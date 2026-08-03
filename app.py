@@ -1,4 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+import uuid
+from datetime import datetime
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
 
 app = Flask(__name__)
 # Key rahasia untuk menangani session dan flash message
@@ -35,6 +37,41 @@ users = {
 }
 
 # ----------------------------------------------------
+# DATA DEVICE DUMMY (SIMULASI TABEL DEVICES)
+# Struktur: devices[username] = [ {token, name, ip, is_master, status, created_at}, ... ]
+# ----------------------------------------------------
+devices = {}
+
+
+def get_device_token():
+    """Ambil device_token dari cookie browser. Kalau belum ada, buat baru."""
+    return request.cookies.get('device_token') or uuid.uuid4().hex
+
+
+def build_device_name():
+    ua = request.headers.get('User-Agent', 'Unknown Device')
+    return ua[:150]
+
+
+def find_device(username, token):
+    for d in devices.get(username, []):
+        if d['token'] == token:
+            return d
+    return None
+
+
+def set_device_cookie(resp, token):
+    resp.set_cookie(
+        'device_token',
+        token,
+        max_age=60 * 60 * 24 * 365,  # 1 tahun
+        httponly=True,
+        samesite='Lax'
+    )
+    return resp
+
+
+# ----------------------------------------------------
 # ROUTE UTAMA / ROOT
 # ----------------------------------------------------
 @app.route('/')
@@ -42,7 +79,7 @@ def index():
     return redirect(url_for('login'))
 
 # ----------------------------------------------------
-# ROUTE LOGIN
+# ROUTE LOGIN (dengan Master Device & Approval Device)
 # ----------------------------------------------------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -58,18 +95,116 @@ def login():
                 user = u
                 break
 
-        if user and user['password'] == password:
-            session['user'] = {
-                'nama': user.get('fullname', username),
-                'username': user['username'],
-                'role': user['role']
-            }
-            return redirect(url_for('dashboard'))
-        else:
+        if not (user and user['password'] == password):
             flash('Username, password, atau role salah!', 'error')
             return redirect(url_for('login'))
 
+        device_token = get_device_token()
+        existing_device = find_device(username, device_token)
+
+        # Kasus 1: device ini sudah pernah terdaftar sebelumnya
+        if existing_device:
+            if existing_device['status'] == 'approved':
+                existing_device['last_login_at'] = datetime.utcnow()
+                return _finish_login(user, device_token)
+
+            if existing_device['status'] == 'pending':
+                flash('Perangkat ini masih menunggu persetujuan dari Master Device.', 'error')
+                return redirect(url_for('login'))
+
+            if existing_device['status'] == 'rejected':
+                flash('Perangkat ini ditolak aksesnya. Hubungi admin.', 'error')
+                return redirect(url_for('login'))
+
+        # Kasus 2: user belum punya device sama sekali -> jadikan Master Device
+        user_devices = devices.setdefault(username, [])
+
+        if not user_devices:
+            user_devices.append({
+                'token': device_token,
+                'name': build_device_name(),
+                'ip': request.remote_addr,
+                'is_master': True,
+                'status': 'approved',
+                'created_at': datetime.utcnow(),
+                'last_login_at': datetime.utcnow(),
+            })
+            flash('Perangkat ini telah didaftarkan sebagai Master Device.', 'success')
+            return _finish_login(user, device_token)
+
+        # Kasus 3: sudah ada Master Device, tapi device ini baru -> minta approval
+        user_devices.append({
+            'token': device_token,
+            'name': build_device_name(),
+            'ip': request.remote_addr,
+            'is_master': False,
+            'status': 'pending',
+            'created_at': datetime.utcnow(),
+            'last_login_at': None,
+        })
+        flash(
+            'Login dari perangkat baru terdeteksi. Menunggu persetujuan dari Master Device sebelum akses diberikan.',
+            'error'
+        )
+        return redirect(url_for('login'))
+
     return render_template('login.html')
+
+
+def _finish_login(user, device_token):
+    """Set session login + simpan device_token di cookie browser."""
+    session['user'] = {
+        'nama': user.get('fullname', user['username']),
+        'username': user['username'],
+        'role': user['role']
+    }
+    resp = make_response(redirect(url_for('dashboard')))
+    return set_device_cookie(resp, device_token)
+
+
+# ----------------------------------------------------
+# ROUTE RESET MASTER DEVICE
+# ----------------------------------------------------
+# Menghapus seluruh data device (termasuk Master Device lama) milik akun,
+# lalu langsung mendaftarkan perangkat yang dipakai untuk reset ini
+# sebagai Master Device baru. Wajib verifikasi ulang password karena
+# aksi ini melewati mekanisme approval device.
+@app.route('/reset_device', methods=['GET', 'POST'])
+def reset_device():
+    if request.method == 'POST':
+        role = request.form.get('role')
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        user = None
+        for u in users.values():
+            if u['username'] == username and u['role'] == role:
+                user = u
+                break
+
+        if not (user and user['password'] == password):
+            flash('Username, password, atau role salah! Reset Master Device gagal.', 'error')
+            return redirect(url_for('reset_device'))
+
+        # Hapus semua device lama (termasuk Master Device sebelumnya)
+        devices[username] = []
+
+        # Daftarkan perangkat saat ini sebagai Master Device baru
+        new_token = uuid.uuid4().hex
+        devices[username].append({
+            'token': new_token,
+            'name': build_device_name(),
+            'ip': request.remote_addr,
+            'is_master': True,
+            'status': 'approved',
+            'created_at': datetime.utcnow(),
+            'last_login_at': datetime.utcnow(),
+        })
+
+        flash('Master Device berhasil direset. Perangkat ini sekarang menjadi Master Device baru.', 'success')
+        return _finish_login(user, new_token)
+
+    return render_template('reset_device.html')
 
 # ----------------------------------------------------
 # ROUTE REGISTER / BUAT AKUN BARU
