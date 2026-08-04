@@ -441,7 +441,7 @@
                     <div id="dynamic-notification-island" class="absolute left-0 right-0 bg-amber-300 text-slate-900 px-3.5 py-1.5 rounded-2xl border-2 border-amber-500 lightning-border-yellow shadow-lg hidden items-center gap-2 z-20">
                         <div class="profile-wrapper w-6 h-6 flex-shrink-0">
                             <img id="island-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar" alt="Avatar">
-                            <img src="../static/img/border_admin.jpg" class="user-border" alt="Border_Emas">
+                            <img src="../static/img/border_admin.jpg" class="user-border" alt="Border_Admin">
                         </div>
                         <span id="island-notification-text" class="text-[11px] font-extrabold text-slate-900 tracking-wide truncate">Notifikasi Aktif</span>
                     </div>
@@ -471,7 +471,7 @@
                     <div id="profile-menu-trigger" onclick="toggleProfileDropdown(event)" class="flex items-center gap-3 pl-2 border-l border-slate-200 cursor-pointer select-none py-1">
                         <div class="profile-wrapper">
                             <img id="header-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar" alt="Avatar">
-                            <img src="../static/img/border_emas.png" class="user-border" alt="Border_Emas">
+                            <img src="../static/img/border_admin.jpg" class="user-border" alt="Border_Admin">
                         </div>
 
                         <div class="hidden sm:block text-left">
@@ -2908,6 +2908,14 @@
         }
         const DAFTAR_BORDER_QUIZ = buatDaftarBorderQuiz();
 
+        // Border khusus Admin/Developer: selalu terbuka (tidak lewat syarat quiz
+        // ataupun prestasi), dipakai buat akun DEV/Admin seperti akun ini.
+        // tierRank sengaja dibuat paling tinggi supaya otomatis jadi border
+        // default yang dipakai selama belum pernah pilih border lain manual.
+        const DAFTAR_BORDER_ADMIN = [
+            { id: 'admin_dev', kategori: 'admin', nama: 'Admin', file: '../static/img/border_admin.jpg', tierRank: 99, rank: '👑 Developer Sistem' }
+        ];
+
         // Border dari jalur Prestasi (upload sertifikat/piala + konfirmasi admin/guru)
         const DAFTAR_BORDER_PRESTASI = [
             { id: 'prestasi_perunggu', kategori: 'prestasi', nama: 'Perunggu Prestasi', file: '../static/img/border_bronze.jpg', minPrestasi: 1, tierRank: 1, rank: '🥉 Berprestasi' },
@@ -3163,6 +3171,7 @@
         }
 
         function isBorderTerbuka(border) {
+            if (border.kategori === 'admin') return true;
             if (border.kategori === 'prestasi') {
                 return getJumlahPrestasiDisetujui() >= border.minPrestasi;
             }
@@ -3172,7 +3181,7 @@
         }
 
         function getSemuaBorder() {
-            return [...DAFTAR_BORDER_QUIZ, ...DAFTAR_BORDER_PRESTASI];
+            return [...DAFTAR_BORDER_ADMIN, ...DAFTAR_BORDER_QUIZ, ...DAFTAR_BORDER_PRESTASI];
         }
 
         function getBorderTertinggiTerbuka() {
@@ -3213,6 +3222,9 @@
         // dipakai baik untuk border yang sudah dimiliki (jadi tahu asalnya dari mana)
         // maupun yang belum dimiliki (jadi tahu syaratnya apa).
         function deskripsiSumberBorder(border) {
+            if (border.kategori === 'admin') {
+                return `<i class="fa-solid fa-crown mr-1"></i>Khusus Admin/Developer`;
+            }
             if (border.kategori === 'prestasi') {
                 return `<i class="fa-solid fa-trophy mr-1"></i>Prestasi &middot; min. ${border.minPrestasi} disetujui`;
             }
