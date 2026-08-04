@@ -291,6 +291,13 @@
                         <i class="fa-solid fa-pen-to-square w-5 text-center"></i> Penilaian Tugas
                     </div>
                 </button>
+
+                <button onclick="switchTab('prestasi')" id="btn-prestasi" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium transition-all">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-trophy w-5 text-center"></i> Konfirmasi Prestasi
+                    </div>
+                    <span id="badge-prestasi-menunggu" class="hidden px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold">0</span>
+                </button>
             </div>
         </div>
 
@@ -616,6 +623,31 @@
                         </tbody>
                     </table>
                 </div>
+            </section>
+
+            <section id="tab-prestasi" class="tab-content hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between md:items-center gap-4">
+                    <div>
+                        <h3 class="font-extrabold text-2xl text-slate-900">🏆 Konfirmasi Prestasi Siswa</h3>
+                        <p class="text-xs text-slate-400 mt-1">Sertifikat/piala yang diajukan siswa dari seluruh kelas. Setujui untuk membuka Border Prestasi mereka.</p>
+                    </div>
+                    <div class="flex gap-2 items-center flex-wrap">
+                        <select id="filter-status-prestasi" onchange="renderKonfirmasiPrestasi()" class="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none">
+                            <option value="menunggu">Menunggu Konfirmasi</option>
+                            <option value="disetujui">Sudah Disetujui</option>
+                            <option value="ditolak">Sudah Ditolak</option>
+                            <option value="ALL">Semua Status</option>
+                        </select>
+                        <select id="filter-kelas-prestasi" onchange="renderKonfirmasiPrestasi()" class="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none">
+                            <option value="ALL">Semua Kelas</option>
+                        </select>
+                        <button onclick="renderKonfirmasiPrestasi()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md">
+                            <i class="fa-solid fa-rotate mr-1"></i> Perbarui
+                        </button>
+                    </div>
+                </div>
+
+                <div id="grid-konfirmasi-prestasi" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
             </section>
 
         </main>
@@ -948,6 +980,54 @@
         </div>
     </div>
 
+    <!-- Modal Lihat Bukti Prestasi (foto diperbesar) -->
+    <div id="modal-lihat-bukti-prestasi" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[70] flex items-center justify-center p-4 hidden" onclick="tutupModalBuktiPrestasi()">
+        <div class="relative max-w-lg w-full" onclick="event.stopPropagation()">
+            <button onclick="tutupModalBuktiPrestasi()" class="absolute -top-10 right-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <img id="img-bukti-prestasi-besar" src="" class="w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl bg-white" alt="Bukti Prestasi (Diperbesar)">
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Setujui / Tolak Prestasi -->
+    <div id="modal-konfirmasi-prestasi" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[70] flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h4 id="judul-modal-konfirmasi-prestasi" class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-trophy text-amber-500 mr-1.5"></i> Setujui Prestasi</h4>
+                <button onclick="tutupModalKonfirmasiPrestasi()" class="text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-full">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-5 space-y-4">
+                <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                    <p id="ringkasan-prestasi-siswa" class="text-xs font-bold text-slate-700"></p>
+                    <p id="ringkasan-prestasi-judul" class="text-xs text-slate-500 mt-0.5"></p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nama Admin/Guru yang Mengonfirmasi:</label>
+                    <input type="text" id="input-nama-admin-prestasi" placeholder="Contoh: Ahmad, S.T" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                </div>
+
+                <div id="wrapper-catatan-tolak-prestasi" class="hidden">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Catatan Penolakan (opsional):</label>
+                    <textarea id="input-catatan-tolak-prestasi" rows="2" placeholder="Contoh: Foto bukti kurang jelas, mohon upload ulang." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"></textarea>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+                <button onclick="tutupModalKonfirmasiPrestasi()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-all">
+                    Batal
+                </button>
+                <button id="btn-proses-konfirmasi-prestasi" onclick="prosesKonfirmasiPrestasi()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-500/20 flex items-center gap-2">
+                    <i class="fa-solid fa-check"></i> Setujui
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let selectedKelasBeriTugas = '';
         let editingTaskId = null; // null = lagi bikin tugas baru, terisi = lagi edit tugas dgn id ini
@@ -1122,6 +1202,7 @@
             if (tabId === 'rekap-tugas') renderRekapSemuaTugas();
             if (tabId === 'absensi') renderAbsensiSiswa();
             if (tabId === 'nilai') renderPenilaianTugas();
+            if (tabId === 'prestasi') renderKonfirmasiPrestasi();
             const mainContainer = document.getElementById('main-scroll-container');
             if(mainContainer) mainContainer.scrollTop = 0;
         }
@@ -2619,6 +2700,212 @@
             inputBio.value = localStorage.getItem('guru_bio') || '';
         }
 
+        /* ============================================================
+           FITUR KONFIRMASI PRESTASI (sertifikat/piala siswa)
+           Membaca localStorage key `pengajuan_prestasi_<KELAS>` yang
+           sama dengan yang ditulis oleh siswa di Dashboard Siswa (mis.
+           `pengajuan_prestasi_XII_TKJ_3` untuk kelas "XII TKJ 3"), lalu
+           guru bisa Setujui/Tolak dari sini. Perubahan status disimpan
+           balik ke key yang sama sehingga Dashboard Siswa langsung
+           mendeteksinya lewat event 'storage' dan menampilkan nama
+           admin/guru yang mengonfirmasi.
+           ============================================================ */
+
+        function keyPrestasiKelas(namaKelas) {
+            return `pengajuan_prestasi_${namaKelas.replace(/\s+/g, '_')}`;
+        }
+
+        function getPengajuanPrestasiKelas(namaKelas) {
+            const raw = localStorage.getItem(keyPrestasiKelas(namaKelas));
+            return raw ? JSON.parse(raw) : [];
+        }
+
+        function savePengajuanPrestasiKelas(namaKelas, daftar) {
+            localStorage.setItem(keyPrestasiKelas(namaKelas), JSON.stringify(daftar));
+        }
+
+        // Kumpulkan semua pengajuan dari seluruh kelas jadi satu daftar datar,
+        // masing-masing entri ditandai kelas asalnya supaya bisa difilter &
+        // supaya waktu disimpan kembali tahu harus ditulis ke key kelas mana.
+        function getSemuaPengajuanPrestasi() {
+            const semua = [];
+            daftarSeluruhKelasDummy.forEach(k => {
+                getPengajuanPrestasiKelas(k.nama).forEach(p => {
+                    semua.push({ ...p, _kelas: k.nama });
+                });
+            });
+            // Terbaru duluan
+            semua.sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+            return semua;
+        }
+
+        function isiFilterKelasPrestasi() {
+            const sel = document.getElementById('filter-kelas-prestasi');
+            if (!sel || sel.dataset.terisi) return;
+            daftarSeluruhKelasDummy.forEach(k => {
+                const opt = document.createElement('option');
+                opt.value = k.nama;
+                opt.innerText = k.nama;
+                sel.appendChild(opt);
+            });
+            sel.dataset.terisi = '1';
+        }
+
+        function updateBadgePrestasiMenunggu() {
+            const jumlahMenunggu = getSemuaPengajuanPrestasi().filter(p => p.status === 'menunggu').length;
+            const badge = document.getElementById('badge-prestasi-menunggu');
+            if (!badge) return;
+            if (jumlahMenunggu > 0) {
+                badge.innerText = String(jumlahMenunggu);
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function renderKonfirmasiPrestasi() {
+            isiFilterKelasPrestasi();
+            updateBadgePrestasiMenunggu();
+
+            const filterStatus = document.getElementById('filter-status-prestasi')?.value || 'menunggu';
+            const filterKelas = document.getElementById('filter-kelas-prestasi')?.value || 'ALL';
+
+            let daftar = getSemuaPengajuanPrestasi();
+            if (filterStatus !== 'ALL') daftar = daftar.filter(p => p.status === filterStatus);
+            if (filterKelas !== 'ALL') daftar = daftar.filter(p => p._kelas === filterKelas);
+
+            const container = document.getElementById('grid-konfirmasi-prestasi');
+            if (!container) return;
+
+            if (daftar.length === 0) {
+                container.innerHTML = `<div class="lg:col-span-2 text-center py-12 text-slate-400 bg-white rounded-2xl border border-slate-200/80"><i class="fa-solid fa-medal text-3xl mb-2 block"></i>Tidak ada pengajuan prestasi untuk filter ini.</div>`;
+                return;
+            }
+
+            container.innerHTML = daftar.map(p => {
+                let badge, info;
+                if (p.status === 'disetujui') {
+                    badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-100 text-emerald-700 flex items-center gap-1 flex-shrink-0"><i class="fa-solid fa-circle-check"></i>Disetujui</span>`;
+                    info = `<p class="text-[11px] text-emerald-600 font-semibold mt-1.5"><i class="fa-solid fa-user-shield mr-1"></i>Dikonfirmasi oleh ${p.adminPenyetuju || 'Admin'} &middot; ${p.tanggalKonfirmasi || ''}</p>`;
+                } else if (p.status === 'ditolak') {
+                    badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-rose-100 text-rose-700 flex items-center gap-1 flex-shrink-0"><i class="fa-solid fa-circle-xmark"></i>Ditolak</span>`;
+                    info = `<p class="text-[11px] text-rose-600 font-semibold mt-1.5"><i class="fa-solid fa-user-shield mr-1"></i>Ditolak oleh ${p.adminPenyetuju || 'Admin'}${p.catatanAdmin ? ' &middot; ' + p.catatanAdmin : ''}</p>`;
+                } else {
+                    badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-100 text-amber-700 flex items-center gap-1 flex-shrink-0"><i class="fa-solid fa-hourglass-half"></i>Menunggu</span>`;
+                    info = `<p class="text-[11px] text-slate-400 mt-1.5">Diajukan ${p.tanggalAjukan}</p>`;
+                }
+
+                const tombolAksi = p.status === 'menunggu' ? `
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="bukaModalKonfirmasiPrestasi('${p._kelas}', '${p.id}', 'disetujui')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all">
+                            <i class="fa-solid fa-check mr-1"></i>Setujui
+                        </button>
+                        <button onclick="bukaModalKonfirmasiPrestasi('${p._kelas}', '${p.id}', 'ditolak')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all">
+                            <i class="fa-solid fa-xmark mr-1"></i>Tolak
+                        </button>
+                    </div>` : '';
+
+                return `
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 flex gap-4">
+                    <img src="${p.foto}" class="w-20 h-20 rounded-xl object-cover border border-slate-200 flex-shrink-0 cursor-pointer" onclick="bukaModalBuktiPrestasi('${p.foto}')" alt="Bukti prestasi">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between gap-2 flex-wrap">
+                            <div>
+                                <p class="text-[10px] font-bold text-blue-600 uppercase tracking-wide">${p._kelas} &middot; ${p.namaSiswa || 'Siswa'}</p>
+                                <h5 class="text-sm font-bold text-slate-800 mt-0.5">${p.judul}</h5>
+                            </div>
+                            ${badge}
+                        </div>
+                        ${p.keterangan ? `<p class="text-xs text-slate-500 mt-1.5">${p.keterangan}</p>` : ''}
+                        ${info}
+                        ${tombolAksi}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function bukaModalBuktiPrestasi(foto) {
+            document.getElementById('img-bukti-prestasi-besar').src = foto;
+            document.getElementById('modal-lihat-bukti-prestasi').classList.remove('hidden');
+        }
+
+        function tutupModalBuktiPrestasi() {
+            document.getElementById('modal-lihat-bukti-prestasi').classList.add('hidden');
+        }
+
+        let _prosesPrestasiAktif = null; // { kelas, id, aksi }
+
+        function bukaModalKonfirmasiPrestasi(namaKelas, idPengajuan, aksi) {
+            const daftar = getPengajuanPrestasiKelas(namaKelas);
+            const p = daftar.find(x => x.id === idPengajuan);
+            if (!p) return;
+
+            _prosesPrestasiAktif = { kelas: namaKelas, id: idPengajuan, aksi: aksi };
+
+            document.getElementById('ringkasan-prestasi-siswa').innerText = `${p.namaSiswa || 'Siswa'} · ${namaKelas}`;
+            document.getElementById('ringkasan-prestasi-judul').innerText = p.judul;
+            document.getElementById('input-nama-admin-prestasi').value = cariNamaGuruKelas(namaKelas);
+            document.getElementById('input-catatan-tolak-prestasi').value = '';
+
+            const judulModal = document.getElementById('judul-modal-konfirmasi-prestasi');
+            const wrapperCatatan = document.getElementById('wrapper-catatan-tolak-prestasi');
+            const tombolProses = document.getElementById('btn-proses-konfirmasi-prestasi');
+
+            if (aksi === 'disetujui') {
+                judulModal.innerHTML = '<i class="fa-solid fa-trophy text-amber-500 mr-1.5"></i> Setujui Prestasi';
+                wrapperCatatan.classList.add('hidden');
+                tombolProses.className = "px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-500/20 flex items-center gap-2";
+                tombolProses.innerHTML = '<i class="fa-solid fa-check"></i> Setujui';
+            } else {
+                judulModal.innerHTML = '<i class="fa-solid fa-circle-xmark text-rose-500 mr-1.5"></i> Tolak Prestasi';
+                wrapperCatatan.classList.remove('hidden');
+                tombolProses.className = "px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-rose-500/20 flex items-center gap-2";
+                tombolProses.innerHTML = '<i class="fa-solid fa-xmark"></i> Tolak';
+            }
+
+            document.getElementById('modal-konfirmasi-prestasi').classList.remove('hidden');
+        }
+
+        function tutupModalKonfirmasiPrestasi() {
+            document.getElementById('modal-konfirmasi-prestasi').classList.add('hidden');
+            _prosesPrestasiAktif = null;
+        }
+
+        function prosesKonfirmasiPrestasi() {
+            if (!_prosesPrestasiAktif) return;
+            const { kelas, id, aksi } = _prosesPrestasiAktif;
+
+            const namaAdmin = document.getElementById('input-nama-admin-prestasi').value.trim();
+            if (!namaAdmin) { alert('Nama admin/guru yang mengonfirmasi wajib diisi.'); return; }
+            const catatan = document.getElementById('input-catatan-tolak-prestasi').value.trim();
+
+            const now = new Date();
+            const bulanSingkat = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+            const timestamp = now.getDate() + ' ' + bulanSingkat[now.getMonth()] + ' ' + now.getFullYear() + ', ' +
+                               String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+
+            const daftar = getPengajuanPrestasiKelas(kelas);
+            const idx = daftar.findIndex(x => x.id === id);
+            if (idx === -1) { tutupModalKonfirmasiPrestasi(); return; }
+
+            daftar[idx].status = aksi;
+            daftar[idx].adminPenyetuju = namaAdmin;
+            daftar[idx].tanggalKonfirmasi = timestamp;
+            daftar[idx].catatanAdmin = aksi === 'ditolak' ? (catatan || null) : null;
+
+            savePengajuanPrestasiKelas(kelas, daftar);
+
+            tutupModalKonfirmasiPrestasi();
+            renderKonfirmasiPrestasi();
+        }
+
+        window.addEventListener('storage', (e) => {
+            if (e.key && e.key.startsWith('pengajuan_prestasi_')) {
+                updateBadgePrestasiMenunggu();
+                if (activeTab === 'prestasi') renderKonfirmasiPrestasi();
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             updateHeaderClock();
             setInterval(updateHeaderClock, 1000);
@@ -2628,6 +2915,7 @@
             setInterval(renderTeacherSchedule, 30000);
             loadSavedProfilePhotoGuru();
             loadBioGuru();
+            updateBadgePrestasiMenunggu();
 
             // Begitu guru masuk, langsung dicek apakah saat ini sudah masuk
             // jam mengajarnya hari ini (lalu terus dipantau tiap 5 detik).
