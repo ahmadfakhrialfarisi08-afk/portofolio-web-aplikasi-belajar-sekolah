@@ -554,33 +554,95 @@
                         <div class="max-w-md">
                             <span class="bg-white/25 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 inline-block">Koleksi Border</span>
                             <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">🖼️ Border Avatar Kamu</h2>
-                            <p class="text-amber-50 text-sm leading-relaxed">Border kebuka otomatis sesuai rank di Quiz & Leaderboard. Makin banyak poin, makin keren bingkai foto profilmu!</p>
+                            <p class="text-amber-50 text-sm leading-relaxed">Ada 2 jalur untuk buka border: menang Quiz sesuai tingkat kesulitan, atau upload bukti Prestasi (sertifikat/piala) yang dikonfirmasi guru/admin.</p>
                         </div>
                         <div class="flex sm:flex-col gap-4 sm:gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-5 py-4 flex-shrink-0">
                             <div class="text-center sm:text-left">
-                                <p class="text-[10px] uppercase tracking-wide text-amber-50 font-semibold">Total Poin Kamu</p>
-                                <p id="border-total-poin-display" class="text-2xl font-extrabold">0</p>
-                            </div>
-                            <div class="text-center sm:text-left border-l sm:border-l-0 sm:border-t border-white/20 pl-4 sm:pl-0 sm:pt-2">
                                 <p class="text-[10px] uppercase tracking-wide text-amber-50 font-semibold">Border Terpakai</p>
                                 <p id="border-terpakai-display" class="text-sm font-bold">-</p>
+                            </div>
+                            <div class="text-center sm:text-left border-l sm:border-l-0 sm:border-t border-white/20 pl-4 sm:pl-0 sm:pt-2">
+                                <p class="text-[10px] uppercase tracking-wide text-amber-50 font-semibold">Prestasi Disetujui</p>
+                                <p id="border-jumlah-prestasi-display" class="text-2xl font-extrabold">0</p>
                             </div>
                         </div>
                     </div>
                     <i class="fa-solid fa-ring absolute -right-8 -bottom-8 text-white/10 text-9xl"></i>
                 </div>
 
-                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 class="font-bold text-lg text-slate-900">Semua Daftar Border</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Kumpulkan poin dari Quiz untuk membuka border berikutnya.</p>
-                        </div>
+                <!-- Sub-tab: Border Quiz vs Border Prestasi -->
+                <div class="flex gap-1.5 bg-slate-100 p-1.5 rounded-2xl w-fit">
+                    <button onclick="switchSubTabBorder('quiz')" id="subtab-border-quiz-btn" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-white text-slate-900 shadow-sm">
+                        <i class="fa-solid fa-gamepad mr-1.5"></i>Border Quiz
+                    </button>
+                    <button onclick="switchSubTabBorder('prestasi')" id="subtab-border-prestasi-btn" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-500 hover:text-slate-800">
+                        <i class="fa-solid fa-trophy mr-1.5"></i>Border Prestasi
+                    </button>
+                </div>
+
+                <!-- ================= PANEL: BORDER QUIZ (per tingkat kesulitan) ================= -->
+                <div id="panel-border-quiz" class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <p class="text-xs text-slate-400">Setiap tingkat kesulitan quiz punya jalur border sendiri, berdasarkan skor terbaikmu di level itu.</p>
                         <button onclick="switchTab('quiz')" class="text-xs font-semibold text-purple-600 hover:underline flex items-center gap-1 flex-shrink-0">
                             Main Quiz <i class="fa-solid fa-arrow-right text-[10px]"></i>
                         </button>
                     </div>
-                    <div id="grid-koleksi-border" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"></div>
+                    <div id="wrapper-border-quiz-level" class="space-y-6"></div>
+                </div>
+
+                <!-- ================= PANEL: BORDER PRESTASI (upload sertifikat/piala) ================= -->
+                <div id="panel-border-prestasi" class="space-y-6 hidden">
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                        <div class="flex items-center gap-3 mb-1">
+                            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-file-arrow-up"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-base text-slate-900">Ajukan Prestasi Baru</h3>
+                                <p class="text-xs text-slate-400">Upload foto sertifikat/piala, lalu tunggu konfirmasi dari guru/admin.</p>
+                            </div>
+                        </div>
+                        <form id="form-ajukan-prestasi" onsubmit="ajukanPrestasi(event)" class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="sm:col-span-2">
+                                <label class="text-xs font-bold text-slate-600 mb-1.5 block">Judul Prestasi</label>
+                                <input id="input-judul-prestasi" type="text" required placeholder="Contoh: Juara 1 LKS Tingkat Provinsi" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-600 mb-1.5 block">Jenis Bukti</label>
+                                <select id="input-jenis-prestasi" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                                    <option value="sertifikat">Sertifikat</option>
+                                    <option value="piala">Piala</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-600 mb-1.5 block">Foto Sertifikat/Piala</label>
+                                <input id="input-file-prestasi" type="file" accept="image/*" required class="w-full text-xs file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-amber-100 file:text-amber-700 file:text-xs file:font-bold border border-slate-200 rounded-xl">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="text-xs font-bold text-slate-600 mb-1.5 block">Keterangan (opsional)</label>
+                                <textarea id="input-keterangan-prestasi" rows="2" placeholder="Contoh: Diselenggarakan Dinas Pendidikan, Maret 2026" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></textarea>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <button type="submit" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition-all">
+                                    <i class="fa-solid fa-paper-plane mr-1.5"></i>Kirim untuk Dikonfirmasi
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                        <div class="mb-6">
+                            <h3 class="font-bold text-lg text-slate-900">Border dari Prestasi</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Terbuka otomatis sesuai jumlah prestasi yang sudah <b>disetujui</b> admin/guru.</p>
+                        </div>
+                        <div id="grid-koleksi-border-prestasi" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                        <h3 class="font-bold text-lg text-slate-900 mb-4">Riwayat Pengajuan Prestasi</h3>
+                        <div id="list-riwayat-prestasi" class="space-y-3"></div>
+                    </div>
                 </div>
             </section>
 
@@ -2189,6 +2251,16 @@
                     renderKoleksiBorder();
                 }
             }
+            if (e.key === KEY_PRESTASI_SISWA) {
+                // Guru menyetujui/menolak/membatalkan pengajuan prestasi dari Dashboard
+                // Guru. Border avatar langsung disesuaikan lagi di sini: kalau prestasi
+                // yang membuka border itu dibatalkan, border yang sedang dipakai otomatis
+                // turun ke border tertinggi yang MASIH terbuka — sama seperti siswa lain.
+                terapkanBorderKeAvatar();
+                if (!document.getElementById('tab-akademik').classList.contains('hidden')) {
+                    renderKoleksiBorder();
+                }
+            }
         });
 
         // Jaga-jaga kalau perubahan dari Dashboard Guru tidak sempat kepancar lewat
@@ -2680,30 +2752,111 @@
 
         /* ============================================================
            FITUR KOLEKSI BORDER AVATAR (menggantikan tab Akademik)
-           Border terbuka otomatis sesuai total poin di Quiz & Leaderboard,
-           mengikuti tingkatan rank yang sama dengan getRankInfoQuiz().
+           Dipisah jadi 2 KATEGORI/JALUR terpisah:
+           1. BORDER QUIZ    -> satu jalur border sendiri untuk TIAP tingkat
+                                kesulitan (easy/medium/hard), terbuka sesuai
+                                skor TERBAIK siswa di level itu (bestByLevel).
+           2. BORDER PRESTASI -> terbuka dari upload sertifikat/piala yang
+                                sudah DIKONFIRMASI (disetujui) oleh guru/admin.
+                                Karena file ini murni front-end (belum ada
+                                backend admin), status konfirmasi disimpan di
+                                localStorage dan bisa diuji lewat tombol
+                                "Simulasi Guru" pada tiap pengajuan yang masih
+                                Menunggu — di implementasi produksi, tombol ini
+                                diganti alur approve dari Dashboard Guru/Admin.
            CATATAN: nama file border di bawah masih placeholder mengikuti
            pola yang sudah dipakai (border_emas.png) — tinggal ganti isi
-           `file` kalau file PNG border lain sudah tersedia di folder
+           `file` kalau file PNG/JPG border lain sudah tersedia di folder
            ../static/img/.
            ============================================================ */
 
         const KEY_BORDER_TERPAKAI = `border_terpakai_${KELAS_AKTIF_SISWA}`;
+        // Key & skema data di bawah harus SAMA PERSIS dengan yang dipakai Dashboard
+        // Guru (lihat keyPrestasiKelas() & renderKonfirmasiPrestasi() di dashboard_guru.html),
+        // supaya prestasi yang diajukan siswa di sini benar2 muncul & bisa dikonfirmasi
+        // oleh guru manapun di sana, dan status/nama guru penyetuju bisa kebaca balik di sini.
+        const KEY_PRESTASI_SISWA = `pengajuan_prestasi_${KELAS_AKTIF_SISWA}`;
 
-        const DAFTAR_BORDER = [
-            { id: 'polos',   nama: 'Polos',   file: '../static/img/border_polos.png',   minPoin: 0,   rank: '🔰 Pemula' },
-            { id: 'perak',   nama: 'Perak',   file: '../static/img/border_silver.jpg',  minPoin: 100, rank: '📘 Pelajar Rajin' },
-            { id: 'emas',    nama: 'Emas',    file: '../static/img/border_gold.jpg',    minPoin: 250, rank: '🧠 Master Quiz' },
-            { id: 'permata', nama: 'Permata', file: '../static/img/border_bronze.jpg',  minPoin: 500, rank: '👑 Legenda Sekolah' }
+        // Tingkatan/tier generik yang dipakai berulang di tiap level quiz.
+        const BORDER_TIER_TEMPLATE = [
+            { tierId: 'polos',   nama: 'Polos',   file: '../static/img/border_polos.png',  minPoin: 0,   tierRank: 0 },
+            { tierId: 'perak',   nama: 'Perak',   file: '../static/img/border_silver.jpg', minPoin: 100, tierRank: 1 },
+            { tierId: 'emas',    nama: 'Emas',    file: '../static/img/border_gold.jpg',   minPoin: 250, tierRank: 2 },
+            { tierId: 'permata', nama: 'Permata', file: '../static/img/border_bronze.jpg', minPoin: 500, tierRank: 3 }
         ];
 
+        const LEVEL_META_BORDER = {
+            easy:   { label: 'Easy',   icon: 'fa-seedling',    warna: 'emerald', rankAwal: '🔰 Pemula Easy' },
+            medium: { label: 'Medium', icon: 'fa-bolt',        warna: 'amber',   rankAwal: '🔰 Pemula Medium' },
+            hard:   { label: 'Hard',   icon: 'fa-fire',        warna: 'rose',    rankAwal: '🔰 Pemula Hard' }
+        };
+
+        // Bangun daftar border quiz: 4 tier x 3 level = 12 border, masing2
+        // level (easy/medium/hard) punya jalur pembukaan sendiri2.
+        function buatDaftarBorderQuiz() {
+            const list = [];
+            Object.keys(LEVEL_META_BORDER).forEach(level => {
+                BORDER_TIER_TEMPLATE.forEach(tier => {
+                    list.push({
+                        id: `quiz_${level}_${tier.tierId}`,
+                        kategori: 'quiz',
+                        level,
+                        nama: `${tier.nama} ${LEVEL_META_BORDER[level].label}`,
+                        file: tier.file,
+                        minPoin: tier.minPoin,
+                        tierRank: tier.tierRank,
+                        rank: tier.tierRank === 0 ? LEVEL_META_BORDER[level].rankAwal
+                            : tier.tierRank === 1 ? `📘 Pelajar Rajin ${LEVEL_META_BORDER[level].label}`
+                            : tier.tierRank === 2 ? `🧠 Master Quiz ${LEVEL_META_BORDER[level].label}`
+                            : `👑 Legenda ${LEVEL_META_BORDER[level].label}`
+                    });
+                });
+            });
+            return list;
+        }
+        const DAFTAR_BORDER_QUIZ = buatDaftarBorderQuiz();
+
+        // Border dari jalur Prestasi (upload sertifikat/piala + konfirmasi admin/guru)
+        const DAFTAR_BORDER_PRESTASI = [
+            { id: 'prestasi_perunggu', kategori: 'prestasi', nama: 'Perunggu Prestasi', file: '../static/img/border_bronze.jpg', minPrestasi: 1, tierRank: 1, rank: '🥉 Berprestasi' },
+            { id: 'prestasi_perak',    kategori: 'prestasi', nama: 'Perak Prestasi',    file: '../static/img/border_silver.jpg', minPrestasi: 3, tierRank: 2, rank: '🥈 Siswa Berbakat' },
+            { id: 'prestasi_emas',     kategori: 'prestasi', nama: 'Emas Prestasi',     file: '../static/img/border_gold.jpg',   minPrestasi: 5, tierRank: 3, rank: '🏆 Bintang Sekolah' }
+        ];
+
+        function getPrestasiData() {
+            try {
+                const raw = localStorage.getItem(KEY_PRESTASI_SISWA);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function savePrestasiData(list) {
+            localStorage.setItem(KEY_PRESTASI_SISWA, JSON.stringify(list));
+        }
+
+        function getJumlahPrestasiDisetujui() {
+            return getPrestasiData().filter(p => p.status === 'disetujui').length;
+        }
+
         function isBorderTerbuka(border) {
-            return (getQuizData().totalPoin || 0) >= border.minPoin;
+            if (border.kategori === 'prestasi') {
+                return getJumlahPrestasiDisetujui() >= border.minPrestasi;
+            }
+            const data = getQuizData();
+            const bestLevel = (data.bestByLevel && data.bestByLevel[border.level]) || 0;
+            return bestLevel >= border.minPoin;
+        }
+
+        function getSemuaBorder() {
+            return [...DAFTAR_BORDER_QUIZ, ...DAFTAR_BORDER_PRESTASI];
         }
 
         function getBorderTertinggiTerbuka() {
-            const terbuka = DAFTAR_BORDER.filter(isBorderTerbuka);
-            return terbuka[terbuka.length - 1] || DAFTAR_BORDER[0];
+            const terbuka = getSemuaBorder().filter(isBorderTerbuka);
+            if (!terbuka.length) return DAFTAR_BORDER_QUIZ[0];
+            return terbuka.reduce((tertinggi, b) => (b.tierRank > tertinggi.tierRank ? b : tertinggi), terbuka[0]);
         }
 
         // Kalau siswa belum pernah pilih manual, atau pilihannya (aneh/lama)
@@ -2712,13 +2865,13 @@
         // selama siswa belum pernah pilih border lain secara manual.
         function getBorderTerpakai() {
             const idTersimpan = localStorage.getItem(KEY_BORDER_TERPAKAI);
-            const border = DAFTAR_BORDER.find(b => b.id === idTersimpan);
+            const border = getSemuaBorder().find(b => b.id === idTersimpan);
             if (border && isBorderTerbuka(border)) return border;
             return getBorderTertinggiTerbuka();
         }
 
         function pakaiBorder(id) {
-            const border = DAFTAR_BORDER.find(b => b.id === id);
+            const border = getSemuaBorder().find(b => b.id === id);
             if (!border || !isBorderTerbuka(border)) return;
             localStorage.setItem(KEY_BORDER_TERPAKAI, id);
             terapkanBorderKeAvatar();
@@ -2734,42 +2887,202 @@
             });
         }
 
+        // Render satu kartu border (dipakai bareng oleh grid Quiz & grid Prestasi)
+        function buatKartuBorder(border, dipakai) {
+            const terbuka = isBorderTerbuka(border);
+            const sedangDipakai = dipakai.id === border.id;
+            let labelKurang = '';
+            if (!terbuka) {
+                if (border.kategori === 'prestasi') {
+                    const sisa = Math.max(0, border.minPrestasi - getJumlahPrestasiDisetujui());
+                    labelKurang = `Butuh ${sisa} prestasi disetujui lagi`;
+                } else {
+                    const data = getQuizData();
+                    const bestLevel = (data.bestByLevel && data.bestByLevel[border.level]) || 0;
+                    const sisa = Math.max(0, border.minPoin - bestLevel);
+                    labelKurang = `Butuh ${sisa} poin lagi`;
+                }
+            }
+
+            const card = document.createElement('div');
+            card.className = `rounded-2xl border p-5 flex flex-col items-center text-center transition-all ${sedangDipakai ? 'border-amber-400 bg-amber-50/50 shadow-md' : 'border-slate-200 bg-white'} ${!terbuka ? 'opacity-70' : ''}`;
+
+            card.innerHTML = `
+                <div class="profile-wrapper w-20 h-20 mb-3 relative">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar${!terbuka ? ' grayscale' : ''}" alt="Preview Avatar">
+                    <img src="${border.file}" class="user-border" alt="Border_${border.nama}">
+                    ${!terbuka ? '<div class="absolute inset-0 flex items-center justify-center bg-slate-900/40 rounded-full"><i class="fa-solid fa-lock text-white text-lg"></i></div>' : ''}
+                </div>
+                <h4 class="font-bold text-sm text-slate-900">${border.nama}</h4>
+                <p class="text-[10px] text-slate-400 mt-0.5 mb-3">${border.rank}</p>
+                ${terbuka
+                    ? `<button onclick="pakaiBorder('${border.id}')" ${sedangDipakai ? 'disabled' : ''} class="w-full py-2 rounded-xl text-xs font-bold transition-all ${sedangDipakai ? 'bg-emerald-100 text-emerald-700 cursor-default' : 'bg-slate-800 hover:bg-slate-900 text-white'}">${sedangDipakai ? '<i class="fa-solid fa-check mr-1"></i>Sedang Dipakai' : 'Pakai Border'}</button>`
+                    : `<button disabled class="w-full py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed"><i class="fa-solid fa-lock mr-1"></i>${labelKurang}</button>`
+                }
+            `;
+            return card;
+        }
+
+        function switchSubTabBorder(tab) {
+            const panelQuiz = document.getElementById('panel-border-quiz');
+            const panelPrestasi = document.getElementById('panel-border-prestasi');
+            const btnQuiz = document.getElementById('subtab-border-quiz-btn');
+            const btnPrestasi = document.getElementById('subtab-border-prestasi-btn');
+            if (!panelQuiz || !panelPrestasi) return;
+
+            const aktif = 'bg-white text-slate-900 shadow-sm';
+            const nonaktif = 'text-slate-500 hover:text-slate-800';
+
+            if (tab === 'prestasi') {
+                panelQuiz.classList.add('hidden');
+                panelPrestasi.classList.remove('hidden');
+                btnPrestasi.className = `px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${aktif}`;
+                btnQuiz.className = `px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${nonaktif}`;
+            } else {
+                panelPrestasi.classList.add('hidden');
+                panelQuiz.classList.remove('hidden');
+                btnQuiz.className = `px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${aktif}`;
+                btnPrestasi.className = `px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${nonaktif}`;
+            }
+        }
+
+        function renderKoleksiBorderQuiz(dipakai) {
+            const wrapper = document.getElementById('wrapper-border-quiz-level');
+            if (!wrapper) return;
+            wrapper.innerHTML = '';
+            const data = getQuizData();
+
+            Object.keys(LEVEL_META_BORDER).forEach(level => {
+                const meta = LEVEL_META_BORDER[level];
+                const bestLevel = (data.bestByLevel && data.bestByLevel[level]) || 0;
+                const bordersLevel = DAFTAR_BORDER_QUIZ.filter(b => b.level === level);
+
+                const blok = document.createElement('div');
+                blok.className = 'bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6';
+                blok.innerHTML = `
+                    <div class="flex items-center justify-between mb-5">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-9 h-9 rounded-xl bg-${meta.warna}-100 text-${meta.warna}-600 flex items-center justify-center">
+                                <i class="fa-solid ${meta.icon}"></i>
+                            </span>
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-900">Border Quiz &middot; ${meta.label}</h3>
+                                <p class="text-[11px] text-slate-400">Skor terbaikmu di level ${meta.label}: <b class="text-slate-600">${bestLevel} poin</b></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid-border-level-${level} grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"></div>
+                `;
+                wrapper.appendChild(blok);
+
+                const grid = blok.querySelector(`.grid-border-level-${level}`);
+                bordersLevel.forEach(border => grid.appendChild(buatKartuBorder(border, dipakai)));
+            });
+        }
+
+        function renderKoleksiBorderPrestasi(dipakai) {
+            const grid = document.getElementById('grid-koleksi-border-prestasi');
+            if (grid) {
+                grid.innerHTML = '';
+                DAFTAR_BORDER_PRESTASI.forEach(border => grid.appendChild(buatKartuBorder(border, dipakai)));
+            }
+            renderRiwayatPrestasi();
+        }
+
+        function labelStatusPrestasi(status) {
+            if (status === 'disetujui') return { teks: 'Disetujui', kelas: 'bg-emerald-100 text-emerald-700' };
+            if (status === 'ditolak') return { teks: 'Ditolak', kelas: 'bg-rose-100 text-rose-700' };
+            return { teks: 'Menunggu Konfirmasi', kelas: 'bg-amber-100 text-amber-700' };
+        }
+
+        function renderRiwayatPrestasi() {
+            const container = document.getElementById('list-riwayat-prestasi');
+            if (!container) return;
+            // id diawali "prestasi_" + Date.now(), jadi urutan string == urutan waktu.
+            const list = getPrestasiData().slice().sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+
+            if (!list.length) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Belum ada prestasi yang diajukan. Upload sertifikat/piala pertamamu di atas!</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            list.forEach(item => {
+                const status = labelStatusPrestasi(item.status);
+
+                let ketAdmin = '';
+                if (item.status === 'disetujui') {
+                    ketAdmin = `<p class="text-[11px] text-emerald-600 font-semibold mt-1"><i class="fa-solid fa-user-shield mr-1"></i>Dikonfirmasi oleh ${item.adminPenyetuju || 'Admin'} &middot; ${item.tanggalKonfirmasi || ''}</p>`;
+                } else if (item.status === 'ditolak') {
+                    ketAdmin = `<p class="text-[11px] text-rose-600 font-semibold mt-1"><i class="fa-solid fa-user-shield mr-1"></i>Ditolak oleh ${item.adminPenyetuju || 'Admin'}${item.catatanAdmin ? ' &middot; ' + item.catatanAdmin : ''}</p>`;
+                } else if (item.pembatalanTerakhir) {
+                    const statusSebelum = item.pembatalanTerakhir.statusSebelum === 'disetujui' ? 'disetujui' : 'ditolak';
+                    ketAdmin = `<p class="text-[11px] text-orange-500 font-semibold mt-1"><i class="fa-solid fa-rotate-left mr-1"></i>Sebelumnya ${statusSebelum}, dibatalkan oleh ${item.pembatalanTerakhir.oleh} &middot; ${item.pembatalanTerakhir.tanggal} — sedang ditinjau ulang</p>`;
+                }
+
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-4 p-3 rounded-xl border border-slate-200/80';
+                row.innerHTML = `
+                    <img src="${item.foto}" class="w-14 h-14 rounded-lg object-cover flex-shrink-0 border border-slate-200" alt="Bukti ${item.judul}">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold text-slate-900 truncate">${item.judul}</p>
+                        <p class="text-[11px] text-slate-400">${item.jenis === 'piala' ? 'Piala' : 'Sertifikat'} &middot; diajukan ${item.tanggalAjukan}</p>
+                        ${ketAdmin}
+                    </div>
+                    <span class="text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0 self-start ${status.kelas}">${status.teks}</span>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function ajukanPrestasi(event) {
+            event.preventDefault();
+            const judul = document.getElementById('input-judul-prestasi').value.trim();
+            const jenis = document.getElementById('input-jenis-prestasi').value;
+            const keterangan = document.getElementById('input-keterangan-prestasi').value.trim();
+            const fileInput = document.getElementById('input-file-prestasi');
+            const file = fileInput.files && fileInput.files[0];
+            if (!judul || !file) return;
+
+            const now = new Date();
+            const bulanSingkat = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+            const tanggalAjukan = now.getDate() + ' ' + bulanSingkat[now.getMonth()] + ' ' + now.getFullYear() + ', ' +
+                                   String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                // Skema field di sini SAMA dengan yang dibaca Dashboard Guru
+                // (judul, jenis, keterangan, foto, namaSiswa, status, tanggalAjukan)
+                // supaya pengajuan ini langsung muncul & bisa dikonfirmasi di sana.
+                const list = getPrestasiData();
+                list.push({
+                    id: `prestasi_${Date.now()}`,
+                    judul,
+                    jenis,
+                    keterangan: keterangan || null,
+                    foto: reader.result,
+                    namaSiswa: NAMA_PEMAIN_QUIZ,
+                    tanggalAjukan,
+                    status: 'menunggu'
+                });
+                savePrestasiData(list);
+                document.getElementById('form-ajukan-prestasi').reset();
+                renderKoleksiBorderPrestasi(getBorderTerpakai());
+                triggerDynamicIsland('Prestasi diajukan! Menunggu konfirmasi guru/admin.');
+            };
+            reader.readAsDataURL(file);
+        }
+
         function renderKoleksiBorder() {
-            const totalPoin = getQuizData().totalPoin || 0;
             const dipakai = getBorderTerpakai();
 
-            const elPoin = document.getElementById('border-total-poin-display');
             const elDipakai = document.getElementById('border-terpakai-display');
-            if (elPoin) elPoin.innerText = String(totalPoin);
+            const elJumlahPrestasi = document.getElementById('border-jumlah-prestasi-display');
             if (elDipakai) elDipakai.innerText = dipakai.nama;
+            if (elJumlahPrestasi) elJumlahPrestasi.innerText = String(getJumlahPrestasiDisetujui());
 
-            const container = document.getElementById('grid-koleksi-border');
-            if (!container) return;
-            container.innerHTML = '';
-
-            DAFTAR_BORDER.forEach(border => {
-                const terbuka = isBorderTerbuka(border);
-                const sedangDipakai = dipakai.id === border.id;
-                const sisaPoin = Math.max(0, border.minPoin - totalPoin);
-
-                const card = document.createElement('div');
-                card.className = `rounded-2xl border p-5 flex flex-col items-center text-center transition-all ${sedangDipakai ? 'border-amber-400 bg-amber-50/50 shadow-md' : 'border-slate-200 bg-white'} ${!terbuka ? 'opacity-70' : ''}`;
-
-                card.innerHTML = `
-                    <div class="profile-wrapper w-20 h-20 mb-3 relative">
-                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar${!terbuka ? ' grayscale' : ''}" alt="Preview Avatar">
-                        <img src="${border.file}" class="user-border" alt="Border_${border.nama}">
-                        ${!terbuka ? '<div class="absolute inset-0 flex items-center justify-center bg-slate-900/40 rounded-full"><i class="fa-solid fa-lock text-white text-lg"></i></div>' : ''}
-                    </div>
-                    <h4 class="font-bold text-sm text-slate-900">${border.nama}</h4>
-                    <p class="text-[10px] text-slate-400 mt-0.5 mb-3">${border.rank}</p>
-                    ${terbuka
-                        ? `<button onclick="pakaiBorder('${border.id}')" ${sedangDipakai ? 'disabled' : ''} class="w-full py-2 rounded-xl text-xs font-bold transition-all ${sedangDipakai ? 'bg-emerald-100 text-emerald-700 cursor-default' : 'bg-slate-800 hover:bg-slate-900 text-white'}">${sedangDipakai ? '<i class="fa-solid fa-check mr-1"></i>Sedang Dipakai' : 'Pakai Border'}</button>`
-                        : `<button disabled class="w-full py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed"><i class="fa-solid fa-lock mr-1"></i>Butuh ${sisaPoin} poin lagi</button>`
-                    }
-                `;
-                container.appendChild(card);
-            });
+            renderKoleksiBorderQuiz(dipakai);
+            renderKoleksiBorderPrestasi(dipakai);
         }
     </script>
 </body>
