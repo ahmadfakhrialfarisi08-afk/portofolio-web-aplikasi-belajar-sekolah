@@ -213,6 +213,9 @@
            guru), bukan tugas ditarik — border kirinya emerald, bukan rose. */
         .notif-toast-ditarik.notif-toast-hijau { border-left-color: #10b981; }
         html.dark .notif-toast-ditarik.notif-toast-hijau { border-color: #14532d; }
+        /* Varian ungu: dipakai khusus notif "ditikung" di leaderboard Quiz. */
+        .notif-toast-ditarik.notif-toast-ungu { border-left-color: #9333ea; }
+        html.dark .notif-toast-ditarik.notif-toast-ungu { border-color: #4c1d95; }
         @keyframes notifSlideIn {
             from { transform: translateX(24px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -336,10 +339,11 @@
                     </div>
                 </button>
 
-                <button onclick="switchTab('spp')" id="btn-spp" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium transition-all">
+                <button onclick="switchTab('quiz')" id="btn-quiz" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium transition-all relative">
                     <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-wallet w-5 text-center"></i> Pembayaran SPP
+                        <i class="fa-solid fa-gamepad w-5 text-center"></i> Quiz & Leaderboard
                     </div>
+                    <span id="badge-quiz-ditikung" class="w-3 h-3 bg-rose-600 rounded-full hidden shadow-sm shadow-rose-500/50"></span>
                 </button>
 
                 <button onclick="switchTab('pengumuman')" id="btn-pengumuman" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium transition-all">
@@ -495,10 +499,10 @@
                         <h3 class="text-2xl font-bold text-slate-900 mt-0.5"><span id="count-completed-tasks">0</span> <span class="text-xs font-normal text-slate-400">Tugas</span></h3>
                     </div>
 
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                        <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-receipt"></i></div>
-                        <p class="text-xs font-medium text-slate-400">Status SPP</p>
-                        <h3 class="text-sm font-bold text-emerald-600 mt-2">Lunas (Juli)</h3>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm cursor-pointer hover:shadow-md hover:border-amber-200 transition-all" onclick="switchTab('quiz')">
+                        <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-trophy"></i></div>
+                        <p class="text-xs font-medium text-slate-400">Total Poin Quiz</p>
+                        <h3 class="text-2xl font-bold text-slate-900 mt-0.5"><span id="beranda-total-poin-quiz">0</span> <span class="text-xs font-normal text-amber-600">Poin</span></h3>
                     </div>
                 </div>
 
@@ -622,11 +626,155 @@
                 </div>
             </section>
             
-            <section id="tab-spp" class="tab-content space-y-6 hidden">
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <h3 class="font-bold text-xl text-slate-900 mb-2">💳 Pembayaran SPP</h3>
-                    <p class="text-xs text-slate-400">Informasi status pembayaran SPP bulanan siswa.</p>
+            <section id="tab-quiz" class="tab-content space-y-6 hidden">
+
+                <!-- ============ VIEW 1: MENU QUIZ ============ -->
+                <div id="quiz-view-menu">
+                    <div class="relative rounded-3xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 p-8 text-white overflow-hidden shadow-xl shadow-purple-500/10">
+                        <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+                            <div class="max-w-md">
+                                <span class="bg-white/25 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 inline-block">Quiz & Leaderboard</span>
+                                <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">🎮 Uji Wawasanmu, Kumpulkan Poin!</h2>
+                                <p class="text-purple-100 text-sm leading-relaxed">Pilih tingkat kesulitan, jawab secepat & setepat mungkin, lalu rebut posisi teratas di leaderboard.</p>
+                            </div>
+                            <div class="flex sm:flex-col gap-4 sm:gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-5 py-4 flex-shrink-0">
+                                <div class="text-center sm:text-left">
+                                    <p class="text-[10px] uppercase tracking-wide text-purple-100 font-semibold">Total Poin Kamu</p>
+                                    <p id="quiz-total-poin-display" class="text-2xl font-extrabold">0</p>
+                                </div>
+                                <div class="text-center sm:text-left border-l sm:border-l-0 sm:border-t border-white/20 pl-4 sm:pl-0 sm:pt-2">
+                                    <p class="text-[10px] uppercase tracking-wide text-purple-100 font-semibold">Rank Kamu</p>
+                                    <p id="quiz-rank-display" class="text-sm font-bold">🔰 Pemula</p>
+                                </div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-trophy absolute -right-8 -bottom-8 text-white/10 text-9xl"></i>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-seedling"></i></div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-lg text-slate-900">Easy</h3>
+                                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-md">10 Poin/Soal</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Pemanasan santai, 5 soal umum & dasar TI. Waktu 20 detik/soal.</p>
+                            <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-easy" class="font-bold text-slate-800">0</span></p>
+                            <button onclick="startQuiz('easy')" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
+                            </button>
+                        </div>
+
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
+                            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-fire"></i></div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-lg text-slate-900">Medium</h3>
+                                <span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md">20 Poin/Soal</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Level menengah seputar jaringan & komputer. Waktu 15 detik/soal.</p>
+                            <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-medium" class="font-bold text-slate-800">0</span></p>
+                            <button onclick="startQuiz('medium')" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
+                            </button>
+                        </div>
+
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
+                            <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-skull"></i></div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-lg text-slate-900">Hard</h3>
+                                <span class="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-bold rounded-md">35 Poin/Soal</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Level sulit, materi jaringan lanjutan. Waktu cuma 10 detik/soal!</p>
+                            <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-hard" class="font-bold text-slate-800">0</span></p>
+                            <button onclick="startQuiz('hard')" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 mt-6">
+                        <div class="flex items-center justify-between flex-wrap gap-3 mb-5">
+                            <div>
+                                <h3 class="font-bold text-lg text-slate-900">🏆 Leaderboard</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Peringkat pemain berdasarkan total poin yang terkumpul.</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2" id="quiz-leaderboard-filter">
+                                <button onclick="setFilterLeaderboardQuiz('semua')" data-val="semua" class="quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-purple-600 text-white border-purple-600">Semua</button>
+                                <button onclick="setFilterLeaderboardQuiz('easy')" data-val="easy" class="quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100">Easy</button>
+                                <button onclick="setFilterLeaderboardQuiz('medium')" data-val="medium" class="quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100">Medium</button>
+                                <button onclick="setFilterLeaderboardQuiz('hard')" data-val="hard" class="quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100">Hard</button>
+                            </div>
+                        </div>
+                        <div id="quiz-leaderboard-list" class="space-y-2"></div>
+                        <div id="quiz-leaderboard-kosong" class="hidden p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                            <i class="fa-solid fa-ranking-star text-2xl mb-2"></i>
+                            <p class="text-xs font-medium">Belum ada yang main quiz ini. Jadilah yang pertama!</p>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- ============ VIEW 2: SEDANG MENGERJAKAN QUIZ ============ -->
+                <div id="quiz-view-play" class="hidden">
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 sm:p-8">
+                        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                            <span id="quiz-play-level-badge" class="px-3 py-1 rounded-lg text-xs font-bold"></span>
+                            <div class="flex items-center gap-4">
+                                <span class="text-xs font-semibold text-slate-500">Soal <span id="quiz-play-nomor">1</span>/<span id="quiz-play-total">5</span></span>
+                                <span class="text-xs font-semibold text-slate-500">Skor: <span id="quiz-play-skor" class="text-slate-900 font-bold">0</span></span>
+                            </div>
+                        </div>
+
+                        <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-2">
+                            <div id="quiz-progress-bar" class="h-full bg-purple-500 transition-all duration-300" style="width: 20%"></div>
+                        </div>
+
+                        <div class="flex items-center gap-2 mb-6">
+                            <i class="fa-regular fa-clock text-slate-400 text-xs"></i>
+                            <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div id="quiz-timer-bar" class="h-full bg-emerald-500 transition-all duration-1000 ease-linear" style="width: 100%"></div>
+                            </div>
+                            <span id="quiz-timer-text" class="text-xs font-bold text-slate-600 w-8 text-right">20s</span>
+                        </div>
+
+                        <h3 id="quiz-question-text" class="font-bold text-xl text-slate-900 mb-6">Pertanyaan...</h3>
+
+                        <div id="quiz-options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                    </div>
+                </div>
+
+                <!-- ============ VIEW 3: HASIL QUIZ ============ -->
+                <div id="quiz-view-result" class="hidden">
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-8 sm:p-10 text-center max-w-xl mx-auto">
+                        <div id="quiz-result-icon" class="text-6xl mb-4">🏆</div>
+                        <h3 class="font-extrabold text-2xl text-slate-900 mb-1">Quiz Selesai!</h3>
+                        <p id="quiz-result-subtitle" class="text-sm text-slate-400 mb-6">Kerja bagus!</p>
+
+                        <div class="grid grid-cols-3 gap-3 mb-6">
+                            <div class="bg-slate-50 rounded-2xl p-4">
+                                <p class="text-[10px] font-semibold text-slate-400 uppercase">Benar</p>
+                                <p id="quiz-result-benar" class="text-xl font-extrabold text-emerald-600 mt-1">0/5</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-2xl p-4">
+                                <p class="text-[10px] font-semibold text-slate-400 uppercase">Poin Didapat</p>
+                                <p id="quiz-result-poin" class="text-xl font-extrabold text-purple-600 mt-1">0</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-2xl p-4">
+                                <p class="text-[10px] font-semibold text-slate-400 uppercase">Level</p>
+                                <p id="quiz-result-level" class="text-xl font-extrabold text-slate-800 mt-1">-</p>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <button onclick="ulangiQuizTerakhir()" class="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-rotate-right text-[10px]"></i> Main Lagi
+                            </button>
+                            <button onclick="backToQuizMenu()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-arrow-left text-[10px]"></i> Kembali ke Menu
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             </section>
 
             <section id="tab-pengumuman" class="tab-content space-y-6 hidden">
@@ -1972,6 +2120,11 @@
             if (tabName === 'guru') {
                 renderDaftarGuru();
             }
+            if (tabName === 'quiz') {
+                backToQuizMenu();
+                const badge = document.getElementById('badge-quiz-ditikung');
+                if (badge) badge.classList.add('hidden');
+            }
         };
 
         // Kalau guru menambah/mengubah/menarik tugas dari tab atau perangkat lain,
@@ -1990,6 +2143,15 @@
             }
             if (e.key === NOTIF_TUGAS_DITARIK_KEY) {
                 cekNotifBaruTugasDitarik();
+            }
+            if (e.key === KEY_QUIZ_DATA) {
+                cekNotifDitikungQuiz();
+                updateBerandaPoinQuiz();
+                if (!document.getElementById('tab-quiz').classList.contains('hidden') &&
+                    !document.getElementById('quiz-view-menu').classList.contains('hidden')) {
+                    renderMenuQuiz();
+                    renderLeaderboardQuiz();
+                }
             }
         });
 
@@ -2053,6 +2215,8 @@
             renderRiwayatPengumpulan();
             renderLiveTaskContent(); // render awal: langsung munculin status tugas terdekat saat halaman baru dibuka
             checkTaskBadgeStatus();
+            updateBerandaPoinQuiz();
+            pastikanBaselineSeenIdsQuiz();
             cekPembaruanTugasRealtime(); // set snapshot awal sebagai baseline
             updateGlobalCountdown();
             setInterval(updateGlobalCountdown, 1000);
@@ -2062,6 +2226,419 @@
             }, 3000);
             cekNotifBaruTugasDitarik();
         });
+
+        /* ============================================================
+           FITUR QUIZ & LEADERBOARD (menggantikan Pembayaran SPP)
+           - 3 tingkat kesulitan: easy, medium, hard
+           - Tiap sesi quiz mengambil 5 soal acak dari bank soal
+           - Sistem poin: poin dasar per soal + bonus kecepatan jawab
+           - Leaderboard (semua level & per level) tersimpan di localStorage
+             sehingga tersinkron antar tab/perangkat yang berbagi origin
+             yang sama, mengikuti pola sinkronisasi yang sudah dipakai
+             fitur Tugas & Catatan di file ini.
+           ============================================================ */
+
+        const NAMA_PEMAIN_QUIZ = 'AHMAD FAKHRI AL FARISI';
+        const KEY_QUIZ_DATA = `quiz_data_${KELAS_AKTIF_SISWA}`;
+
+        const QUIZ_CONFIG = {
+            easy:   { label: 'Easy',   poinDasar: 10, waktu: 20, warnaBadge: 'bg-emerald-100 text-emerald-700', warnaBar: 'bg-emerald-500' },
+            medium: { label: 'Medium', poinDasar: 20, waktu: 15, warnaBadge: 'bg-amber-100 text-amber-700',     warnaBar: 'bg-amber-500' },
+            hard:   { label: 'Hard',   poinDasar: 35, waktu: 10, warnaBadge: 'bg-rose-100 text-rose-700',       warnaBar: 'bg-rose-500' }
+        };
+
+        const QUIZ_BANK = {
+            easy: [
+                { q: 'Apa ibu kota Indonesia?', opsi: ['Jakarta', 'Bandung', 'Surabaya', 'Medan'], jawaban: 0 },
+                { q: '1 KB (kilobyte) sama dengan berapa byte?', opsi: ['1000 byte', '1024 byte', '100 byte', '1 byte'], jawaban: 1 },
+                { q: 'Aplikasi untuk membuka halaman internet disebut?', opsi: ['Web Browser', 'Compiler', 'Sistem Operasi', 'Antivirus'], jawaban: 0 },
+                { q: 'Berapa hasil dari 12 x 8?', opsi: ['96', '86', '106', '88'], jawaban: 0 },
+                { q: 'Lambang negara Indonesia adalah?', opsi: ['Garuda Pancasila', 'Rajawali', 'Elang Jawa', 'Merpati'], jawaban: 0 },
+                { q: 'Perangkat keras untuk mengetik disebut?', opsi: ['Keyboard', 'Mouse', 'Monitor', 'Speaker'], jawaban: 0 },
+                { q: 'Bahasa yang dipakai untuk mengatur tampilan/gaya halaman web adalah?', opsi: ['CSS', 'HTML', 'Python', 'Java'], jawaban: 0 },
+                { q: 'Satuan yang biasa dipakai untuk mengukur kecepatan internet adalah?', opsi: ['Mbps', 'Kilogram', 'Meter', 'Liter'], jawaban: 0 }
+            ],
+            medium: [
+                { q: 'Protokol yang dipakai untuk mengirim halaman web adalah?', opsi: ['HTTP', 'FTP', 'SMTP', 'POP3'], jawaban: 0 },
+                { q: 'IP address versi 4 (IPv4) terdiri dari berapa bit?', opsi: ['32 bit', '64 bit', '16 bit', '128 bit'], jawaban: 0 },
+                { q: 'Perangkat jaringan yang menghubungkan beberapa jaringan berbeda adalah?', opsi: ['Router', 'Switch', 'Hub', 'Repeater'], jawaban: 0 },
+                { q: 'Bahasa pemrograman yang mengatur logika/interaksi di halaman web adalah?', opsi: ['JavaScript', 'CSS', 'HTML', 'XML'], jawaban: 0 },
+                { q: 'Kepanjangan dari CPU adalah?', opsi: ['Central Processing Unit', 'Computer Personal Unit', 'Central Program Utility', 'Control Processing Unit'], jawaban: 0 },
+                { q: 'Topologi jaringan yang berbentuk melingkar disebut topologi?', opsi: ['Ring', 'Star', 'Bus', 'Mesh'], jawaban: 0 },
+                { q: 'Perintah untuk mengecek koneksi jaringan di Command Prompt adalah?', opsi: ['ping', 'cd', 'dir', 'ls'], jawaban: 0 },
+                { q: 'RAM pada komputer berfungsi sebagai?', opsi: ['Memori sementara', 'Penyimpanan permanen', 'Pendingin prosesor', 'Sumber daya listrik'], jawaban: 0 }
+            ],
+            hard: [
+                { q: 'Subnet mask default untuk kelas C adalah?', opsi: ['255.255.255.0', '255.255.0.0', '255.0.0.0', '255.255.255.255'], jawaban: 0 },
+                { q: 'Port default yang dipakai untuk HTTPS adalah?', opsi: ['443', '80', '21', '25'], jawaban: 0 },
+                { q: 'Kepanjangan dari DNS adalah?', opsi: ['Domain Name System', 'Data Network System', 'Digital Name Server', 'Domain Network Service'], jawaban: 0 },
+                { q: 'Layer OSI yang bertugas menangani routing paket data adalah?', opsi: ['Network Layer', 'Transport Layer', 'Data Link Layer', 'Session Layer'], jawaban: 0 },
+                { q: 'Protokol yang dipakai untuk mengirim email adalah?', opsi: ['SMTP', 'HTTP', 'FTP', 'SNMP'], jawaban: 0 },
+                { q: 'Kepanjangan dari VLAN adalah?', opsi: ['Virtual Local Area Network', 'Variable LAN', 'Virtual Line Access Network', 'Verified LAN'], jawaban: 0 },
+                { q: 'Perintah untuk melihat konfigurasi IP di Windows adalah?', opsi: ['ipconfig', 'ifconfig', 'netstat', 'tracert'], jawaban: 0 },
+                { q: 'Jumlah maksimal host yang bisa ditampung subnet /29 adalah?', opsi: ['6', '8', '14', '30'], jawaban: 0 }
+            ]
+        };
+
+        let quizState = null; // { level, soal[], index, skor, benar, waktuSisa, timerId }
+        let quizFilterLeaderboardAktif = 'semua';
+
+        function getQuizData() {
+            try {
+                const raw = localStorage.getItem(KEY_QUIZ_DATA);
+                return raw ? JSON.parse(raw) : { totalPoin: 0, bestByLevel: { easy: 0, medium: 0, hard: 0 }, leaderboard: [] };
+            } catch (e) {
+                return { totalPoin: 0, bestByLevel: { easy: 0, medium: 0, hard: 0 }, leaderboard: [] };
+            }
+        }
+
+        function saveQuizData(data) {
+            localStorage.setItem(KEY_QUIZ_DATA, JSON.stringify(data));
+        }
+
+        function getRankInfoQuiz(totalPoin) {
+            if (totalPoin >= 500) return { label: '👑 Legenda Sekolah', warna: 'text-amber-200' };
+            if (totalPoin >= 250) return { label: '🧠 Master Quiz', warna: 'text-white' };
+            if (totalPoin >= 100) return { label: '📘 Pelajar Rajin', warna: 'text-white' };
+            return { label: '🔰 Pemula', warna: 'text-white' };
+        }
+
+        function acakSoalQuiz(level, jumlah) {
+            const bank = [...QUIZ_BANK[level]];
+            for (let i = bank.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [bank[i], bank[j]] = [bank[j], bank[i]];
+            }
+            return bank.slice(0, Math.min(jumlah, bank.length));
+        }
+
+        function tampilkanViewQuiz(view) {
+            document.getElementById('quiz-view-menu').classList.add('hidden');
+            document.getElementById('quiz-view-play').classList.add('hidden');
+            document.getElementById('quiz-view-result').classList.add('hidden');
+            document.getElementById(`quiz-view-${view}`).classList.remove('hidden');
+        }
+
+        function startQuiz(level) {
+            const soal = acakSoalQuiz(level, 5);
+            quizState = { level, soal, index: 0, skor: 0, benar: 0, waktuSisa: QUIZ_CONFIG[level].waktu, timerId: null };
+            tampilkanViewQuiz('play');
+            document.getElementById('quiz-play-total').innerText = String(soal.length);
+
+            const cfg = QUIZ_CONFIG[level];
+            const badge = document.getElementById('quiz-play-level-badge');
+            badge.className = `px-3 py-1 rounded-lg text-xs font-bold ${cfg.warnaBadge}`;
+            badge.innerText = cfg.label;
+
+            renderSoalQuiz();
+        }
+
+        function renderSoalQuiz() {
+            const { level, soal, index } = quizState;
+            const cfg = QUIZ_CONFIG[level];
+            const item = soal[index];
+
+            document.getElementById('quiz-play-nomor').innerText = String(index + 1);
+            document.getElementById('quiz-play-skor').innerText = String(quizState.skor);
+            document.getElementById('quiz-progress-bar').style.width = `${((index) / soal.length) * 100}%`;
+            document.getElementById('quiz-question-text').innerText = item.q;
+
+            const container = document.getElementById('quiz-options-container');
+            container.innerHTML = '';
+            item.opsi.forEach((teks, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-opsi-btn text-left px-4 py-3 rounded-xl border-2 border-slate-200 bg-white hover:border-purple-400 hover:bg-purple-50 text-sm font-semibold text-slate-700 transition-all';
+                btn.innerHTML = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-100 text-slate-500 text-xs font-bold mr-2 align-middle">${String.fromCharCode(65 + i)}</span>${teks}`;
+                btn.onclick = () => pilihJawabanQuiz(i);
+                container.appendChild(btn);
+            });
+
+            quizState.waktuSisa = cfg.waktu;
+            updateTimerBarQuiz();
+            clearInterval(quizState.timerId);
+            quizState.timerId = setInterval(() => {
+                quizState.waktuSisa -= 1;
+                updateTimerBarQuiz();
+                if (quizState.waktuSisa <= 0) {
+                    clearInterval(quizState.timerId);
+                    pilihJawabanQuiz(-1); // waktu habis, dianggap tidak menjawab
+                }
+            }, 1000);
+        }
+
+        function updateTimerBarQuiz() {
+            const cfg = QUIZ_CONFIG[quizState.level];
+            const persen = Math.max(0, (quizState.waktuSisa / cfg.waktu) * 100);
+            const bar = document.getElementById('quiz-timer-bar');
+            bar.style.width = `${persen}%`;
+            bar.className = `h-full transition-all duration-1000 ease-linear ${persen <= 30 ? 'bg-rose-500' : cfg.warnaBar}`;
+            document.getElementById('quiz-timer-text').innerText = `${Math.max(0, quizState.waktuSisa)}s`;
+        }
+
+        function pilihJawabanQuiz(indexDipilih) {
+            if (!quizState) return;
+            clearInterval(quizState.timerId);
+
+            const cfg = QUIZ_CONFIG[quizState.level];
+            const item = quizState.soal[quizState.index];
+            const tombolTombol = document.querySelectorAll('#quiz-options-container .quiz-opsi-btn');
+
+            tombolTombol.forEach((btn, i) => {
+                btn.onclick = null;
+                if (i === item.jawaban) {
+                    btn.className = 'quiz-opsi-btn text-left px-4 py-3 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-sm font-semibold text-emerald-700 transition-all';
+                } else if (i === indexDipilih) {
+                    btn.className = 'quiz-opsi-btn text-left px-4 py-3 rounded-xl border-2 border-rose-500 bg-rose-50 text-sm font-semibold text-rose-700 transition-all';
+                } else {
+                    btn.className = 'quiz-opsi-btn text-left px-4 py-3 rounded-xl border-2 border-slate-200 bg-white text-sm font-semibold text-slate-400 transition-all opacity-60';
+                }
+            });
+
+            if (indexDipilih === item.jawaban) {
+                const bonusKecepatan = Math.round((quizState.waktuSisa / cfg.waktu) * (cfg.poinDasar * 0.5));
+                quizState.skor += cfg.poinDasar + bonusKecepatan;
+                quizState.benar += 1;
+            }
+            document.getElementById('quiz-play-skor').innerText = String(quizState.skor);
+
+            setTimeout(() => {
+                quizState.index += 1;
+                if (quizState.index < quizState.soal.length) {
+                    renderSoalQuiz();
+                } else {
+                    document.getElementById('quiz-progress-bar').style.width = '100%';
+                    selesaikanQuiz();
+                }
+            }, 1200);
+        }
+
+        function selesaikanQuiz() {
+            const { level, skor, benar, soal } = quizState;
+            const cfg = QUIZ_CONFIG[level];
+            const data = getQuizData();
+
+            data.totalPoin = (data.totalPoin || 0) + skor;
+            data.bestByLevel = data.bestByLevel || { easy: 0, medium: 0, hard: 0 };
+            if (skor > (data.bestByLevel[level] || 0)) data.bestByLevel[level] = skor;
+
+            data.leaderboard = data.leaderboard || [];
+            const entriBaru = {
+                id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                nama: NAMA_PEMAIN_QUIZ,
+                level,
+                skor,
+                benar,
+                total: soal.length,
+                tanggal: new Date().toISOString()
+            };
+            data.leaderboard.push(entriBaru);
+            saveQuizData(data);
+            tandaiIdSudahDilihatQuiz(entriBaru.id); // entri sendiri, jangan ikut memicu notif "ditikung"
+            updateBerandaPoinQuiz();
+
+            const persen = benar / soal.length;
+            document.getElementById('quiz-result-icon').innerText = persen >= 0.8 ? '🏆' : (persen >= 0.5 ? '🥈' : '💪');
+            document.getElementById('quiz-result-subtitle').innerText = persen >= 0.8 ? 'Luar biasa, kamu jagoan quiz!' : (persen >= 0.5 ? 'Bagus, terus tingkatkan lagi!' : 'Tetap semangat, coba lagi yuk!');
+            document.getElementById('quiz-result-benar').innerText = `${benar}/${soal.length}`;
+            document.getElementById('quiz-result-poin').innerText = String(skor);
+            document.getElementById('quiz-result-level').innerText = cfg.label;
+
+            tampilkanViewQuiz('result');
+        }
+
+        function ulangiQuizTerakhir() {
+            if (quizState) startQuiz(quizState.level);
+        }
+
+        function backToQuizMenu() {
+            if (quizState) clearInterval(quizState.timerId);
+            tampilkanViewQuiz('menu');
+            renderMenuQuiz();
+            renderLeaderboardQuiz();
+        }
+
+        function renderMenuQuiz() {
+            const data = getQuizData();
+            document.getElementById('quiz-total-poin-display').innerText = String(data.totalPoin || 0);
+            const rank = getRankInfoQuiz(data.totalPoin || 0);
+            document.getElementById('quiz-rank-display').innerText = rank.label;
+
+            const best = data.bestByLevel || { easy: 0, medium: 0, hard: 0 };
+            document.getElementById('quiz-best-easy').innerText = String(best.easy || 0);
+            document.getElementById('quiz-best-medium').innerText = String(best.medium || 0);
+            document.getElementById('quiz-best-hard').innerText = String(best.hard || 0);
+        }
+
+        function updateBerandaPoinQuiz() {
+            const data = getQuizData();
+            const el = document.getElementById('beranda-total-poin-quiz');
+            if (el) el.innerText = String(data.totalPoin || 0);
+        }
+
+        function setFilterLeaderboardQuiz(val) {
+            quizFilterLeaderboardAktif = val;
+            document.querySelectorAll('.quiz-filter-chip').forEach(btn => {
+                if (btn.dataset.val === val) {
+                    btn.className = 'quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-purple-600 text-white border-purple-600';
+                } else {
+                    btn.className = 'quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100';
+                }
+            });
+            renderLeaderboardQuiz();
+        }
+
+        function renderLeaderboardQuiz() {
+            const data = getQuizData();
+            let daftar = [...(data.leaderboard || [])];
+
+            if (quizFilterLeaderboardAktif !== 'semua') {
+                daftar = daftar.filter(e => e.level === quizFilterLeaderboardAktif);
+            }
+
+            daftar.sort((a, b) => b.skor - a.skor);
+            daftar = daftar.slice(0, 10);
+
+            const container = document.getElementById('quiz-leaderboard-list');
+            const kosongState = document.getElementById('quiz-leaderboard-kosong');
+            container.innerHTML = '';
+
+            if (daftar.length === 0) {
+                kosongState.classList.remove('hidden');
+                return;
+            }
+            kosongState.classList.add('hidden');
+
+            const medali = ['🥇', '🥈', '🥉'];
+            daftar.forEach((entri, i) => {
+                const cfg = QUIZ_CONFIG[entri.level];
+                const baris = document.createElement('div');
+                baris.className = `flex items-center justify-between gap-3 p-3 rounded-xl border ${i < 3 ? 'border-amber-200 bg-amber-50/50' : 'border-slate-100 bg-slate-50'}`;
+                baris.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-7 text-center font-bold text-sm text-slate-500">${medali[i] || (i + 1)}</span>
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold text-slate-800 truncate">${entri.nama}</p>
+                            <p class="text-[10px] text-slate-400">${entri.benar}/${entri.total} benar &middot; ${new Date(entri.tanggal).toLocaleDateString('id-ID')}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${cfg.warnaBadge}">${cfg.label}</span>
+                        <span class="text-sm font-extrabold text-slate-900">${entri.skor}</span>
+                    </div>
+                `;
+                container.appendChild(baris);
+            });
+        }
+
+        /* ============================================================
+           NOTIFIKASI "DITIKUNG" DI LEADERBOARD
+           Terpicu saat ada entri BARU di leaderboard (nama lain, biasanya
+           dari tab/perangkat lain yang berbagi localStorage yang sama —
+           sama seperti cara notif "Tugas Ditarik Guru" bekerja di file
+           ini) yang skornya melampaui skor terbaik kita di level tsb.
+           ============================================================ */
+
+        const KEY_QUIZ_SEEN_IDS = `quiz_seen_ids_${KELAS_AKTIF_SISWA}`;
+
+        function getSeenIdsQuiz() {
+            const raw = localStorage.getItem(KEY_QUIZ_SEEN_IDS);
+            return raw ? JSON.parse(raw) : [];
+        }
+
+        function tandaiIdSudahDilihatQuiz(id) {
+            const seenIds = getSeenIdsQuiz();
+            if (!seenIds.includes(id)) {
+                seenIds.push(id);
+                localStorage.setItem(KEY_QUIZ_SEEN_IDS, JSON.stringify(seenIds));
+            }
+        }
+
+        // Dipanggil sekali saat halaman pertama kali dibuka: entri lama yang sudah
+        // ada di leaderboard ditandai "sudah dilihat" duluan, supaya tidak ikut
+        // memicu notif ditikung basi begitu halaman baru saja dimuat.
+        function pastikanBaselineSeenIdsQuiz() {
+            const seenIds = getSeenIdsQuiz();
+            if (seenIds.length > 0) return;
+            const data = getQuizData();
+            const idAwal = (data.leaderboard || []).filter(e => e.id).map(e => e.id);
+            if (idAwal.length > 0) localStorage.setItem(KEY_QUIZ_SEEN_IDS, JSON.stringify(idAwal));
+        }
+
+        function hitungPosisiPemainQuiz(level) {
+            const data = getQuizData();
+            const daftar = (data.leaderboard || []).filter(e => e.level === level);
+            const skorTerbaikPerNama = {};
+            daftar.forEach(e => {
+                if (!skorTerbaikPerNama[e.nama] || e.skor > skorTerbaikPerNama[e.nama]) {
+                    skorTerbaikPerNama[e.nama] = e.skor;
+                }
+            });
+            const urutan = Object.entries(skorTerbaikPerNama).sort((a, b) => b[1] - a[1]);
+            const idx = urutan.findIndex(([nama]) => nama === NAMA_PEMAIN_QUIZ);
+            return idx === -1 ? null : idx + 1;
+        }
+
+        function cekNotifDitikungQuiz() {
+            const data = getQuizData();
+            const seenIds = getSeenIdsQuiz();
+            const semuaEntri = data.leaderboard || [];
+
+            const entriBelumDilihat = semuaEntri.filter(e => e.id && !seenIds.includes(e.id) && e.nama !== NAMA_PEMAIN_QUIZ);
+            if (entriBelumDilihat.length === 0) return;
+
+            entriBelumDilihat.forEach((entri, i) => {
+                const skorTerbaikSaya = Math.max(
+                    0,
+                    ...semuaEntri.filter(e => e.nama === NAMA_PEMAIN_QUIZ && e.level === entri.level).map(e => e.skor)
+                );
+                if (entri.skor > skorTerbaikSaya) {
+                    setTimeout(() => tampilkanToastDitikungQuiz(entri), i * 400);
+                }
+                tandaiIdSudahDilihatQuiz(entri.id);
+            });
+        }
+
+        function tampilkanToastDitikungQuiz(entri) {
+            const container = document.getElementById('notif-toast-container');
+            if (!container) return;
+
+            const cfg = QUIZ_CONFIG[entri.level];
+            const posisi = hitungPosisiPemainQuiz(entri.level);
+            const idToast = `ditikung-${entri.id}`;
+
+            const toast = document.createElement('div');
+            toast.className = 'notif-toast-ditarik notif-toast-ungu';
+            toast.id = `toast-${idToast}`;
+            toast.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-user-ninja"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-extrabold text-slate-900 dark:text-slate-100">Kamu Ditikung di Leaderboard!</p>
+                        <p class="text-[11px] font-bold text-purple-600 mt-0.5"><i class="fa-solid fa-bolt mr-1"></i>${entri.nama} &middot; ${cfg.label} &middot; ${entri.skor} poin</p>
+                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">${entri.nama} baru saja menyalip skor terbaikmu di level ${cfg.label}${posisi ? `. Posisimu sekarang di peringkat #${posisi}` : ''}. Yuk balas, main lagi!</p>
+                        <button onclick="switchTab('quiz'); tutupToastDitikungQuiz('${idToast}')" class="mt-2 text-[11px] font-bold text-purple-600 hover:underline">Balas Sekarang &rarr;</button>
+                    </div>
+                    <button onclick="tutupToastDitikungQuiz('${idToast}')" class="text-slate-300 hover:text-slate-500 flex-shrink-0">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>`;
+
+            container.appendChild(toast);
+
+            const badge = document.getElementById('badge-quiz-ditikung');
+            if (badge) badge.classList.remove('hidden');
+
+            setTimeout(() => tutupToastDitikungQuiz(idToast), 8000);
+        }
+
+        function tutupToastDitikungQuiz(idToast) {
+            const toast = document.getElementById(`toast-${idToast}`);
+            if (!toast) return;
+            toast.classList.add('notif-keluar');
+            setTimeout(() => toast.remove(), 300);
+        }
     </script>
 </body>
 </html>
