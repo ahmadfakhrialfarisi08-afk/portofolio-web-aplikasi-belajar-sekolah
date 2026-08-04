@@ -2898,9 +2898,11 @@
            - Tetap tampil normal & bisa "ditikung"/menikung di
              renderLeaderboardQuiz() seperti entri asli.
            - Bisa difilter & dikelola (hapus) khusus lewat panel ini.
-           - Tidak memicu notif "ditikung" saat baru ditambahkan
-             (langsung ditandai sudah dilihat, sama seperti entri
-             milik sendiri).
+           - IKUT memicu notif "ditikung" kalau skornya melebihi skor
+             terbaik siswa di level yang sama (dicek manual lewat
+             cekNotifDitikungQuiz() begitu dummy selesai ditambahkan,
+             karena event 'storage' bawaan browser tidak nyala di
+             tab yang sama dengan yang melakukan localStorage.setItem).
            ============================================================ */
 
         function toggleDummyPanel() {
@@ -2945,7 +2947,11 @@
             };
             data.leaderboard.push(entriDummy);
             saveQuizData(data);
-            tandaiIdSudahDilihatQuiz(entriDummy.id); // dummy baru jangan ikut memicu notif "ditikung"
+            // Dummy baru SENGAJA tidak langsung ditandai "sudah dilihat" di sini —
+            // biar diperlakukan sama seperti entri asli & ikut dicek oleh
+            // cekNotifDitikungQuiz() di bawah (yang akan menandainya sendiri
+            // setelah selesai dicek), supaya menambah dummy dengan skor lebih
+            // tinggi dari skor terbaik siswa langsung memicu toast "ditikung".
 
             document.getElementById('dummy-nama').value = '';
             document.getElementById('dummy-kelas').value = '';
@@ -2953,6 +2959,7 @@
 
             renderPanelDummyLeaderboard();
             renderLeaderboardQuiz();
+            cekNotifDitikungQuiz(); // panggil manual: event 'storage' tidak nyala di tab yang sama
         }
 
         function hapusDummyLeaderboard(id) {
