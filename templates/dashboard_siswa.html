@@ -322,7 +322,7 @@
 
                 <button onclick="switchTab('akademik')" id="btn-akademik" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium transition-all">
                     <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-graduation-cap w-5 text-center"></i> Akademik
+                        <i class="fa-solid fa-crown w-5 text-center"></i> Koleksi Border
                     </div>
                 </button>
 
@@ -549,9 +549,38 @@
             </section>
 
             <section id="tab-akademik" class="tab-content space-y-6 hidden">
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <h3 class="font-bold text-xl text-slate-900 mb-2">🎓 Portal Akademik & Nilai Rapor</h3>
-                    <p class="text-xs text-slate-400 mb-6">Pantau rekapitulasi nilai dan capaian pembelajaran kamu.</p>
+                <div class="relative rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 p-8 text-white overflow-hidden shadow-xl shadow-amber-500/10">
+                    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+                        <div class="max-w-md">
+                            <span class="bg-white/25 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 inline-block">Koleksi Border</span>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">🖼️ Border Avatar Kamu</h2>
+                            <p class="text-amber-50 text-sm leading-relaxed">Border kebuka otomatis sesuai rank di Quiz & Leaderboard. Makin banyak poin, makin keren bingkai foto profilmu!</p>
+                        </div>
+                        <div class="flex sm:flex-col gap-4 sm:gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-5 py-4 flex-shrink-0">
+                            <div class="text-center sm:text-left">
+                                <p class="text-[10px] uppercase tracking-wide text-amber-50 font-semibold">Total Poin Kamu</p>
+                                <p id="border-total-poin-display" class="text-2xl font-extrabold">0</p>
+                            </div>
+                            <div class="text-center sm:text-left border-l sm:border-l-0 sm:border-t border-white/20 pl-4 sm:pl-0 sm:pt-2">
+                                <p class="text-[10px] uppercase tracking-wide text-amber-50 font-semibold">Border Terpakai</p>
+                                <p id="border-terpakai-display" class="text-sm font-bold">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-ring absolute -right-8 -bottom-8 text-white/10 text-9xl"></i>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-900">Semua Daftar Border</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Kumpulkan poin dari Quiz untuk membuka border berikutnya.</p>
+                        </div>
+                        <button onclick="switchTab('quiz')" class="text-xs font-semibold text-purple-600 hover:underline flex items-center gap-1 flex-shrink-0">
+                            Main Quiz <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                    </div>
+                    <div id="grid-koleksi-border" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"></div>
                 </div>
             </section>
 
@@ -2120,6 +2149,9 @@
             if (tabName === 'guru') {
                 renderDaftarGuru();
             }
+            if (tabName === 'akademik') {
+                renderKoleksiBorder();
+            }
             if (tabName === 'quiz') {
                 backToQuizMenu();
                 const badge = document.getElementById('badge-quiz-ditikung');
@@ -2147,10 +2179,14 @@
             if (e.key === KEY_QUIZ_DATA) {
                 cekNotifDitikungQuiz();
                 updateBerandaPoinQuiz();
+                terapkanBorderKeAvatar();
                 if (!document.getElementById('tab-quiz').classList.contains('hidden') &&
                     !document.getElementById('quiz-view-menu').classList.contains('hidden')) {
                     renderMenuQuiz();
                     renderLeaderboardQuiz();
+                }
+                if (!document.getElementById('tab-akademik').classList.contains('hidden')) {
+                    renderKoleksiBorder();
                 }
             }
         });
@@ -2217,6 +2253,7 @@
             checkTaskBadgeStatus();
             updateBerandaPoinQuiz();
             pastikanBaselineSeenIdsQuiz();
+            terapkanBorderKeAvatar();
             cekPembaruanTugasRealtime(); // set snapshot awal sebagai baseline
             updateGlobalCountdown();
             setInterval(updateGlobalCountdown, 1000);
@@ -2435,6 +2472,7 @@
             saveQuizData(data);
             tandaiIdSudahDilihatQuiz(entriBaru.id); // entri sendiri, jangan ikut memicu notif "ditikung"
             updateBerandaPoinQuiz();
+            terapkanBorderKeAvatar();
 
             const persen = benar / soal.length;
             document.getElementById('quiz-result-icon').innerText = persen >= 0.8 ? '🏆' : (persen >= 0.5 ? '🥈' : '💪');
@@ -2638,6 +2676,100 @@
             if (!toast) return;
             toast.classList.add('notif-keluar');
             setTimeout(() => toast.remove(), 300);
+        }
+
+        /* ============================================================
+           FITUR KOLEKSI BORDER AVATAR (menggantikan tab Akademik)
+           Border terbuka otomatis sesuai total poin di Quiz & Leaderboard,
+           mengikuti tingkatan rank yang sama dengan getRankInfoQuiz().
+           CATATAN: nama file border di bawah masih placeholder mengikuti
+           pola yang sudah dipakai (border_emas.png) — tinggal ganti isi
+           `file` kalau file PNG border lain sudah tersedia di folder
+           ../static/img/.
+           ============================================================ */
+
+        const KEY_BORDER_TERPAKAI = `border_terpakai_${KELAS_AKTIF_SISWA}`;
+
+        const DAFTAR_BORDER = [
+            { id: 'polos',   nama: 'Polos',   file: '../static/img/border_polos.png',   minPoin: 0,   rank: '🔰 Pemula' },
+            { id: 'perak',   nama: 'Perak',   file: '../static/img/border_perak.png',   minPoin: 100, rank: '📘 Pelajar Rajin' },
+            { id: 'emas',    nama: 'Emas',    file: '../static/img/border_emas.png',    minPoin: 250, rank: '🧠 Master Quiz' },
+            { id: 'permata', nama: 'Permata', file: '../static/img/border_permata.png', minPoin: 500, rank: '👑 Legenda Sekolah' }
+        ];
+
+        function isBorderTerbuka(border) {
+            return (getQuizData().totalPoin || 0) >= border.minPoin;
+        }
+
+        function getBorderTertinggiTerbuka() {
+            const terbuka = DAFTAR_BORDER.filter(isBorderTerbuka);
+            return terbuka[terbuka.length - 1] || DAFTAR_BORDER[0];
+        }
+
+        // Kalau siswa belum pernah pilih manual, atau pilihannya (aneh/lama)
+        // ternyata belum/tidak terbuka, otomatis pakaikan border tertinggi
+        // yang sudah dia buka — jadi border "naik sendiri" tiap naik rank
+        // selama siswa belum pernah pilih border lain secara manual.
+        function getBorderTerpakai() {
+            const idTersimpan = localStorage.getItem(KEY_BORDER_TERPAKAI);
+            const border = DAFTAR_BORDER.find(b => b.id === idTersimpan);
+            if (border && isBorderTerbuka(border)) return border;
+            return getBorderTertinggiTerbuka();
+        }
+
+        function pakaiBorder(id) {
+            const border = DAFTAR_BORDER.find(b => b.id === id);
+            if (!border || !isBorderTerbuka(border)) return;
+            localStorage.setItem(KEY_BORDER_TERPAKAI, id);
+            terapkanBorderKeAvatar();
+            renderKoleksiBorder();
+            triggerDynamicIsland(`Border ${border.nama} dipakai!`);
+        }
+
+        function terapkanBorderKeAvatar() {
+            const border = getBorderTerpakai();
+            document.querySelectorAll('.user-border').forEach(img => {
+                img.src = border.file;
+                img.alt = `Border_${border.nama}`;
+            });
+        }
+
+        function renderKoleksiBorder() {
+            const totalPoin = getQuizData().totalPoin || 0;
+            const dipakai = getBorderTerpakai();
+
+            const elPoin = document.getElementById('border-total-poin-display');
+            const elDipakai = document.getElementById('border-terpakai-display');
+            if (elPoin) elPoin.innerText = String(totalPoin);
+            if (elDipakai) elDipakai.innerText = dipakai.nama;
+
+            const container = document.getElementById('grid-koleksi-border');
+            if (!container) return;
+            container.innerHTML = '';
+
+            DAFTAR_BORDER.forEach(border => {
+                const terbuka = isBorderTerbuka(border);
+                const sedangDipakai = dipakai.id === border.id;
+                const sisaPoin = Math.max(0, border.minPoin - totalPoin);
+
+                const card = document.createElement('div');
+                card.className = `rounded-2xl border p-5 flex flex-col items-center text-center transition-all ${sedangDipakai ? 'border-amber-400 bg-amber-50/50 shadow-md' : 'border-slate-200 bg-white'} ${!terbuka ? 'opacity-70' : ''}`;
+
+                card.innerHTML = `
+                    <div class="profile-wrapper w-20 h-20 mb-3 relative">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar${!terbuka ? ' grayscale' : ''}" alt="Preview Avatar">
+                        <img src="${border.file}" class="user-border" alt="Border_${border.nama}">
+                        ${!terbuka ? '<div class="absolute inset-0 flex items-center justify-center bg-slate-900/40 rounded-full"><i class="fa-solid fa-lock text-white text-lg"></i></div>' : ''}
+                    </div>
+                    <h4 class="font-bold text-sm text-slate-900">${border.nama}</h4>
+                    <p class="text-[10px] text-slate-400 mt-0.5 mb-3">${border.rank}</p>
+                    ${terbuka
+                        ? `<button onclick="pakaiBorder('${border.id}')" ${sedangDipakai ? 'disabled' : ''} class="w-full py-2 rounded-xl text-xs font-bold transition-all ${sedangDipakai ? 'bg-emerald-100 text-emerald-700 cursor-default' : 'bg-slate-800 hover:bg-slate-900 text-white'}">${sedangDipakai ? '<i class="fa-solid fa-check mr-1"></i>Sedang Dipakai' : 'Pakai Border'}</button>`
+                        : `<button disabled class="w-full py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed"><i class="fa-solid fa-lock mr-1"></i>Butuh ${sisaPoin} poin lagi</button>`
+                    }
+                `;
+                container.appendChild(card);
+            });
         }
     </script>
 </body>
