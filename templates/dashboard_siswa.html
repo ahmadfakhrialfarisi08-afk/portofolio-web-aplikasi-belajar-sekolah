@@ -87,20 +87,22 @@
         html.dark .text-slate-300 { color: #64748b !important; }
 
         html.dark .bg-blue-50,
-        html.dark .bg-blue-50\/25,
-        html.dark .bg-blue-50\/50 { background-color: rgba(59, 130, 246, 0.14) !important; }
+        html.dark .bg-blue-50\/25 { background-color: rgba(59, 130, 246, 0.12) !important; }
+        html.dark .bg-emerald-50,
+        html.dark .bg-emerald-50\/50 { background-color: rgba(16, 185, 129, 0.12) !important; }
         html.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.12) !important; }
-        html.dark .bg-slate-50 { background-color: rgba(148, 163, 184, 0.10) !important; }
+        html.dark .bg-rose-50 { background-color: rgba(244, 63, 94, 0.12) !important; }
         html.dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.18) !important; }
-        html.dark .bg-blue-100 { background-color: rgba(59, 130, 246, 0.20) !important; }
-        html.dark .bg-slate-100 { background-color: rgba(148, 163, 184, 0.16) !important; }
+        html.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.18) !important; }
+        html.dark .bg-rose-100 { background-color: rgba(244, 63, 94, 0.18) !important; }
+        html.dark .bg-blue-100 { background-color: rgba(59, 130, 246, 0.18) !important; }
 
         html.dark input, html.dark textarea { background-color: #0f172a !important; color: #e2e8f0 !important; }
         html.dark ::placeholder { color: #64748b !important; }
         html.dark .shadow-sm, html.dark .shadow-md, html.dark .shadow-xl, html.dark .shadow-lg { box-shadow: none !important; }
 
         /* --- Teks & border berwarna (badge status, label, link) ---
-           Di mode terang, warna2 ini (misal text-blue-700, border-blue-200)
+           Di mode terang, warna2 ini (misal text-blue-700, border-emerald-200)
            dipasangkan dengan background pastel terang (bg-blue-50, dst) sehingga
            kontrasnya pas. Tapi begitu mode gelap aktif, background pastel itu
            ikut digelapkan (lihat blok bg-*-50/100 di atas) sedangkan warna teks
@@ -111,15 +113,19 @@
         html.dark .text-blue-500 { color: #60a5fa !important; }
         html.dark .text-blue-600 { color: #93c5fd !important; }
         html.dark .text-blue-700 { color: #bfdbfe !important; }
+        html.dark .text-emerald-600 { color: #6ee7b7 !important; }
+        html.dark .text-emerald-700 { color: #a7f3d0 !important; }
         html.dark .text-amber-600 { color: #fcd34d !important; }
         html.dark .text-amber-700,
         html.dark .text-amber-800 { color: #fde68a !important; }
-        html.dark .text-slate-600 { color: #b7c2d0 !important; }
-        html.dark .text-slate-700 { color: #cbd5e1 !important; }
+        html.dark .text-rose-600 { color: #fda4af !important; }
+        html.dark .text-rose-700 { color: #fecdd3 !important; }
 
         html.dark .border-blue-100,
         html.dark .border-blue-200 { border-color: rgba(59, 130, 246, 0.35) !important; }
+        html.dark .border-emerald-200 { border-color: rgba(16, 185, 129, 0.35) !important; }
         html.dark .border-amber-200 { border-color: rgba(245, 158, 11, 0.35) !important; }
+        html.dark .border-rose-200 { border-color: rgba(244, 63, 94, 0.35) !important; }
 
         #btn-dark-mode-toggle .icon-sun { display: none; }
         html.dark #btn-dark-mode-toggle .icon-moon { display: none; }
@@ -136,8 +142,8 @@
         }
         /* Aman: waktu masih jauh -> hijau solid, tenang, tidak berkedip */
         .inline-countdown-tugas-item.countdown-aman {
-            border-color: #2563eb;
-            background: #3b82f6;
+            border-color: #059669;
+            background: #10b981;
         }
         .inline-countdown-tugas-item.countdown-aman span,
         .inline-countdown-tugas-item.countdown-aman i { color: #ffffff !important; }
@@ -153,16 +159,16 @@
         /* Bahaya: hampir habis -> merah solid, kedap-kedip.
            Kecepatan kedip (--blink-speed) diatur lewat JS, makin dekat deadline makin cepat. */
         .inline-countdown-tugas-item.countdown-bahaya {
-            border-color: #1e293b;
-            background: #475569;
+            border-color: #be123c;
+            background: #f43f5e;
             --blink-speed: 1s;
             animation: countdownDangerPulse var(--blink-speed) infinite ease-in-out;
         }
         .inline-countdown-tugas-item.countdown-bahaya span,
         .inline-countdown-tugas-item.countdown-bahaya i { color: #ffffff !important; }
         @keyframes countdownDangerPulse {
-            0%, 100% { box-shadow: 0 0 0 rgba(15,23,42,0); opacity: 1; }
-            50% { box-shadow: 0 0 16px rgba(15,23,42,0.85); opacity: 0.75; }
+            0%, 100% { box-shadow: 0 0 0 rgba(244,63,94,0); opacity: 1; }
+            50% { box-shadow: 0 0 16px rgba(244,63,94,0.85); opacity: 0.75; }
         }
 
         .countdown-dot { width: 8px; height: 8px; border-radius: 999px; flex-shrink: 0; background: #ffffff; }
@@ -176,7 +182,7 @@
         @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
 
         /* --- 3. RIWAYAT PENGUMPULAN --- */
-        .riwayat-item { border-left: 3px solid #3b82f6; }
+        .riwayat-item { border-left: 3px solid #10b981; }
         html.dark .riwayat-item { background-color: #1a2332 !important; }
 
         /* --- 4. NOTIFIKASI TUGAS DITARIK GURU --- */
@@ -194,22 +200,22 @@
         .notif-toast-ditarik {
             pointer-events: auto;
             background: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-left: 4px solid #475569;
+            border: 1px solid #fecdd3;
+            border-left: 4px solid #f43f5e;
             border-radius: 1rem;
             box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1);
             padding: 0.9rem 1rem;
             animation: notifSlideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .notif-toast-ditarik.notif-keluar { animation: notifSlideOut 0.3s ease forwards; }
-        html.dark .notif-toast-ditarik { background: #1a2332; border-color: #334155; }
-        /* Varian biru: dipakai saat notifnya kabar baik (mis. tambahan waktu dari
-           guru), bukan tugas ditarik — border kirinya biru, bukan abu-abu. */
-        .notif-toast-ditarik.notif-toast-hijau { border-left-color: #3b82f6; }
-        html.dark .notif-toast-ditarik.notif-toast-hijau { border-color: #1e3a8a; }
-        /* Varian kuning: dipakai khusus notif "ditikung" di leaderboard Quiz. */
-        .notif-toast-ditarik.notif-toast-ungu { border-left-color: #d97706; }
-        html.dark .notif-toast-ditarik.notif-toast-ungu { border-color: #b45309; }
+        html.dark .notif-toast-ditarik { background: #1a2332; border-color: #3f1d2b; }
+        /* Varian hijau: dipakai saat notifnya kabar baik (mis. tambahan waktu dari
+           guru), bukan tugas ditarik — border kirinya emerald, bukan rose. */
+        .notif-toast-ditarik.notif-toast-hijau { border-left-color: #10b981; }
+        html.dark .notif-toast-ditarik.notif-toast-hijau { border-color: #14532d; }
+        /* Varian ungu: dipakai khusus notif "ditikung" di leaderboard Quiz. */
+        .notif-toast-ditarik.notif-toast-ungu { border-left-color: #9333ea; }
+        html.dark .notif-toast-ditarik.notif-toast-ungu { border-color: #4c1d95; }
         @keyframes notifSlideIn {
             from { transform: translateX(24px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -263,16 +269,16 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            background: #f1f5f9;
-            border: 1px solid #cbd5e1;
-            color: #334155;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
             font-size: 11px;
             font-weight: 700;
             padding: 0.55rem 0.75rem;
             border-radius: 0.75rem;
             animation: peringatanMuncul 0.25s ease;
         }
-        html.dark .peringatan-foto-kosong { background: rgba(148, 163, 184, 0.12); border-color: #334155; color: #cbd5e1; }
+        html.dark .peringatan-foto-kosong { background: rgba(244, 63, 94, 0.12); border-color: #4c1d24; color: #fca5a5; }
         @keyframes peringatanMuncul {
             from { opacity: 0; transform: translateY(-4px); }
             to { opacity: 1; transform: translateY(0); }
@@ -324,7 +330,7 @@
                     <div class="flex items-center gap-3">
                         <i class="fa-solid fa-book w-5 text-center"></i> Tugas & Catatan
                     </div>
-                    <span id="badge-tugas-baru" class="w-3 h-3 bg-slate-600 rounded-full hidden shadow-sm shadow-slate-500/50"></span>
+                    <span id="badge-tugas-baru" class="w-3 h-3 bg-rose-600 rounded-full hidden shadow-sm shadow-rose-500/50"></span>
                 </button>
 
                 <button onclick="switchTab('guru')" id="btn-guru" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium transition-all">
@@ -337,7 +343,7 @@
                     <div class="flex items-center gap-3">
                         <i class="fa-solid fa-gamepad w-5 text-center"></i> Quiz & Leaderboard
                     </div>
-                    <span id="badge-quiz-ditikung" class="w-3 h-3 bg-slate-600 rounded-full hidden shadow-sm shadow-slate-500/50"></span>
+                    <span id="badge-quiz-ditikung" class="w-3 h-3 bg-rose-600 rounded-full hidden shadow-sm shadow-rose-500/50"></span>
                 </button>
 
                 <button onclick="switchTab('pengumuman')" id="btn-pengumuman" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium transition-all">
@@ -360,7 +366,7 @@
                 </button>
             </div>
 
-            <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-4 rounded-2xl text-white text-center">
+            <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-4 rounded-2xl text-white text-center">
                 <i class="fa-solid fa-headset text-2xl mb-2"></i>
                 <h4 class="text-xs font-semibold">Butuh Bantuan Bimbingan?</h4>
                 <p class="text-[10px] text-blue-100 mt-1 mb-3">Konsultasi gratis dengan Guru BK</p>
@@ -401,7 +407,7 @@
 
                 <button class="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 relative">
                     <i class="fa-regular fa-bell"></i>
-                    <span id="badge-bell-dot" class="absolute top-2 right-2 w-2 h-2 bg-slate-500 rounded-full hidden"></span>
+                    <span id="badge-bell-dot" class="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full hidden"></span>
                 </button>
 
                 <button id="btn-dark-mode-toggle" onclick="toggleDarkMode()" title="Mode Gelap - biar mata gak capek pas begadang ngerjain tugas" class="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 relative transition-all">
@@ -465,7 +471,7 @@
         <main class="p-8 space-y-8">
             
             <section id="tab-beranda" class="tab-content space-y-8">
-                <div class="relative rounded-3xl bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500 p-8 text-white overflow-hidden shadow-xl shadow-blue-500/10">
+                <div class="relative rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 p-8 text-white overflow-hidden shadow-xl shadow-blue-500/10">
                     <div class="max-w-xl relative z-10">
                         <span class="bg-white/25 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 inline-block">Tahun Ajaran 2026/2027</span>
                         <h2 class="text-3xl font-extrabold mb-2">Selamat Pagi, AHMAD FAKHRI AL FARISI! 👋</h2>
@@ -476,9 +482,9 @@
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
                     <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-user-check"></i></div>
+                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-user-check"></i></div>
                         <p class="text-xs font-medium text-slate-400">Kehadiran Bulan Ini</p>
-                        <h3 class="text-2xl font-bold text-slate-900 mt-0.5">100% <span class="text-xs font-normal text-blue-600">Hadir</span></h3>
+                        <h3 class="text-2xl font-bold text-slate-900 mt-0.5">100% <span class="text-xs font-normal text-emerald-600">Hadir</span></h3>
                     </div>
                     
                     <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
@@ -488,7 +494,7 @@
                     </div>
 
                     <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-circle-check"></i></div>
+                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-circle-check"></i></div>
                         <p class="text-xs font-medium text-slate-400">Tugas Sudah Selesai</p>
                         <h3 class="text-2xl font-bold text-slate-900 mt-0.5"><span id="count-completed-tasks">0</span> <span class="text-xs font-normal text-slate-400">Tugas</span></h3>
                     </div>
@@ -543,7 +549,7 @@
             </section>
 
             <section id="tab-akademik" class="tab-content space-y-6 hidden">
-                <div class="relative rounded-3xl bg-gradient-to-r from-slate-800 via-slate-700 to-amber-600 p-8 text-white overflow-hidden shadow-xl shadow-amber-500/10">
+                <div class="relative rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 p-8 text-white overflow-hidden shadow-xl shadow-amber-500/10">
                     <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                         <div class="max-w-md">
                             <span class="bg-white/25 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 inline-block">Koleksi Border</span>
@@ -568,10 +574,10 @@
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
                     <div class="flex items-center justify-between gap-3 mb-6">
                         <div>
-                            <h3 class="font-bold text-lg text-slate-900"><i class="fa-solid fa-box-open text-blue-500 mr-1.5"></i>Border yang Sudah Dimiliki</h3>
+                            <h3 class="font-bold text-lg text-slate-900"><i class="fa-solid fa-box-open text-emerald-500 mr-1.5"></i>Border yang Sudah Dimiliki</h3>
                             <p class="text-xs text-slate-400 mt-0.5">Semua border yang sudah kamu buka — gabungan dari jalur Quiz dan Prestasi.</p>
                         </div>
-                        <span id="badge-jumlah-border-dimiliki" class="flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 whitespace-nowrap">0 border</span>
+                        <span id="badge-jumlah-border-dimiliki" class="flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 whitespace-nowrap">0 border</span>
                     </div>
                     <div id="grid-border-dimiliki" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"></div>
                     <p id="teks-kosong-border-dimiliki" class="hidden text-xs text-slate-400 text-center py-6">Belum ada border yang dimiliki. Main quiz atau ajukan prestasi untuk membuka border pertamamu!</p>
@@ -663,7 +669,7 @@
                             <h3 class="font-bold text-xl text-slate-900">🗂️ Riwayat Pengumpulan</h3>
                             <p class="text-xs text-slate-400 mt-0.5">Bukti sah tanggal & jam kamu ngirim tugas, biar aman kalau ada yang bilang "kamu belum ngumpul!"</p>
                         </div>
-                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-lg">Bukti Otomatis</span>
+                        <span class="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg">Bukti Otomatis</span>
                     </div>
                     <div id="container-riwayat-pengumpulan" class="space-y-3 mt-5"></div>
                 </div>
@@ -714,20 +720,20 @@
 
                 <!-- ============ VIEW 1: MENU QUIZ ============ -->
                 <div id="quiz-view-menu">
-                    <div class="relative rounded-3xl bg-gradient-to-r from-slate-900 via-blue-800 to-blue-600 p-8 text-white overflow-hidden shadow-xl shadow-blue-500/10">
+                    <div class="relative rounded-3xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 p-8 text-white overflow-hidden shadow-xl shadow-purple-500/10">
                         <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                             <div class="max-w-md">
                                 <span class="bg-white/25 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 inline-block">Quiz & Leaderboard</span>
                                 <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">🎮 Uji Wawasanmu, Kumpulkan Poin!</h2>
-                                <p class="text-blue-100 text-sm leading-relaxed">Pilih tingkat kesulitan, jawab secepat & setepat mungkin, lalu rebut posisi teratas di leaderboard.</p>
+                                <p class="text-purple-100 text-sm leading-relaxed">Pilih tingkat kesulitan, jawab secepat & setepat mungkin, lalu rebut posisi teratas di leaderboard.</p>
                             </div>
                             <div class="flex sm:flex-col gap-4 sm:gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-5 py-4 flex-shrink-0">
                                 <div class="text-center sm:text-left">
-                                    <p class="text-[10px] uppercase tracking-wide text-blue-100 font-semibold">Total Poin Kamu</p>
+                                    <p class="text-[10px] uppercase tracking-wide text-purple-100 font-semibold">Total Poin Kamu</p>
                                     <p id="quiz-total-poin-display" class="text-2xl font-extrabold">0</p>
                                 </div>
                                 <div class="text-center sm:text-left border-l sm:border-l-0 sm:border-t border-white/20 pl-4 sm:pl-0 sm:pt-2">
-                                    <p class="text-[10px] uppercase tracking-wide text-blue-100 font-semibold">Rank Kamu</p>
+                                    <p class="text-[10px] uppercase tracking-wide text-purple-100 font-semibold">Rank Kamu</p>
                                     <p id="quiz-rank-display" class="text-sm font-bold">🔰 Pemula</p>
                                 </div>
                             </div>
@@ -737,14 +743,14 @@
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
-                            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-seedling"></i></div>
+                            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-seedling"></i></div>
                             <div class="flex items-center gap-2">
                                 <h3 class="font-bold text-lg text-slate-900">Easy</h3>
-                                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-md">10 Poin/Soal</span>
+                                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-md">10 Poin/Soal</span>
                             </div>
                             <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Pemanasan santai, 5 soal umum & dasar TI. Waktu 20 detik/soal.</p>
                             <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-easy" class="font-bold text-slate-800">0</span></p>
-                            <button onclick="startQuiz('easy')" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                            <button onclick="startQuiz('easy')" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
                             </button>
                         </div>
@@ -763,14 +769,14 @@
                         </div>
 
                         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
-                            <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-skull"></i></div>
+                            <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-skull"></i></div>
                             <div class="flex items-center gap-2">
                                 <h3 class="font-bold text-lg text-slate-900">Hard</h3>
-                                <span class="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-md">35 Poin/Soal</span>
+                                <span class="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-bold rounded-md">35 Poin/Soal</span>
                             </div>
                             <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Level sulit, materi jaringan lanjutan. Waktu cuma 10 detik/soal!</p>
                             <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-hard" class="font-bold text-slate-800">0</span></p>
-                            <button onclick="startQuiz('hard')" class="w-full py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                            <button onclick="startQuiz('hard')" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
                             </button>
                         </div>
@@ -783,7 +789,7 @@
                                 <p class="text-xs text-slate-400 mt-0.5">Peringkat pemain berdasarkan total poin yang terkumpul.</p>
                             </div>
                             <div class="flex flex-wrap gap-2" id="quiz-leaderboard-filter">
-                                <button onclick="setFilterLeaderboardQuiz('semua')" data-val="semua" class="quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-blue-600 text-white border-blue-600">Semua</button>
+                                <button onclick="setFilterLeaderboardQuiz('semua')" data-val="semua" class="quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-purple-600 text-white border-purple-600">Semua</button>
                                 <button onclick="setFilterLeaderboardQuiz('easy')" data-val="easy" class="quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100">Easy</button>
                                 <button onclick="setFilterLeaderboardQuiz('medium')" data-val="medium" class="quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100">Medium</button>
                                 <button onclick="setFilterLeaderboardQuiz('hard')" data-val="hard" class="quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100">Hard</button>
@@ -809,13 +815,13 @@
                         </div>
 
                         <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-2">
-                            <div id="quiz-progress-bar" class="h-full bg-blue-500 transition-all duration-300" style="width: 20%"></div>
+                            <div id="quiz-progress-bar" class="h-full bg-purple-500 transition-all duration-300" style="width: 20%"></div>
                         </div>
 
                         <div class="flex items-center gap-2 mb-6">
                             <i class="fa-regular fa-clock text-slate-400 text-xs"></i>
                             <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div id="quiz-timer-bar" class="h-full bg-blue-500 transition-all duration-1000 ease-linear" style="width: 100%"></div>
+                                <div id="quiz-timer-bar" class="h-full bg-emerald-500 transition-all duration-1000 ease-linear" style="width: 100%"></div>
                             </div>
                             <span id="quiz-timer-text" class="text-xs font-bold text-slate-600 w-8 text-right">20s</span>
                         </div>
@@ -836,11 +842,11 @@
                         <div class="grid grid-cols-3 gap-3 mb-6">
                             <div class="bg-slate-50 rounded-2xl p-4">
                                 <p class="text-[10px] font-semibold text-slate-400 uppercase">Benar</p>
-                                <p id="quiz-result-benar" class="text-xl font-extrabold text-blue-600 mt-1">0/5</p>
+                                <p id="quiz-result-benar" class="text-xl font-extrabold text-emerald-600 mt-1">0/5</p>
                             </div>
                             <div class="bg-slate-50 rounded-2xl p-4">
                                 <p class="text-[10px] font-semibold text-slate-400 uppercase">Poin Didapat</p>
-                                <p id="quiz-result-poin" class="text-xl font-extrabold text-blue-600 mt-1">0</p>
+                                <p id="quiz-result-poin" class="text-xl font-extrabold text-purple-600 mt-1">0</p>
                             </div>
                             <div class="bg-slate-50 rounded-2xl p-4">
                                 <p class="text-[10px] font-semibold text-slate-400 uppercase">Level</p>
@@ -849,7 +855,7 @@
                         </div>
 
                         <div class="flex flex-col sm:flex-row gap-3">
-                            <button onclick="ulangiQuizTerakhir()" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                            <button onclick="ulangiQuizTerakhir()" class="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-rotate-right text-[10px]"></i> Main Lagi
                             </button>
                             <button onclick="backToQuizMenu()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
@@ -1085,9 +1091,9 @@
             // tema hijau), dibedakan lewat notif.tipe yang dikirim dari Dashboard Guru.
             const isTambahanWaktu = notif.tipe === 'tambahan_waktu';
             const iconClass = isTambahanWaktu ? 'fa-solid fa-hourglass-end' : 'fa-solid fa-triangle-exclamation';
-            const iconWrapClass = isTambahanWaktu ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-600';
+            const iconWrapClass = isTambahanWaktu ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600';
             const judulToast = isTambahanWaktu ? 'Tambahan Waktu dari Guru' : 'Tugas Ditarik oleh Guru';
-            const namaGuruClass = isTambahanWaktu ? 'text-blue-600' : 'text-slate-600';
+            const namaGuruClass = isTambahanWaktu ? 'text-emerald-600' : 'text-rose-600';
 
             const toast = document.createElement('div');
             toast.className = 'notif-toast-ditarik' + (isTambahanWaktu ? ' notif-toast-hijau' : '');
@@ -1287,18 +1293,18 @@
                 sudahDikumpulkan.sort((a, b) => (b.waktuKirimGuru || 0) - (a.waktuKirimGuru || 0));
                 const data = sudahDikumpulkan[0];
                 container.innerHTML = `
-                    <div class="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between">
+                    <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-blue-500 text-white flex items-center justify-center font-bold">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold">
                                 <i class="fa-solid fa-circle-check text-lg"></i>
                             </div>
                             <div>
-                                <span class="text-[10px] font-bold text-blue-700 uppercase tracking-wider bg-blue-100 px-2 py-0.5 rounded">Selesai</span>
+                                <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded">Selesai</span>
                                 <h4 class="font-bold text-slate-800 text-xs mt-0.5">Tugas Selesai Dikirim</h4>
                                 <p class="text-[11px] text-slate-500">Waktu Kirim: ${data.waktuKirim || '-'}</p>
                             </div>
                         </div>
-                        <button onclick="switchTab('tugas')" class="text-xs font-bold text-blue-600 hover:underline">Buka</button>
+                        <button onclick="switchTab('tugas')" class="text-xs font-bold text-emerald-600 hover:underline">Buka</button>
                     </div>`;
                 return;
             }
@@ -1342,9 +1348,9 @@
                 let statusLabel = `<span class="text-[10px] font-bold text-slate-400">Akan Datang</span>`;
 
                 if (currentTotalMinutes >= startTotalMinutes && currentTotalMinutes <= endTotalMinutes) {
-                    cardStyle = "border-blue-500 bg-blue-50/50 shadow-sm";
-                    badgeStyle = "bg-blue-500 text-white animate-pulse";
-                    statusLabel = `<span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-extrabold rounded-md animate-pulse">Sedang Berlangsung</span>`;
+                    cardStyle = "border-emerald-500 bg-emerald-50/50 shadow-sm";
+                    badgeStyle = "bg-emerald-500 text-white animate-pulse";
+                    statusLabel = `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-extrabold rounded-md animate-pulse">Sedang Berlangsung</span>`;
                 } else if (currentTotalMinutes > endTotalMinutes) {
                     cardStyle = "border-slate-200 bg-slate-50 opacity-75";
                     badgeStyle = "bg-slate-200 text-slate-500";
@@ -1496,14 +1502,14 @@
                 }
                 statusActionHTML = `
                     <div class="space-y-2 text-right">
-                        <span class="inline-block text-xs text-blue-600 font-bold bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200 shadow-sm">
+                        <span class="inline-block text-xs text-emerald-600 font-bold bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 shadow-sm">
                             <i class="fa-solid fa-check mr-1"></i> Tugas Berhasil Dikirim (${data.waktuKirim || '-'})
                         </span>
                         ${studentImagePreview}
                     </div>`;
             } else if (isExpired) {
                 statusActionHTML = `
-                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-xs font-bold flex items-center gap-2 shadow-sm">
+                    <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-bold flex items-center gap-2 shadow-sm">
                         <i class="fa-solid fa-lock text-sm"></i> Waktu Habis (${batasWaktuTugas}). Tugas terkunci otomatis, tidak dapat dikirim!
                     </div>`;
             } else {
@@ -1519,7 +1525,7 @@
                             <i class="fa-solid fa-triangle-exclamation"></i>
                             <span>Foto tugas belum dipilih. Unggah foto dulu sebelum mengirim!</span>
                         </div>
-                        <button onclick="kirimTugasSiswa('${data.id}')" id="btn-kirim-tugas-${data.id}" class="w-full sm:w-auto px-5 py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-md hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+                        <button onclick="kirimTugasSiswa('${data.id}')" id="btn-kirim-tugas-${data.id}" class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-md hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
                             <i class="fa-solid fa-paper-plane"></i> Kirim Tugas Sekarang
                         </button>
                     </div>`;
@@ -1547,7 +1553,7 @@
                     ${teacherImageHTML}
                     ${voiceNoteHTML}
                     <div class="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-blue-100 gap-3">
-                        <span class="text-xs font-bold ${data.studentSubmitted || data.sudahMengumpulkan ? 'text-blue-600' : (isExpired ? 'text-slate-600' : 'text-amber-600')}">
+                        <span class="text-xs font-bold ${data.studentSubmitted || data.sudahMengumpulkan ? 'text-emerald-600' : (isExpired ? 'text-rose-600' : 'text-amber-600')}">
                             Status: ${data.studentSubmitted || data.sudahMengumpulkan ? 'Sudah Dikirim' : (isExpired ? 'Terkunci (Lewat Deadline)' : 'Belum Dikerjakan')}
                         </span>
                         ${statusActionHTML}
@@ -1725,7 +1731,7 @@
             container.innerHTML = daftarFoto.map((src, i) => `
                 <div class="relative group">
                     <img src="${src}" class="w-full h-14 object-cover rounded-lg border border-slate-200 shadow-sm">
-                    <button type="button" onclick="hapusFotoTugasSementara('${taskId}', ${i})" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-600 text-white text-[10px] flex items-center justify-center shadow-md">
+                    <button type="button" onclick="hapusFotoTugasSementara('${taskId}', ${i})" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-600 text-white text-[10px] flex items-center justify-center shadow-md">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
@@ -2008,7 +2014,7 @@
             container.innerHTML = riwayat.map(item => `
                 <div class="riwayat-item flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200">
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                        <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
                             <i class="fa-solid fa-check"></i>
                         </div>
                         <div>
@@ -2016,7 +2022,7 @@
                             <p class="text-[11px] text-slate-500">${item.tanggal} • Pukul ${item.jam}</p>
                         </div>
                     </div>
-                    <span class="text-[10px] font-extrabold text-blue-700 bg-blue-100 px-2.5 py-1 rounded-lg whitespace-nowrap">✅ ${item.status}</span>
+                    <span class="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg whitespace-nowrap">✅ ${item.status}</span>
                 </div>
             `).join('');
         }
@@ -2344,9 +2350,9 @@
         const KEY_QUIZ_DATA = `quiz_data_${KELAS_AKTIF_SISWA}`;
 
         const QUIZ_CONFIG = {
-            easy:   { label: 'Easy',   poinDasar: 10, waktu: 20, warnaBadge: 'bg-blue-100 text-blue-700', warnaBar: 'bg-blue-500' },
+            easy:   { label: 'Easy',   poinDasar: 10, waktu: 20, warnaBadge: 'bg-emerald-100 text-emerald-700', warnaBar: 'bg-emerald-500' },
             medium: { label: 'Medium', poinDasar: 20, waktu: 15, warnaBadge: 'bg-amber-100 text-amber-700',     warnaBar: 'bg-amber-500' },
-            hard:   { label: 'Hard',   poinDasar: 35, waktu: 10, warnaBadge: 'bg-slate-100 text-slate-700',       warnaBar: 'bg-slate-500' }
+            hard:   { label: 'Hard',   poinDasar: 35, waktu: 10, warnaBadge: 'bg-rose-100 text-rose-700',       warnaBar: 'bg-rose-500' }
         };
 
         const QUIZ_BANK = {
@@ -2449,7 +2455,7 @@
             container.innerHTML = '';
             item.opsi.forEach((teks, i) => {
                 const btn = document.createElement('button');
-                btn.className = 'quiz-opsi-btn text-left px-4 py-3 rounded-xl border-2 border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50 text-sm font-semibold text-slate-700 transition-all';
+                btn.className = 'quiz-opsi-btn text-left px-4 py-3 rounded-xl border-2 border-slate-200 bg-white hover:border-purple-400 hover:bg-purple-50 text-sm font-semibold text-slate-700 transition-all';
                 btn.innerHTML = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-100 text-slate-500 text-xs font-bold mr-2 align-middle">${String.fromCharCode(65 + i)}</span>${teks}`;
                 btn.onclick = () => pilihJawabanQuiz(i);
                 container.appendChild(btn);
@@ -2473,7 +2479,7 @@
             const persen = Math.max(0, (quizState.waktuSisa / cfg.waktu) * 100);
             const bar = document.getElementById('quiz-timer-bar');
             bar.style.width = `${persen}%`;
-            bar.className = `h-full transition-all duration-1000 ease-linear ${persen <= 30 ? 'bg-slate-500' : cfg.warnaBar}`;
+            bar.className = `h-full transition-all duration-1000 ease-linear ${persen <= 30 ? 'bg-rose-500' : cfg.warnaBar}`;
             document.getElementById('quiz-timer-text').innerText = `${Math.max(0, quizState.waktuSisa)}s`;
         }
 
@@ -2488,9 +2494,9 @@
             tombolTombol.forEach((btn, i) => {
                 btn.onclick = null;
                 if (i === item.jawaban) {
-                    btn.className = 'quiz-opsi-btn text-left px-4 py-3 rounded-xl border-2 border-blue-500 bg-blue-50 text-sm font-semibold text-blue-700 transition-all';
+                    btn.className = 'quiz-opsi-btn text-left px-4 py-3 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-sm font-semibold text-emerald-700 transition-all';
                 } else if (i === indexDipilih) {
-                    btn.className = 'quiz-opsi-btn text-left px-4 py-3 rounded-xl border-2 border-slate-500 bg-slate-50 text-sm font-semibold text-slate-700 transition-all';
+                    btn.className = 'quiz-opsi-btn text-left px-4 py-3 rounded-xl border-2 border-rose-500 bg-rose-50 text-sm font-semibold text-rose-700 transition-all';
                 } else {
                     btn.className = 'quiz-opsi-btn text-left px-4 py-3 rounded-xl border-2 border-slate-200 bg-white text-sm font-semibold text-slate-400 transition-all opacity-60';
                 }
@@ -2582,7 +2588,7 @@
             quizFilterLeaderboardAktif = val;
             document.querySelectorAll('.quiz-filter-chip').forEach(btn => {
                 if (btn.dataset.val === val) {
-                    btn.className = 'quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-blue-600 text-white border-blue-600';
+                    btn.className = 'quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-purple-600 text-white border-purple-600';
                 } else {
                     btn.className = 'quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100';
                 }
@@ -2714,14 +2720,14 @@
             toast.id = `toast-${idToast}`;
             toast.innerHTML = `
                 <div class="flex items-start gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                    <div class="w-9 h-9 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
                         <i class="fa-solid fa-user-ninja"></i>
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-extrabold text-slate-900 dark:text-slate-100">Kamu Ditikung di Leaderboard!</p>
-                        <p class="text-[11px] font-bold text-blue-600 mt-0.5"><i class="fa-solid fa-bolt mr-1"></i>${entri.nama} &middot; ${cfg.label} &middot; ${entri.skor} poin</p>
+                        <p class="text-[11px] font-bold text-purple-600 mt-0.5"><i class="fa-solid fa-bolt mr-1"></i>${entri.nama} &middot; ${cfg.label} &middot; ${entri.skor} poin</p>
                         <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">${entri.nama} baru saja menyalip skor terbaikmu di level ${cfg.label}${posisi ? `. Posisimu sekarang di peringkat #${posisi}` : ''}. Yuk balas, main lagi!</p>
-                        <button onclick="switchTab('quiz'); tutupToastDitikungQuiz('${idToast}')" class="mt-2 text-[11px] font-bold text-blue-600 hover:underline">Balas Sekarang &rarr;</button>
+                        <button onclick="switchTab('quiz'); tutupToastDitikungQuiz('${idToast}')" class="mt-2 text-[11px] font-bold text-purple-600 hover:underline">Balas Sekarang &rarr;</button>
                     </div>
                     <button onclick="tutupToastDitikungQuiz('${idToast}')" class="text-slate-300 hover:text-slate-500 flex-shrink-0">
                         <i class="fa-solid fa-xmark"></i>
@@ -2919,9 +2925,9 @@
                 </div>
                 <h4 class="font-bold text-sm text-slate-900">${border.nama}</h4>
                 <p class="text-[10px] text-slate-400 mt-0.5">${border.rank}</p>
-                <p class="text-[10px] ${terbuka ? 'text-blue-600' : 'text-slate-400'} mb-3 leading-snug">${deskripsiSumberBorder(border)}</p>
+                <p class="text-[10px] ${terbuka ? 'text-emerald-600' : 'text-slate-400'} mb-3 leading-snug">${deskripsiSumberBorder(border)}</p>
                 ${terbuka
-                    ? `<button onclick="pakaiBorder('${border.id}')" ${sedangDipakai ? 'disabled' : ''} class="w-full py-2 rounded-xl text-xs font-bold transition-all ${sedangDipakai ? 'bg-blue-100 text-blue-700 cursor-default' : 'bg-slate-800 hover:bg-slate-900 text-white'}">${sedangDipakai ? '<i class="fa-solid fa-check mr-1"></i>Sedang Dipakai' : 'Pakai Border'}</button>`
+                    ? `<button onclick="pakaiBorder('${border.id}')" ${sedangDipakai ? 'disabled' : ''} class="w-full py-2 rounded-xl text-xs font-bold transition-all ${sedangDipakai ? 'bg-emerald-100 text-emerald-700 cursor-default' : 'bg-slate-800 hover:bg-slate-900 text-white'}">${sedangDipakai ? '<i class="fa-solid fa-check mr-1"></i>Sedang Dipakai' : 'Pakai Border'}</button>`
                     : `<button disabled class="w-full py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed"><i class="fa-solid fa-lock mr-1"></i>${labelKurang}</button>`
                 }
             `;
@@ -2976,8 +2982,8 @@
         }
 
         function labelStatusPrestasi(status) {
-            if (status === 'disetujui') return { teks: 'Disetujui', kelas: 'bg-blue-100 text-blue-700' };
-            if (status === 'ditolak') return { teks: 'Ditolak', kelas: 'bg-slate-100 text-slate-700' };
+            if (status === 'disetujui') return { teks: 'Disetujui', kelas: 'bg-emerald-100 text-emerald-700' };
+            if (status === 'ditolak') return { teks: 'Ditolak', kelas: 'bg-rose-100 text-rose-700' };
             return { teks: 'Menunggu Konfirmasi', kelas: 'bg-amber-100 text-amber-700' };
         }
 
@@ -2998,12 +3004,12 @@
 
                 let ketAdmin = '';
                 if (item.status === 'disetujui') {
-                    ketAdmin = `<p class="text-[11px] text-blue-600 font-semibold mt-1"><i class="fa-solid fa-user-shield mr-1"></i>Dikonfirmasi oleh ${item.adminPenyetuju || 'Admin'} &middot; ${item.tanggalKonfirmasi || ''}</p>`;
+                    ketAdmin = `<p class="text-[11px] text-emerald-600 font-semibold mt-1"><i class="fa-solid fa-user-shield mr-1"></i>Dikonfirmasi oleh ${item.adminPenyetuju || 'Admin'} &middot; ${item.tanggalKonfirmasi || ''}</p>`;
                 } else if (item.status === 'ditolak') {
-                    ketAdmin = `<p class="text-[11px] text-slate-600 font-semibold mt-1"><i class="fa-solid fa-user-shield mr-1"></i>Ditolak oleh ${item.adminPenyetuju || 'Admin'}${item.catatanAdmin ? ' &middot; ' + item.catatanAdmin : ''}</p>`;
+                    ketAdmin = `<p class="text-[11px] text-rose-600 font-semibold mt-1"><i class="fa-solid fa-user-shield mr-1"></i>Ditolak oleh ${item.adminPenyetuju || 'Admin'}${item.catatanAdmin ? ' &middot; ' + item.catatanAdmin : ''}</p>`;
                 } else if (item.pembatalanTerakhir) {
                     const statusSebelum = item.pembatalanTerakhir.statusSebelum === 'disetujui' ? 'disetujui' : 'ditolak';
-                    ketAdmin = `<p class="text-[11px] text-amber-500 font-semibold mt-1"><i class="fa-solid fa-rotate-left mr-1"></i>Sebelumnya ${statusSebelum}, dibatalkan oleh ${item.pembatalanTerakhir.oleh} &middot; ${item.pembatalanTerakhir.tanggal} — sedang ditinjau ulang</p>`;
+                    ketAdmin = `<p class="text-[11px] text-orange-500 font-semibold mt-1"><i class="fa-solid fa-rotate-left mr-1"></i>Sebelumnya ${statusSebelum}, dibatalkan oleh ${item.pembatalanTerakhir.oleh} &middot; ${item.pembatalanTerakhir.tanggal} — sedang ditinjau ulang</p>`;
                 }
 
                 const row = document.createElement('div');
