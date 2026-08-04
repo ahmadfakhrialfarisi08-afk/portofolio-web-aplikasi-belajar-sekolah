@@ -338,6 +338,11 @@
         #viewport-zoom-foto-prestasi.zoom-dragging { cursor: grabbing; }
         #img-zoom-foto-prestasi { transition: transform 0.15s ease-out; }
         #img-zoom-foto-prestasi.zoom-tanpa-transisi { transition: none; }
+
+        /* --- 10. JAGA-JAGA: kalau file gambar border/avatar gagal dimuat (404,
+           belum ada asetnya, dsb), jangan sampai teks "alt" numpuk kelihatan di
+           atas frame border seperti sebelumnya — cukup disembunyikan saja. */
+        .user-border, .user-avatar { color: transparent; font-size: 0; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden">
@@ -2923,6 +2928,16 @@
             localStorage.setItem(KEY_PRESTASI_SISWA, JSON.stringify(list));
         }
 
+        // Jaga-jaga tambahan: kalau gambar border/avatar tetap gagal dimuat (mis.
+        // file asetnya memang belum ada di server), sembunyikan total elemennya
+        // supaya tidak ada ikon "gambar rusak" + teks alt yang nyangkut di layar.
+        document.addEventListener('error', (e) => {
+            const el = e.target;
+            if (el && el.tagName === 'IMG' && (el.classList.contains('user-border') || el.classList.contains('user-avatar'))) {
+                el.style.visibility = 'hidden';
+            }
+        }, true);
+
         /* ================= ANIMASI BERHASIL KIRIM BUKTI PRESTASI ================= */
         let _timeoutSuksesPrestasi = null;
 
@@ -3387,19 +3402,16 @@
         }
 
         function renderKoleksiBorder() {
-            const dipakai = getBorderTerpakai(); // Contoh: { nama: "Border Admin", file: "border_admin.png" }
+            const dipakai = getBorderTerpakai();
 
-             // 1. Untuk teks nama border (biar cuma tampil teksnya di menu tertentu)
-             const elDipakai = document.getElementById('border-terpakai-display');
-             if (elDipakai) elDipakai.innerText = dipakai.nama;
+            const elDipakai = document.getElementById('border-terpakai-display');
+            if (elDipakai) elDipakai.innerText = dipakai.nama;
 
-            // 2. TAMBAHAN INI: Agar gambar border di navbar otomatis berubah sesuai yang dipakai
-             const elBorderElement = document.querySelector('.user-border');
-             if (elBorderElement && dipakai.file) {
-                 elBorderElement.style.backgroundImage = `url('../static/img/${dipakai.file}')`;
-                 elBorderElement.style.backgroundSize = 'cover';
-                 elBorderElement.style.backgroundPosition = 'center';
-             }
+            // Gambar+alt border di avatar (semua tempat, bukan cuma satu elemen)
+            // sudah ditangani lengkap & benar oleh terapkanBorderKeAvatar(), jadi
+            // dipanggil ulang di sini supaya avatar ikut ter-refresh tiap kali
+            // koleksi border dirender (mis. setelah prestasi baru disetujui).
+            terapkanBorderKeAvatar();
 
              const elJumlahPrestasi = document.getElementById('border-jumlah-prestasi-display');
              if (elJumlahPrestasi) elJumlahPrestasi.innerText = String(getJumlahPrestasiDisetujui());
