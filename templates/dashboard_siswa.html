@@ -570,29 +570,36 @@
                     <i class="fa-solid fa-ring absolute -right-8 -bottom-8 text-white/10 text-9xl"></i>
                 </div>
 
-                <!-- Sub-tab: Border Quiz vs Border Prestasi -->
-                <div class="flex gap-1.5 bg-slate-100 p-1.5 rounded-2xl w-fit">
-                    <button onclick="switchSubTabBorder('quiz')" id="subtab-border-quiz-btn" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-white text-slate-900 shadow-sm">
-                        <i class="fa-solid fa-gamepad mr-1.5"></i>Border Quiz
-                    </button>
-                    <button onclick="switchSubTabBorder('prestasi')" id="subtab-border-prestasi-btn" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-500 hover:text-slate-800">
-                        <i class="fa-solid fa-trophy mr-1.5"></i>Border Prestasi
-                    </button>
+                <!-- ================= BORDER YANG SUDAH DIMILIKI ================= -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                    <div class="flex items-center justify-between gap-3 mb-6">
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-900"><i class="fa-solid fa-box-open text-emerald-500 mr-1.5"></i>Border yang Sudah Dimiliki</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Semua border yang sudah kamu buka — gabungan dari jalur Quiz dan Prestasi.</p>
+                        </div>
+                        <span id="badge-jumlah-border-dimiliki" class="flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 whitespace-nowrap">0 border</span>
+                    </div>
+                    <div id="grid-border-dimiliki" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"></div>
+                    <p id="teks-kosong-border-dimiliki" class="hidden text-xs text-slate-400 text-center py-6">Belum ada border yang dimiliki. Main quiz atau ajukan prestasi untuk membuka border pertamamu!</p>
                 </div>
 
-                <!-- ================= PANEL: BORDER QUIZ (per tingkat kesulitan) ================= -->
-                <div id="panel-border-quiz" class="space-y-6">
-                    <div class="flex items-center justify-between">
-                        <p class="text-xs text-slate-400">Setiap tingkat kesulitan quiz punya jalur border sendiri, berdasarkan skor terbaikmu di level itu.</p>
-                        <button onclick="switchTab('quiz')" class="text-xs font-semibold text-purple-600 hover:underline flex items-center gap-1 flex-shrink-0">
-                            Main Quiz <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                <!-- ================= BORDER YANG BELUM DIMILIKI (collapsible) ================= -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-900"><i class="fa-solid fa-lock text-slate-400 mr-1.5"></i>Border yang Belum Dimiliki</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Border lain yang masih terkunci, dari jalur Quiz maupun Prestasi.</p>
+                        </div>
+                        <button onclick="toggleBorderBelumDimiliki()" id="btn-toggle-border-belum" class="flex-shrink-0 text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white transition-all whitespace-nowrap">
+                            <span id="teks-toggle-border-belum">Tampilkan Semua (0)</span>
+                            <i id="icon-toggle-border-belum" class="fa-solid fa-chevron-down ml-1.5 text-[10px] transition-transform"></i>
                         </button>
                     </div>
-                    <div id="wrapper-border-quiz-level" class="space-y-6"></div>
+                    <div id="grid-border-belum-dimiliki" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-6"></div>
                 </div>
 
-                <!-- ================= PANEL: BORDER PRESTASI (upload sertifikat/piala) ================= -->
-                <div id="panel-border-prestasi" class="space-y-6 hidden">
+                <!-- ================= AJUKAN PRESTASI (upload sertifikat/piala) ================= -->
+                <div class="space-y-6">
                     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
                         <div class="flex items-center gap-3 mb-1">
                             <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
@@ -629,14 +636,6 @@
                                 </button>
                             </div>
                         </form>
-                    </div>
-
-                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
-                        <div class="mb-6">
-                            <h3 class="font-bold text-lg text-slate-900">Border dari Prestasi</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Terbuka otomatis sesuai jumlah prestasi yang sudah <b>disetujui</b> admin/guru.</p>
-                        </div>
-                        <div id="grid-koleksi-border-prestasi" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
                     </div>
 
                     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
@@ -2887,7 +2886,18 @@
             });
         }
 
-        // Render satu kartu border (dipakai bareng oleh grid Quiz & grid Prestasi)
+        // Keterangan singkat "cara dapetin" yang ditampilkan di bawah tiap kartu border,
+        // dipakai baik untuk border yang sudah dimiliki (jadi tahu asalnya dari mana)
+        // maupun yang belum dimiliki (jadi tahu syaratnya apa).
+        function deskripsiSumberBorder(border) {
+            if (border.kategori === 'prestasi') {
+                return `<i class="fa-solid fa-trophy mr-1"></i>Prestasi &middot; min. ${border.minPrestasi} disetujui`;
+            }
+            const meta = LEVEL_META_BORDER[border.level];
+            return `<i class="fa-solid fa-gamepad mr-1"></i>Quiz ${meta ? meta.label : ''} &middot; min. ${border.minPoin} poin`;
+        }
+
+        // Render satu kartu border (dipakai bareng oleh grid Sudah Dimiliki & Belum Dimiliki)
         function buatKartuBorder(border, dipakai) {
             const terbuka = isBorderTerbuka(border);
             const sedangDipakai = dipakai.id === border.id;
@@ -2914,7 +2924,8 @@
                     ${!terbuka ? '<div class="absolute inset-0 flex items-center justify-center bg-slate-900/40 rounded-full"><i class="fa-solid fa-lock text-white text-lg"></i></div>' : ''}
                 </div>
                 <h4 class="font-bold text-sm text-slate-900">${border.nama}</h4>
-                <p class="text-[10px] text-slate-400 mt-0.5 mb-3">${border.rank}</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">${border.rank}</p>
+                <p class="text-[10px] ${terbuka ? 'text-emerald-600' : 'text-slate-400'} mb-3 leading-snug">${deskripsiSumberBorder(border)}</p>
                 ${terbuka
                     ? `<button onclick="pakaiBorder('${border.id}')" ${sedangDipakai ? 'disabled' : ''} class="w-full py-2 rounded-xl text-xs font-bold transition-all ${sedangDipakai ? 'bg-emerald-100 text-emerald-700 cursor-default' : 'bg-slate-800 hover:bg-slate-900 text-white'}">${sedangDipakai ? '<i class="fa-solid fa-check mr-1"></i>Sedang Dipakai' : 'Pakai Border'}</button>`
                     : `<button disabled class="w-full py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed"><i class="fa-solid fa-lock mr-1"></i>${labelKurang}</button>`
@@ -2923,70 +2934,51 @@
             return card;
         }
 
-        function switchSubTabBorder(tab) {
-            const panelQuiz = document.getElementById('panel-border-quiz');
-            const panelPrestasi = document.getElementById('panel-border-prestasi');
-            const btnQuiz = document.getElementById('subtab-border-quiz-btn');
-            const btnPrestasi = document.getElementById('subtab-border-prestasi-btn');
-            if (!panelQuiz || !panelPrestasi) return;
+        // Grid "Sudah Dimiliki": gabungan border quiz & prestasi yang sudah terbuka,
+        // ditampilkan bareng (tidak dipisah per kategori) sesuai urutan tier-nya.
+        function renderKoleksiBorderDimiliki(dipakai) {
+            const grid = document.getElementById('grid-border-dimiliki');
+            const teksKosong = document.getElementById('teks-kosong-border-dimiliki');
+            const badge = document.getElementById('badge-jumlah-border-dimiliki');
+            if (!grid) return;
 
-            const aktif = 'bg-white text-slate-900 shadow-sm';
-            const nonaktif = 'text-slate-500 hover:text-slate-800';
+            const dimiliki = getSemuaBorder().filter(isBorderTerbuka);
+            grid.innerHTML = '';
+            dimiliki.forEach(border => grid.appendChild(buatKartuBorder(border, dipakai)));
 
-            if (tab === 'prestasi') {
-                panelQuiz.classList.add('hidden');
-                panelPrestasi.classList.remove('hidden');
-                btnPrestasi.className = `px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${aktif}`;
-                btnQuiz.className = `px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${nonaktif}`;
-            } else {
-                panelPrestasi.classList.add('hidden');
-                panelQuiz.classList.remove('hidden');
-                btnQuiz.className = `px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${aktif}`;
-                btnPrestasi.className = `px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${nonaktif}`;
+            grid.classList.toggle('hidden', dimiliki.length === 0);
+            if (teksKosong) teksKosong.classList.toggle('hidden', dimiliki.length > 0);
+            if (badge) badge.innerText = `${dimiliki.length} border`;
+        }
+
+        // Grid "Belum Dimiliki": disembunyikan secara default, baru dirender &
+        // ditampilkan saat tombol toggle diklik — isinya semua border terkunci
+        // dari jalur Quiz maupun Prestasi sekaligus.
+        function renderKoleksiBorderBelumDimiliki(dipakai) {
+            const grid = document.getElementById('grid-border-belum-dimiliki');
+            const teksToggle = document.getElementById('teks-toggle-border-belum');
+            if (!grid) return;
+
+            const belumDimiliki = getSemuaBorder().filter(b => !isBorderTerbuka(b));
+            grid.innerHTML = '';
+            belumDimiliki.forEach(border => grid.appendChild(buatKartuBorder(border, dipakai)));
+
+            if (teksToggle) {
+                const sedangTerbuka = !grid.classList.contains('hidden');
+                teksToggle.innerText = sedangTerbuka
+                    ? `Sembunyikan (${belumDimiliki.length})`
+                    : `Tampilkan Semua (${belumDimiliki.length})`;
             }
         }
 
-        function renderKoleksiBorderQuiz(dipakai) {
-            const wrapper = document.getElementById('wrapper-border-quiz-level');
-            if (!wrapper) return;
-            wrapper.innerHTML = '';
-            const data = getQuizData();
+        function toggleBorderBelumDimiliki() {
+            const grid = document.getElementById('grid-border-belum-dimiliki');
+            const icon = document.getElementById('icon-toggle-border-belum');
+            if (!grid) return;
 
-            Object.keys(LEVEL_META_BORDER).forEach(level => {
-                const meta = LEVEL_META_BORDER[level];
-                const bestLevel = (data.bestByLevel && data.bestByLevel[level]) || 0;
-                const bordersLevel = DAFTAR_BORDER_QUIZ.filter(b => b.level === level);
-
-                const blok = document.createElement('div');
-                blok.className = 'bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6';
-                blok.innerHTML = `
-                    <div class="flex items-center justify-between mb-5">
-                        <div class="flex items-center gap-2.5">
-                            <span class="w-9 h-9 rounded-xl bg-${meta.warna}-100 text-${meta.warna}-600 flex items-center justify-center">
-                                <i class="fa-solid ${meta.icon}"></i>
-                            </span>
-                            <div>
-                                <h3 class="font-bold text-sm text-slate-900">Border Quiz &middot; ${meta.label}</h3>
-                                <p class="text-[11px] text-slate-400">Skor terbaikmu di level ${meta.label}: <b class="text-slate-600">${bestLevel} poin</b></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="grid-border-level-${level} grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"></div>
-                `;
-                wrapper.appendChild(blok);
-
-                const grid = blok.querySelector(`.grid-border-level-${level}`);
-                bordersLevel.forEach(border => grid.appendChild(buatKartuBorder(border, dipakai)));
-            });
-        }
-
-        function renderKoleksiBorderPrestasi(dipakai) {
-            const grid = document.getElementById('grid-koleksi-border-prestasi');
-            if (grid) {
-                grid.innerHTML = '';
-                DAFTAR_BORDER_PRESTASI.forEach(border => grid.appendChild(buatKartuBorder(border, dipakai)));
-            }
-            renderRiwayatPrestasi();
+            grid.classList.toggle('hidden');
+            if (icon) icon.classList.toggle('rotate-180');
+            renderKoleksiBorderBelumDimiliki(getBorderTerpakai());
         }
 
         function labelStatusPrestasi(status) {
@@ -3067,7 +3059,7 @@
                 });
                 savePrestasiData(list);
                 document.getElementById('form-ajukan-prestasi').reset();
-                renderKoleksiBorderPrestasi(getBorderTerpakai());
+                renderKoleksiBorder();
                 triggerDynamicIsland('Prestasi diajukan! Menunggu konfirmasi guru/admin.');
             };
             reader.readAsDataURL(file);
@@ -3081,8 +3073,9 @@
             if (elDipakai) elDipakai.innerText = dipakai.nama;
             if (elJumlahPrestasi) elJumlahPrestasi.innerText = String(getJumlahPrestasiDisetujui());
 
-            renderKoleksiBorderQuiz(dipakai);
-            renderKoleksiBorderPrestasi(dipakai);
+            renderKoleksiBorderDimiliki(dipakai);
+            renderKoleksiBorderBelumDimiliki(dipakai);
+            renderRiwayatPrestasi();
         }
     </script>
 </body>
