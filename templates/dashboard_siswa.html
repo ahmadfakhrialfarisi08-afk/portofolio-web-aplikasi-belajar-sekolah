@@ -1150,6 +1150,13 @@
                     if (dropdownAvatar) dropdownAvatar.src = base64Image;
                     if (islandAvatar) islandAvatar.src = base64Image;
 
+                    // Foto baru langsung disebar ke SEMUA entri leaderboard milik
+                    // siswa ini (bukan cuma foto di header/dropdown) supaya foto
+                    // di leaderboard tersinkron realtime, tanpa perlu main quiz
+                    // ulang. renderLeaderboardQuiz() aman dipanggil walau tab Quiz
+                    // sedang tidak aktif (elemennya tetap ada di DOM, cuma disembunyikan).
+                    if (typeof renderLeaderboardQuiz === 'function') renderLeaderboardQuiz();
+
                     alert('Foto profil berhasil diperbarui!');
                     triggerDynamicIsland("Foto profil diperbarui!");
                 };
@@ -2776,20 +2783,27 @@
             const medali = ['🥇', '🥈', '🥉'];
             daftar.forEach((entri, i) => {
                 const cfg = QUIZ_CONFIG[entri.level];
-                // Fallback buat entri lama (sebelum fitur foto/kelas/border disinkronkan)
-                // yang mungkin belum punya field ini di localStorage.
                 const namaEntri = entri.nama;
-                const fotoEntri = entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120`;
-                const borderEntri = entri.border || '../static/img/border_polos.png';
-                const titleEntri = entri.borderTitle || '🔰 Pemula';
-                const kelasEntri = entri.kelas || '-';
                 const iniSayaSendiri = namaEntri === NAMA_PEMAIN_QUIZ;
-                // Fallback buat entri lama yang belum punya efekNama/badgeDev
-                // tersimpan: dihitung ulang dari border aktif SAYA SENDIRI kalau
-                // entri ini memang milik saya, atau dikosongkan (nama polos) kalau
-                // entri milik pemain lain yang datanya belum tersinkron.
-                const efekNamaEntri = entri.efekNama || (iniSayaSendiri ? getEfekNamaClass(getBorderTerpakai()) : '');
-                const badgeDevEntri = entri.badgeDev || (iniSayaSendiri ? getBadgeDevHtml(getBorderTerpakai()) : '');
+
+                // Entri milik SAYA SENDIRI selalu ditampilkan REALTIME memakai data
+                // profil yang aktif SEKARANG (foto, kelas, border/title, efek nama,
+                // badge dev) — bukan snapshot beku dari saat quiz itu dimainkan dulu.
+                // Jadi begitu foto profil diganti (lihat updateProfilePhoto()), SEMUA
+                // entri lama milik saya di leaderboard langsung ikut berubah tanpa
+                // perlu main quiz ulang. Entri milik siswa lain tetap pakai snapshot
+                // foto/kelas/border miliknya sendiri (data terakhir yang tersinkron
+                // saat dia terakhir main), dengan fallback untuk entri lama yang
+                // belum punya field ini tersimpan di localStorage.
+                const borderLiveSaya = iniSayaSendiri ? getBorderTerpakai() : null;
+                const fotoEntri = iniSayaSendiri
+                    ? getFotoProfilAktifQuiz()
+                    : (entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120`);
+                const borderEntri = iniSayaSendiri ? borderLiveSaya.file : (entri.border || '../static/img/border_polos.png');
+                const titleEntri = iniSayaSendiri ? borderLiveSaya.rank : (entri.borderTitle || '🔰 Pemula');
+                const kelasEntri = iniSayaSendiri ? getKelasAktifQuiz() : (entri.kelas || '-');
+                const efekNamaEntri = iniSayaSendiri ? getEfekNamaClass(borderLiveSaya) : (entri.efekNama || '');
+                const badgeDevEntri = iniSayaSendiri ? getBadgeDevHtml(borderLiveSaya) : (entri.badgeDev || '');
                 const kelasNamaEntri = `text-xs font-bold truncate ${efekNamaEntri || 'text-slate-800'}`;
 
                 const baris = document.createElement('div');
