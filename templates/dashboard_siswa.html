@@ -3387,12 +3387,22 @@
         }
 
         function renderKoleksiBorder() {
-            const dipakai = getBorderTerpakai();
+            const dipakai = getBorderTerpakai(); // Contoh: { nama: "Border Admin", file: "border_admin.png" }
 
-            const elDipakai = document.getElementById('border-terpakai-display');
-            const elJumlahPrestasi = document.getElementById('border-jumlah-prestasi-display');
-            if (elDipakai) elDipakai.innerText = dipakai.nama;
-            if (elJumlahPrestasi) elJumlahPrestasi.innerText = String(getJumlahPrestasiDisetujui());
+             // 1. Untuk teks nama border (biar cuma tampil teksnya di menu tertentu)
+             const elDipakai = document.getElementById('border-terpakai-display');
+             if (elDipakai) elDipakai.innerText = dipakai.nama;
+
+            // 2. TAMBAHAN INI: Agar gambar border di navbar otomatis berubah sesuai yang dipakai
+             const elBorderElement = document.querySelector('.user-border');
+             if (elBorderElement && dipakai.file) {
+                 elBorderElement.style.backgroundImage = `url('../static/img/${dipakai.file}')`;
+                 elBorderElement.style.backgroundSize = 'cover';
+                 elBorderElement.style.backgroundPosition = 'center';
+             }
+
+             const elJumlahPrestasi = document.getElementById('border-jumlah-prestasi-display');
+             if (elJumlahPrestasi) elJumlahPrestasi.innerText = String(getJumlahPrestasiDisetujui());
 
             renderKoleksiBorderDimiliki(dipakai);
             renderKoleksiBorderBelumDimiliki(dipakai);
