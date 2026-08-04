@@ -907,10 +907,10 @@
                         <div class="flex items-center justify-between flex-wrap gap-3 mb-5">
                             <div>
                                 <h3 class="font-bold text-lg text-slate-900">🏆 Leaderboard</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Peringkat pemain berdasarkan total poin yang terkumpul.</p>
+                                <p class="text-xs text-slate-400 mt-0.5" id="quiz-leaderboard-subtitle">Poin kamu di masing-masing quiz. Pilih level untuk lihat peringkat semua siswa.</p>
                             </div>
                             <div class="flex flex-wrap gap-2" id="quiz-leaderboard-filter">
-                                <button onclick="setFilterLeaderboardQuiz('semua')" data-val="semua" class="quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-purple-600 text-white border-purple-600">Semua</button>
+                                <button onclick="setFilterLeaderboardQuiz('semua')" data-val="semua" class="quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-purple-600 text-white border-purple-600">Poin Saya</button>
                                 <button onclick="setFilterLeaderboardQuiz('easy')" data-val="easy" class="quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100">Easy</button>
                                 <button onclick="setFilterLeaderboardQuiz('medium')" data-val="medium" class="quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100">Medium</button>
                                 <button onclick="setFilterLeaderboardQuiz('hard')" data-val="hard" class="quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100">Hard</button>
@@ -2796,6 +2796,14 @@
                     btn.className = 'quiz-filter-chip px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100';
                 }
             });
+
+            const subtitle = document.getElementById('quiz-leaderboard-subtitle');
+            if (subtitle) {
+                subtitle.innerText = val === 'semua'
+                    ? 'Poin kamu di masing-masing quiz. Pilih level untuk lihat peringkat semua siswa.'
+                    : 'Peringkat semua siswa berdasarkan total poin yang terkumpul.';
+            }
+
             renderLeaderboardQuiz();
         }
 
@@ -2820,13 +2828,51 @@
                 </span>`;
         }
 
+        // Tab "Poin Saya" (quizFilterLeaderboardAktif === 'semua') TIDAK menampilkan
+        // leaderboard gabungan semua siswa lagi — cuma poin milik siswa yang lagi
+        // login, dirinci per quiz (easy/medium/hard). Leaderboard berisi SEMUA
+        // siswa baru muncul begitu salah satu level kesulitan dipilih.
+        function renderLeaderboardQuizMilikSaya(data) {
+            const container = document.getElementById('quiz-leaderboard-list');
+            const kosongState = document.getElementById('quiz-leaderboard-kosong');
+            container.innerHTML = '';
+            kosongState.classList.add('hidden');
+
+            const best = data.bestByLevel || { easy: 0, medium: 0, hard: 0 };
+            const semuaEntriSaya = (data.leaderboard || []).filter(e => e.nama === NAMA_PEMAIN_QUIZ);
+
+            ['easy', 'medium', 'hard'].forEach(level => {
+                const cfg = QUIZ_CONFIG[level];
+                const skorTerbaik = best[level] || 0;
+                const entriTerakhir = semuaEntriSaya
+                    .filter(e => e.level === level)
+                    .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))[0];
+
+                const baris = document.createElement('div');
+                baris.className = 'flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50';
+                baris.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold flex-shrink-0 ${cfg.warnaBadge}">${cfg.label}</span>
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold text-slate-800 truncate">Poin terbaik kamu</p>
+                            <p class="text-[10px] text-slate-400 truncate mt-0.5">${entriTerakhir ? `${entriTerakhir.benar}/${entriTerakhir.total} benar &middot; terakhir main ${new Date(entriTerakhir.tanggal).toLocaleDateString('id-ID')}` : 'Belum pernah main quiz ini'}</p>
+                        </div>
+                    </div>
+                    <span class="text-sm font-extrabold text-slate-900 flex-shrink-0">${skorTerbaik}</span>
+                `;
+                container.appendChild(baris);
+            });
+        }
+
         function renderLeaderboardQuiz() {
             const data = getQuizData();
-            let daftar = [...(data.leaderboard || [])];
 
-            if (quizFilterLeaderboardAktif !== 'semua') {
-                daftar = daftar.filter(e => e.level === quizFilterLeaderboardAktif);
+            if (quizFilterLeaderboardAktif === 'semua') {
+                renderLeaderboardQuizMilikSaya(data);
+                return;
             }
+
+            let daftar = [...(data.leaderboard || [])].filter(e => e.level === quizFilterLeaderboardAktif);
 
             daftar.sort((a, b) => b.skor - a.skor);
             daftar = daftar.slice(0, 10);
