@@ -2936,13 +2936,24 @@
             localStorage.setItem(KEY_PRESTASI_SISWA, JSON.stringify(list));
         }
 
-        // Jaga-jaga tambahan: kalau gambar border/avatar tetap gagal dimuat (mis.
-        // file asetnya memang belum ada di server), sembunyikan total elemennya
-        // supaya tidak ada ikon "gambar rusak" + teks alt yang nyangkut di layar.
+        // Jaga-jaga tambahan: kalau gambar border/avatar gagal dimuat (mis. file
+        // asetnya belum ada di server), sembunyikan elemennya biar tidak ada ikon
+        // "gambar rusak" + teks alt yang nyangkut di layar. Begitu ganti ke border
+        // lain yang berhasil dimuat, visibility-nya dikembalikan lagi di sini —
+        // sebelumnya TIDAK ADA logika pengembalian ini, jadi sekali ada satu
+        // border yang gagal load, elemen border jadi tersembunyi selamanya
+        // walau border sesudahnya sebenarnya valid ("dipakai" tapi kelihatannya
+        // gak berubah di avatar).
         document.addEventListener('error', (e) => {
             const el = e.target;
             if (el && el.tagName === 'IMG' && (el.classList.contains('user-border') || el.classList.contains('user-avatar'))) {
                 el.style.visibility = 'hidden';
+            }
+        }, true);
+        document.addEventListener('load', (e) => {
+            const el = e.target;
+            if (el && el.tagName === 'IMG' && (el.classList.contains('user-border') || el.classList.contains('user-avatar'))) {
+                el.style.visibility = '';
             }
         }, true);
 
@@ -3213,6 +3224,7 @@
         function terapkanBorderKeAvatar() {
             const border = getBorderTerpakai();
             document.querySelectorAll('.user-border').forEach(img => {
+                img.style.visibility = ''; // reset dulu, biar border baru selalu dicoba tampil lagi
                 img.src = border.file;
                 img.alt = `Border_${border.nama}`;
             });
