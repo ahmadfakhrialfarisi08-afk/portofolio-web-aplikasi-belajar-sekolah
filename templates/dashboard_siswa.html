@@ -291,6 +291,53 @@
             80% { transform: translateX(4px); }
         }
         .goyang-peringatan { animation: goyangPeringatan 0.4s ease; }
+
+        /* --- 7. NOTIFIKASI STATUS PRESTASI (disetujui/ditolak guru) ---
+           Pakai ulang komponen toast #notif-toast-container & .notif-toast-ditarik
+           yang sudah ada di atas (poin 4), cuma beda isi: nama guru penyetuju &
+           pesan sama-sama diwarnai merah (ditolak) / hijau (disetujui). */
+
+        /* --- 8. ANIMASI BERHASIL KIRIM BUKTI PRESTASI --- */
+        .modal-sukses-pop { animation: suksesPopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes suksesPopIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .modal-sukses-ring { animation: suksesRingPulse 1.4s ease-out infinite; }
+        @keyframes suksesRingPulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35); }
+            100% { box-shadow: 0 0 0 20px rgba(16, 185, 129, 0); }
+        }
+        .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 3;
+            stroke-miterlimit: 10;
+            stroke: #10b981;
+            fill: none;
+            animation: checkmarkStrokeCircle 0.5s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-width: 3;
+            stroke: #10b981;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: checkmarkStrokeCheck 0.3s 0.5s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        @keyframes checkmarkStrokeCircle { 100% { stroke-dashoffset: 0; } }
+        @keyframes checkmarkStrokeCheck { 100% { stroke-dashoffset: 0; } }
+
+        /* --- 9. MODAL ZOOM FOTO BUKTI PRESTASI --- */
+        .thumb-bukti-prestasi {
+            cursor: zoom-in;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .thumb-bukti-prestasi:hover { transform: scale(1.06); box-shadow: 0 4px 14px rgba(0,0,0,0.18); }
+        #viewport-zoom-foto-prestasi { cursor: grab; touch-action: none; }
+        #viewport-zoom-foto-prestasi.zoom-dragging { cursor: grabbing; }
+        #img-zoom-foto-prestasi { transition: transform 0.15s ease-out; }
+        #img-zoom-foto-prestasi.zoom-tanpa-transisi { transition: none; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden">
@@ -389,7 +436,7 @@
                     <div id="dynamic-notification-island" class="absolute left-0 right-0 bg-amber-300 text-slate-900 px-3.5 py-1.5 rounded-2xl border-2 border-amber-500 lightning-border-yellow shadow-lg hidden items-center gap-2 z-20">
                         <div class="profile-wrapper w-6 h-6 flex-shrink-0">
                             <img id="island-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar" alt="Avatar">
-                            <img src="../static/img/border_admin.png" class="user-border" alt="Border_Emas">
+                            <img src="../static/img/border_emas.png" class="user-border" alt="Border_Emas">
                         </div>
                         <span id="island-notification-text" class="text-[11px] font-extrabold text-slate-900 tracking-wide truncate">Notifikasi Aktif</span>
                     </div>
@@ -907,6 +954,42 @@
             </div>
             <p class="text-xs text-slate-400 text-center">AHMAD FAKHRI AL FARISI</p>
         </div>
+    </div>
+
+    <!-- Animasi berhasil kirim bukti prestasi -->
+    <div id="modal-sukses-prestasi" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[105] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-7 shadow-2xl flex flex-col items-center text-center space-y-3 modal-sukses-pop">
+            <div class="w-20 h-20 rounded-full bg-emerald-50 flex items-center justify-center modal-sukses-ring">
+                <svg class="w-11 h-11" viewBox="0 0 52 52">
+                    <circle class="checkmark-circle" cx="26" cy="26" r="23"/>
+                    <path class="checkmark-check" fill="none" d="M14 27l7 7 16-16"/>
+                </svg>
+            </div>
+            <h3 class="font-extrabold text-base text-slate-900">Berhasil Dikirim!</h3>
+            <p id="pesan-sukses-prestasi" class="text-xs text-slate-500 leading-relaxed"></p>
+            <button onclick="tutupSuksesPrestasi()" class="mt-2 w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-all">Oke, Mengerti</button>
+        </div>
+    </div>
+
+    <!-- Modal zoom foto bukti prestasi (klik foto di riwayat -> perbesar, bisa di-zoom in/out & digeser) -->
+    <div id="modal-zoom-foto-prestasi" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[110] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupZoomFotoPrestasi()">
+        <div class="absolute top-4 right-4 flex items-center gap-2 z-10">
+            <button onclick="zoomFotoPrestasi(-0.25)" title="Perkecil" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center">
+                <i class="fa-solid fa-magnifying-glass-minus"></i>
+            </button>
+            <button onclick="resetZoomFotoPrestasi()" title="Reset zoom" id="label-persen-zoom-prestasi" class="px-3 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center justify-center min-w-[3.5rem]">100%</button>
+            <button onclick="zoomFotoPrestasi(0.25)" title="Perbesar" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center">
+                <i class="fa-solid fa-magnifying-glass-plus"></i>
+            </button>
+            <button onclick="tutupZoomFotoPrestasi()" title="Tutup" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div id="viewport-zoom-foto-prestasi" class="w-full h-full flex items-center justify-center overflow-hidden">
+            <img id="img-zoom-foto-prestasi" src="" draggable="false" alt="Bukti Prestasi" class="max-w-[92vw] max-h-[78vh] object-contain select-none rounded-lg shadow-2xl">
+        </div>
+        <p id="judul-zoom-foto-prestasi" class="absolute bottom-5 left-0 right-0 text-center text-white/80 text-xs font-semibold px-4 pointer-events-none"></p>
+        <p class="absolute bottom-1 left-0 right-0 text-center text-white/40 text-[10px] pointer-events-none">Scroll / cubit untuk zoom &middot; geser untuk memindahkan &middot; dobel klik untuk reset</p>
     </div>
 
     <script>
@@ -2255,6 +2338,7 @@
                 // Guru. Border avatar langsung disesuaikan lagi di sini: kalau prestasi
                 // yang membuka border itu dibatalkan, border yang sedang dipakai otomatis
                 // turun ke border tertinggi yang MASIH terbuka — sama seperti siswa lain.
+                cekNotifBaruStatusPrestasi();
                 terapkanBorderKeAvatar();
                 if (!document.getElementById('tab-akademik').classList.contains('hidden')) {
                     renderKoleksiBorder();
@@ -2272,11 +2356,13 @@
             renderLiveTaskContent();
             cekNotifBaruTugasDitarik();
             checkTaskBadgeStatus();
+            cekNotifBaruStatusPrestasi();
         });
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
                 sinkronkanRiwayatDenganTugasAktif();
                 renderRiwayatPengumpulan();
+                cekNotifBaruStatusPrestasi();
             }
         });
 
@@ -2331,8 +2417,10 @@
             setInterval(() => {
                 sinkronkanRiwayatDenganTugasAktif();
                 cekPembaruanTugasRealtime();
+                cekNotifBaruStatusPrestasi();
             }, 3000);
             cekNotifBaruTugasDitarik();
+            cekNotifBaruStatusPrestasi();
         });
 
         /* ============================================================
@@ -2835,6 +2923,226 @@
             localStorage.setItem(KEY_PRESTASI_SISWA, JSON.stringify(list));
         }
 
+        /* ================= ANIMASI BERHASIL KIRIM BUKTI PRESTASI ================= */
+        let _timeoutSuksesPrestasi = null;
+
+        function tampilkanSuksesPrestasi(pesan) {
+            const modal = document.getElementById('modal-sukses-prestasi');
+            const pesanEl = document.getElementById('pesan-sukses-prestasi');
+            if (!modal) return;
+            if (pesanEl) pesanEl.innerText = pesan || 'Bukti prestasi kamu sudah dikirim & menunggu konfirmasi guru.';
+
+            // Restart animasi checkmark tiap kali modal dibuka lagi (kalau cuma
+            // classList show, animasi CSS-nya tidak akan replay dari awal).
+            modal.querySelectorAll('.checkmark-circle, .checkmark-check').forEach(el => {
+                el.style.animation = 'none';
+                void el.offsetWidth; // paksa reflow
+                el.style.animation = '';
+            });
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+
+            clearTimeout(_timeoutSuksesPrestasi);
+            _timeoutSuksesPrestasi = setTimeout(tutupSuksesPrestasi, 3500);
+        }
+
+        function tutupSuksesPrestasi() {
+            const modal = document.getElementById('modal-sukses-prestasi');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+            clearTimeout(_timeoutSuksesPrestasi);
+        }
+
+        /* ================= NOTIFIKASI STATUS PRESTASI (disetujui/ditolak guru) =================
+           Beda dengan notif tugas ditarik (yang dikirim guru lewat key notif terpisah),
+           status prestasi diubah LANGSUNG di objek prestasi itu sendiri oleh Dashboard
+           Guru. Jadi di sini kita simpan snapshot status yang TERAKHIR DILIHAT siswa per
+           id prestasi, lalu setiap kali data prestasi berubah (event 'storage', polling,
+           tab aktif lagi) kita bandingkan: kalau status barusan berubah jadi 'disetujui'
+           atau 'ditolak', munculkan toast bernama guru & pesan yang diwarnai hijau/merah. */
+        const KEY_STATUS_PRESTASI_TERLIHAT = `status_prestasi_terlihat_${KELAS_AKTIF_SISWA}`;
+
+        function getStatusPrestasiTerlihat() {
+            try {
+                const raw = localStorage.getItem(KEY_STATUS_PRESTASI_TERLIHAT);
+                return raw ? JSON.parse(raw) : null; // null = belum pernah ada snapshot (baru pertama kali)
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function saveStatusPrestasiTerlihat(map) {
+            localStorage.setItem(KEY_STATUS_PRESTASI_TERLIHAT, JSON.stringify(map));
+        }
+
+        function tampilkanToastStatusPrestasi(item) {
+            const container = document.getElementById('notif-toast-container');
+            if (!container) return;
+
+            const disetujui = item.status === 'disetujui';
+            const namaAdmin = item.adminPenyetuju || 'Guru/Admin';
+            const pesanDefault = disetujui
+                ? `Prestasi "${item.judul}" kamu telah disetujui. Selamat! 🎉`
+                : `Prestasi "${item.judul}" kamu ditolak. Coba cek lagi & ajukan ulang, ya.`;
+            const pesan = item.catatanAdmin ? item.catatanAdmin : pesanDefault;
+
+            const warnaKelas = disetujui ? 'text-emerald-600' : 'text-rose-600';
+            const iconWrapClass = disetujui ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600';
+            const iconClass = disetujui ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark';
+            const judulToast = disetujui ? 'Prestasi Disetujui!' : 'Prestasi Ditolak';
+
+            const toastId = `toast-status-prestasi-${item.id}-${Date.now()}`;
+            const toast = document.createElement('div');
+            toast.className = 'notif-toast-ditarik' + (disetujui ? ' notif-toast-hijau' : '');
+            toast.id = toastId;
+            toast.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <div class="w-9 h-9 rounded-lg ${iconWrapClass} flex items-center justify-center flex-shrink-0">
+                        <i class="${iconClass}"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-extrabold text-slate-900 dark:text-slate-100">${judulToast}</p>
+                        <p class="text-[11px] font-bold ${warnaKelas} mt-0.5"><i class="fa-solid fa-chalkboard-user mr-1"></i>${namaAdmin}</p>
+                        <p class="text-[11px] ${warnaKelas} mt-1 leading-relaxed font-semibold">${pesan}</p>
+                    </div>
+                    <button onclick="document.getElementById('${toastId}')?.remove()" class="text-slate-300 hover:text-slate-500 flex-shrink-0">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>`;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                const el = document.getElementById(toastId);
+                if (!el) return;
+                el.classList.add('notif-keluar');
+                setTimeout(() => el.remove(), 300);
+            }, 8000);
+        }
+
+        function cekNotifBaruStatusPrestasi() {
+            const list = getPrestasiData();
+            const sebelumnya = getStatusPrestasiTerlihat();
+            const sekarang = {};
+            list.forEach(item => { sekarang[item.id] = item.status; });
+
+            // Baseline pertama kali (belum ada snapshot sama sekali): cuma simpan,
+            // JANGAN munculkan toast, supaya prestasi lama yang sudah lebih dulu
+            // disetujui/ditolak tidak ikut "muncul lagi" seolah baru terjadi.
+            if (sebelumnya !== null) {
+                list.forEach(item => {
+                    const statusLama = sebelumnya[item.id];
+                    const jadiFinal = (item.status === 'disetujui' || item.status === 'ditolak');
+                    if (jadiFinal && statusLama !== undefined && statusLama !== item.status) {
+                        tampilkanToastStatusPrestasi(item);
+                    }
+                });
+            }
+            saveStatusPrestasiTerlihat(sekarang);
+        }
+
+        /* ================= ZOOM FOTO BUKTI PRESTASI ================= */
+        let _zoomFotoState = { scale: 1, x: 0, y: 0, dragging: false, mulaiX: 0, mulaiY: 0 };
+
+        function bukaZoomFotoPrestasi(url, judul) {
+            const modal = document.getElementById('modal-zoom-foto-prestasi');
+            const img = document.getElementById('img-zoom-foto-prestasi');
+            const labelJudul = document.getElementById('judul-zoom-foto-prestasi');
+            if (!modal || !img) return;
+
+            img.src = url;
+            if (labelJudul) labelJudul.innerText = judul || '';
+            _zoomFotoState = { scale: 1, x: 0, y: 0, dragging: false, mulaiX: 0, mulaiY: 0 };
+            terapkanTransformZoomPrestasi();
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function tutupZoomFotoPrestasi() {
+            const modal = document.getElementById('modal-zoom-foto-prestasi');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+
+        function terapkanTransformZoomPrestasi() {
+            const img = document.getElementById('img-zoom-foto-prestasi');
+            const label = document.getElementById('label-persen-zoom-prestasi');
+            if (img) img.style.transform = `translate(${_zoomFotoState.x}px, ${_zoomFotoState.y}px) scale(${_zoomFotoState.scale})`;
+            if (label) label.innerText = `${Math.round(_zoomFotoState.scale * 100)}%`;
+        }
+
+        function zoomFotoPrestasi(delta) {
+            const skalaBaru = Math.min(4, Math.max(1, +(_zoomFotoState.scale + delta).toFixed(2)));
+            _zoomFotoState.scale = skalaBaru;
+            if (skalaBaru === 1) { _zoomFotoState.x = 0; _zoomFotoState.y = 0; } // balik ke 100% -> posisi tengah lagi
+            terapkanTransformZoomPrestasi();
+        }
+
+        function resetZoomFotoPrestasi() {
+            _zoomFotoState = { ..._zoomFotoState, scale: 1, x: 0, y: 0 };
+            terapkanTransformZoomPrestasi();
+        }
+
+        // Scroll mouse / trackpad untuk zoom in-out saat kursor ada di atas foto.
+        document.addEventListener('wheel', (e) => {
+            const viewport = document.getElementById('viewport-zoom-foto-prestasi');
+            const modal = document.getElementById('modal-zoom-foto-prestasi');
+            if (!viewport || !modal || modal.classList.contains('hidden')) return;
+            if (!e.target.closest('#viewport-zoom-foto-prestasi')) return;
+            e.preventDefault();
+            zoomFotoPrestasi(e.deltaY < 0 ? 0.2 : -0.2);
+        }, { passive: false });
+
+        // Klik-tahan-geser (mouse) & sentuh-geser (touchscreen HP) untuk menggeser
+        // foto yang sudah di-zoom, plus dobel klik untuk reset cepat ke 100%.
+        document.addEventListener('DOMContentLoaded', () => {
+            const viewport = document.getElementById('viewport-zoom-foto-prestasi');
+            if (!viewport) return;
+
+            const mulaiGeser = (clientX, clientY) => {
+                if (_zoomFotoState.scale <= 1) return;
+                _zoomFotoState.dragging = true;
+                _zoomFotoState.mulaiX = clientX - _zoomFotoState.x;
+                _zoomFotoState.mulaiY = clientY - _zoomFotoState.y;
+                viewport.classList.add('zoom-dragging');
+                document.getElementById('img-zoom-foto-prestasi')?.classList.add('zoom-tanpa-transisi');
+            };
+            const prosesGeser = (clientX, clientY) => {
+                if (!_zoomFotoState.dragging) return;
+                _zoomFotoState.x = clientX - _zoomFotoState.mulaiX;
+                _zoomFotoState.y = clientY - _zoomFotoState.mulaiY;
+                terapkanTransformZoomPrestasi();
+            };
+            const akhiriGeser = () => {
+                _zoomFotoState.dragging = false;
+                viewport.classList.remove('zoom-dragging');
+                document.getElementById('img-zoom-foto-prestasi')?.classList.remove('zoom-tanpa-transisi');
+            };
+
+            viewport.addEventListener('mousedown', (e) => mulaiGeser(e.clientX, e.clientY));
+            window.addEventListener('mousemove', (e) => prosesGeser(e.clientX, e.clientY));
+            window.addEventListener('mouseup', akhiriGeser);
+
+            viewport.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) mulaiGeser(e.touches[0].clientX, e.touches[0].clientY);
+            }, { passive: true });
+            viewport.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1) prosesGeser(e.touches[0].clientX, e.touches[0].clientY);
+            }, { passive: true });
+            viewport.addEventListener('touchend', akhiriGeser);
+
+            viewport.addEventListener('dblclick', () => {
+                _zoomFotoState.scale === 1 ? zoomFotoPrestasi(1) : resetZoomFotoPrestasi();
+            });
+        });
+
         function getJumlahPrestasiDisetujui() {
             return getPrestasiData().filter(p => p.status === 'disetujui').length;
         }
@@ -3015,7 +3323,7 @@
                 const row = document.createElement('div');
                 row.className = 'flex items-center gap-4 p-3 rounded-xl border border-slate-200/80';
                 row.innerHTML = `
-                    <img src="${item.foto}" class="w-14 h-14 rounded-lg object-cover flex-shrink-0 border border-slate-200" alt="Bukti ${item.judul}">
+                    <img src="${item.foto}" title="Klik untuk perbesar" class="thumb-bukti-prestasi w-14 h-14 rounded-lg object-cover flex-shrink-0 border border-slate-200" alt="Bukti ${item.judul}">
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-bold text-slate-900 truncate">${item.judul}</p>
                         <p class="text-[11px] text-slate-400">${item.jenis === 'piala' ? 'Piala' : 'Sertifikat'} &middot; diajukan ${item.tanggalAjukan}</p>
@@ -3023,6 +3331,12 @@
                     </div>
                     <span class="text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0 self-start ${status.kelas}">${status.teks}</span>
                 `;
+                // Pakai addEventListener + closure (bukan atribut onclick) supaya foto
+                // base64 yang bisa panjang tidak perlu diduplikasi lagi ke dalam HTML string.
+                const imgThumb = row.querySelector('.thumb-bukti-prestasi');
+                if (imgThumb) {
+                    imgThumb.addEventListener('click', () => bukaZoomFotoPrestasi(item.foto, item.judul));
+                }
                 container.appendChild(row);
             });
         }
@@ -3058,9 +3372,16 @@
                     status: 'menunggu'
                 });
                 savePrestasiData(list);
+                // Baseline status prestasi ini langsung disimpan sebagai 'menunggu'
+                // supaya nanti saat guru approve/tolak, perubahan statusnya kebaca
+                // sebagai perubahan baru dan toast notifikasinya muncul.
+                const snapshotStatus = getStatusPrestasiTerlihat() || {};
+                snapshotStatus[list[list.length - 1].id] = 'menunggu';
+                saveStatusPrestasiTerlihat(snapshotStatus);
+
                 document.getElementById('form-ajukan-prestasi').reset();
                 renderKoleksiBorder();
-                triggerDynamicIsland('Prestasi diajukan! Menunggu konfirmasi guru/admin.');
+                tampilkanSuksesPrestasi(`Bukti "${judul}" berhasil dikirim dan sedang menunggu konfirmasi dari guru/admin.`);
             };
             reader.readAsDataURL(file);
         }
