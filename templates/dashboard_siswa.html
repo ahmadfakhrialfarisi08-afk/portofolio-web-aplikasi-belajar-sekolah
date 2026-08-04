@@ -128,6 +128,9 @@
         html.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.18) !important; }
         html.dark .bg-rose-100 { background-color: rgba(244, 63, 94, 0.18) !important; }
         html.dark .bg-blue-100 { background-color: rgba(59, 130, 246, 0.18) !important; }
+        html.dark .bg-purple-50 { background-color: rgba(168, 85, 247, 0.12) !important; }
+        html.dark .border-purple-200 { border-color: rgba(168, 85, 247, 0.35) !important; }
+        html.dark .text-purple-600 { color: #c084fc !important; }
 
         html.dark input, html.dark textarea { background-color: #0f172a !important; color: #e2e8f0 !important; }
         html.dark ::placeholder { color: #64748b !important; }
@@ -439,6 +442,42 @@
         </div>
 
         <div class="p-4 border-t border-slate-100 space-y-3">
+            <!-- ============================================================
+                 PANEL DUMMY LEADERBOARD (khusus kontrol dari sidebar)
+                 Akun dummy disimpan sebagai entri biasa di leaderboard quiz
+                 (localStorage, key sama dgn KEY_QUIZ_DATA) tapi diberi flag
+                 dummy:true supaya bisa dibedakan & dikelola (tambah/hapus)
+                 lewat panel ini tanpa ikut memicu notif "ditikung".
+                 ============================================================ -->
+            <div class="bg-purple-50 border border-purple-200 rounded-2xl overflow-hidden">
+                <button onclick="toggleDummyPanel()" class="w-full flex items-center justify-between px-3.5 py-3 text-left">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-user-astronaut text-purple-600 text-sm"></i>
+                        <h4 class="text-xs font-bold text-slate-900">Panel Dummy Leaderboard</h4>
+                    </div>
+                    <i id="icon-toggle-dummy-panel" class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform"></i>
+                </button>
+                <div id="panel-dummy-leaderboard" class="hidden px-3.5 pb-3.5 space-y-2.5">
+                    <form onsubmit="tambahDummyLeaderboard(event)" class="space-y-1.5">
+                        <input id="dummy-nama" type="text" placeholder="Nama akun dummy" required maxlength="60" class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 bg-white">
+                        <input id="dummy-kelas" type="text" placeholder="Kelas (mis. XII TKJ 2)" maxlength="40" class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 bg-white">
+                        <div class="grid grid-cols-2 gap-1.5">
+                            <select id="dummy-level" class="w-full p-2 text-xs border border-slate-200 rounded-lg bg-white">
+                                <option value="easy">Easy</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                            <input id="dummy-skor" type="number" placeholder="Skor" required min="0" max="9999" class="w-full p-2 text-xs border border-slate-200 rounded-lg bg-white">
+                        </div>
+                        <button type="submit" class="w-full py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-plus text-[10px]"></i> Tambah ke Leaderboard
+                        </button>
+                    </form>
+                    <div id="list-dummy-leaderboard" class="space-y-1.5 max-h-48 overflow-y-auto"></div>
+                    <p class="text-[9px] text-slate-400 text-center leading-relaxed">Akun dummy cuma tersimpan di browser ini (localStorage) &mdash; tidak terkirim ke siapapun.</p>
+                </div>
+            </div>
+
             <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl">
                 <div class="flex items-center gap-2 mb-2">
                     <i class="fa-solid fa-comment-dots text-blue-600 text-sm"></i>
@@ -461,7 +500,7 @@
 
     <div class="flex-1 flex flex-col h-screen overflow-y-auto">
         
-        <header class="h-20 bg-white/85 backdrop-blur-md border-b border-slate-200/80 px-8 flex items-center justify-between sticky top-0 z-10">
+        <header class="h-20 bg-white/85 backdrop-blur-md border-b border-slate-200/80 px-8 flex items-center justify-between sticky top-0 z-30">
             <div class="flex items-center gap-3 transition-all duration-500">
                 <button id="btn-toggle-sidebar" onclick="toggleSidebarMobile()" title="Buka menu" class="md:hidden p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all flex-shrink-0">
                     <i class="fa-solid fa-bars"></i>
@@ -2451,6 +2490,7 @@
             renderLiveTaskContent(); // render awal: langsung munculin status tugas terdekat saat halaman baru dibuka
             checkTaskBadgeStatus();
             updateBerandaPoinQuiz();
+            renderPanelDummyLeaderboard();
             pastikanBaselineSeenIdsQuiz();
             terapkanBorderKeAvatar();
             cekPembaruanTugasRealtime(); // set snapshot awal sebagai baseline
@@ -2847,6 +2887,112 @@
                     </div>
                 `;
                 container.appendChild(baris);
+            });
+        }
+
+        /* ============================================================
+           PANEL DUMMY LEADERBOARD (dikontrol dari sidebar)
+           Akun dummy ditambahkan sebagai entri biasa di
+           data.leaderboard (key sama dgn KEY_QUIZ_DATA milik kelas
+           aktif) tapi diberi flag dummy:true, supaya:
+           - Tetap tampil normal & bisa "ditikung"/menikung di
+             renderLeaderboardQuiz() seperti entri asli.
+           - Bisa difilter & dikelola (hapus) khusus lewat panel ini.
+           - Tidak memicu notif "ditikung" saat baru ditambahkan
+             (langsung ditandai sudah dilihat, sama seperti entri
+             milik sendiri).
+           ============================================================ */
+
+        function toggleDummyPanel() {
+            const panel = document.getElementById('panel-dummy-leaderboard');
+            const icon = document.getElementById('icon-toggle-dummy-panel');
+            if (!panel) return;
+            panel.classList.toggle('hidden');
+            if (icon) icon.classList.toggle('rotate-180');
+        }
+
+        function tambahDummyLeaderboard(event) {
+            event.preventDefault();
+            const nama = document.getElementById('dummy-nama').value.trim();
+            const kelas = document.getElementById('dummy-kelas').value.trim() || '-';
+            const level = document.getElementById('dummy-level').value;
+            const skorInput = document.getElementById('dummy-skor').value;
+            const skor = parseInt(skorInput, 10);
+            if (!nama || isNaN(skor) || skor < 0) return;
+
+            // Perkiraan kasar jumlah benar dari skor, cuma buat tampilan
+            // "x/5 benar" di baris leaderboard supaya wajar dilihat.
+            const poinDasar = QUIZ_CONFIG[level].poinDasar;
+            const benarPerkiraan = Math.max(0, Math.min(5, Math.round(skor / (poinDasar * 1.3))));
+
+            const data = getQuizData();
+            data.leaderboard = data.leaderboard || [];
+            const entriDummy = {
+                id: `dummy_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                nama,
+                kelas,
+                foto: `https://ui-avatars.com/api/?name=${encodeURIComponent(nama)}&background=e0e7ff&color=3730a3&size=120`,
+                border: '../static/img/border_polos.png',
+                borderTitle: '🔰 Pemula',
+                efekNama: '',
+                badgeDev: '',
+                level,
+                skor,
+                benar: benarPerkiraan,
+                total: 5,
+                tanggal: new Date().toISOString(),
+                dummy: true
+            };
+            data.leaderboard.push(entriDummy);
+            saveQuizData(data);
+            tandaiIdSudahDilihatQuiz(entriDummy.id); // dummy baru jangan ikut memicu notif "ditikung"
+
+            document.getElementById('dummy-nama').value = '';
+            document.getElementById('dummy-kelas').value = '';
+            document.getElementById('dummy-skor').value = '';
+
+            renderPanelDummyLeaderboard();
+            renderLeaderboardQuiz();
+        }
+
+        function hapusDummyLeaderboard(id) {
+            const data = getQuizData();
+            data.leaderboard = (data.leaderboard || []).filter(e => e.id !== id);
+            saveQuizData(data);
+            renderPanelDummyLeaderboard();
+            renderLeaderboardQuiz();
+        }
+
+        function renderPanelDummyLeaderboard() {
+            const container = document.getElementById('list-dummy-leaderboard');
+            if (!container) return;
+
+            const data = getQuizData();
+            const daftarDummy = (data.leaderboard || [])
+                .filter(e => e.dummy)
+                .sort((a, b) => b.skor - a.skor);
+
+            if (!daftarDummy.length) {
+                container.innerHTML = `<p class="text-[10px] text-slate-400 text-center py-2">Belum ada akun dummy. Tambahkan lewat form di atas.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            daftarDummy.forEach(entri => {
+                const cfg = QUIZ_CONFIG[entri.level];
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between gap-2 p-2 bg-white border border-slate-200 rounded-lg';
+                row.innerHTML = `
+                    <div class="min-w-0">
+                        <p class="text-[11px] font-bold text-slate-800 truncate">${entri.nama}</p>
+                        <p class="text-[9px] text-slate-400 truncate">${entri.kelas} &middot; <span class="px-1 py-0.5 rounded ${cfg.warnaBadge} font-semibold">${cfg.label}</span> &middot; ${entri.skor} poin</p>
+                    </div>
+                    <button class="text-rose-500 hover:text-rose-700 flex-shrink-0 px-1.5 py-1" title="Hapus akun dummy ini">
+                        <i class="fa-solid fa-trash text-[11px]"></i>
+                    </button>
+                `;
+                row.querySelector('button').addEventListener('click', () => hapusDummyLeaderboard(entri.id));
+                container.appendChild(row);
             });
         }
 
