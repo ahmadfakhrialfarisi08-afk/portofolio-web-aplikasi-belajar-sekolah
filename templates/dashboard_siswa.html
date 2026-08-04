@@ -2759,6 +2759,27 @@
             renderLeaderboardQuiz();
         }
 
+        // Badge medali "buatan" (bukan cuma emoji polos) khusus juara 1/2/3:
+        // 1 = emas, 2 = silver/perak, 3 = bronze/perunggu. Peringkat 4 dst
+        // TIDAK dikasih medali sama sekali, cuma nomor urut biasa (lihat
+        // pemanggilannya di renderLeaderboardQuiz).
+        const GAYA_MEDALI = {
+            1: { gradasi: 'from-yellow-400 via-amber-300 to-yellow-500', cincin: 'ring-amber-200', teks: 'text-amber-900' },
+            2: { gradasi: 'from-slate-300 via-slate-100 to-slate-400',   cincin: 'ring-slate-200', teks: 'text-slate-700' },
+            3: { gradasi: 'from-orange-400 via-orange-300 to-amber-600', cincin: 'ring-orange-200', teks: 'text-orange-900' }
+        };
+        function buatBadgeMedali(peringkat) {
+            const gaya = GAYA_MEDALI[peringkat];
+            if (!gaya) {
+                // Peringkat 4 dan seterusnya: nomor urut biasa, tanpa medali.
+                return `<span class="w-6 h-6 text-center font-bold text-sm text-slate-500 flex-shrink-0 flex items-center justify-center">${peringkat}</span>`;
+            }
+            return `
+                <span class="relative w-6 h-6 flex-shrink-0 rounded-full bg-gradient-to-br ${gaya.gradasi} ring-2 ${gaya.cincin} shadow-sm flex items-center justify-center">
+                    <i class="fa-solid fa-medal text-[11px] ${gaya.teks}"></i>
+                </span>`;
+        }
+
         function renderLeaderboardQuiz() {
             const data = getQuizData();
             let daftar = [...(data.leaderboard || [])];
@@ -2780,7 +2801,6 @@
             }
             kosongState.classList.add('hidden');
 
-            const medali = ['🥇', '🥈', '🥉'];
             daftar.forEach((entri, i) => {
                 const cfg = QUIZ_CONFIG[entri.level];
                 const namaEntri = entri.nama;
@@ -2810,7 +2830,7 @@
                 baris.className = `flex items-center justify-between gap-3 p-3 rounded-xl border ${i < 3 ? 'border-amber-200 bg-amber-50/50' : 'border-slate-100 bg-slate-50'} ${iniSayaSendiri ? 'ring-1 ring-purple-300' : ''}`;
                 baris.innerHTML = `
                     <div class="flex items-center gap-3 min-w-0">
-                        <span class="w-6 text-center font-bold text-sm text-slate-500 flex-shrink-0">${medali[i] || (i + 1)}</span>
+                        ${buatBadgeMedali(i + 1)}
                         <div class="profile-wrapper w-10 h-10 flex-shrink-0">
                             <img src="${fotoEntri}" class="user-avatar" alt="Avatar ${namaEntri}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120'">
                             <img src="${borderEntri}" class="user-border" alt="Border ${namaEntri}">
