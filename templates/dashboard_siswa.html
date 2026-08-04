@@ -481,7 +481,7 @@
                                     <i class="fa-solid fa-crown text-[8px] mr-0.5"></i> DEV
                                 </span>
                             </h4>
-                            <p class="text-xs text-slate-400">Siswa • XII TKJ 3/TAV</p>
+                            <p id="header-user-kelas" class="text-xs text-slate-400">Siswa • XII TKJ 3/TAV</p>
                         </div>
                     </div>
 
@@ -2440,7 +2440,6 @@
            ============================================================ */
 
         const NAMA_PEMAIN_QUIZ = 'AHMAD FAKHRI AL FARISI';
-        const KELAS_TAMPIL_QUIZ = 'XII TKJ 3';
         const KEY_QUIZ_DATA = `quiz_data_${KELAS_AKTIF_SISWA}`;
         const AVATAR_DEFAULT_QUIZ = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120';
 
@@ -2449,6 +2448,19 @@
         // bukan foto lama yang sudah diganti).
         function getFotoProfilAktifQuiz() {
             return localStorage.getItem('student_profile_photo') || AVATAR_DEFAULT_QUIZ;
+        }
+
+        // Ambil kelas LANGSUNG dari teks di kartu profil header (id="header-user-kelas"),
+        // bukan angka yang ditulis ulang manual di sini — supaya kelas yang tersimpan
+        // di tiap entri leaderboard selalu 100% sama dengan yang tampil di profil,
+        // termasuk kalau formatnya "XII TKJ 3/TAV" (bukan cuma "XII TKJ 3").
+        function getKelasAktifQuiz() {
+            const el = document.getElementById('header-user-kelas');
+            if (!el) return KELAS_AKTIF_SISWA.replace(/_/g, ' ');
+            // Teksnya berformat "Siswa • XII TKJ 3/TAV" -> ambil bagian setelah "•" saja
+            const teks = el.textContent || '';
+            const bagian = teks.split('•');
+            return (bagian[1] || teks).trim();
         }
 
         const QUIZ_CONFIG = {
@@ -2631,13 +2643,20 @@
             data.bestByLevel = data.bestByLevel || { easy: 0, medium: 0, hard: 0 };
             if (skor > (data.bestByLevel[level] || 0)) data.bestByLevel[level] = skor;
 
+            // Simpan dulu skor terbaru SEBELUM ambil border, supaya kalau skor ini
+            // baru saja membuka border/title tier berikutnya, entri leaderboard
+            // langsung sinkron pakai border+title yang paling baru itu juga.
+            saveQuizData(data);
+            const borderAktif = getBorderTerpakai();
+
             data.leaderboard = data.leaderboard || [];
             const entriBaru = {
                 id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
                 nama: NAMA_PEMAIN_QUIZ,
-                kelas: KELAS_TAMPIL_QUIZ,
+                kelas: getKelasAktifQuiz(),
                 foto: getFotoProfilAktifQuiz(),
-                border: getBorderTerpakai().file,
+                border: borderAktif.file,
+                borderTitle: borderAktif.rank,
                 level,
                 skor,
                 benar,
@@ -2730,6 +2749,7 @@
                 const namaEntri = entri.nama;
                 const fotoEntri = entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120`;
                 const borderEntri = entri.border || '../static/img/border_polos.png';
+                const titleEntri = entri.borderTitle || '🔰 Pemula';
                 const kelasEntri = entri.kelas || '-';
                 const iniSayaSendiri = namaEntri === NAMA_PEMAIN_QUIZ;
 
@@ -2738,13 +2758,14 @@
                 baris.innerHTML = `
                     <div class="flex items-center gap-3 min-w-0">
                         <span class="w-6 text-center font-bold text-sm text-slate-500 flex-shrink-0">${medali[i] || (i + 1)}</span>
-                        <div class="profile-wrapper w-9 h-9 flex-shrink-0">
+                        <div class="profile-wrapper w-10 h-10 flex-shrink-0">
                             <img src="${fotoEntri}" class="user-avatar" alt="Avatar ${namaEntri}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120'">
                             <img src="${borderEntri}" class="user-border" alt="Border ${namaEntri}">
                         </div>
                         <div class="min-w-0">
                             <p class="text-xs font-bold text-slate-800 truncate">${namaEntri}${iniSayaSendiri ? ' <span class="text-purple-500">(Kamu)</span>' : ''}</p>
-                            <p class="text-[10px] text-slate-400 truncate">Kelas ${kelasEntri} &middot; ${entri.benar}/${entri.total} benar &middot; ${new Date(entri.tanggal).toLocaleDateString('id-ID')}</p>
+                            <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200 truncate max-w-full">${titleEntri}</span>
+                            <p class="text-[10px] text-slate-400 truncate mt-0.5">Kelas ${kelasEntri} &middot; ${entri.benar}/${entri.total} benar &middot; ${new Date(entri.tanggal).toLocaleDateString('id-ID')}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2 flex-shrink-0">
@@ -2846,6 +2867,7 @@
             // (snapshot foto profil & border yang sedang dia pakai saat main quiz).
             const fotoPenikung = entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120`;
             const borderPenikung = entri.border || '../static/img/border_polos.png';
+            const titlePenikung = entri.borderTitle || '🔰 Pemula';
             const kelasPenikung = entri.kelas ? ` &middot; Kelas ${entri.kelas}` : '';
             const pesanRebut = PESAN_REBUT_POSISI_QUIZ[Math.floor(Math.random() * PESAN_REBUT_POSISI_QUIZ.length)];
 
@@ -2854,13 +2876,14 @@
             toast.id = `toast-${idToast}`;
             toast.innerHTML = `
                 <div class="flex items-start gap-3">
-                    <div class="profile-wrapper w-9 h-9 flex-shrink-0">
+                    <div class="profile-wrapper w-10 h-10 flex-shrink-0">
                         <img src="${fotoPenikung}" class="user-avatar" alt="Avatar ${entri.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120'">
                         <img src="${borderPenikung}" class="user-border" alt="Border ${entri.nama}">
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-extrabold text-slate-900 dark:text-slate-100">😱 Kamu Ditikung di Leaderboard!</p>
                         <p class="text-[11px] font-bold text-purple-600 mt-0.5"><i class="fa-solid fa-bolt mr-1"></i>${entri.nama}${kelasPenikung} &middot; ${cfg.label} &middot; ${entri.skor} poin</p>
+                        <span class="inline-block mt-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200">${titlePenikung}</span>
                         <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">${entri.nama} baru saja menyalip skor terbaikmu di level ${cfg.label}${posisi ? `, posisimu sekarang turun ke peringkat #${posisi}` : ''}.</p>
                         <p class="text-[11px] font-semibold text-slate-700 mt-1 leading-relaxed">${pesanRebut}</p>
                         <button onclick="switchTab('quiz'); tutupToastDitikungQuiz('${idToast}')" class="mt-2 text-[11px] font-bold text-purple-600 hover:underline">Balas Sekarang &rarr;</button>
