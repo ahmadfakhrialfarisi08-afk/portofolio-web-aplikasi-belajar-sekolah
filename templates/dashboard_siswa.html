@@ -3266,7 +3266,7 @@
 
             card.innerHTML = `
                 <div class="profile-wrapper w-20 h-20 mb-3 relative">
-                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar${!terbuka ? ' grayscale' : ''}" alt="Preview Avatar">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23000'/%3E%3C/svg%3E" class="user-avatar" alt="Preview Avatar">
                     <img src="${border.file}" class="user-border" alt="Border_${border.nama}">
                     ${!terbuka ? '<div class="absolute inset-0 flex items-center justify-center bg-slate-900/40 rounded-full"><i class="fa-solid fa-lock text-white text-lg"></i></div>' : ''}
                 </div>
