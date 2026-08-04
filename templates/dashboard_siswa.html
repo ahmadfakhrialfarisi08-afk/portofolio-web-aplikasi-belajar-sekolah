@@ -44,6 +44,38 @@
             30%, 100% { top: -50px; left: 85px; }
         }
 
+        /* ============================================================
+           EFEK NAMA (mengikuti tier border yang sedang dipakai siswa)
+           Dipakai bareng di: header profil, Quiz & Leaderboard, notif
+           "ditikung" — supaya efek nama selalu sinkron dg border aktif.
+           ============================================================ */
+        @keyframes shimmerNama { to { background-position: 200% center; } }
+
+        .efek-nama-perak {
+            background: linear-gradient(90deg, #64748b, #f1f5f9, #94a3b8, #f1f5f9, #64748b);
+            background-size: 200% auto;
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            animation: shimmerNama 3s linear infinite; font-weight: 800;
+        }
+        .efek-nama-emas, .gold-name {
+            background: linear-gradient(90deg, #b45309, #fde68a, #f59e0b, #fde68a, #b45309);
+            background-size: 200% auto;
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            animation: shimmerNama 2.5s linear infinite; font-weight: 800;
+        }
+        .efek-nama-permata {
+            background: linear-gradient(90deg, #06b6d4, #a78bfa, #f472b6, #a78bfa, #06b6d4);
+            background-size: 200% auto;
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            animation: shimmerNama 3s linear infinite; font-weight: 800;
+        }
+        .efek-nama-admin {
+            background: linear-gradient(90deg, #f59e0b, #fef08a, #facc15, #fef08a, #f59e0b);
+            background-size: 200% auto;
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            animation: shimmerNama 2s linear infinite; font-weight: 800;
+        }
+
         @keyframes borderLightningShine {
             0% { border-color: rgba(202, 138, 4, 0.6); box-shadow: 0 0 10px rgba(234, 179, 8, 0.5), inset 0 0 5px rgba(234, 179, 8, 0.3); }
             50% { border-color: rgba(250, 204, 21, 1); box-shadow: 0 0 25px rgba(250, 204, 21, 0.9), 0 0 10px rgba(234, 179, 8, 0.8), inset 0 0 10px rgba(250, 204, 21, 0.5); }
@@ -475,11 +507,9 @@
                         </div>
 
                         <div class="hidden sm:block text-left">
-                            <h4 class="text-sm leading-snug gold-name flex items-center gap-1">
-                                AHMAD FAKHRI AL FARISI
-                                <span class="badge-dev px-2 py-0.5 text-[10px] font-bold bg-amber-400 text-slate-900 rounded-md shadow-sm">
-                                    <i class="fa-solid fa-crown text-[8px] mr-0.5"></i> DEV
-                                </span>
+                            <h4 class="text-sm leading-snug flex items-center gap-1">
+                                <span id="header-user-nama-efek">AHMAD FAKHRI AL FARISI</span>
+                                <span id="header-user-badge-dev"></span>
                             </h4>
                             <p id="header-user-kelas" class="text-xs text-slate-400">Siswa • XII TKJ 3/TAV</p>
                         </div>
@@ -2657,6 +2687,8 @@
                 foto: getFotoProfilAktifQuiz(),
                 border: borderAktif.file,
                 borderTitle: borderAktif.rank,
+                efekNama: getEfekNamaClass(borderAktif),
+                badgeDev: getBadgeDevHtml(borderAktif),
                 level,
                 skor,
                 benar,
@@ -2752,6 +2784,13 @@
                 const titleEntri = entri.borderTitle || '🔰 Pemula';
                 const kelasEntri = entri.kelas || '-';
                 const iniSayaSendiri = namaEntri === NAMA_PEMAIN_QUIZ;
+                // Fallback buat entri lama yang belum punya efekNama/badgeDev
+                // tersimpan: dihitung ulang dari border aktif SAYA SENDIRI kalau
+                // entri ini memang milik saya, atau dikosongkan (nama polos) kalau
+                // entri milik pemain lain yang datanya belum tersinkron.
+                const efekNamaEntri = entri.efekNama || (iniSayaSendiri ? getEfekNamaClass(getBorderTerpakai()) : '');
+                const badgeDevEntri = entri.badgeDev || (iniSayaSendiri ? getBadgeDevHtml(getBorderTerpakai()) : '');
+                const kelasNamaEntri = `text-xs font-bold truncate ${efekNamaEntri || 'text-slate-800'}`;
 
                 const baris = document.createElement('div');
                 baris.className = `flex items-center justify-between gap-3 p-3 rounded-xl border ${i < 3 ? 'border-amber-200 bg-amber-50/50' : 'border-slate-100 bg-slate-50'} ${iniSayaSendiri ? 'ring-1 ring-purple-300' : ''}`;
@@ -2763,7 +2802,7 @@
                             <img src="${borderEntri}" class="user-border" alt="Border ${namaEntri}">
                         </div>
                         <div class="min-w-0">
-                            <p class="text-xs font-bold text-slate-800 truncate">${namaEntri}${iniSayaSendiri ? ' <span class="text-purple-500">(Kamu)</span>' : ''}</p>
+                            <p class="${kelasNamaEntri}">${namaEntri}${badgeDevEntri ? ' ' + badgeDevEntri : ''}${iniSayaSendiri ? ' <span class="text-purple-500">(Kamu)</span>' : ''}</p>
                             <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200 truncate max-w-full">${titleEntri}</span>
                             <p class="text-[10px] text-slate-400 truncate mt-0.5">Kelas ${kelasEntri} &middot; ${entri.benar}/${entri.total} benar &middot; ${new Date(entri.tanggal).toLocaleDateString('id-ID')}</p>
                         </div>
@@ -2868,6 +2907,8 @@
             const fotoPenikung = entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120`;
             const borderPenikung = entri.border || '../static/img/border_polos.png';
             const titlePenikung = entri.borderTitle || '🔰 Pemula';
+            const efekNamaPenikung = entri.efekNama || '';
+            const badgeDevPenikung = entri.badgeDev || '';
             const kelasPenikung = entri.kelas ? ` &middot; Kelas ${entri.kelas}` : '';
             const pesanRebut = PESAN_REBUT_POSISI_QUIZ[Math.floor(Math.random() * PESAN_REBUT_POSISI_QUIZ.length)];
 
@@ -2882,7 +2923,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-extrabold text-slate-900 dark:text-slate-100">😱 Kamu Ditikung di Leaderboard!</p>
-                        <p class="text-[11px] font-bold text-purple-600 mt-0.5"><i class="fa-solid fa-bolt mr-1"></i>${entri.nama}${kelasPenikung} &middot; ${cfg.label} &middot; ${entri.skor} poin</p>
+                        <p class="text-[11px] font-bold mt-0.5"><i class="fa-solid fa-bolt mr-1 text-purple-600"></i><span class="${efekNamaPenikung || 'text-purple-600'}">${entri.nama}</span>${badgeDevPenikung ? ' ' + badgeDevPenikung : ''}<span class="text-purple-600">${kelasPenikung} &middot; ${cfg.label} &middot; ${entri.skor} poin</span></p>
                         <span class="inline-block mt-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200">${titlePenikung}</span>
                         <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">${entri.nama} baru saja menyalip skor terbaikmu di level ${cfg.label}${posisi ? `, posisimu sekarang turun ke peringkat #${posisi}` : ''}.</p>
                         <p class="text-[11px] font-semibold text-slate-700 mt-1 leading-relaxed">${pesanRebut}</p>
@@ -3294,6 +3335,35 @@
                 img.src = border.file;
                 img.alt = `Border_${border.nama}`;
             });
+            terapkanEfekNamaHeader(border);
+        }
+
+        // ===== Efek Nama & Badge (ikut tier border yang sedang dipakai) =====
+        // Dipakai bareng oleh header profil, entri Leaderboard Quiz, dan toast
+        // notif "ditikung" — supaya efek nama SELALU sinkron dengan border/title
+        // yang sedang aktif, bukan cuma warna emas yang di-hardcode di header.
+        function getEfekNamaClass(border) {
+            if (!border) return '';
+            if (border.kategori === 'admin') return 'efek-nama-admin';
+            if (border.tierRank >= 3) return 'efek-nama-permata';
+            if (border.tierRank === 2) return 'efek-nama-emas';
+            if (border.tierRank === 1) return 'efek-nama-perak';
+            return '';
+        }
+
+        function getBadgeDevHtml(border) {
+            if (border && border.kategori === 'admin') {
+                return `<span class="badge-dev px-2 py-0.5 text-[10px] font-bold bg-amber-400 text-slate-900 rounded-md shadow-sm"><i class="fa-solid fa-crown text-[8px] mr-0.5"></i> DEV</span>`;
+            }
+            return '';
+        }
+
+        function terapkanEfekNamaHeader(border) {
+            const elNama = document.getElementById('header-user-nama-efek');
+            const elBadge = document.getElementById('header-user-badge-dev');
+            const kelasEfek = getEfekNamaClass(border);
+            if (elNama) elNama.className = kelasEfek;
+            if (elBadge) elBadge.innerHTML = getBadgeDevHtml(border);
         }
 
         // Keterangan singkat "cara dapetin" yang ditampilkan di bawah tiap kartu border,
