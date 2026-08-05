@@ -88,6 +88,35 @@
             animation: borderLightningShine 1.5s infinite ease-in-out;
         }
 
+        /* Dynamic Island notifikasi header: nongol di tengah, dorong search bar & jam ke samping */
+        #header-left-group,
+        #header-right-group {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #header-left-group.island-push-left {
+            transform: translateX(-46px);
+        }
+        #header-right-group.island-push-right {
+            transform: translateX(46px);
+        }
+        #dynamic-notification-island {
+            display: flex;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            z-index: 40;
+            max-width: min(22rem, calc(100% - 2rem));
+            transform: translate(-50%, -50%) scale(0.3);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        }
+        #dynamic-notification-island.island-active {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
         /* ============================================================
            TAMBAHAN FITUR BARU (tidak mengubah style lama di atas)
            1. Mode Gelap (Dark Mode)
@@ -501,25 +530,26 @@
     <div class="flex-1 flex flex-col h-screen overflow-y-auto">
         
         <header class="h-20 bg-white/85 backdrop-blur-md border-b border-slate-200/80 px-8 flex items-center justify-between sticky top-0 z-30">
-            <div class="flex items-center gap-3 transition-all duration-500">
+            <div class="flex items-center gap-3 transition-all duration-500" id="header-left-group">
                 <button id="btn-toggle-sidebar" onclick="toggleSidebarMobile()" title="Buka menu" class="md:hidden p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all flex-shrink-0">
                     <i class="fa-solid fa-bars"></i>
                 </button>
                 <div class="relative flex items-center bg-slate-50 border border-slate-200/80 rounded-2xl px-3.5 py-1.5 shadow-sm w-48 sm:w-64 transition-all duration-300 dynamic-island-container" id="search-bar-container">
                     <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs mr-2.5"></i>
                     <input type="text" placeholder="Cari nama temenmu ..." class="bg-transparent text-xs text-slate-800 focus:outline-none w-full">
-                    
-                    <div id="dynamic-notification-island" class="absolute left-0 right-0 bg-amber-300 text-slate-900 px-3.5 py-1.5 rounded-2xl border-2 border-amber-500 lightning-border-yellow shadow-lg hidden items-center gap-2 z-20">
-                        <div class="profile-wrapper w-6 h-6 flex-shrink-0">
-                            <img id="island-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar" alt="Avatar">
-                            <img src="../static/img/border_admin.jpg" class="user-border" alt="Border_Admin">
-                        </div>
-                        <span id="island-notification-text" class="text-[11px] font-extrabold text-slate-900 tracking-wide truncate">Notifikasi Aktif</span>
-                    </div>
                 </div>
             </div>
 
-            <div class="flex items-center gap-4">
+            <!-- Dynamic Island notifikasi: nangkring di tengah header, antara search bar & jam realtime -->
+            <div id="dynamic-notification-island" class="items-center gap-2 bg-amber-300 text-slate-900 px-3.5 py-1.5 rounded-2xl border-2 border-amber-500 lightning-border-yellow shadow-lg">
+                <div class="profile-wrapper w-6 h-6 flex-shrink-0">
+                    <img id="island-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar" alt="Avatar">
+                    <img src="../static/img/border_admin.jpg" class="user-border" alt="Border_Admin">
+                </div>
+                <span id="island-notification-text" class="text-[11px] font-extrabold text-slate-900 tracking-wide truncate">Notifikasi Aktif</span>
+            </div>
+
+            <div class="flex items-center gap-4" id="header-right-group">
                 <div class="flex flex-col items-start justify-center bg-slate-50 border border-slate-200/80 px-4 py-1.5 rounded-2xl shadow-sm transition-all duration-300" id="header-clock-container">
                     <div class="flex items-center gap-2">
                         <i class="fa-regular fa-clock text-blue-600 text-xs animate-pulse"></i>
@@ -1076,6 +1106,8 @@
             const notifText = document.getElementById('island-notification-text');
             const islandAvatar = document.getElementById('island-user-avatar');
             const headerAvatar = document.getElementById('header-user-avatar');
+            const leftGroup = document.getElementById('header-left-group');
+            const rightGroup = document.getElementById('header-right-group');
 
             if (islandAvatar && headerAvatar) {
                 islandAvatar.src = headerAvatar.src;
@@ -1086,12 +1118,21 @@
             }
 
             if (notifIsland) {
-                notifIsland.classList.remove('hidden');
-                notifIsland.classList.add('flex');
+                // kalau ada notif sebelumnya yang lagi nunggu nutup, batalin dulu
+                if (notifIsland._islandCloseTimer) {
+                    clearTimeout(notifIsland._islandCloseTimer);
+                }
 
-                setTimeout(() => {
-                    notifIsland.classList.remove('flex');
-                    notifIsland.classList.add('hidden');
+                // buka: search bar & jam kebelah, notif mekar di tengah
+                notifIsland.classList.add('island-active');
+                if (leftGroup) leftGroup.classList.add('island-push-left');
+                if (rightGroup) rightGroup.classList.add('island-push-right');
+
+                notifIsland._islandCloseTimer = setTimeout(() => {
+                    // nutup: notif ciut, search bar & jam balik nempel normal
+                    notifIsland.classList.remove('island-active');
+                    if (leftGroup) leftGroup.classList.remove('island-push-left');
+                    if (rightGroup) rightGroup.classList.remove('island-push-right');
                 }, 5000);
             }
         }
