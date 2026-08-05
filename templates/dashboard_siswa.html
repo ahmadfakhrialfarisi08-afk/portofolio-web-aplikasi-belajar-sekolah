@@ -3400,7 +3400,7 @@
                     <div class="flex items-center gap-3 min-w-0">
                         ${buatBadgeMedali(i + 1)}
                         <div class="profile-wrapper w-10 h-10 flex-shrink-0">
-                            <img src="${fotoEntri}" class="user-avatar" alt="Avatar ${namaEntri}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120'">
+                            <img src="${fotoEntri}" class="user-avatar avatar-leaderboard-zoom cursor-zoom-in transition-transform hover:scale-110" title="Klik untuk perbesar foto" alt="Avatar ${namaEntri}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120'">
                             <img src="${borderEntri}" class="user-border" alt="Border ${namaEntri}">
                         </div>
                         <div class="min-w-0">
@@ -3414,6 +3414,17 @@
                         <span class="text-sm font-extrabold text-slate-900">${entri.skor}</span>
                     </div>
                 `;
+
+                // Klik foto profil di leaderboard -> perbesar (pakai ulang modal zoom
+                // yang sama dengan zoom foto bukti prestasi, cuma beda sumber foto).
+                const imgAvatarLeaderboard = baris.querySelector('.avatar-leaderboard-zoom');
+                if (imgAvatarLeaderboard) {
+                    imgAvatarLeaderboard.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        bukaZoomFotoPrestasi(imgAvatarLeaderboard.src, namaEntri);
+                    });
+                }
+
                 container.appendChild(baris);
             });
         }
