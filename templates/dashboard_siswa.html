@@ -642,10 +642,26 @@
                     <span id="header-realtime-date" class="text-[10px] font-semibold text-slate-400 -mt-0.5">Memuat tanggal...</span>
                 </div>
 
-                <button class="p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 relative transition-colors" aria-label="Notifikasi">
-                    <i class="fa-regular fa-bell" aria-hidden="true"></i>
-                    <span id="badge-bell-dot" class="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full hidden"></span>
-                </button>
+                <div class="relative">
+                    <button id="btn-bell" onclick="toggleBellDropdown(event)" class="p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 relative transition-colors" aria-label="Notifikasi" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa-regular fa-bell" aria-hidden="true"></i>
+                        <span id="badge-bell-dot" class="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full hidden"></span>
+                    </button>
+
+                    <!-- Pusat notifikasi: kumpulan kabar dari guru (tugas ditarik, tambahan
+                         waktu, tugas baru) yang TERSIMPAN di sini walau siswa belum sempat
+                         membuka aplikasi saat kejadiannya. Toast (#notif-toast-container)
+                         tetap muncul untuk kabar real-time saat aplikasi terbuka — dropdown
+                         ini pelengkapnya supaya notifikasi tidak hilang begitu saja. -->
+                    <div id="bell-dropdown" class="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white border border-slate-200 rounded-2xl shadow-xl hidden z-50" role="menu" aria-label="Daftar notifikasi">
+                        <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                            <span class="text-xs font-bold text-slate-800">Notifikasi</span>
+                            <button onclick="toggleBellDropdown(event)" class="text-slate-400 hover:text-slate-600" aria-label="Tutup notifikasi"><i class="fa-solid fa-xmark text-xs"></i></button>
+                        </div>
+                        <div id="list-bell-dropdown" class="max-h-80 overflow-y-auto p-2 space-y-1"></div>
+                        <p id="bell-dropdown-kosong" class="text-xs text-slate-400 text-center py-8 hidden">Belum ada notifikasi baru.</p>
+                    </div>
+                </div>
 
                 <button id="btn-dark-mode-toggle" onclick="toggleDarkMode()" title="Mode Gelap - biar mata gak capek pas begadang ngerjain tugas" aria-label="Ubah mode gelap/terang" class="p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 relative transition-colors">
                     <i class="fa-solid fa-moon icon-moon" aria-hidden="true"></i>
@@ -1441,6 +1457,7 @@
             belumDitampilkan.forEach((notif, i) => {
                 setTimeout(() => tampilkanToastTugasDitarik(notif), i * 400);
             });
+            updateBadgeLonceng();
         }
 
         function checkTaskBadgeStatus() {
@@ -1454,7 +1471,141 @@
             } else {
                 badgeEl.classList.add('hidden');
             }
+            updateBadgeLonceng();
         }
+
+        /* ================= PUSAT NOTIFIKASI (LONCENG) =================
+           Toast (#notif-toast-container) cuma nongol kalau siswa SEDANG buka
+           aplikasi saat kejadiannya (tugas ditarik, tambahan waktu, tugas
+           baru). Kalau aplikasi lagi ditutup, kabar itu tetap harus bisa
+           dilihat — makanya di sini kabar yang sama disimpan & ditampilkan
+           lagi lewat ikon lonceng, dengan titik merah yang baru hilang
+           setelah lonceng dibuka. Sumber datanya dipakai bareng dgn notif
+           toast (notif_tugas_XII_TKJ_3) & status isViewedByStudent tugas,
+           jadi tidak perlu data baru dari Dashboard Guru. */
+        const KEY_BELL_SEEN = `lonceng_dilihat_${KELAS_AKTIF_SISWA}`;
+
+        function getBellSeenIds() {
+            const raw = localStorage.getItem(KEY_BELL_SEEN);
+            return raw ? JSON.parse(raw) : [];
+        }
+
+        function tandaiSemuaLoncengDilihat(ids) {
+            const seen = new Set(getBellSeenIds());
+            ids.forEach(id => seen.add(id));
+            localStorage.setItem(KEY_BELL_SEEN, JSON.stringify([...seen]));
+        }
+
+        // Gabungan 2 sumber kabar guru jadi satu daftar notifikasi terurut,
+        // masing-masing ditandai sudah/belum dilihat di lonceng (independen
+        // dari status "dibaca" milik toast, supaya lonceng tidak ikut
+        // otomatis kesilep begitu toast-nya lewat 8 detik).
+        function getDaftarNotifikasiLonceng() {
+            const seen = new Set(getBellSeenIds());
+
+            const notifGuru = getNotifTugasDitarik().map(n => {
+                const waktu = parseInt(String(n.id || '').replace(/\D/g, '').slice(-13), 10) || 0;
+                const isTambahanWaktu = n.tipe === 'tambahan_waktu';
+                return {
+                    id: n.id,
+                    kategori: isTambahanWaktu ? 'tambahan_waktu' : 'ditarik',
+                    judul: isTambahanWaktu ? 'Tambahan Waktu dari Guru' : 'Tugas Ditarik oleh Guru',
+                    keterangan: `${n.namaGuru || 'Guru'}${n.pesan ? ' • ' + n.pesan : ''}`,
+                    dilihat: seen.has(n.id),
+                    _waktu: waktu
+                };
+            });
+
+            const tugasBaru = getTasksSiswa()
+                .filter(t => !t.isViewedByStudent)
+                .map(t => {
+                    const bellId = `tugasbaru-${t.id}`;
+                    const namaGuruTugas = t.namaGuru || t.guru || t.teacher || t.pengajar || 'Guru Mata Pelajaran';
+                    return {
+                        id: bellId,
+                        kategori: 'tugas_baru',
+                        judul: 'Tugas Baru Diberikan',
+                        keterangan: `${namaGuruTugas} • ${t.judul || t.tipe || 'Tugas Pembelajaran'}`,
+                        dilihat: seen.has(bellId),
+                        _waktu: t.waktuKirimGuru || 0
+                    };
+                });
+
+            return [...notifGuru, ...tugasBaru].sort((a, b) => (b._waktu || 0) - (a._waktu || 0));
+        }
+
+        function updateBadgeLonceng() {
+            const badge = document.getElementById('badge-bell-dot');
+            if (!badge) return;
+            const adaBelumDilihat = getDaftarNotifikasiLonceng().some(n => !n.dilihat);
+            badge.classList.toggle('hidden', !adaBelumDilihat);
+        }
+
+        function renderBellDropdown() {
+            const container = document.getElementById('list-bell-dropdown');
+            const teksKosong = document.getElementById('bell-dropdown-kosong');
+            if (!container) return;
+
+            const daftar = getDaftarNotifikasiLonceng();
+            container.innerHTML = '';
+            container.classList.toggle('hidden', daftar.length === 0);
+            if (teksKosong) teksKosong.classList.toggle('hidden', daftar.length > 0);
+            if (daftar.length === 0) return;
+
+            const tampilan = {
+                ditarik: { icon: 'fa-triangle-exclamation', wrap: 'bg-rose-100 text-rose-600' },
+                tambahan_waktu: { icon: 'fa-hourglass-end', wrap: 'bg-emerald-100 text-emerald-600' },
+                tugas_baru: { icon: 'fa-book-open', wrap: 'bg-blue-100 text-blue-600' }
+            };
+
+            daftar.forEach(n => {
+                const meta = tampilan[n.kategori] || tampilan.ditarik;
+                const row = document.createElement('div');
+                row.className = `flex items-start gap-3 p-2.5 rounded-xl ${n.dilihat ? '' : 'bg-blue-50/70'}`;
+                row.innerHTML = `
+                    <div class="w-9 h-9 rounded-lg ${meta.wrap} flex items-center justify-center flex-shrink-0 text-xs">
+                        <i class="fa-solid ${meta.icon}"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-bold text-slate-800">${n.judul}</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-relaxed">${n.keterangan}</p>
+                    </div>
+                    ${n.dilihat ? '' : '<span class="w-2 h-2 bg-blue-600 rounded-full mt-1.5 flex-shrink-0"></span>'}
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function toggleBellDropdown(event) {
+            if (event) event.stopPropagation();
+            const dropdown = document.getElementById('bell-dropdown');
+            const trigger = document.getElementById('btn-bell');
+            const profileDropdown = document.getElementById('profile-dropdown');
+            if (!dropdown) return;
+
+            if (profileDropdown) profileDropdown.classList.add('hidden'); // biar gak numpuk 2 dropdown sekaligus
+
+            const akanDibuka = dropdown.classList.contains('hidden');
+            dropdown.classList.toggle('hidden');
+            if (trigger) trigger.setAttribute('aria-expanded', String(akanDibuka));
+
+            if (akanDibuka) {
+                renderBellDropdown();
+                // Baru dianggap "dilihat" begitu lonceng dibuka & isinya sempat
+                // tampil — sebelum diklik, titik merah tetap menyala.
+                tandaiSemuaLoncengDilihat(getDaftarNotifikasiLonceng().map(n => n.id));
+                updateBadgeLonceng();
+            }
+        }
+
+        window.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('bell-dropdown');
+            const trigger = document.getElementById('btn-bell');
+            if (dropdown && trigger && !trigger.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+                trigger.setAttribute('aria-expanded', 'false');
+            }
+        });
 
         /* ================= SIDEBAR MOBILE (hamburger) ================= */
         function toggleSidebarMobile() {
