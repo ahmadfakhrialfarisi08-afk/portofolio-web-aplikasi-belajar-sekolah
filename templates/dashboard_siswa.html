@@ -3156,8 +3156,16 @@
             const borderAktif = getBorderTerpakai();
 
             data.leaderboard = data.leaderboard || [];
+
+            // Leaderboard cuma menyimpan SATU entri per siswa per level, yaitu
+            // skor terbaiknya. Kalau siswa main ulang & skornya lebih rendah
+            // dari skor terbaik yang sudah tersimpan, skor itu TIDAK ditambah
+            // sebagai baris baru maupun menimpa entri lama -- entri lama
+            // (skor tertinggi) tetap bertahan di leaderboard.
+            const entriLamaSaya = data.leaderboard.find(e => e.nama === NAMA_PEMAIN_QUIZ && e.level === level);
+
             const entriBaru = {
-                id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                id: entriLamaSaya ? entriLamaSaya.id : `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
                 nama: NAMA_PEMAIN_QUIZ,
                 kelas: getKelasAktifQuiz(),
                 foto: getFotoProfilAktifQuiz(),
@@ -3171,7 +3179,19 @@
                 total: soal.length,
                 tanggal: new Date().toISOString()
             };
-            data.leaderboard.push(entriBaru);
+
+            if (!entriLamaSaya) {
+                // Belum pernah main quiz level ini -> catat sebagai entri baru.
+                data.leaderboard.push(entriBaru);
+            } else if (skor > entriLamaSaya.skor) {
+                // Skor baru mengalahkan skor terbaik sebelumnya -> entri lama
+                // diganti (bukan ditambah baris baru) supaya leaderboard tetap
+                // cuma menampilkan satu baris berisi skor terbaik siswa ini.
+                Object.assign(entriLamaSaya, entriBaru);
+            }
+            // Kalau skor <= skor terbaik sebelumnya: sengaja tidak melakukan
+            // apa-apa, biar entri lama (poin tertinggi) yang bertahan.
+
             saveQuizData(data);
             tandaiIdSudahDilihatQuiz(entriBaru.id); // entri sendiri, jangan ikut memicu notif "ditikung"
             updateBerandaPoinQuiz();
