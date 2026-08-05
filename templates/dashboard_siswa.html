@@ -91,13 +91,14 @@
         /* Dynamic Island notifikasi header: nongol di tengah, dorong search bar & jam ke samping */
         #header-left-group,
         #header-right-group {
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
+            transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
         }
         #header-left-group.island-push-left {
-            transform: translateX(-46px);
+            transform: translateX(-48px);
         }
         #header-right-group.island-push-right {
-            transform: translateX(46px);
+            transform: translateX(48px);
         }
         #dynamic-notification-island {
             display: flex;
@@ -106,10 +107,11 @@
             left: 50%;
             z-index: 40;
             max-width: min(22rem, calc(100% - 2rem));
-            transform: translate(-50%, -50%) scale(0.3);
+            will-change: transform, opacity;
+            transform: translate(-50%, -50%) scale(0.35);
             opacity: 0;
             pointer-events: none;
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease-out;
         }
         #dynamic-notification-island.island-active {
             transform: translate(-50%, -50%) scale(1);
@@ -1117,24 +1119,42 @@
                 notifText.innerText = messageText;
             }
 
-            if (notifIsland) {
-                // kalau ada notif sebelumnya yang lagi nunggu nutup, batalin dulu
-                if (notifIsland._islandCloseTimer) {
-                    clearTimeout(notifIsland._islandCloseTimer);
-                }
+            if (!notifIsland) return;
 
-                // buka: search bar & jam kebelah, notif mekar di tengah
-                notifIsland.classList.add('island-active');
+            // batalin semua timer/animasi notif sebelumnya biar nggak numpuk & patah-patah
+            if (notifIsland._islandOpenTimer) clearTimeout(notifIsland._islandOpenTimer);
+            if (notifIsland._islandCloseTimer) clearTimeout(notifIsland._islandCloseTimer);
+            if (notifIsland._islandPushOffTimer) clearTimeout(notifIsland._islandPushOffTimer);
+
+            const pushApart = () => {
                 if (leftGroup) leftGroup.classList.add('island-push-left');
                 if (rightGroup) rightGroup.classList.add('island-push-right');
+            };
+            const pushTogether = () => {
+                if (leftGroup) leftGroup.classList.remove('island-push-left');
+                if (rightGroup) rightGroup.classList.remove('island-push-right');
+            };
 
-                notifIsland._islandCloseTimer = setTimeout(() => {
-                    // nutup: notif ciut, search bar & jam balik nempel normal
-                    notifIsland.classList.remove('island-active');
-                    if (leftGroup) leftGroup.classList.remove('island-push-left');
-                    if (rightGroup) rightGroup.classList.remove('island-push-right');
-                }, 5000);
+            // kalau notif lagi ciut/nutup (masih di tengah proses nutup), lanjut mulus dari sana
+            const alreadyOpen = notifIsland.classList.contains('island-active');
+
+            if (!alreadyOpen) {
+                // 1) celahnya kebuka dulu (search bar & jam mulai kebelah)
+                pushApart();
+                // 2) sedikit setelahnya, pil notifnya baru mekar ngisi celah
+                notifIsland._islandOpenTimer = setTimeout(() => {
+                    notifIsland.classList.add('island-active');
+                }, 120);
             }
+
+            notifIsland._islandCloseTimer = setTimeout(() => {
+                // nutup: pil ciut duluan...
+                notifIsland.classList.remove('island-active');
+                // ...baru search bar & jam balik nempel normal, biar nggak nabrak
+                notifIsland._islandPushOffTimer = setTimeout(() => {
+                    pushTogether();
+                }, 200);
+            }, 5000);
         }
 
         function kirimSaranSiswa() {
