@@ -3712,6 +3712,11 @@
         // oleh guru manapun di sana, dan status/nama guru penyetuju bisa kebaca balik di sini.
         const KEY_PRESTASI_SISWA = `pengajuan_prestasi_${KELAS_AKTIF_SISWA}`;
 
+        // Border prestasi TIDAK auto-terbuka lagi hanya karena poin sudah cukup —
+        // siswa harus klik tombol "Klaim Border" secara manual dulu. Key ini
+        // menyimpan daftar id border prestasi yang sudah pernah diklaim.
+        const KEY_BORDER_PRESTASI_DIKLAIM = `border_prestasi_diklaim_${KELAS_AKTIF_SISWA}`;
+
         // Tingkatan/tier generik yang dipakai berulang di tiap level quiz.
         const BORDER_TIER_TEMPLATE = [
             { tierId: 'polos',   nama: 'Polos',   file: '../static/img/border_polos.png',  minPoin: 0,   tierRank: 0 },
@@ -4189,6 +4194,46 @@
             return getPrestasiData().filter(p => p.status === 'disetujui').length;
         }
 
+        // ================= KLAIM MANUAL BORDER PRESTASI =================
+        // Poin cukup SAJA tidak lagi otomatis membuka border prestasi — begitu
+        // poin cukup, kartu border cuma menampilkan ceklis "Poin cukup" (hijau)
+        // dan tombol "Klaim Border" (hijau). Border baru benar-benar dimiliki
+        // setelah tombol itu diklik, dan status klaimnya disimpan di sini.
+        function getBorderPrestasiDiklaim() {
+            try {
+                const raw = localStorage.getItem(KEY_BORDER_PRESTASI_DIKLAIM);
+                const arr = raw ? JSON.parse(raw) : [];
+                return Array.isArray(arr) ? arr : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveBorderPrestasiDiklaim(arr) {
+            localStorage.setItem(KEY_BORDER_PRESTASI_DIKLAIM, JSON.stringify(arr));
+        }
+
+        function sudahKlaimBorderPrestasi(borderId) {
+            return getBorderPrestasiDiklaim().includes(borderId);
+        }
+
+        // Syarat poin border prestasi terpenuhi (lepas dari sudah diklaim atau belum).
+        function poinPrestasiCukup(border) {
+            return getTotalPoinPrestasiDisetujui() >= border.minPoin;
+        }
+
+        function klaimBorderPrestasi(borderId) {
+            const border = DAFTAR_BORDER_PRESTASI.find(b => b.id === borderId);
+            if (!border || !poinPrestasiCukup(border) || sudahKlaimBorderPrestasi(borderId)) return;
+
+            const daftar = getBorderPrestasiDiklaim();
+            daftar.push(borderId);
+            saveBorderPrestasiDiklaim(daftar);
+
+            renderKoleksiBorder();
+            triggerDynamicIsland(`Border ${border.nama} berhasil diklaim!`);
+        }
+
         // ================= MODAL "BUKA BORDER" (popup pengajuan prestasi) =================
         // Dipicu dari tombol "Buka Border" di kartu border prestasi yang masih terkunci.
         // Modal cuma menampilkan konteks border yang dituju (nama, syarat) — pengajuan
@@ -4238,8 +4283,10 @@
         function isBorderTerbuka(border) {
             if (border.kategori === 'admin') return true;
             if (border.kategori === 'prestasi') {
-                const poin = getTotalPoinPrestasiDisetujui(); // 0 poin = semua tier masih terkunci
-                return poin >= border.minPoin;
+                // Poin cukup saja belum cukup untuk "dimiliki" — border prestasi
+                // baru resmi terbuka setelah siswa klik "Klaim Border" (lihat
+                // klaimBorderPrestasi()), jadi status klaim ikut disyaratkan di sini.
+                return poinPrestasiCukup(border) && sudahKlaimBorderPrestasi(border.id);
             }
             const data = getQuizData();
             const poin = (data.totalPoinByLevel && data.totalPoinByLevel[border.level]) || 0; // total akumulasi poin quiz level ini
@@ -4332,8 +4379,14 @@
         function buatKartuBorder(border, dipakai) {
             const terbuka = isBorderTerbuka(border);
             const sedangDipakai = dipakai.id === border.id;
+
+            // Khusus kategori prestasi: begitu poin sudah cukup tapi belum diklaim,
+            // kartu tampil dalam mode "siap klaim" — bukan lagi mode "kurang poin".
+            const poinCukup = border.kategori === 'prestasi' ? poinPrestasiCukup(border) : false;
+            const siapDiklaim = border.kategori === 'prestasi' && !terbuka && poinCukup;
+
             let labelKurang = '';
-            if (!terbuka) {
+            if (!terbuka && !siapDiklaim) {
                 if (border.kategori === 'prestasi') {
                     const sisa = Math.max(0, border.minPoin - getTotalPoinPrestasiDisetujui());
                     labelKurang = `Butuh ${sisa} poin lagi (sertifikat/piala beragam)`;
@@ -4345,24 +4398,42 @@
                 }
             }
 
+            // Ceklis kecil syarat border prestasi (poin & sertifikat) — hanya
+            // tampil selagi border belum resmi dimiliki (masih perlu diklaim).
+            let ceklisSyaratHtml = '';
+            if (siapDiklaim) {
+                const baris = (ok, teks) => `
+                    <p class="flex items-center gap-1.5 ${ok ? 'text-emerald-600' : 'text-slate-400'}">
+                        <i class="fa-solid ${ok ? 'fa-circle-check' : 'fa-circle'} text-[10px]"></i>${teks}
+                    </p>`;
+                ceklisSyaratHtml = `
+                    <div class="w-full text-[10px] font-semibold text-left mb-2.5 space-y-1">
+                        ${baris(true, 'Poin mencukupi')}
+                        ${baris(true, 'Sertifikat/piala disetujui')}
+                    </div>`;
+            }
+
             const card = document.createElement('div');
-            card.className = `rounded-2xl border p-5 flex flex-col items-center text-center transition-all ${sedangDipakai ? 'border-amber-400 bg-amber-50/50 shadow-md' : 'border-slate-200 bg-white'} ${!terbuka ? 'opacity-70' : ''}`;
+            card.className = `rounded-2xl border p-5 flex flex-col items-center text-center transition-all ${sedangDipakai ? 'border-amber-400 bg-amber-50/50 shadow-md' : (siapDiklaim ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-200 bg-white')} ${!terbuka ? 'opacity-70' : ''}`;
 
             card.innerHTML = `
                 <div class="profile-wrapper w-20 h-20 mb-3 relative">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23000'/%3E%3C/svg%3E" class="user-avatar" alt="Preview Avatar">
                     <img src="${border.file}" class="user-border ${!terbuka ? 'grayscale' : ''}" alt="Border_${border.nama}">
-                    ${!terbuka ? '<div class="absolute inset-0 flex items-center justify-center bg-slate-900/40 rounded-full"><i class="fa-solid fa-lock text-white text-lg"></i></div>' : ''}
+                    ${!terbuka ? `<div class="absolute inset-0 flex items-center justify-center ${siapDiklaim ? 'bg-emerald-600/30' : 'bg-slate-900/40'} rounded-full"><i class="fa-solid ${siapDiklaim ? 'fa-unlock' : 'fa-lock'} text-white text-lg"></i></div>` : ''}
                 </div>
                 <h4 class="font-bold text-sm text-slate-900">${border.nama}</h4>
                 <p class="text-[10px] text-slate-400 mt-0.5">${border.rank}</p>
                 <p class="text-[10px] ${terbuka ? 'text-emerald-600' : 'text-slate-400'} mb-3 leading-snug">${deskripsiSumberBorder(border)}</p>
+                ${ceklisSyaratHtml}
                 ${terbuka
                     ? `<button onclick="pakaiBorder('${border.id}')" ${sedangDipakai ? 'disabled' : ''} class="w-full py-2 rounded-xl text-xs font-bold transition-all ${sedangDipakai ? 'bg-emerald-100 text-emerald-700 cursor-default' : 'bg-slate-800 hover:bg-slate-900 text-white'}">${sedangDipakai ? '<i class="fa-solid fa-check mr-1"></i>Sedang Dipakai' : 'Pakai Border'}</button>`
-                    : (border.kategori === 'prestasi'
-                        ? `<p class="text-[10px] text-amber-600 font-semibold mb-2">${labelKurang}</p>
-                           <button onclick="bukaModalBukaBorder('${border.id}')" class="w-full py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition-all"><i class="fa-solid fa-unlock mr-1"></i>Buka Border</button>`
-                        : `<button disabled class="w-full py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed"><i class="fa-solid fa-lock mr-1"></i>${labelKurang}</button>`)
+                    : (siapDiklaim
+                        ? `<button onclick="klaimBorderPrestasi('${border.id}')" class="w-full py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white transition-all"><i class="fa-solid fa-award mr-1"></i>Klaim Border</button>`
+                        : (border.kategori === 'prestasi'
+                            ? `<p class="text-[10px] text-amber-600 font-semibold mb-2">${labelKurang}</p>
+                               <button onclick="bukaModalBukaBorder('${border.id}')" class="w-full py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition-all"><i class="fa-solid fa-unlock mr-1"></i>Buka Border</button>`
+                            : `<button disabled class="w-full py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed"><i class="fa-solid fa-lock mr-1"></i>${labelKurang}</button>`))
                 }
             `;
             return card;
