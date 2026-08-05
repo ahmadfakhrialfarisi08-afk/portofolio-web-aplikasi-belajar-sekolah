@@ -6,6 +6,7 @@
     <title>Portal Aplikasi Sekolah - Dashboard Siswa</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     
@@ -847,6 +848,49 @@
                         </button>
                     </div>
                     <div id="grid-border-belum-dimiliki" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-6"></div>
+                </div>
+
+                <!-- ================= JOURNEY PRESTASI (rekam jejak per tahun ajaran) =================
+                     Data diambil otomatis dari riwayat prestasi yang berstatus "disetujui": timestamp
+                     disisipkan di id (prestasi_<timestamp>) lalu dipetakan ke tahun ajaran (Jul—Jun)
+                     sesuai kelas yang dipilih. Tidak ada perbandingan ke siswa lain — semua angka di
+                     sini murni progress diri sendiri. -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-900"><i class="fa-solid fa-route text-amber-500 mr-1.5"></i>Journey Prestasi</h3>
+                            <p id="journey-label-tahun-ajaran" class="text-xs text-slate-400 mt-0.5">Tahun Ajaran -</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" data-kelas="X" onclick="setTabJourneyPrestasi('X')" class="tab-journey-kelas px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-50">Kelas 10</button>
+                            <button type="button" data-kelas="XI" onclick="setTabJourneyPrestasi('XI')" class="tab-journey-kelas px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-50">Kelas 11</button>
+                            <button type="button" data-kelas="XII" onclick="setTabJourneyPrestasi('XII')" class="tab-journey-kelas px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-amber-500 text-white border-amber-500">Kelas 12 (Current)</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+                        <div class="rounded-xl border border-slate-200/80 p-4">
+                            <p class="text-[11px] font-semibold text-slate-400 uppercase">Total Prestasi Tahun Ini</p>
+                            <p class="text-2xl font-extrabold text-slate-900 mt-1"><span id="journey-total-prestasi">0</span></p>
+                        </div>
+                        <div class="rounded-xl border border-slate-200/80 p-4">
+                            <p class="text-[11px] font-semibold text-slate-400 uppercase">Poin Akumulasi</p>
+                            <p class="text-2xl font-extrabold text-amber-600 mt-1"><span id="journey-poin-akumulasi">0</span></p>
+                        </div>
+                        <div class="rounded-xl border border-slate-200/80 p-4">
+                            <p class="text-[11px] font-semibold text-slate-400 uppercase">Status Pencapaian</p>
+                            <p class="text-sm font-bold text-slate-900 mt-1.5" id="journey-status-pencapaian">🌱 Belum Ada Pencapaian</p>
+                        </div>
+                    </div>
+
+                    <span id="journey-streak-konsisten" class="hidden inline-flex items-center gap-1.5 mb-5 px-3 py-1.5 rounded-full bg-orange-50 text-orange-600 text-xs font-bold"></span>
+
+                    <div>
+                        <p class="text-xs font-bold text-slate-600 mb-2">Grafik Progress Bulanan</p>
+                        <div class="relative h-56">
+                            <canvas id="chart-journey-prestasi"></canvas>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ================= AJUKAN PRESTASI (upload sertifikat/piala) ================= -->
@@ -3587,6 +3631,160 @@
             }
         }
 
+        /* ================= JOURNEY PRESTASI (per tahun ajaran) =================
+           Tahun ajaran diasumsikan berjalan Juli—Juni (kalender akademik umum di
+           Indonesia). "Kelas 12 (Current)" = tahun ajaran yang sedang berjalan
+           hari ini; "Kelas 11" = 1 tahun ajaran sebelumnya; "Kelas 10" = 2 tahun
+           ajaran sebelumnya. Tidak ada input manual — semua dipetakan otomatis
+           dari timestamp yang disisipkan di id tiap prestasi (prestasi_<ts>). */
+        const OFFSET_TAHUN_KELAS_JOURNEY = { X: 2, XI: 1, XII: 0 };
+        const POIN_PER_JENIS_PRESTASI = { piala: 75, sertifikat: 50 };
+        const BULAN_MULAI_TAHUN_AJARAN = 6; // Juli, 0-based (Jan=0)
+
+        function getRentangTahunAjaran(offsetTahunKeBelakang) {
+            const sekarang = new Date();
+            let tahunMulai = sekarang.getFullYear();
+            if (sekarang.getMonth() < BULAN_MULAI_TAHUN_AJARAN) tahunMulai -= 1;
+            tahunMulai -= offsetTahunKeBelakang;
+            const mulai = new Date(tahunMulai, BULAN_MULAI_TAHUN_AJARAN, 1);
+            const akhir = new Date(tahunMulai + 1, BULAN_MULAI_TAHUN_AJARAN, 0, 23, 59, 59, 999); // 30 Juni tahun berikutnya
+            return { mulai, akhir, labelTahun: `${tahunMulai}/${tahunMulai + 1}` };
+        }
+
+        function ambilTimestampPrestasi(item) {
+            // id dibuat dgn `prestasi_${Date.now()}` saat pengajuan (lihat ajukanPrestasi()),
+            // jadi timestamp aslinya bisa diambil langsung dari id tanpa parsing string tanggal.
+            if (!item || !item.id) return null;
+            const ts = Number(String(item.id).split('_')[1]);
+            return Number.isFinite(ts) ? ts : null;
+        }
+
+        function ambilPrestasiUntukKelasJourney(kodeKelas) {
+            const offset = OFFSET_TAHUN_KELAS_JOURNEY[kodeKelas];
+            if (offset === undefined) return { rentang: null, items: [] };
+            const rentang = getRentangTahunAjaran(offset);
+            const items = getPrestasiData().filter(item => {
+                if (item.status !== 'disetujui') return false;
+                const ts = ambilTimestampPrestasi(item);
+                return ts !== null && ts >= rentang.mulai.getTime() && ts <= rentang.akhir.getTime();
+            });
+            return { rentang, items };
+        }
+
+        function hitungPoinPrestasi(item) {
+            return POIN_PER_JENIS_PRESTASI[item.jenis] ?? 50;
+        }
+
+        function tentukanStatusPencapaianJourney(jumlahPrestasi) {
+            const tierCocok = DAFTAR_BORDER_PRESTASI.slice().reverse().find(t => jumlahPrestasi >= t.minPrestasi);
+            return tierCocok ? tierCocok.rank : '🌱 Belum Ada Pencapaian';
+        }
+
+        function hitungStreakKonsistenJourney() {
+            // Hitung mundur dari Kelas 12 (sekarang): berapa tahun ajaran BERTURUT-TURUT
+            // yang masing-masing punya minimal 1 prestasi disetujui.
+            let streak = 0;
+            for (const kode of ['XII', 'XI', 'X']) {
+                const { items } = ambilPrestasiUntukKelasJourney(kode);
+                if (items.length > 0) streak++; else break;
+            }
+            return streak;
+        }
+
+        let kelasAktifJourneyPrestasi = 'XII';
+        let chartJourneyPrestasi = null;
+
+        function setTabJourneyPrestasi(kodeKelas) {
+            kelasAktifJourneyPrestasi = kodeKelas;
+            document.querySelectorAll('.tab-journey-kelas').forEach(btn => {
+                const aktif = btn.dataset.kelas === kodeKelas;
+                btn.classList.toggle('bg-amber-500', aktif);
+                btn.classList.toggle('text-white', aktif);
+                btn.classList.toggle('border-amber-500', aktif);
+                btn.classList.toggle('bg-white', !aktif);
+                btn.classList.toggle('text-slate-600', !aktif);
+                btn.classList.toggle('border-slate-200', !aktif);
+            });
+            renderJourneyPrestasi();
+        }
+
+        function renderJourneyPrestasi() {
+            const kode = kelasAktifJourneyPrestasi;
+            const { rentang, items } = ambilPrestasiUntukKelasJourney(kode);
+            const totalPrestasi = items.length;
+            const totalPoin = items.reduce((sum, it) => sum + hitungPoinPrestasi(it), 0);
+
+            const elTotal = document.getElementById('journey-total-prestasi');
+            if (elTotal) elTotal.innerText = String(totalPrestasi);
+            const elPoin = document.getElementById('journey-poin-akumulasi');
+            if (elPoin) elPoin.innerText = String(totalPoin);
+            const elStatus = document.getElementById('journey-status-pencapaian');
+            if (elStatus) elStatus.innerText = tentukanStatusPencapaianJourney(totalPrestasi);
+            const elLabelTahun = document.getElementById('journey-label-tahun-ajaran');
+            if (elLabelTahun && rentang) elLabelTahun.innerText = `Tahun Ajaran ${rentang.labelTahun}`;
+
+            const streak = hitungStreakKonsistenJourney();
+            const elStreak = document.getElementById('journey-streak-konsisten');
+            if (elStreak) {
+                if (streak >= 2) {
+                    elStreak.innerText = `🔥 Konsisten ${streak} Tahun Ajaran Berturut-turut`;
+                    elStreak.classList.remove('hidden');
+                } else {
+                    elStreak.classList.add('hidden');
+                }
+            }
+
+            renderChartJourneyPrestasi(items);
+        }
+
+        function renderChartJourneyPrestasi(items) {
+            const canvas = document.getElementById('chart-journey-prestasi');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            // Bucket poin per bulan, urut mulai dari bulan awal tahun ajaran (Juli) s/d Juni.
+            const labelBulan = ['Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'];
+            const poinPerBulan = new Array(12).fill(0);
+            items.forEach(item => {
+                const ts = ambilTimestampPrestasi(item);
+                if (ts === null) return;
+                let bulanIndex = new Date(ts).getMonth() - BULAN_MULAI_TAHUN_AJARAN;
+                if (bulanIndex < 0) bulanIndex += 12;
+                poinPerBulan[bulanIndex] += hitungPoinPrestasi(item);
+            });
+
+            if (chartJourneyPrestasi) {
+                chartJourneyPrestasi.data.datasets[0].data = poinPerBulan;
+                chartJourneyPrestasi.update();
+                return;
+            }
+
+            chartJourneyPrestasi = new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labelBulan,
+                    datasets: [{
+                        label: 'Poin Prestasi',
+                        data: poinPerBulan,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                        tension: 0.35,
+                        fill: true,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#f59e0b'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
         function savePrestasiData(list) {
             localStorage.setItem(KEY_PRESTASI_SISWA, JSON.stringify(list));
         }
@@ -4127,6 +4325,7 @@
             renderKoleksiBorderDimiliki(dipakai);
             renderKoleksiBorderBelumDimiliki(dipakai);
             renderRiwayatPrestasi();
+            renderJourneyPrestasi();
         }
     </script>
 </body>
