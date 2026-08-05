@@ -3642,9 +3642,9 @@
 
         // Border dari jalur Prestasi (upload sertifikat/piala + konfirmasi admin/guru)
         const DAFTAR_BORDER_PRESTASI = [
-            { id: 'prestasi_perunggu', kategori: 'prestasi', nama: 'Perunggu Prestasi', file: '../static/img/border_bronze.jpg', minPrestasi: 1, tierRank: 1, rank: '🥉 Berprestasi' },
-            { id: 'prestasi_perak',    kategori: 'prestasi', nama: 'Perak Prestasi',    file: '../static/img/border_silver.jpg', minPrestasi: 3, tierRank: 2, rank: '🥈 Siswa Berbakat' },
-            { id: 'prestasi_emas',     kategori: 'prestasi', nama: 'Emas Prestasi',     file: '../static/img/border_gold.jpg',   minPrestasi: 5, tierRank: 3, rank: '🏆 Bintang Sekolah' }
+            { id: 'prestasi_perunggu', kategori: 'prestasi', nama: 'Perunggu Prestasi', file: '../static/img/border_bronze.jpg', minPoin: 50,  tierRank: 1, rank: '🥉 Berprestasi' },
+            { id: 'prestasi_perak',    kategori: 'prestasi', nama: 'Perak Prestasi',    file: '../static/img/border_silver.jpg', minPoin: 200, tierRank: 2, rank: '🥈 Siswa Berbakat' },
+            { id: 'prestasi_emas',     kategori: 'prestasi', nama: 'Emas Prestasi',     file: '../static/img/border_gold.jpg',   minPoin: 400, tierRank: 3, rank: '🏆 Bintang Sekolah' }
         ];
 
         function getPrestasiData() {
@@ -3700,8 +3700,19 @@
             return POIN_PER_JENIS_PRESTASI[item.jenis] ?? 50;
         }
 
-        function tentukanStatusPencapaianJourney(jumlahPrestasi) {
-            const tierCocok = DAFTAR_BORDER_PRESTASI.slice().reverse().find(t => jumlahPrestasi >= t.minPrestasi);
+        // ================= SISTEM POIN BORDER (dibaca langsung dari localStorage) =================
+        // Semua prestasi yang sudah disetujui guru/admin tersimpan di localStorage lewat
+        // getPrestasiData(). Fungsi ini menjumlahkan poin dari prestasi yang disetujui itu
+        // menjadi satu angka poin — inilah yang jadi dasar buka/tutup border prestasi
+        // (0 poin = semua border prestasi masih terkunci & tampil grayscale).
+        function getTotalPoinPrestasiDisetujui() {
+            return getPrestasiData()
+                .filter(item => item.status === 'disetujui')
+                .reduce((total, item) => total + hitungPoinPrestasi(item), 0);
+        }
+
+        function tentukanStatusPencapaianJourney(totalPoin) {
+            const tierCocok = DAFTAR_BORDER_PRESTASI.slice().reverse().find(t => totalPoin >= t.minPoin);
             return tierCocok ? tierCocok.rank : '🌱 Belum Ada Pencapaian';
         }
 
@@ -3744,7 +3755,7 @@
             const elPoin = document.getElementById('journey-poin-akumulasi');
             if (elPoin) elPoin.innerText = String(totalPoin);
             const elStatus = document.getElementById('journey-status-pencapaian');
-            if (elStatus) elStatus.innerText = tentukanStatusPencapaianJourney(totalPrestasi);
+            if (elStatus) elStatus.innerText = tentukanStatusPencapaianJourney(totalPoin);
             const elLabelTahun = document.getElementById('journey-label-tahun-ajaran');
             if (elLabelTahun && rentang) elLabelTahun.innerText = `Tahun Ajaran ${rentang.labelTahun}`;
 
@@ -4075,8 +4086,8 @@
             if (elNama) elNama.innerText = border.nama;
             if (elPreview) elPreview.src = border.file;
             if (elSyarat) {
-                const sisa = Math.max(0, border.minPrestasi - getJumlahPrestasiDisetujui());
-                elSyarat.innerHTML = `<i class="fa-solid fa-circle-info mr-1"></i>Butuh ${sisa} prestasi disetujui lagi untuk membuka border ini.`;
+                const sisa = Math.max(0, border.minPoin - getTotalPoinPrestasiDisetujui());
+                elSyarat.innerHTML = `<i class="fa-solid fa-circle-info mr-1"></i>Butuh ${sisa} poin lagi (dari prestasi disetujui) untuk membuka border ini.`;
             }
 
             document.getElementById('form-ajukan-prestasi').reset();
@@ -4099,14 +4110,21 @@
             document.body.style.overflow = '';
         }
 
+        // ================= INTI SISTEM BORDER: cek terbuka/terkunci berdasarkan POIN =================
+        // Poin selalu dibaca ulang dari localStorage tiap kali fungsi ini dipanggil (bukan
+        // disimpan di variabel), jadi begitu poin bertambah di localStorage (prestasi baru
+        // disetujui, atau skor quiz baru), pemanggilan berikutnya otomatis "melihat" poin
+        // yang sudah naik dan bisa langsung membuka tier berikutnya (🥉 -> 🥈 -> 🏆) tanpa
+        // perlu logika tambahan apa pun di sini.
         function isBorderTerbuka(border) {
             if (border.kategori === 'admin') return true;
             if (border.kategori === 'prestasi') {
-                return getJumlahPrestasiDisetujui() >= border.minPrestasi;
+                const poin = getTotalPoinPrestasiDisetujui(); // 0 poin = semua tier masih terkunci
+                return poin >= border.minPoin;
             }
             const data = getQuizData();
-            const bestLevel = (data.bestByLevel && data.bestByLevel[border.level]) || 0;
-            return bestLevel >= border.minPoin;
+            const poin = (data.bestByLevel && data.bestByLevel[border.level]) || 0; // 0 poin = terkunci
+            return poin >= border.minPoin;
         }
 
         function getSemuaBorder() {
@@ -4185,7 +4203,7 @@
                 return `<i class="fa-solid fa-crown mr-1"></i>Khusus Admin/Developer`;
             }
             if (border.kategori === 'prestasi') {
-                return `<i class="fa-solid fa-trophy mr-1"></i>Prestasi &middot; min. ${border.minPrestasi} disetujui`;
+                return `<i class="fa-solid fa-trophy mr-1"></i>Prestasi &middot; min. ${border.minPoin} poin`;
             }
             const meta = LEVEL_META_BORDER[border.level];
             return `<i class="fa-solid fa-gamepad mr-1"></i>Quiz ${meta ? meta.label : ''} &middot; min. ${border.minPoin} poin`;
@@ -4198,8 +4216,8 @@
             let labelKurang = '';
             if (!terbuka) {
                 if (border.kategori === 'prestasi') {
-                    const sisa = Math.max(0, border.minPrestasi - getJumlahPrestasiDisetujui());
-                    labelKurang = `Butuh ${sisa} prestasi disetujui lagi`;
+                    const sisa = Math.max(0, border.minPoin - getTotalPoinPrestasiDisetujui());
+                    labelKurang = `Butuh ${sisa} poin lagi`;
                 } else {
                     const data = getQuizData();
                     const bestLevel = (data.bestByLevel && data.bestByLevel[border.level]) || 0;
@@ -4214,7 +4232,7 @@
             card.innerHTML = `
                 <div class="profile-wrapper w-20 h-20 mb-3 relative">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23000'/%3E%3C/svg%3E" class="user-avatar" alt="Preview Avatar">
-                    <img src="${border.file}" class="user-border" alt="Border_${border.nama}">
+                    <img src="${border.file}" class="user-border ${!terbuka ? 'grayscale' : ''}" alt="Border_${border.nama}">
                     ${!terbuka ? '<div class="absolute inset-0 flex items-center justify-center bg-slate-900/40 rounded-full"><i class="fa-solid fa-lock text-white text-lg"></i></div>' : ''}
                 </div>
                 <h4 class="font-bold text-sm text-slate-900">${border.nama}</h4>
