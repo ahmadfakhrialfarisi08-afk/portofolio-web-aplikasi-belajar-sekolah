@@ -3187,8 +3187,22 @@
             // supaya makin sering & makin bagus main di level itu, poinnya kepakai/
             // kesinkron ke arah buka border, bukan cuma "mentok" di skor 1x main
             // (yang max-nya per level memang jauh di bawah 250/500).
+            // Poin SEBELUM ditambah skor sesi ini disimpan dulu, supaya sesudahnya
+            // kita bisa tahu border level ini mana saja yang BARU SAJA jadi cukup
+            // poinnya (buat notif "Selamat! border X siap diklaim").
             data.totalPoinByLevel = data.totalPoinByLevel || { easy: 0, medium: 0, hard: 0 };
-            data.totalPoinByLevel[level] = (data.totalPoinByLevel[level] || 0) + skor;
+            const poinLevelSebelum = data.totalPoinByLevel[level] || 0;
+            data.totalPoinByLevel[level] = poinLevelSebelum + skor;
+            const poinLevelSesudah = data.totalPoinByLevel[level];
+
+            // Border level ini yang tadinya BELUM cukup poin, dan sekarang (setelah
+            // skor sesi ini ditambahkan) JADI cukup poin -- ini yang baru "kebuka"
+            // syaratnya & siap diklaim siswa. Border minPoin 0 dilewati karena
+            // memang selalu otomatis terbuka (bukan pencapaian yang perlu diklaim).
+            const borderBaruBisaDiklaim = DAFTAR_BORDER_QUIZ.filter(b =>
+                b.level === level && b.minPoin > 0 &&
+                poinLevelSebelum < b.minPoin && poinLevelSesudah >= b.minPoin
+            );
 
             // Simpan dulu skor terbaru SEBELUM ambil border, supaya kalau skor ini
             // baru saja membuka border/title tier berikutnya, entri leaderboard
@@ -3246,6 +3260,16 @@
             document.getElementById('quiz-result-level').innerText = cfg.label;
 
             tampilkanViewQuiz('result');
+
+            // Notif "Selamat" kalau ada border baru yang syarat poinnya baru saja
+            // terpenuhi dari sesi quiz ini -- selalu tampil apa pun jumlah border
+            // yang baru bisa diklaim (1 atau lebih, nama-namanya digabung jadi satu).
+            if (borderBaruBisaDiklaim.length > 0) {
+                const daftarNama = borderBaruBisaDiklaim.map(b => b.nama).join(', ');
+                setTimeout(() => {
+                    triggerDynamicIsland(`🎉 Selamat! Border ${daftarNama} siap diklaim!`);
+                }, 600);
+            }
         }
 
         function ulangiQuizTerakhir() {
@@ -3712,10 +3736,11 @@
         // oleh guru manapun di sana, dan status/nama guru penyetuju bisa kebaca balik di sini.
         const KEY_PRESTASI_SISWA = `pengajuan_prestasi_${KELAS_AKTIF_SISWA}`;
 
-        // Border prestasi TIDAK auto-terbuka lagi hanya karena poin sudah cukup —
-        // siswa harus klik tombol "Klaim Border" secara manual dulu. Key ini
-        // menyimpan daftar id border prestasi yang sudah pernah diklaim.
-        const KEY_BORDER_PRESTASI_DIKLAIM = `border_prestasi_diklaim_${KELAS_AKTIF_SISWA}`;
+        // Border prestasi MAUPUN quiz TIDAK auto-terbuka lagi hanya karena poin
+        // sudah cukup — siswa harus klik tombol "Klaim Border" secara manual dulu.
+        // Key ini menyimpan daftar id semua border (prestasi & quiz) yang sudah
+        // pernah diklaim.
+        const KEY_BORDER_DIKLAIM = `border_diklaim_${KELAS_AKTIF_SISWA}`;
 
         // Tingkatan/tier generik yang dipakai berulang di tiap level quiz.
         const BORDER_TIER_TEMPLATE = [
@@ -4194,14 +4219,15 @@
             return getPrestasiData().filter(p => p.status === 'disetujui').length;
         }
 
-        // ================= KLAIM MANUAL BORDER PRESTASI =================
-        // Poin cukup SAJA tidak lagi otomatis membuka border prestasi — begitu
-        // poin cukup, kartu border cuma menampilkan ceklis "Poin cukup" (hijau)
-        // dan tombol "Klaim Border" (hijau). Border baru benar-benar dimiliki
-        // setelah tombol itu diklik, dan status klaimnya disimpan di sini.
-        function getBorderPrestasiDiklaim() {
+        // ================= KLAIM MANUAL BORDER (PRESTASI & QUIZ) =================
+        // Poin cukup SAJA tidak lagi otomatis membuka border — begitu poin cukup,
+        // kartu border cuma menampilkan ceklis syarat (hijau) dan tombol "Klaim
+        // Border". Border baru benar-benar dimiliki setelah tombol itu diklik,
+        // dan status klaimnya disimpan di sini (berlaku sama utk kategori
+        // 'prestasi' maupun 'quiz' — admin tetap selalu terbuka tanpa klaim).
+        function getBorderDiklaim() {
             try {
-                const raw = localStorage.getItem(KEY_BORDER_PRESTASI_DIKLAIM);
+                const raw = localStorage.getItem(KEY_BORDER_DIKLAIM);
                 const arr = raw ? JSON.parse(raw) : [];
                 return Array.isArray(arr) ? arr : [];
             } catch (e) {
@@ -4209,29 +4235,50 @@
             }
         }
 
-        function saveBorderPrestasiDiklaim(arr) {
-            localStorage.setItem(KEY_BORDER_PRESTASI_DIKLAIM, JSON.stringify(arr));
+        function saveBorderDiklaim(arr) {
+            localStorage.setItem(KEY_BORDER_DIKLAIM, JSON.stringify(arr));
         }
 
-        function sudahKlaimBorderPrestasi(borderId) {
-            return getBorderPrestasiDiklaim().includes(borderId);
+        function sudahKlaimBorder(borderId) {
+            return getBorderDiklaim().includes(borderId);
         }
 
-        // Syarat poin border prestasi terpenuhi (lepas dari sudah diklaim atau belum).
+        // Syarat poin border (prestasi ATAU quiz) terpenuhi, lepas dari sudah
+        // diklaim atau belum.
+        function poinCukupUntukBorder(border) {
+            if (border.kategori === 'prestasi') {
+                return getTotalPoinPrestasiDisetujui() >= border.minPoin;
+            }
+            if (border.kategori === 'quiz') {
+                const data = getQuizData();
+                const totalLevel = (data.totalPoinByLevel && data.totalPoinByLevel[border.level]) || 0;
+                return totalLevel >= border.minPoin;
+            }
+            return true; // admin
+        }
+
+        // Dipertahankan sebagai alias supaya pemanggilan lama (khusus prestasi)
+        // tetap konsisten & mudah dibaca di tempat yang memang spesifik prestasi.
         function poinPrestasiCukup(border) {
-            return getTotalPoinPrestasiDisetujui() >= border.minPoin;
+            return poinCukupUntukBorder(border);
         }
 
-        function klaimBorderPrestasi(borderId) {
-            const border = DAFTAR_BORDER_PRESTASI.find(b => b.id === borderId);
-            if (!border || !poinPrestasiCukup(border) || sudahKlaimBorderPrestasi(borderId)) return;
+        function klaimBorder(borderId) {
+            const border = getSemuaBorder().find(b => b.id === borderId);
+            if (!border || border.kategori === 'admin') return;
+            if (!poinCukupUntukBorder(border) || sudahKlaimBorder(borderId)) return;
 
-            const daftar = getBorderPrestasiDiklaim();
+            const daftar = getBorderDiklaim();
             daftar.push(borderId);
-            saveBorderPrestasiDiklaim(daftar);
+            saveBorderDiklaim(daftar);
 
             renderKoleksiBorder();
             triggerDynamicIsland(`Border ${border.nama} berhasil diklaim!`);
+        }
+
+        // Nama lama dipertahankan sebagai alias (dipakai di kartu border prestasi).
+        function klaimBorderPrestasi(borderId) {
+            klaimBorder(borderId);
         }
 
         // ================= MODAL "BUKA BORDER" (popup pengajuan prestasi) =================
@@ -4282,15 +4329,13 @@
         // perlu logika tambahan apa pun di sini.
         function isBorderTerbuka(border) {
             if (border.kategori === 'admin') return true;
-            if (border.kategori === 'prestasi') {
-                // Poin cukup saja belum cukup untuk "dimiliki" — border prestasi
-                // baru resmi terbuka setelah siswa klik "Klaim Border" (lihat
-                // klaimBorderPrestasi()), jadi status klaim ikut disyaratkan di sini.
-                return poinPrestasiCukup(border) && sudahKlaimBorderPrestasi(border.id);
-            }
-            const data = getQuizData();
-            const poin = (data.totalPoinByLevel && data.totalPoinByLevel[border.level]) || 0; // total akumulasi poin quiz level ini
-            return poin >= border.minPoin;
+            // Border tier dasar (minPoin 0, mis. "Polos") itu bawaan semua siswa
+            // sejak awal — bukan pencapaian yang perlu diklaim, jadi tetap auto.
+            if (border.minPoin === 0) return true;
+            // Prestasi maupun quiz: poin cukup saja belum cukup untuk "dimiliki" —
+            // border baru resmi terbuka setelah siswa klik "Klaim Border" (lihat
+            // klaimBorder()), jadi status klaim ikut disyaratkan di sini.
+            return poinCukupUntukBorder(border) && sudahKlaimBorder(border.id);
         }
 
         function getSemuaBorder() {
@@ -4380,10 +4425,11 @@
             const terbuka = isBorderTerbuka(border);
             const sedangDipakai = dipakai.id === border.id;
 
-            // Khusus kategori prestasi: begitu poin sudah cukup tapi belum diklaim,
-            // kartu tampil dalam mode "siap klaim" — bukan lagi mode "kurang poin".
-            const poinCukup = border.kategori === 'prestasi' ? poinPrestasiCukup(border) : false;
-            const siapDiklaim = border.kategori === 'prestasi' && !terbuka && poinCukup;
+            // Begitu poin sudah cukup tapi belum diklaim, kartu tampil dalam mode
+            // "siap klaim" — bukan lagi mode "kurang poin". Berlaku utk prestasi
+            // MAUPUN quiz (admin & border tier dasar minPoin 0 selalu auto terbuka).
+            const poinCukup = border.kategori !== 'admin' ? poinCukupUntukBorder(border) : false;
+            const siapDiklaim = border.kategori !== 'admin' && !terbuka && poinCukup;
 
             let labelKurang = '';
             if (!terbuka && !siapDiklaim) {
@@ -4398,8 +4444,8 @@
                 }
             }
 
-            // Ceklis kecil syarat border prestasi (poin & sertifikat) — hanya
-            // tampil selagi border belum resmi dimiliki (masih perlu diklaim).
+            // Ceklis kecil syarat border (poin, & khusus prestasi: sertifikat) —
+            // hanya tampil selagi border belum resmi dimiliki (masih perlu diklaim).
             let ceklisSyaratHtml = '';
             if (siapDiklaim) {
                 const baris = (ok, teks) => `
@@ -4408,8 +4454,8 @@
                     </p>`;
                 ceklisSyaratHtml = `
                     <div class="w-full text-[10px] font-semibold text-left mb-2.5 space-y-1">
-                        ${baris(true, 'Poin mencukupi')}
-                        ${baris(true, 'Sertifikat/piala disetujui')}
+                        ${baris(true, border.kategori === 'prestasi' ? 'Poin mencukupi' : 'Poin quiz mencukupi')}
+                        ${border.kategori === 'prestasi' ? baris(true, 'Sertifikat/piala disetujui') : ''}
                     </div>`;
             }
 
@@ -4429,7 +4475,7 @@
                 ${terbuka
                     ? `<button onclick="pakaiBorder('${border.id}')" ${sedangDipakai ? 'disabled' : ''} class="w-full py-2 rounded-xl text-xs font-bold transition-all ${sedangDipakai ? 'bg-emerald-100 text-emerald-700 cursor-default' : 'bg-slate-800 hover:bg-slate-900 text-white'}">${sedangDipakai ? '<i class="fa-solid fa-check mr-1"></i>Sedang Dipakai' : 'Pakai Border'}</button>`
                     : (siapDiklaim
-                        ? `<button onclick="klaimBorderPrestasi('${border.id}')" class="w-full py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white transition-all"><i class="fa-solid fa-award mr-1"></i>Klaim Border</button>`
+                        ? `<button onclick="klaimBorder('${border.id}')" class="w-full py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white transition-all"><i class="fa-solid fa-award mr-1"></i>Klaim Border</button>`
                         : (border.kategori === 'prestasi'
                             ? `<p class="text-[10px] text-amber-600 font-semibold mb-2">${labelKurang}</p>
                                <button onclick="bukaModalBukaBorder('${border.id}')" class="w-full py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition-all"><i class="fa-solid fa-unlock mr-1"></i>Buka Border</button>`
