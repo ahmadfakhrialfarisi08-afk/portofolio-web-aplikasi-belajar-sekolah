@@ -3015,9 +3015,9 @@
             let data;
             try {
                 const raw = localStorage.getItem(KEY_QUIZ_DATA);
-                data = raw ? JSON.parse(raw) : { totalPoin: 0, bestByLevel: { easy: 0, medium: 0, hard: 0 }, leaderboard: [] };
+                data = raw ? JSON.parse(raw) : { totalPoin: 0, bestByLevel: { easy: 0, medium: 0, hard: 0 }, totalPoinByLevel: { easy: 0, medium: 0, hard: 0 }, leaderboard: [] };
             } catch (e) {
-                data = { totalPoin: 0, bestByLevel: { easy: 0, medium: 0, hard: 0 }, leaderboard: [] };
+                data = { totalPoin: 0, bestByLevel: { easy: 0, medium: 0, hard: 0 }, totalPoinByLevel: { easy: 0, medium: 0, hard: 0 }, leaderboard: [] };
             }
 
             // Bersih-bersih data lama: kalau masih ada sisa beberapa entri leaderboard
@@ -3181,6 +3181,14 @@
             data.totalPoin = (data.totalPoin || 0) + skor;
             data.bestByLevel = data.bestByLevel || { easy: 0, medium: 0, hard: 0 };
             if (skor > (data.bestByLevel[level] || 0)) data.bestByLevel[level] = skor;
+
+            // Akumulasi total poin PER LEVEL (beda dari bestByLevel yang cuma nyimpen
+            // skor tertinggi 1x main) -- ini yang dipakai buat syarat buka Border Quiz,
+            // supaya makin sering & makin bagus main di level itu, poinnya kepakai/
+            // kesinkron ke arah buka border, bukan cuma "mentok" di skor 1x main
+            // (yang max-nya per level memang jauh di bawah 250/500).
+            data.totalPoinByLevel = data.totalPoinByLevel || { easy: 0, medium: 0, hard: 0 };
+            data.totalPoinByLevel[level] = (data.totalPoinByLevel[level] || 0) + skor;
 
             // Simpan dulu skor terbaru SEBELUM ambil border, supaya kalau skor ini
             // baru saja membuka border/title tier berikutnya, entri leaderboard
@@ -4234,7 +4242,7 @@
                 return poin >= border.minPoin;
             }
             const data = getQuizData();
-            const poin = (data.bestByLevel && data.bestByLevel[border.level]) || 0; // 0 poin = terkunci
+            const poin = (data.totalPoinByLevel && data.totalPoinByLevel[border.level]) || 0; // total akumulasi poin quiz level ini
             return poin >= border.minPoin;
         }
 
@@ -4317,7 +4325,7 @@
                 return `<i class="fa-solid fa-trophy mr-1"></i>Prestasi &middot; min. 1 sertifikat/piala beragam (&asymp;${border.minPoin} poin)`;
             }
             const meta = LEVEL_META_BORDER[border.level];
-            return `<i class="fa-solid fa-gamepad mr-1"></i>Quiz ${meta ? meta.label : ''} &middot; min. ${border.minPoin} poin`;
+            return `<i class="fa-solid fa-gamepad mr-1"></i>Quiz ${meta ? meta.label : ''} &middot; min. ${border.minPoin} poin (akumulasi total poin main quiz level ini)`;
         }
 
         // Render satu kartu border (dipakai bareng oleh grid Sudah Dimiliki & Belum Dimiliki)
@@ -4331,8 +4339,8 @@
                     labelKurang = `Butuh ${sisa} poin lagi (sertifikat/piala beragam)`;
                 } else {
                     const data = getQuizData();
-                    const bestLevel = (data.bestByLevel && data.bestByLevel[border.level]) || 0;
-                    const sisa = Math.max(0, border.minPoin - bestLevel);
+                    const totalLevel = (data.totalPoinByLevel && data.totalPoinByLevel[border.level]) || 0;
+                    const sisa = Math.max(0, border.minPoin - totalLevel);
                     labelKurang = `Butuh ${sisa} poin lagi`;
                 }
             }
