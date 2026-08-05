@@ -3012,12 +3012,45 @@
         let quizFilterLeaderboardAktif = 'semua';
 
         function getQuizData() {
+            let data;
             try {
                 const raw = localStorage.getItem(KEY_QUIZ_DATA);
-                return raw ? JSON.parse(raw) : { totalPoin: 0, bestByLevel: { easy: 0, medium: 0, hard: 0 }, leaderboard: [] };
+                data = raw ? JSON.parse(raw) : { totalPoin: 0, bestByLevel: { easy: 0, medium: 0, hard: 0 }, leaderboard: [] };
             } catch (e) {
-                return { totalPoin: 0, bestByLevel: { easy: 0, medium: 0, hard: 0 }, leaderboard: [] };
+                data = { totalPoin: 0, bestByLevel: { easy: 0, medium: 0, hard: 0 }, leaderboard: [] };
             }
+
+            // Bersih-bersih data lama: kalau masih ada sisa beberapa entri leaderboard
+            // untuk siswa+level yang sama (peninggalan sebelum aturan "cuma simpan
+            // skor terbaik" berlaku), rapikan jadi cuma 1 entri per siswa per level
+            // -- yang skornya paling tinggi. Berlaku otomatis untuk semua tingkat
+            // kesulitan (easy/medium/hard) tiap kali data quiz dibaca.
+            if (data.leaderboard && data.leaderboard.length) {
+                const bersih = dedupLeaderboardQuiz(data.leaderboard);
+                if (bersih.length !== data.leaderboard.length) {
+                    data.leaderboard = bersih;
+                    try { localStorage.setItem(KEY_QUIZ_DATA, JSON.stringify(data)); } catch (e) {}
+                } else {
+                    data.leaderboard = bersih;
+                }
+            }
+
+            return data;
+        }
+
+        // Sisakan 1 entri per kombinasi nama+level di leaderboard, yaitu yang
+        // skornya tertinggi (kalau skornya sama, ambil yang tanggalnya paling baru).
+        function dedupLeaderboardQuiz(list) {
+            const terbaikPerOrang = new Map();
+            list.forEach(e => {
+                const kunci = `${e.nama}||${e.level}`;
+                const existing = terbaikPerOrang.get(kunci);
+                if (!existing || e.skor > existing.skor ||
+                    (e.skor === existing.skor && new Date(e.tanggal) > new Date(existing.tanggal))) {
+                    terbaikPerOrang.set(kunci, e);
+                }
+            });
+            return Array.from(terbaikPerOrang.values());
         }
 
         function saveQuizData(data) {
