@@ -473,6 +473,48 @@
         @keyframes checkmarkStrokeCircle { 100% { stroke-dashoffset: 0; } }
         @keyframes checkmarkStrokeCheck { 100% { stroke-dashoffset: 0; } }
 
+        /* Konfeti kecil yang muncul di modal sukses kirim prestasi */
+        .confetti-sukses {
+            position: absolute;
+            top: 14%;
+            left: 50%;
+            width: 7px;
+            height: 10px;
+            background: var(--c, #f59e0b);
+            border-radius: 2px;
+            opacity: 0;
+            pointer-events: none;
+            animation: confettiJatuh 0.9s ease-out forwards;
+        }
+        @keyframes confettiJatuh {
+            0%   { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+            100% { opacity: 0; transform: translate(var(--x, 0), 90px) rotate(var(--rot, 45deg)) scale(0.6); }
+        }
+
+        /* --- 10. ANIMASI FORM & TOMBOL KIRIM PRESTASI --- */
+        .modal-kirim-prestasi-pop { animation: kirimPrestasiPopIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes kirimPrestasiPopIn {
+            0% { transform: translateY(14px) scale(0.96); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .field-kirim-prestasi {
+            animation: fieldMasuk 0.35s ease both;
+            animation-delay: calc(var(--delay, 0) * 60ms);
+        }
+        @keyframes fieldMasuk {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .btn-kirim-prestasi { background-position: 0% center; animation: btnKirimGlow 2.2s ease-in-out infinite; }
+        .btn-kirim-prestasi:hover { animation-play-state: paused; }
+        @keyframes btnKirimGlow {
+            0%, 100% { box-shadow: 0 8px 20px -6px rgba(245, 158, 11, 0.55); }
+            50% { box-shadow: 0 8px 26px -4px rgba(249, 115, 22, 0.7); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .modal-kirim-prestasi-pop, .field-kirim-prestasi, .btn-kirim-prestasi, .confetti-sukses { animation: none !important; }
+        }
+
         /* --- 9. MODAL ZOOM FOTO BUKTI PRESTASI --- */
         .thumb-bukti-prestasi {
             cursor: zoom-in;
@@ -806,7 +848,7 @@
                         <div class="max-w-md">
                             <span class="bg-white/25 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 inline-block">Koleksi Border</span>
                             <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">🖼️ Border Avatar Kamu</h2>
-                            <p class="text-amber-50 text-sm leading-relaxed">Ada 2 jalur untuk buka border: menang Quiz sesuai tingkat kesulitan, atau upload bukti Prestasi (sertifikat/piala) yang dikonfirmasi guru/admin.</p>
+                            <p class="text-amber-50 text-sm leading-relaxed">Ada 2 jalur untuk buka border: menang Quiz sesuai tingkat kesulitan, atau upload bukti Prestasi (minimal 1 sertifikat atau 1 piala, jenisnya boleh beragam) yang dikonfirmasi guru/admin.</p>
                         </div>
                         <div class="flex sm:flex-col gap-4 sm:gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-5 py-4 flex-shrink-0">
                             <div class="text-center sm:text-left">
@@ -1170,7 +1212,7 @@
          sengaja tetap sama (form-ajukan-prestasi, input-judul-prestasi, dst) supaya
          fungsi ajukanPrestasi() yang sudah ada tidak perlu diubah sama sekali. -->
     <div id="modal-buka-border-prestasi" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[103] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupModalBukaBorder()">
-        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden">
+        <div class="modal-kirim-prestasi-pop bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden">
             <div class="relative bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 p-6 text-white">
                 <button onclick="tutupModalBukaBorder()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all">
                     <i class="fa-solid fa-xmark"></i>
@@ -1188,12 +1230,12 @@
             </div>
 
             <form id="form-ajukan-prestasi" onsubmit="ajukanPrestasi(event)" class="p-6 space-y-4">
-                <div>
+                <div class="field-kirim-prestasi" style="--delay:0">
                     <label class="text-xs font-bold text-slate-600 mb-1.5 block">Nama Lomba / Prestasi</label>
-                    <input id="input-judul-prestasi" type="text" required placeholder="Contoh: Juara 1 LKS Tingkat Provinsi" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                    <input id="input-judul-prestasi" type="text" required placeholder="Contoh: Juara 1 LKS Tingkat Provinsi" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 transition-shadow">
                 </div>
 
-                <div>
+                <div class="field-kirim-prestasi" style="--delay:1">
                     <label class="text-xs font-bold text-slate-600 mb-2 block">Jenis Bukti</label>
                     <div class="grid grid-cols-2 gap-3">
                         <label class="chip-jenis-bukti cursor-pointer">
@@ -1212,17 +1254,17 @@
                     <input type="hidden" id="input-jenis-prestasi" value="sertifikat">
                 </div>
 
-                <div>
+                <div class="field-kirim-prestasi" style="--delay:2">
                     <label class="text-xs font-bold text-slate-600 mb-1.5 block">Foto Sertifikat/Piala</label>
                     <input id="input-file-prestasi" type="file" accept="image/*" required class="w-full text-xs file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-amber-100 file:text-amber-700 file:text-xs file:font-bold border border-slate-200 rounded-xl">
                 </div>
 
-                <div>
+                <div class="field-kirim-prestasi" style="--delay:3">
                     <label class="text-xs font-bold text-slate-600 mb-1.5 block">Keterangan (opsional)</label>
                     <textarea id="input-keterangan-prestasi" rows="2" placeholder="Contoh: Diselenggarakan Dinas Pendidikan, Maret 2026" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></textarea>
                 </div>
 
-                <button type="submit" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition-all shadow-sm shadow-amber-500/30">
+                <button type="submit" class="btn-kirim-prestasi field-kirim-prestasi w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 bg-[length:200%_auto] hover:bg-right text-white text-sm font-bold transition-all duration-500 shadow-lg shadow-amber-500/40 hover:shadow-xl hover:shadow-amber-500/50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]" style="--delay:4">
                     <i class="fa-solid fa-paper-plane mr-1.5"></i>Kirim untuk Dikonfirmasi
                 </button>
             </form>
@@ -1231,7 +1273,12 @@
 
     <!-- Animasi berhasil kirim bukti prestasi -->
     <div id="modal-sukses-prestasi" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[105] hidden items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-xs w-full p-7 shadow-2xl flex flex-col items-center text-center space-y-3 modal-sukses-pop">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-7 shadow-2xl flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
+            <span class="confetti-sukses" style="--x:-38px; --rot:-30deg; --c:#f59e0b; animation-delay:0s;"></span>
+            <span class="confetti-sukses" style="--x:34px; --rot:20deg; --c:#10b981; animation-delay:.08s;"></span>
+            <span class="confetti-sukses" style="--x:-18px; --rot:60deg; --c:#f43f5e; animation-delay:.16s;"></span>
+            <span class="confetti-sukses" style="--x:22px; --rot:-50deg; --c:#3b82f6; animation-delay:.24s;"></span>
+            <span class="confetti-sukses" style="--x:0px; --rot:10deg; --c:#a855f7; animation-delay:.12s;"></span>
             <div class="w-20 h-20 rounded-full bg-emerald-50 flex items-center justify-center modal-sukses-ring">
                 <svg class="w-11 h-11" viewBox="0 0 52 52">
                     <circle class="checkmark-circle" cx="26" cy="26" r="23"/>
@@ -3857,7 +3904,7 @@
 
             // Restart animasi checkmark tiap kali modal dibuka lagi (kalau cuma
             // classList show, animasi CSS-nya tidak akan replay dari awal).
-            modal.querySelectorAll('.checkmark-circle, .checkmark-check').forEach(el => {
+            modal.querySelectorAll('.checkmark-circle, .checkmark-check, .confetti-sukses').forEach(el => {
                 el.style.animation = 'none';
                 void el.offsetWidth; // paksa reflow
                 el.style.animation = '';
@@ -4087,7 +4134,7 @@
             if (elPreview) elPreview.src = border.file;
             if (elSyarat) {
                 const sisa = Math.max(0, border.minPoin - getTotalPoinPrestasiDisetujui());
-                elSyarat.innerHTML = `<i class="fa-solid fa-circle-info mr-1"></i>Butuh ${sisa} poin lagi (dari prestasi disetujui) untuk membuka border ini.`;
+                elSyarat.innerHTML = `<i class="fa-solid fa-circle-info mr-1"></i>Butuh ${sisa} poin lagi dari sertifikat/piala yang disetujui &mdash; minimal 1 bukti prestasi (sertifikat atau piala, jenisnya boleh beragam) untuk membuka border ini.`;
             }
 
             document.getElementById('form-ajukan-prestasi').reset();
@@ -4203,7 +4250,7 @@
                 return `<i class="fa-solid fa-crown mr-1"></i>Khusus Admin/Developer`;
             }
             if (border.kategori === 'prestasi') {
-                return `<i class="fa-solid fa-trophy mr-1"></i>Prestasi &middot; min. ${border.minPoin} poin`;
+                return `<i class="fa-solid fa-trophy mr-1"></i>Prestasi &middot; min. 1 sertifikat/piala beragam (&asymp;${border.minPoin} poin)`;
             }
             const meta = LEVEL_META_BORDER[border.level];
             return `<i class="fa-solid fa-gamepad mr-1"></i>Quiz ${meta ? meta.label : ''} &middot; min. ${border.minPoin} poin`;
@@ -4217,7 +4264,7 @@
             if (!terbuka) {
                 if (border.kategori === 'prestasi') {
                     const sisa = Math.max(0, border.minPoin - getTotalPoinPrestasiDisetujui());
-                    labelKurang = `Butuh ${sisa} poin lagi`;
+                    labelKurang = `Butuh ${sisa} poin lagi (sertifikat/piala beragam)`;
                 } else {
                     const data = getQuizData();
                     const bestLevel = (data.bestByLevel && data.bestByLevel[border.level]) || 0;
