@@ -1790,10 +1790,19 @@
             if (!container) return;
 
             const now = getAccurateNow();
-            let hariIni = namaHariIndo[now.getDay()];
-            if (hariIni === "Minggu" || hariIni === "Sabtu") hariIni = "Senin";
+            const hariIni = namaHariIndo[now.getDay()];
+            const hariLibur = hariIni === "Minggu" || hariIni === "Sabtu";
+            const listJadwal = hariLibur ? [] : (jadwalPelajaran[hariIni] || []);
 
-            const listJadwal = jadwalPelajaran[hariIni] || [];
+            if (listJadwal.length === 0) {
+                container.innerHTML = `
+                    <div class="p-6 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                        <i class="fa-solid fa-mug-hot text-2xl mb-1 text-slate-300"></i>
+                        <p class="text-xs font-medium">${hariLibur ? `Hari ${hariIni} libur, tidak ada jadwal pelajaran.` : 'Tidak ada jadwal pelajaran hari ini.'}</p>
+                    </div>`;
+                return;
+            }
+
             const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
 
             let html = '';
@@ -2263,8 +2272,16 @@
                 _menitTerakhirDitampilkan = minutes;
 
                 const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+                const teksTanggal = now.toLocaleDateString('id-ID', options);
+
                 const dateEl = document.getElementById('header-realtime-date');
-                if (dateEl) dateEl.innerText = now.toLocaleDateString('id-ID', options);
+                if (dateEl) dateEl.innerText = teksTanggal;
+
+                // Teks di kartu "Jadwal Hari Ini" disinkronkan dari sumber jam yang
+                // sama (getAccurateNow) supaya harinya tidak pernah beda dgn jam
+                // realtime di header, walau device dibiarkan terbuka lewat tengah malam.
+                const currentDateEl = document.getElementById('current-date-text');
+                if (currentDateEl) currentDateEl.innerText = teksTanggal;
 
                 renderTodaySchedule();
                 checkTaskBadgeStatus();
