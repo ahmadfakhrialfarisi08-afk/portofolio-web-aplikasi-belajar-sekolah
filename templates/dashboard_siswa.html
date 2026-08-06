@@ -124,6 +124,43 @@
         }
 
         /* ============================================================
+           STREAK TUGAS (menggantikan kartu "Kehadiran Bulan Ini")
+           Kartu berubah warna & karakter api ikut "membara" (makin
+           menyala + berkedip makin cepat) sesuai panjang streak tugas
+           beruntun yang berhasil dijaga siswa. Tier 0 = api padam/pudar,
+           tier 4 = api paling membara (kartu gelap + glow kuat).
+           ============================================================ */
+        @keyframes flameFlicker {
+            0%, 100% { transform: scale(1) rotate(-3deg); }
+            50% { transform: scale(1.12) rotate(3deg); }
+        }
+        .streak-flame-icon {
+            display: inline-block;
+            transform-origin: 50% 90%;
+        }
+        .streak-card { transition: background .35s ease, border-color .35s ease, box-shadow .35s ease; }
+
+        .streak-tier-0 .streak-flame-icon { animation: none; opacity: .45; filter: none; }
+        .streak-tier-1 .streak-flame-icon { animation: flameFlicker 2.2s ease-in-out infinite; filter: drop-shadow(0 0 5px rgba(251,191,36,.55)); }
+        .streak-tier-2 .streak-flame-icon { animation: flameFlicker 1.5s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(249,115,22,.65)); }
+        .streak-tier-3 .streak-flame-icon { animation: flameFlicker 1s ease-in-out infinite; filter: drop-shadow(0 0 11px rgba(234,88,12,.75)); }
+        .streak-tier-4 .streak-flame-icon { animation: flameFlicker .65s ease-in-out infinite; filter: drop-shadow(0 0 14px rgba(248,113,113,.9)); }
+
+        .streak-tier-0 { background: #ffffff; }
+        .streak-tier-1 { background: linear-gradient(135deg, #ffffff, #fffbeb); border-color: #fde68a !important; }
+        .streak-tier-2 { background: linear-gradient(135deg, #fffbeb, #ffedd5); border-color: #fdba74 !important; }
+        .streak-tier-3 { background: linear-gradient(135deg, #fff1e6, #ffe4e0); border-color: #fca5a5 !important; box-shadow: 0 0 0 1px rgba(249,115,22,.15), var(--shadow-card); }
+        .streak-tier-4 {
+            background: linear-gradient(135deg, #7c2d12, #431407 70%);
+            border-color: #f97316 !important;
+            box-shadow: 0 0 0 1px rgba(249,115,22,.35), 0 8px 20px -6px rgba(249,115,22,.45);
+        }
+        .streak-tier-4 #streak-label-atas,
+        .streak-tier-4 #streak-jumlah,
+        .streak-tier-4 #streak-label-bawah { color: #fff7ed !important; }
+        .streak-tier-4 .streak-icon-wrap { background: rgba(255,255,255,.15) !important; color: #fed7aa !important; }
+
+        /* ============================================================
            EFEK NAMA (mengikuti tier border yang sedang dipakai siswa)
            Dipakai bareng di: header profil, Quiz & Leaderboard, notif
            "ditikung" — supaya efek nama selalu sinkron dg border aktif.
@@ -775,10 +812,10 @@
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                        <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-base mb-3" aria-hidden="true"><i class="fa-solid fa-user-check"></i></div>
-                        <p class="text-xs font-medium text-slate-500">Kehadiran Bulan Ini</p>
-                        <h3 class="text-2xl font-bold text-slate-900 mt-0.5">100% <span class="text-xs font-normal text-emerald-600">Hadir</span></h3>
+                    <div id="kartu-streak-tugas" class="streak-card streak-tier-0 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm" title="Streak naik tiap tugas dikumpulkan sebelum deadline berturut-turut, dan putus kalau ada tugas yang kelewat.">
+                        <div class="streak-icon-wrap w-10 h-10 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center text-base mb-3" aria-hidden="true"><i id="streak-flame-icon" class="fa-solid fa-fire streak-flame-icon"></i></div>
+                        <p id="streak-label-atas" class="text-xs font-medium text-slate-500">Streak Tugas</p>
+                        <h3 class="text-2xl font-bold text-slate-900 mt-0.5"><span id="streak-jumlah">0</span> <span id="streak-label-bawah" class="text-xs font-normal text-slate-400">Belum Ada</span></h3>
                     </div>
 
                     <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
@@ -1899,6 +1936,73 @@
 
             if (elPending) elPending.innerText = String(pending);
             if (elCompleted) elCompleted.innerText = String(completed);
+
+            renderStreakTugas();
+        }
+
+        /* ================= STREAK TUGAS (menggantikan "Kehadiran Bulan Ini") =================
+           Streak = jumlah tugas BERUNTUN yang berhasil dikumpulkan siswa, dihitung
+           mundur dari tugas paling baru. Tugas yang deadline-nya sudah lewat TAPI
+           belum dikumpulkan (bolong) memutus streak di titik itu. Tugas yang belum
+           jatuh tempo (masih berjalan) dilewati saja -- tidak menambah atau memutus,
+           karena belum bisa dinilai berhasil/gagalnya. */
+        function hitungStreakTugas() {
+            const tasks = getTasksSiswa();
+            const now = getAccurateNow();
+
+            const daftar = tasks.map(t => {
+                const batasWaktu = t.deadline || t.deadlineDate || '';
+                return {
+                    selesai: !!(t.studentSubmitted || t.sudahMengumpulkan),
+                    kedaluwarsa: cekTugasSudahKedaluwarsa(batasWaktu, now),
+                    waktu: parseDeadlineTugas(batasWaktu)
+                };
+            });
+
+            // Urutkan dari tugas paling lama ke paling baru (berdasar deadline).
+            // Tugas tanpa deadline yang valid ditaruh paling akhir (dianggap paling baru).
+            daftar.sort((a, b) => {
+                if (!a.waktu && !b.waktu) return 0;
+                if (!a.waktu) return 1;
+                if (!b.waktu) return -1;
+                return a.waktu - b.waktu;
+            });
+
+            let streak = 0;
+            for (let i = daftar.length - 1; i >= 0; i--) {
+                const t = daftar[i];
+                if (t.selesai) { streak++; continue; }
+                if (t.kedaluwarsa) break; // tugas bolong -> streak putus persis di sini
+                // belum jatuh tempo -> lewati, cek tugas sebelumnya
+            }
+            return streak;
+        }
+
+        // Tier menentukan warna kartu & seberapa "membara" karakter apinya.
+        // Ambang batasnya sengaja dibuat rendah supaya progresnya cepat terasa.
+        function getStreakTierInfo(streak) {
+            if (streak <= 0) return { tier: 0, label: 'Belum Ada', sub: 'Yuk kumpulkan tugas pertamamu!' };
+            if (streak <= 2) return { tier: 1, label: 'Beruntun', sub: 'Baru mulai, terus jaga ya!' };
+            if (streak <= 5) return { tier: 2, label: 'Beruntun', sub: 'Makin panas nih, lanjutkan!' };
+            if (streak <= 9) return { tier: 3, label: 'Beruntun', sub: 'Membara! Jangan sampai putus.' };
+            return { tier: 4, label: 'Beruntun', sub: 'Legend! Streak-mu sedang membara-bara 🔥' };
+        }
+
+        function renderStreakTugas() {
+            const kartu = document.getElementById('kartu-streak-tugas');
+            const elJumlah = document.getElementById('streak-jumlah');
+            const elLabelBawah = document.getElementById('streak-label-bawah');
+            if (!kartu || !elJumlah || !elLabelBawah) return;
+
+            const streak = hitungStreakTugas();
+            const info = getStreakTierInfo(streak);
+
+            for (let i = 0; i <= 4; i++) kartu.classList.remove(`streak-tier-${i}`);
+            kartu.classList.add(`streak-tier-${info.tier}`);
+            kartu.title = info.sub;
+
+            elJumlah.innerText = String(streak);
+            elLabelBawah.innerText = info.label;
         }
 
         // Cek apakah sebuah deadline tugas sudah lewat, dipakai renderTugasTerdekat
@@ -2942,6 +3046,7 @@
                 renderLiveTaskContent();
                 updateGlobalCountdown();
                 checkTaskBadgeStatus();
+                updateTaskCounter();
             }
             if (e.key === NOTIF_TUGAS_DITARIK_KEY) {
                 cekNotifBaruTugasDitarik();
@@ -3042,6 +3147,7 @@
             renderRiwayatPengumpulan();
             renderLiveTaskContent(); // render awal: langsung munculin status tugas terdekat saat halaman baru dibuka
             checkTaskBadgeStatus();
+            updateTaskCounter();
             updateBerandaPoinQuiz();
             renderPanelDummyLeaderboard();
             pastikanBaselineSeenIdsQuiz();
@@ -3054,6 +3160,7 @@
                 sinkronkanRiwayatDenganTugasAktif();
                 cekPembaruanTugasRealtime();
                 cekNotifBaruStatusPrestasi();
+                updateTaskCounter(); // biar streak otomatis putus/berubah warna begitu deadline lewat, tanpa perlu refresh
             }, 3000);
             cekNotifBaruTugasDitarik();
             cekNotifBaruStatusPrestasi();
