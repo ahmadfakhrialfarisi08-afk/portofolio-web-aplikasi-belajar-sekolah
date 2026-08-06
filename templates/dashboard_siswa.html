@@ -4536,15 +4536,6 @@
         // oleh guru manapun di sana, dan status/nama guru penyetuju bisa kebaca balik di sini.
         const KEY_PRESTASI_SISWA = `pengajuan_prestasi_${KELAS_AKTIF_SISWA}`;
 
-        // Registry hash PERMANEN — terpisah dari data pengajuan prestasi di atas.
-        // Cuma pernah DITAMBAH (append-only), TIDAK PERNAH dihapus/diedit walau
-        // pengajuan prestasi aslinya nanti dihapus/ditolak/dibatalkan (mis. oleh
-        // guru di Dashboard Guru). Tujuannya: begitu satu file pernah masuk sini,
-        // file itu SELAMANYA tercatat sudah pernah diupload -- jadi kalau ada yang
-        // coba upload ulang file identik di kemudian hari (walau pengajuan lama
-        // sudah lenyap dari riwayat), tetap otomatis kedetek & ditolak.
-        const KEY_HASH_PRESTASI_PERMANEN = `hash_prestasi_permanen_${KELAS_AKTIF_SISWA}`;
-
         // Border prestasi MAUPUN quiz TIDAK auto-terbuka lagi hanya karena poin
         // sudah cukup — siswa harus klik tombol "Klaim Border" secara manual dulu.
         // Key ini menyimpan daftar id semua border (prestasi & quiz) yang sudah
@@ -4890,33 +4881,12 @@
             return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
         }
 
-        // Cek ke SELURUH data prestasi di kelas ini (semua siswa, semua status --
-        // menunggu/disetujui/ditolak) supaya file yang sama tidak bisa lolos cuma
-        // dengan ganti nama file maupun diajukan ulang oleh siswa yang sama/berbeda.
-        function cariPrestasiDenganHashSama(hash) {
-            return getPrestasiData().find(p => p.hashFile === hash);
-        }
-
-        // ===== Registry hash PERMANEN (lihat catatan di deklarasi KEY_HASH_PRESTASI_PERMANEN) =====
-        function getHashPrestasiPermanen() {
-            try {
-                const raw = localStorage.getItem(KEY_HASH_PRESTASI_PERMANEN);
-                return raw ? JSON.parse(raw) : [];
-            } catch (e) {
-                return [];
-            }
-        }
-
-        // Catatan ini HANYA ditambah, tidak pernah dihapus/di-overwrite -- dipanggil
-        // sekali tiap ada pengajuan baru yang lolos verifikasi anti-duplikat.
-        function catatHashPrestasiPermanen(hash, judul, namaSiswa, tanggalAjukan) {
-            const list = getHashPrestasiPermanen();
-            list.push({ hash, judul, namaSiswa, tanggalAjukan });
-            localStorage.setItem(KEY_HASH_PRESTASI_PERMANEN, JSON.stringify(list));
-        }
-
-        function cariHashPermanenSama(hash) {
-            return getHashPrestasiPermanen().find(h => h.hash === hash);
+        // HANYA dianggap duplikat yang diblok sistem kalau file identik ini sebelumnya
+        // sudah pernah DISETUJUI (status 'disetujui'). Kalau pengajuan sebelumnya masih
+        // menunggu konfirmasi, atau malah sudah ditolak guru, file yang sama tetap boleh
+        // dikirim ulang -- sistem TIDAK memblokirnya, biar tetap diteruskan & dinilai guru.
+        function cariPrestasiDisetujuiDenganHashSama(hash) {
+            return getPrestasiData().find(p => p.hashFile === hash && p.status === 'disetujui');
         }
 
         /* ================= NOTIFIKASI STATUS PRESTASI (disetujui/ditolak guru) =================
@@ -5502,14 +5472,12 @@
                 // (2) registry hash permanen yang mencatat SEMUA file yang pernah
                 // pernah diajukan sepanjang sejarah, termasuk yang pengajuan aslinya
                 // sudah dihapus/ditolak/dibatalkan. Kalau salah satu ketemu, dianggap duplikat.
-                const duplikatAktif = cariPrestasiDenganHashSama(hashFileBaru);
-                const duplikatPermanen = cariHashPermanenSama(hashFileBaru);
-                const duplikat = duplikatAktif || duplikatPermanen;
+                const duplikatDisetujui = cariPrestasiDisetujuiDenganHashSama(hashFileBaru);
 
-                if (duplikat) {
-                    const keteranganPemilik = duplikat.namaSiswa === NAMA_PEMAIN_QUIZ
-                        ? `bukti "${duplikat.judul}" yang sudah kamu ajukan sebelumnya`
-                        : `bukti milik siswa lain yang sudah pernah diupload`;
+                if (duplikatDisetujui) {
+                    const keteranganPemilik = duplikatDisetujui.namaSiswa === NAMA_PEMAIN_QUIZ
+                        ? `bukti "${duplikatDisetujui.judul}" yang sudah DISETUJUI sebelumnya`
+                        : `bukti milik siswa lain yang sudah DISETUJUI sebelumnya`;
                     tampilkanGagalPrestasi(`File ini terdeteksi SAMA PERSIS dengan ${keteranganPemilik} (walau nama file sudah diganti). Silakan upload foto bukti yang benar-benar berbeda.`);
                     fileInput.value = '';
                     return;
@@ -5531,10 +5499,6 @@
                     status: 'menunggu'
                 });
                 savePrestasiData(list);
-                // Dicatat permanen di sini juga -- terpisah dari `list` di atas -- supaya
-                // walau entri prestasi ini nanti dihapus dari riwayat, hash file-nya tetap
-                // "diingat" selamanya dan tidak bisa lolos anti-duplikat lagi di masa depan.
-                catatHashPrestasiPermanen(hashFileBaru, judul, NAMA_PEMAIN_QUIZ, tanggalAjukan);
                 // Baseline status prestasi ini langsung disimpan sebagai 'menunggu'
                 // supaya nanti saat guru approve/tolak, perubahan statusnya kebaca
                 // sebagai perubahan baru dan toast notifikasinya muncul.
