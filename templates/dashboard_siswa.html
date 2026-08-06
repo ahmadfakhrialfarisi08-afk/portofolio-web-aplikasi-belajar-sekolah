@@ -1016,14 +1016,14 @@
             
             <section id="tab-quiz" class="tab-content space-y-6 hidden">
 
-                <!-- ============ VIEW 1: MENU QUIZ ============ -->
-                <div id="quiz-view-menu">
+                <!-- ============ VIEW 0: PILIH JENIS QUIZ ============ -->
+                <div id="quiz-view-jenis">
                     <div class="relative rounded-3xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 p-8 text-white overflow-hidden shadow-xl shadow-purple-500/10">
                         <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                             <div class="max-w-md">
                                 <span class="bg-white/25 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 inline-block">Quiz & Leaderboard</span>
                                 <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">🎮 Uji Wawasanmu, Kumpulkan Poin!</h2>
-                                <p class="text-purple-100 text-sm leading-relaxed">Pilih tingkat kesulitan, jawab secepat & setepat mungkin, lalu rebut posisi teratas di leaderboard.</p>
+                                <p class="text-purple-100 text-sm leading-relaxed">Pilih dulu jenis soalnya, lalu tentukan tingkat kesulitan yang mau kamu jajal.</p>
                             </div>
                             <div class="flex sm:flex-col gap-4 sm:gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-5 py-4 flex-shrink-0">
                                 <div class="text-center sm:text-left">
@@ -1039,7 +1039,38 @@
                         <i class="fa-solid fa-trophy absolute -right-8 -bottom-8 text-white/10 text-9xl"></i>
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
+                        <button type="button" onclick="pilihJenisQuiz('pg')" class="text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-purple-200 transition-shadow p-6 flex flex-col">
+                            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-list-check"></i></div>
+                            <h3 class="font-bold text-lg text-slate-900">Pilihan Ganda</h3>
+                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Jawab dengan memilih 1 dari 4 opsi. Ada leaderboard & border koleksi yang bisa dibuka lewat jalur ini.</p>
+                            <span class="w-full py-2.5 bg-purple-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                Lihat Tingkat Kesulitan <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </span>
+                        </button>
+
+                        <button type="button" onclick="pilihJenisQuiz('essay')" class="text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-indigo-200 transition-shadow p-6 flex flex-col">
+                            <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-pen-to-square"></i></div>
+                            <h3 class="font-bold text-lg text-slate-900">Essay</h3>
+                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Ketik sendiri jawabanmu, langsung dicocokkan otomatis dengan kunci jawaban.</p>
+                            <span class="w-full py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                Lihat Tingkat Kesulitan <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ============ VIEW 1a: TINGKAT KESULITAN - PILIHAN GANDA ============ -->
+                <div id="quiz-view-tingkat-pg" class="hidden">
+                    <button type="button" onclick="kembaliKeJenisQuiz()" class="mb-4 inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors">
+                        <i class="fa-solid fa-arrow-left text-[10px]"></i> Kembali pilih jenis quiz
+                    </button>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="px-2.5 py-1 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-md uppercase tracking-wide"><i class="fa-solid fa-list-check mr-1"></i>Pilihan Ganda</span>
+                    </div>
+                    <h3 class="font-bold text-xl text-slate-900 mb-4">Pilih Tingkat Kesulitan</h3>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
                             <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-seedling"></i></div>
                             <div class="flex items-center gap-2">
@@ -1048,7 +1079,7 @@
                             </div>
                             <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Pemanasan santai, 5 soal umum & dasar TI. Waktu 20 detik/soal.</p>
                             <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-easy" class="font-bold text-slate-800">0</span></p>
-                            <button onclick="startQuiz('easy')" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                            <button onclick="startQuiz('pg', 'easy')" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
                             </button>
                         </div>
@@ -1061,7 +1092,7 @@
                             </div>
                             <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Level menengah seputar jaringan & komputer. Waktu 15 detik/soal.</p>
                             <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-medium" class="font-bold text-slate-800">0</span></p>
-                            <button onclick="startQuiz('medium')" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                            <button onclick="startQuiz('pg', 'medium')" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
                             </button>
                         </div>
@@ -1074,7 +1105,7 @@
                             </div>
                             <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Level sulit, materi jaringan lanjutan. Waktu cuma 10 detik/soal!</p>
                             <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-hard" class="font-bold text-slate-800">0</span></p>
-                            <button onclick="startQuiz('hard')" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                            <button onclick="startQuiz('pg', 'hard')" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
                             </button>
                         </div>
@@ -1098,6 +1129,63 @@
                             <i class="fa-solid fa-ranking-star text-2xl mb-2"></i>
                             <p class="text-xs font-medium">Belum ada yang main quiz ini. Jadilah yang pertama!</p>
                         </div>
+                    </div>
+                </div>
+
+                <!-- ============ VIEW 1b: TINGKAT KESULITAN - ESSAY ============ -->
+                <div id="quiz-view-tingkat-essay" class="hidden">
+                    <button type="button" onclick="kembaliKeJenisQuiz()" class="mb-4 inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors">
+                        <i class="fa-solid fa-arrow-left text-[10px]"></i> Kembali pilih jenis quiz
+                    </button>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="px-2.5 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded-md uppercase tracking-wide"><i class="fa-solid fa-pen-to-square mr-1"></i>Essay</span>
+                    </div>
+                    <h3 class="font-bold text-xl text-slate-900 mb-4">Pilih Tingkat Kesulitan</h3>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-seedling"></i></div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-lg text-slate-900">Easy</h3>
+                                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-md">15 Poin/Soal</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Pemanasan santai, 5 soal isian singkat dasar TI. Waktu 40 detik/soal.</p>
+                            <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-essay-easy" class="font-bold text-slate-800">0</span></p>
+                            <button onclick="startQuiz('essay', 'easy')" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
+                            </button>
+                        </div>
+
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
+                            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-fire"></i></div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-lg text-slate-900">Medium</h3>
+                                <span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md">25 Poin/Soal</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Level menengah, isian singkat seputar jaringan & komputer. Waktu 30 detik/soal.</p>
+                            <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-essay-medium" class="font-bold text-slate-800">0</span></p>
+                            <button onclick="startQuiz('essay', 'medium')" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
+                            </button>
+                        </div>
+
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
+                            <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-skull"></i></div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-lg text-slate-900">Hard</h3>
+                                <span class="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-bold rounded-md">40 Poin/Soal</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Level sulit, isian singkat materi jaringan lanjutan. Waktu cuma 25 detik/soal!</p>
+                            <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-essay-hard" class="font-bold text-slate-800">0</span></p>
+                            <button onclick="startQuiz('essay', 'hard')" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 mt-6 flex items-center gap-3">
+                        <i class="fa-solid fa-circle-info text-indigo-500"></i>
+                        <p class="text-xs text-slate-400">Jawaban essay dicocokkan otomatis dengan kunci jawaban singkat (ketikkan intinya saja). Skor terbaik tersimpan di perangkat ini; belum tersedia leaderboard atau border koleksi untuk jalur Essay.</p>
                     </div>
                 </div>
 
@@ -1127,6 +1215,14 @@
                         <h3 id="quiz-question-text" class="font-bold text-xl text-slate-900 mb-6">Pertanyaan...</h3>
 
                         <div id="quiz-options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+
+                        <div id="quiz-essay-container" class="hidden">
+                            <textarea id="quiz-essay-jawaban" rows="3" placeholder="Ketik jawabanmu di sini..." class="w-full p-4 rounded-xl border-2 border-slate-200 focus:border-indigo-400 focus:outline-none text-sm text-slate-800 resize-none transition-colors"></textarea>
+                            <div id="quiz-essay-feedback" class="hidden mt-3"></div>
+                            <button id="quiz-essay-submit-btn" onclick="jawabEssayQuiz()" class="mt-3 w-full sm:w-auto sm:px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-paper-plane text-[10px]"></i> Kirim Jawaban
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -2807,7 +2903,7 @@
                 renderKoleksiBorder();
             }
             if (tabName === 'quiz') {
-                backToQuizMenu();
+                bukaQuizDariAwal();
                 const badge = document.getElementById('badge-quiz-ditikung');
                 if (badge) badge.classList.add('hidden');
             }
@@ -2835,7 +2931,7 @@
                 updateBerandaPoinQuiz();
                 terapkanBorderKeAvatar();
                 if (!document.getElementById('tab-quiz').classList.contains('hidden') &&
-                    !document.getElementById('quiz-view-menu').classList.contains('hidden')) {
+                    !document.getElementById('quiz-view-tingkat-pg').classList.contains('hidden')) {
                     renderMenuQuiz();
                     renderLeaderboardQuiz();
                 }
@@ -3008,7 +3104,100 @@
             ]
         };
 
-        let quizState = null; // { level, soal[], index, skor, benar, waktuSisa, timerId }
+        /* ============================================================
+           JENIS QUIZ: ESSAY (terpisah dari Pilihan Ganda)
+           - Essay TIDAK terhubung ke leaderboard & border koleksi (yang
+             skemanya sudah kadung dibangun khusus utk 3 level Pilihan
+             Ganda) -- Essay cuma nyimpen skor terbaik per level secara
+             lokal, biar aman & tidak mengubah perilaku fitur lama.
+           - Jawaban siswa dicocokkan OTOMATIS ke kunci jawaban (teks),
+             lewat normalisasi huruf kecil + hilangkan tanda baca/spasi
+             berlebih, supaya variasi kecil (kapital, spasi, titik)
+             tetap dianggap benar.
+           ============================================================ */
+        const KEY_QUIZ_ESSAY_DATA = `quiz_essay_data_${KELAS_AKTIF_SISWA}`;
+
+        const QUIZ_CONFIG_ESSAY = {
+            easy:   { label: 'Easy',   poinDasar: 15, waktu: 40, warnaBadge: 'bg-emerald-100 text-emerald-700', warnaBar: 'bg-emerald-500' },
+            medium: { label: 'Medium', poinDasar: 25, waktu: 30, warnaBadge: 'bg-amber-100 text-amber-700',     warnaBar: 'bg-amber-500' },
+            hard:   { label: 'Hard',   poinDasar: 40, waktu: 25, warnaBadge: 'bg-rose-100 text-rose-700',       warnaBar: 'bg-rose-500' }
+        };
+
+        const QUIZ_BANK_ESSAY = {
+            easy: [
+                { q: 'Sebutkan kepanjangan dari "PC" pada komputer!', kunci: ['personal computer'] },
+                { q: 'Apa nama perangkat untuk menggerakkan kursor di layar komputer?', kunci: ['mouse'] },
+                { q: 'Sebutkan sistem operasi buatan Microsoft yang paling umum dipakai di komputer!', kunci: ['windows'] },
+                { q: 'Apa kepanjangan dari "www" yang biasa muncul di alamat website?', kunci: ['world wide web'] },
+                { q: 'Sebutkan nama aplikasi pengolah kata (dokumen) buatan Microsoft!', kunci: ['microsoft word', 'word'] },
+                { q: 'Apa nama tombol pada keyboard untuk menghapus karakter di belakang kursor?', kunci: ['backspace'] },
+                { q: 'Sebutkan satu contoh perangkat keras (hardware) output pada komputer!', kunci: ['monitor', 'printer', 'speaker'] }
+            ],
+            medium: [
+                { q: 'Apa kepanjangan dari HTTP?', kunci: ['hypertext transfer protocol'] },
+                { q: 'Sebutkan protokol yang digunakan untuk mengirim email!', kunci: ['smtp'] },
+                { q: 'Apa kepanjangan dari LAN?', kunci: ['local area network'] },
+                { q: 'Sebutkan perangkat jaringan yang menghubungkan banyak komputer dalam satu jaringan lokal!', kunci: ['switch', 'hub'] },
+                { q: 'Apa kepanjangan dari IP pada IP Address?', kunci: ['internet protocol'] },
+                { q: 'Sebutkan perintah di Command Prompt untuk mengecek koneksi ke alamat lain!', kunci: ['ping'] },
+                { q: 'Apa kepanjangan dari CPU?', kunci: ['central processing unit'] }
+            ],
+            hard: [
+                { q: 'Apa kepanjangan dari DNS?', kunci: ['domain name system'] },
+                { q: 'Sebutkan port default yang digunakan protokol HTTPS!', kunci: ['443'] },
+                { q: 'Apa kepanjangan dari VLAN?', kunci: ['virtual local area network'] },
+                { q: 'Sebutkan subnet mask default untuk kelas C!', kunci: ['255.255.255.0'] },
+                { q: 'Apa kepanjangan dari OSI pada model layer jaringan?', kunci: ['open systems interconnection'] },
+                { q: 'Sebutkan perintah di Windows untuk melihat konfigurasi IP komputer!', kunci: ['ipconfig'] },
+                { q: 'Apa kepanjangan dari VPN?', kunci: ['virtual private network'] }
+            ]
+        };
+
+        function getQuizEssayData() {
+            try {
+                const raw = localStorage.getItem(KEY_QUIZ_ESSAY_DATA);
+                return raw ? JSON.parse(raw) : { bestByLevel: { easy: 0, medium: 0, hard: 0 } };
+            } catch (e) {
+                return { bestByLevel: { easy: 0, medium: 0, hard: 0 } };
+            }
+        }
+
+        function saveQuizEssayData(data) {
+            localStorage.setItem(KEY_QUIZ_ESSAY_DATA, JSON.stringify(data));
+        }
+
+        function acakSoalQuizEssay(level, jumlah) {
+            const bank = [...QUIZ_BANK_ESSAY[level]];
+            for (let i = bank.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [bank[i], bank[j]] = [bank[j], bank[i]];
+            }
+            return bank.slice(0, Math.min(jumlah, bank.length));
+        }
+
+        // Normalisasi teks (huruf kecil, hilangkan tanda baca & spasi berlebih)
+        // supaya jawaban siswa yg beda kapital/spasi/titik-koma tetap dianggap benar.
+        function bersihkanTeksEssay(teks) {
+            return (teks || '')
+                .toLowerCase()
+                .normalize('NFKD')
+                .replace(/[^a-z0-9 ]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function cocokkanJawabanEssay(jawabanSiswa, daftarKunci) {
+            const jawabanBersih = bersihkanTeksEssay(jawabanSiswa);
+            if (!jawabanBersih) return false;
+            return daftarKunci.some(k => bersihkanTeksEssay(k) === jawabanBersih);
+        }
+
+        function getConfigQuizAktif() {
+            if (!quizState) return null;
+            return quizState.jenis === 'essay' ? QUIZ_CONFIG_ESSAY[quizState.level] : QUIZ_CONFIG[quizState.level];
+        }
+
+        let quizState = null; // { jenis: 'pg'|'essay', level, soal[], index, skor, benar, waktuSisa, timerId }
         let quizFilterLeaderboardAktif = 'semua';
 
         function getQuizData() {
@@ -3073,30 +3262,59 @@
             return bank.slice(0, Math.min(jumlah, bank.length));
         }
 
+        const SEMUA_VIEW_QUIZ = ['jenis', 'tingkat-pg', 'tingkat-essay', 'play', 'result'];
         function tampilkanViewQuiz(view) {
-            document.getElementById('quiz-view-menu').classList.add('hidden');
-            document.getElementById('quiz-view-play').classList.add('hidden');
-            document.getElementById('quiz-view-result').classList.add('hidden');
+            SEMUA_VIEW_QUIZ.forEach(v => {
+                const el = document.getElementById(`quiz-view-${v}`);
+                if (el) el.classList.add('hidden');
+            });
             document.getElementById(`quiz-view-${view}`).classList.remove('hidden');
         }
 
-        function startQuiz(level) {
-            const soal = acakSoalQuiz(level, 5);
-            quizState = { level, soal, index: 0, skor: 0, benar: 0, waktuSisa: QUIZ_CONFIG[level].waktu, timerId: null };
+        // Kartu "Pilihan Ganda" / "Essay" di menu awal Quiz -> buka daftar
+        // tingkat kesulitan sesuai jenis yang dipilih.
+        function pilihJenisQuiz(jenis) {
+            if (jenis === 'essay') {
+                tampilkanViewQuiz('tingkat-essay');
+                renderTingkatEssay();
+            } else {
+                tampilkanViewQuiz('tingkat-pg');
+                renderMenuQuiz();
+                renderLeaderboardQuiz();
+            }
+        }
+
+        // Tombol "Kembali pilih jenis quiz" di halaman tingkat kesulitan.
+        function kembaliKeJenisQuiz() {
+            tampilkanViewQuiz('jenis');
+            renderMenuQuiz();
+        }
+
+        function renderTingkatEssay() {
+            const data = getQuizEssayData();
+            const best = data.bestByLevel || { easy: 0, medium: 0, hard: 0 };
+            document.getElementById('quiz-best-essay-easy').innerText = String(best.easy || 0);
+            document.getElementById('quiz-best-essay-medium').innerText = String(best.medium || 0);
+            document.getElementById('quiz-best-essay-hard').innerText = String(best.hard || 0);
+        }
+
+        function startQuiz(jenis, level) {
+            const soal = jenis === 'essay' ? acakSoalQuizEssay(level, 5) : acakSoalQuiz(level, 5);
+            const cfg = jenis === 'essay' ? QUIZ_CONFIG_ESSAY[level] : QUIZ_CONFIG[level];
+            quizState = { jenis, level, soal, index: 0, skor: 0, benar: 0, waktuSisa: cfg.waktu, timerId: null };
             tampilkanViewQuiz('play');
             document.getElementById('quiz-play-total').innerText = String(soal.length);
 
-            const cfg = QUIZ_CONFIG[level];
             const badge = document.getElementById('quiz-play-level-badge');
             badge.className = `px-3 py-1 rounded-lg text-xs font-bold ${cfg.warnaBadge}`;
-            badge.innerText = cfg.label;
+            badge.innerText = jenis === 'essay' ? `${cfg.label} · Essay` : cfg.label;
 
             renderSoalQuiz();
         }
 
         function renderSoalQuiz() {
-            const { level, soal, index } = quizState;
-            const cfg = QUIZ_CONFIG[level];
+            const { jenis, level, soal, index } = quizState;
+            const cfg = getConfigQuizAktif();
             const item = soal[index];
 
             document.getElementById('quiz-play-nomor').innerText = String(index + 1);
@@ -3104,15 +3322,34 @@
             document.getElementById('quiz-progress-bar').style.width = `${((index) / soal.length) * 100}%`;
             document.getElementById('quiz-question-text').innerText = item.q;
 
-            const container = document.getElementById('quiz-options-container');
-            container.innerHTML = '';
-            item.opsi.forEach((teks, i) => {
-                const btn = document.createElement('button');
-                btn.className = 'quiz-opsi-btn text-left px-4 py-3 rounded-xl border-2 border-slate-200 bg-white hover:border-purple-400 hover:bg-purple-50 text-sm font-semibold text-slate-700 transition-all';
-                btn.innerHTML = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-100 text-slate-500 text-xs font-bold mr-2 align-middle">${String.fromCharCode(65 + i)}</span>${teks}`;
-                btn.onclick = () => pilihJawabanQuiz(i);
-                container.appendChild(btn);
-            });
+            const containerOpsi = document.getElementById('quiz-options-container');
+            const containerEssay = document.getElementById('quiz-essay-container');
+
+            if (jenis === 'essay') {
+                containerOpsi.classList.add('hidden');
+                containerOpsi.innerHTML = '';
+                containerEssay.classList.remove('hidden');
+
+                const input = document.getElementById('quiz-essay-jawaban');
+                input.value = '';
+                input.disabled = false;
+                input.focus();
+                const tombolSubmit = document.getElementById('quiz-essay-submit-btn');
+                if (tombolSubmit) tombolSubmit.disabled = false;
+                const feedback = document.getElementById('quiz-essay-feedback');
+                if (feedback) { feedback.classList.add('hidden'); feedback.innerHTML = ''; }
+            } else {
+                containerEssay.classList.add('hidden');
+                containerOpsi.classList.remove('hidden');
+                containerOpsi.innerHTML = '';
+                item.opsi.forEach((teks, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'quiz-opsi-btn text-left px-4 py-3 rounded-xl border-2 border-slate-200 bg-white hover:border-purple-400 hover:bg-purple-50 text-sm font-semibold text-slate-700 transition-all';
+                    btn.innerHTML = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-100 text-slate-500 text-xs font-bold mr-2 align-middle">${String.fromCharCode(65 + i)}</span>${teks}`;
+                    btn.onclick = () => pilihJawabanQuiz(i);
+                    containerOpsi.appendChild(btn);
+                });
+            }
 
             quizState.waktuSisa = cfg.waktu;
             updateTimerBarQuiz();
@@ -3122,13 +3359,17 @@
                 updateTimerBarQuiz();
                 if (quizState.waktuSisa <= 0) {
                     clearInterval(quizState.timerId);
-                    pilihJawabanQuiz(-1); // waktu habis, dianggap tidak menjawab
+                    if (quizState.jenis === 'essay') {
+                        jawabEssayQuiz(true); // waktu habis, dianggap tidak menjawab
+                    } else {
+                        pilihJawabanQuiz(-1); // waktu habis, dianggap tidak menjawab
+                    }
                 }
             }, 1000);
         }
 
         function updateTimerBarQuiz() {
-            const cfg = QUIZ_CONFIG[quizState.level];
+            const cfg = getConfigQuizAktif();
             const persen = Math.max(0, (quizState.waktuSisa / cfg.waktu) * 100);
             const bar = document.getElementById('quiz-timer-bar');
             bar.style.width = `${persen}%`;
@@ -3171,6 +3412,71 @@
                     selesaikanQuiz();
                 }
             }, 1200);
+        }
+
+        // Proses jawaban isian Essay: dicocokkan otomatis ke kunci jawaban lewat
+        // bersihkanTeksEssay()/cocokkanJawabanEssay(). waktuHabis=true dipanggil
+        // dari timer saat siswa tidak sempat menjawab (dianggap salah).
+        function jawabEssayQuiz(waktuHabis) {
+            if (!quizState) return;
+            clearInterval(quizState.timerId);
+
+            const cfg = QUIZ_CONFIG_ESSAY[quizState.level];
+            const item = quizState.soal[quizState.index];
+            const input = document.getElementById('quiz-essay-jawaban');
+            const jawabanSiswa = waktuHabis === true ? '' : (input.value || '');
+            const benar = waktuHabis !== true && cocokkanJawabanEssay(jawabanSiswa, item.kunci);
+
+            input.disabled = true;
+            const tombolSubmit = document.getElementById('quiz-essay-submit-btn');
+            if (tombolSubmit) tombolSubmit.disabled = true;
+
+            const feedback = document.getElementById('quiz-essay-feedback');
+            if (feedback) {
+                feedback.classList.remove('hidden');
+                feedback.innerHTML = benar
+                    ? `<p class="text-emerald-600 font-semibold text-sm flex items-center gap-2"><i class="fa-solid fa-circle-check"></i> Benar! Kunci jawaban: ${item.kunci[0]}</p>`
+                    : `<p class="text-rose-600 font-semibold text-sm flex items-center gap-2"><i class="fa-solid fa-circle-xmark"></i> Kurang tepat. Kunci jawaban: ${item.kunci[0]}</p>`;
+            }
+
+            if (benar) {
+                const bonusKecepatan = Math.round((quizState.waktuSisa / cfg.waktu) * (cfg.poinDasar * 0.5));
+                quizState.skor += cfg.poinDasar + bonusKecepatan;
+                quizState.benar += 1;
+            }
+            document.getElementById('quiz-play-skor').innerText = String(quizState.skor);
+
+            setTimeout(() => {
+                quizState.index += 1;
+                if (quizState.index < quizState.soal.length) {
+                    renderSoalQuiz();
+                } else {
+                    document.getElementById('quiz-progress-bar').style.width = '100%';
+                    selesaikanQuizEssay();
+                }
+            }, 1400);
+        }
+
+        // Versi ringkas dari selesaikanQuiz() khusus Essay: cuma menyimpan skor
+        // terbaik per level secara lokal, TANPA menyentuh leaderboard atau
+        // sistem border koleksi (yang memang didesain khusus utk Pilihan Ganda).
+        function selesaikanQuizEssay() {
+            const { level, skor, benar, soal } = quizState;
+            const cfg = QUIZ_CONFIG_ESSAY[level];
+            const data = getQuizEssayData();
+
+            data.bestByLevel = data.bestByLevel || { easy: 0, medium: 0, hard: 0 };
+            if (skor > (data.bestByLevel[level] || 0)) data.bestByLevel[level] = skor;
+            saveQuizEssayData(data);
+
+            const persen = soal.length ? benar / soal.length : 0;
+            document.getElementById('quiz-result-icon').innerText = persen >= 0.8 ? '🏆' : (persen >= 0.5 ? '🥈' : '💪');
+            document.getElementById('quiz-result-subtitle').innerText = persen >= 0.8 ? 'Luar biasa, kamu jagoan quiz!' : (persen >= 0.5 ? 'Bagus, terus tingkatkan lagi!' : 'Tetap semangat, coba lagi yuk!');
+            document.getElementById('quiz-result-benar').innerText = `${benar}/${soal.length}`;
+            document.getElementById('quiz-result-poin').innerText = String(skor);
+            document.getElementById('quiz-result-level').innerText = `${cfg.label} · Essay`;
+
+            tampilkanViewQuiz('result');
         }
 
         function selesaikanQuiz() {
@@ -3273,14 +3579,30 @@
         }
 
         function ulangiQuizTerakhir() {
-            if (quizState) startQuiz(quizState.level);
+            if (quizState) startQuiz(quizState.jenis, quizState.level);
         }
 
+        // Dipanggil dari tombol "Kembali ke Menu" di layar hasil quiz -> balik
+        // ke daftar tingkat kesulitan sesuai jenis quiz yang barusan dimainkan
+        // (bukan ke halaman pilih jenis paling awal).
         function backToQuizMenu() {
             if (quizState) clearInterval(quizState.timerId);
-            tampilkanViewQuiz('menu');
+            if (quizState && quizState.jenis === 'essay') {
+                tampilkanViewQuiz('tingkat-essay');
+                renderTingkatEssay();
+            } else {
+                tampilkanViewQuiz('tingkat-pg');
+                renderMenuQuiz();
+                renderLeaderboardQuiz();
+            }
+        }
+
+        // Dipanggil setiap kali tab Quiz dibuka dari sidebar -> selalu mulai
+        // dari halaman pilih jenis (Pilihan Ganda / Essay).
+        function bukaQuizDariAwal() {
+            if (quizState) clearInterval(quizState.timerId);
+            tampilkanViewQuiz('jenis');
             renderMenuQuiz();
-            renderLeaderboardQuiz();
         }
 
         function renderMenuQuiz() {
