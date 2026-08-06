@@ -1,0 +1,30 @@
+/* ==========================================
+   BORDER PINK — Kupu-kupu Prestasi
+   ==========================================
+   File border_polos.css memasang glow EMAS (drop-shadow
+   kuning ala frame MLBB) langsung ke class `.user-border`.
+   Karena semua jenis border (polos/admin/pink/dst) sama-sama
+   pakai class itu — cuma beda `src` gambar lewat JS — glow
+   emas itu ikut nempel ke border pink walau gambar
+   border_pink.jpg sendiri sudah bersih (bukan gambarnya yang
+   kotor, tapi filter globalnya).
+
+   Fix di sini: timpa `filter` HANYA saat <img class="user-border">
+   sedang memuat border_pink.jpg, pakai selector atribut
+   `[src*="border_pink"]`. Selector ini otomatis lebih spesifik
+   dari `.user-border` polos, jadi menang tanpa !important dan
+   tidak peduli urutan <link> di <head> (asal file ini tetap
+   di-include, boleh sebelum atau sesudah border_polos.css).
+   ========================================== */
+
+.user-border[src*="border_pink"] {
+  /* Ganti glow emas -> glow pink/ungu, senada sama efek-nama-pink
+     dan warna dominan border_pink.jpg (magenta/pink + ungu muda) */
+  filter: drop-shadow(0 0 4px rgba(219, 39, 119, 0.55))
+          drop-shadow(0 0 7px rgba(216, 180, 254, 0.35));
+}
+
+.profile-wrapper:hover .user-border[src*="border_pink"] {
+  filter: drop-shadow(0 0 8px rgba(219, 39, 119, 0.8))
+          drop-shadow(0 0 12px rgba(216, 180, 254, 0.5));
+}
