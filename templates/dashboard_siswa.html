@@ -4536,6 +4536,15 @@
         // oleh guru manapun di sana, dan status/nama guru penyetuju bisa kebaca balik di sini.
         const KEY_PRESTASI_SISWA = `pengajuan_prestasi_${KELAS_AKTIF_SISWA}`;
 
+        // Registry hash PERMANEN — terpisah dari data pengajuan prestasi di atas.
+        // Cuma pernah DITAMBAH (append-only), TIDAK PERNAH dihapus/diedit walau
+        // pengajuan prestasi aslinya nanti dihapus/ditolak/dibatalkan (mis. oleh
+        // guru di Dashboard Guru). Tujuannya: begitu satu file pernah masuk sini,
+        // file itu SELAMANYA tercatat sudah pernah diupload -- jadi kalau ada yang
+        // coba upload ulang file identik di kemudian hari (walau pengajuan lama
+        // sudah lenyap dari riwayat), tetap otomatis kedetek & ditolak.
+        const KEY_HASH_PRESTASI_PERMANEN = `hash_prestasi_permanen_${KELAS_AKTIF_SISWA}`;
+
         // Border prestasi MAUPUN quiz TIDAK auto-terbuka lagi hanya karena poin
         // sudah cukup — siswa harus klik tombol "Klaim Border" secara manual dulu.
         // Key ini menyimpan daftar id semua border (prestasi & quiz) yang sudah
@@ -4886,6 +4895,28 @@
         // dengan ganti nama file maupun diajukan ulang oleh siswa yang sama/berbeda.
         function cariPrestasiDenganHashSama(hash) {
             return getPrestasiData().find(p => p.hashFile === hash);
+        }
+
+        // ===== Registry hash PERMANEN (lihat catatan di deklarasi KEY_HASH_PRESTASI_PERMANEN) =====
+        function getHashPrestasiPermanen() {
+            try {
+                const raw = localStorage.getItem(KEY_HASH_PRESTASI_PERMANEN);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        // Catatan ini HANYA ditambah, tidak pernah dihapus/di-overwrite -- dipanggil
+        // sekali tiap ada pengajuan baru yang lolos verifikasi anti-duplikat.
+        function catatHashPrestasiPermanen(hash, judul, namaSiswa, tanggalAjukan) {
+            const list = getHashPrestasiPermanen();
+            list.push({ hash, judul, namaSiswa, tanggalAjukan });
+            localStorage.setItem(KEY_HASH_PRESTASI_PERMANEN, JSON.stringify(list));
+        }
+
+        function cariHashPermanenSama(hash) {
+            return getHashPrestasiPermanen().find(h => h.hash === hash);
         }
 
         /* ================= NOTIFIKASI STATUS PRESTASI (disetujui/ditolak guru) =================
@@ -5467,7 +5498,13 @@
                 // walau sudah di-rename, hash yang dihasilkan tetap identik &
                 // otomatis kedetek + ditolak sebelum sempat tersimpan.
                 const hashFileBaru = hitungHashKontenFile(base64File);
-                const duplikat = cariPrestasiDenganHashSama(hashFileBaru);
+                // Dicek ke DUA sumber: (1) data prestasi yang masih ada sekarang,
+                // (2) registry hash permanen yang mencatat SEMUA file yang pernah
+                // pernah diajukan sepanjang sejarah, termasuk yang pengajuan aslinya
+                // sudah dihapus/ditolak/dibatalkan. Kalau salah satu ketemu, dianggap duplikat.
+                const duplikatAktif = cariPrestasiDenganHashSama(hashFileBaru);
+                const duplikatPermanen = cariHashPermanenSama(hashFileBaru);
+                const duplikat = duplikatAktif || duplikatPermanen;
 
                 if (duplikat) {
                     const keteranganPemilik = duplikat.namaSiswa === NAMA_PEMAIN_QUIZ
@@ -5494,6 +5531,10 @@
                     status: 'menunggu'
                 });
                 savePrestasiData(list);
+                // Dicatat permanen di sini juga -- terpisah dari `list` di atas -- supaya
+                // walau entri prestasi ini nanti dihapus dari riwayat, hash file-nya tetap
+                // "diingat" selamanya dan tidak bisa lolos anti-duplikat lagi di masa depan.
+                catatHashPrestasiPermanen(hashFileBaru, judul, NAMA_PEMAIN_QUIZ, tanggalAjukan);
                 // Baseline status prestasi ini langsung disimpan sebagai 'menunggu'
                 // supaya nanti saat guru approve/tolak, perubahan statusnya kebaca
                 // sebagai perubahan baru dan toast notifikasinya muncul.
