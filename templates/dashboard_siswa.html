@@ -4619,7 +4619,7 @@
             { id: 'prestasi_perunggu', kategori: 'prestasi', nama: 'Perunggu Prestasi', file: '../static/img/border_bronze.jpg', minPoin: 50,  tierRank: 1, rank: '🥉 Berprestasi' },
             { id: 'prestasi_perak',    kategori: 'prestasi', nama: 'Perak Prestasi',    file: '../static/img/border_silver.jpg', minPoin: 200, tierRank: 2, rank: '🥈 Siswa Berbakat' },
             { id: 'prestasi_emas',     kategori: 'prestasi', nama: 'Emas Prestasi',     file: '../static/img/border_gold.jpg',   minPoin: 400, tierRank: 3, rank: '🏆 Bintang Sekolah' },
-            { id: 'prestasi_pink',     kategori: 'prestasi', nama: 'Kupu-kupu Prestasi', file: '../static/img/border_pink.jpg',   minPoin: 600, tierRank: 4, rank: '🦋 Legenda Prestasi' }
+            { id: 'prestasi_pink',     kategori: 'prestasi', nama: 'Kupu-kupu Prestasi', file: '../static/img/border_pink.png',   minPoin: 600, tierRank: 4, rank: '🦋 Legenda Prestasi' }
         ];
 
         function getPrestasiData() {
@@ -5333,7 +5333,14 @@
         }
 
         function getBorderTertinggiTerbuka() {
-            const terbuka = getSemuaBorder().filter(isBorderTerbuka);
+            // Border kategori "admin" SENGAJA dikecualikan dari kandidat auto-equip
+            // di sini. Admin selalu return true di isBorderTerbuka() (supaya kartunya
+            // bisa dipakai manual sama akun dev/admin), tapi tierRank-nya (99) paling
+            // tinggi dari semua border lain — kalau ikut masuk kandidat, border admin
+            // jadi SELALU menang tiap kali sistem fallback (mis. border pilihan siswa
+            // sempat dianggap belum valid). Efeknya siswa biasa ikut ke-auto-equip
+            // border Admin padahal bukan miliknya. Makanya di-filter keluar duluan.
+            const terbuka = getSemuaBorder().filter(b => b.kategori !== 'admin' && isBorderTerbuka(b));
             if (!terbuka.length) return DAFTAR_BORDER_QUIZ[0];
             return terbuka.reduce((tertinggi, b) => (b.tierRank > tertinggi.tierRank ? b : tertinggi), terbuka[0]);
         }
