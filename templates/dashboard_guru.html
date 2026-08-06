@@ -983,13 +983,20 @@
         </div>
     </div>
 
-    <!-- Modal Lihat Bukti Prestasi (foto diperbesar) -->
+    <!-- Modal Lihat Bukti Prestasi (foto diperbesar) + Scanner Keaslian (LSB Steganografi) -->
     <div id="modal-lihat-bukti-prestasi" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[70] flex items-center justify-center p-4 hidden" onclick="tutupModalBuktiPrestasi()">
         <div class="relative max-w-lg w-full" onclick="event.stopPropagation()">
             <button onclick="tutupModalBuktiPrestasi()" class="absolute -top-10 right-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all">
                 <i class="fa-solid fa-xmark"></i>
             </button>
             <img id="img-bukti-prestasi-besar" src="" class="w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl bg-white" alt="Bukti Prestasi (Diperbesar)">
+
+            <div class="bg-white rounded-2xl shadow-2xl mt-2 p-3">
+                <button id="btn-scan-keaslian-bukti" onclick="jalankanScanKeaslianBukti()" class="w-full py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-shield-halved"></i> Scan Keaslian Bukti (Cek Watermark Tersembunyi)
+                </button>
+                <div id="hasil-scan-keaslian-bukti" class="mt-2 text-xs"></div>
+            </div>
         </div>
     </div>
 
@@ -2891,7 +2898,7 @@
 
                 return `
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 flex gap-4">
-                    <img src="${p.foto}" class="w-20 h-20 rounded-xl object-cover border border-slate-200 flex-shrink-0 cursor-pointer" onclick="bukaModalBuktiPrestasi('${p.foto}')" alt="Bukti prestasi">
+                    <img src="${p.foto}" class="w-20 h-20 rounded-xl object-cover border border-slate-200 flex-shrink-0 cursor-pointer" onclick="bukaModalBuktiPrestasi('${p._kelas}', '${p.id}')" alt="Bukti prestasi">
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between gap-2 flex-wrap">
                             <div>
@@ -2909,13 +2916,266 @@
             }).join('');
         }
 
-        function bukaModalBuktiPrestasi(foto) {
-            document.getElementById('img-bukti-prestasi-besar').src = foto;
+        let _buktiPrestasiAktif = null; // { kelas, id } - konteks foto yang lagi dibuka, dipakai scanner
+
+        function bukaModalBuktiPrestasi(namaKelas, idPengajuan) {
+            const daftar = getPengajuanPrestasiKelas(namaKelas);
+            const p = daftar.find(x => x.id === idPengajuan);
+            if (!p) return;
+            _buktiPrestasiAktif = { kelas: namaKelas, id: idPengajuan };
+            document.getElementById('img-bukti-prestasi-besar').src = p.foto;
+            document.getElementById('hasil-scan-keaslian-bukti').innerHTML = '';
             document.getElementById('modal-lihat-bukti-prestasi').classList.remove('hidden');
         }
 
         function tutupModalBuktiPrestasi() {
             document.getElementById('modal-lihat-bukti-prestasi').classList.add('hidden');
+            _buktiPrestasiAktif = null;
+        }
+
+        // =====================================================================
+        // STEGANOGRAFI LSB (Least Significant Bit)
+        // Menyisipkan data rahasia (Nama, NISN, Timestamp) ke bit terakhir tiap
+        // channel warna (R, G, B) piksel gambar bukti prestasi, supaya keaslian
+        // file bisa diverifikasi kembali (dan manipulasi/edit bisa terdeteksi).
+        //
+        // PENTING - batasan yang wajib dipahami:
+        // 1. Hasil sisip WAJIB disimpan sebagai PNG (lossless). Kalau file
+        //    dikompres ulang ke JPEG, di-resize, di-crop, atau diedit di aplikasi
+        //    editor foto, bit LSB akan rusak/hilang -- ini justru jadi SINYAL
+        //    bahwa file sudah "disentuh" pihak lain (magic marker tidak ditemukan
+        //    lagi / checksum tidak cocok).
+        // 2. ID untuk menyisipkan data (sisipkanDataRahasiaLSB) dipanggil di sisi
+        //    SISWA, tepat saat file bukti prestasi selesai dipilih/diupload --
+        //    SEBELUM disimpan. Fungsi ini disiapkan di sini supaya siap dipakai;
+        //    untuk pemasangannya di alur upload siswa, sambungkan Dashboard Guru
+        //    ini dengan Dashboard Siswa (upload file yang sama).
+        // 3. Ini BUKAN enkripsi -- data tersembunyi masih bisa diekstrak siapa pun
+        //    yang tahu skemanya. Checksum di sini untuk deteksi manipulasi/corrupt,
+        //    bukan untuk kerahasiaan data.
+        // =====================================================================
+
+        const STEGO_MAGIC = 'STG1'; // penanda 4-byte bahwa gambar mengandung data tersembunyi
+
+        function _stegoStrToBytes(str) { return Array.from(new TextEncoder().encode(str)); }
+        function _stegoBytesToStr(bytes) { return new TextDecoder().decode(new Uint8Array(bytes)); }
+
+        // djb2 hash sederhana (32-bit) -- cukup untuk deteksi perubahan/corrupt,
+        // BUKAN untuk keamanan kriptografis.
+        function _stegoHash32(bytes) {
+            let h = 5381;
+            for (const b of bytes) h = ((h * 33) ^ b) >>> 0;
+            return h >>> 0;
+        }
+        function _stegoUint32ToBytes(n) {
+            return [(n >>> 24) & 0xff, (n >>> 16) & 0xff, (n >>> 8) & 0xff, n & 0xff];
+        }
+        function _stegoBytesToUint32(bytes) {
+            return ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) >>> 0;
+        }
+        function _stegoBytesToBits(bytes) {
+            const bits = [];
+            bytes.forEach(b => { for (let i = 7; i >= 0; i--) bits.push((b >> i) & 1); });
+            return bits;
+        }
+        function _stegoBitsToBytes(bits) {
+            const bytes = [];
+            for (let i = 0; i < bits.length; i += 8) {
+                let b = 0;
+                for (let j = 0; j < 8; j++) b = (b << 1) | (bits[i + j] || 0);
+                bytes.push(b);
+            }
+            return bytes;
+        }
+
+        // Sisipkan {nama, nisn, timestamp} ke dalam gambar (data URL) via LSB.
+        // Dipanggil saat siswa upload bukti prestasi, SEBELUM file disimpan.
+        // Return: Promise<string> -> data URL PNG hasil sisip.
+        function sisipkanDataRahasiaLSB(dataUrlGambar, { nama, nisn, timestamp }) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const pixels = imageData.data;
+
+                        const payloadObj = { nama: nama || '', nisn: nisn || '', timestamp: timestamp || '' };
+                        const payloadBytes = _stegoStrToBytes(JSON.stringify(payloadObj));
+                        const hashBytes = _stegoUint32ToBytes(_stegoHash32(payloadBytes));
+                        const blob = payloadBytes.concat(hashBytes); // payload + checksum 4 byte
+                        const header = _stegoStrToBytes(STEGO_MAGIC).concat(_stegoUint32ToBytes(blob.length)); // MAGIC(4) + LEN(4)
+                        const semuaBytes = header.concat(blob);
+                        const bits = _stegoBytesToBits(semuaBytes);
+
+                        const kapasitasBit = Math.floor(pixels.length / 4) * 3; // 3 channel (R,G,B) per piksel, alpha dilewati
+                        if (bits.length > kapasitasBit) {
+                            reject(new Error('Ukuran gambar terlalu kecil untuk menyisipkan data rahasia.'));
+                            return;
+                        }
+
+                        let bitIdx = 0;
+                        for (let i = 0; i < pixels.length && bitIdx < bits.length; i += 4) {
+                            for (let ch = 0; ch < 3 && bitIdx < bits.length; ch++) {
+                                pixels[i + ch] = (pixels[i + ch] & 0xFE) | bits[bitIdx];
+                                bitIdx++;
+                            }
+                        }
+
+                        ctx.putImageData(imageData, 0, 0);
+                        resolve(canvas.toDataURL('image/png')); // WAJIB PNG -- JPEG akan merusak data LSB
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                img.onerror = () => reject(new Error('Gagal memuat gambar untuk disisipi data.'));
+                img.src = dataUrlGambar;
+            });
+        }
+
+        // Baca & validasi data rahasia dari gambar (data URL).
+        // Return: Promise<{ ditemukan, valid, nama, nisn, timestamp, pesan }>
+        function ekstrakDataRahasiaLSB(dataUrlGambar) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const pixels = imageData.data;
+
+                        const bacaBits = (jumlahBit, offsetBit) => {
+                            const bits = [];
+                            let dilewati = 0;
+                            for (let i = 0; i < pixels.length && bits.length < jumlahBit; i += 4) {
+                                for (let ch = 0; ch < 3 && bits.length < jumlahBit; ch++) {
+                                    if (dilewati < offsetBit) { dilewati++; continue; }
+                                    bits.push(pixels[i + ch] & 1);
+                                }
+                            }
+                            return bits;
+                        };
+
+                        // Header: MAGIC (4 byte) + LEN (4 byte) = 64 bit
+                        const headerBits = bacaBits(64, 0);
+                        if (headerBits.length < 64) {
+                            resolve({ ditemukan: false, valid: false, pesan: 'Gambar terlalu kecil / tidak mengandung data tersembunyi.' });
+                            return;
+                        }
+                        const headerBytes = _stegoBitsToBytes(headerBits);
+                        const magic = _stegoBytesToStr(headerBytes.slice(0, 4));
+                        if (magic !== STEGO_MAGIC) {
+                            resolve({ ditemukan: false, valid: false, pesan: 'Tidak ditemukan watermark tersembunyi. Kemungkinan foto ini tidak diupload lewat sistem (tanpa watermark), atau watermark sudah rusak/hilang karena gambar diedit, di-crop, atau dikompres ulang.' });
+                            return;
+                        }
+                        const panjangBlob = _stegoBytesToUint32(headerBytes.slice(4, 8));
+                        const kapasitasBit = Math.floor(pixels.length / 4) * 3;
+                        if (panjangBlob <= 0 || 64 + panjangBlob * 8 > kapasitasBit) {
+                            resolve({ ditemukan: true, valid: false, pesan: 'Watermark ditemukan tapi datanya rusak (ukuran tidak masuk akal) -- indikasi kuat gambar telah dimanipulasi.' });
+                            return;
+                        }
+
+                        const blobBits = bacaBits(panjangBlob * 8, 64);
+                        const blobBytes = _stegoBitsToBytes(blobBits);
+                        const hashBytes = blobBytes.slice(-4);
+                        const payloadBytes = blobBytes.slice(0, -4);
+                        const hashTersimpan = _stegoBytesToUint32(hashBytes);
+                        const hashDihitung = _stegoHash32(payloadBytes);
+
+                        let payloadObj = null;
+                        try { payloadObj = JSON.parse(_stegoBytesToStr(payloadBytes)); } catch (e) { payloadObj = null; }
+
+                        if (!payloadObj || hashTersimpan !== hashDihitung) {
+                            resolve({
+                                ditemukan: true, valid: false,
+                                nama: payloadObj ? payloadObj.nama : null,
+                                nisn: payloadObj ? payloadObj.nisn : null,
+                                timestamp: payloadObj ? payloadObj.timestamp : null,
+                                pesan: 'Watermark ditemukan TAPI checksum tidak cocok -- indikasi kuat gambar telah diedit/dimanipulasi setelah watermark disisipkan.'
+                            });
+                            return;
+                        }
+
+                        resolve({
+                            ditemukan: true, valid: true,
+                            nama: payloadObj.nama, nisn: payloadObj.nisn, timestamp: payloadObj.timestamp,
+                            pesan: 'Watermark ditemukan dan valid -- gambar konsisten dengan data asli saat diupload, tidak terdeteksi manipulasi.'
+                        });
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                img.onerror = () => reject(new Error('Gagal memuat gambar untuk dipindai.'));
+                img.src = dataUrlGambar;
+            });
+        }
+
+        // Tombol "Scan Keaslian Bukti" di modal foto -- dipakai guru saat
+        // memverifikasi bukti prestasi sebelum menyetujui.
+        function jalankanScanKeaslianBukti() {
+            const hasilEl = document.getElementById('hasil-scan-keaslian-bukti');
+            const btn = document.getElementById('btn-scan-keaslian-bukti');
+            const foto = document.getElementById('img-bukti-prestasi-besar').src;
+            if (!foto) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memindai...';
+            hasilEl.innerHTML = '';
+
+            ekstrakDataRahasiaLSB(foto).then(hasil => {
+                let namaSiswaHarapan = null;
+                if (_buktiPrestasiAktif) {
+                    const daftar = getPengajuanPrestasiKelas(_buktiPrestasiAktif.kelas);
+                    const p = daftar.find(x => x.id === _buktiPrestasiAktif.id);
+                    if (p) namaSiswaHarapan = p.namaSiswa || null;
+                }
+
+                let warnaKotak, ikon, judul;
+                if (hasil.ditemukan && hasil.valid) {
+                    warnaKotak = 'bg-emerald-50 border-emerald-200 text-emerald-700';
+                    ikon = 'fa-shield-halved';
+                    judul = 'Watermark valid, tidak ada indikasi manipulasi';
+                } else if (hasil.ditemukan && !hasil.valid) {
+                    warnaKotak = 'bg-rose-50 border-rose-200 text-rose-700';
+                    ikon = 'fa-triangle-exclamation';
+                    judul = 'Terindikasi dimanipulasi!';
+                } else {
+                    warnaKotak = 'bg-slate-100 border-slate-200 text-slate-600';
+                    ikon = 'fa-circle-question';
+                    judul = 'Watermark tidak ditemukan';
+                }
+
+                let cekNama = '';
+                if (hasil.valid && namaSiswaHarapan && hasil.nama && hasil.nama.trim().toLowerCase() !== namaSiswaHarapan.trim().toLowerCase()) {
+                    cekNama = `<p class="mt-1.5 font-bold text-rose-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Nama di watermark ("${hasil.nama}") beda dengan nama pengaju ("${namaSiswaHarapan}")!</p>`;
+                }
+
+                hasilEl.innerHTML = `
+                    <div class="${warnaKotak} border rounded-xl p-3">
+                        <p class="font-bold"><i class="fa-solid ${ikon} mr-1.5"></i>${judul}</p>
+                        <p class="mt-1 text-[11px] opacity-90">${hasil.pesan}</p>
+                        ${hasil.ditemukan ? `
+                        <div class="mt-2 pt-2 border-t border-current/20 text-[11px] space-y-0.5">
+                            <p><b>Nama (dari watermark):</b> ${hasil.nama || '-'}</p>
+                            <p><b>NISN (dari watermark):</b> ${hasil.nisn || '-'}</p>
+                            <p><b>Timestamp upload:</b> ${hasil.timestamp || '-'}</p>
+                        </div>` : ''}
+                        ${cekNama}
+                    </div>`;
+            }).catch(err => {
+                hasilEl.innerHTML = `<div class="bg-slate-100 border border-slate-200 text-slate-600 rounded-xl p-3"><i class="fa-solid fa-circle-exclamation mr-1"></i>Gagal memindai: ${err.message}</div>`;
+            }).finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Scan Keaslian Bukti (Cek Watermark Tersembunyi)';
+            });
         }
 
         let _prosesPrestasiAktif = null; // { kelas, id, aksi }
