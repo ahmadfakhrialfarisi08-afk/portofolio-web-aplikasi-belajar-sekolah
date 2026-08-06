@@ -89,7 +89,7 @@
            dan indikator status seperti countdown-bahaya) sengaja TIDAK
            dimatikan karena itu ciri khas & pembawa informasi status. */
         @media (prefers-reduced-motion: reduce) {
-            *:not(.efek-nama-perak):not(.efek-nama-emas):not(.gold-name):not(.efek-nama-permata):not(.efek-nama-admin):not(.lightning-border-yellow):not(.badge-dev)::after,
+            *:not(.efek-nama-perak):not(.efek-nama-emas):not(.gold-name):not(.efek-nama-permata):not(.efek-nama-pink):not(.efek-nama-admin):not(.lightning-border-yellow):not(.badge-dev)::after,
             .hover\:shadow-md, .hover\:shadow-xl, .thumb-bukti-prestasi {
                 transition-duration: .01ms !important;
             }
@@ -183,6 +183,14 @@
         }
         .efek-nama-permata {
             background: linear-gradient(90deg, #06b6d4, #a78bfa, #f472b6, #a78bfa, #06b6d4);
+            background-size: 200% auto;
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            animation: shimmerNama 3s linear infinite; font-weight: 800;
+        }
+        /* Efek nama khusus border pink (Kupu-kupu Prestasi) — selaras dgn warna
+           border_pink.jpg, dipakai hanya saat border ini yang sedang dipakai siswa. */
+        .efek-nama-pink {
+            background: linear-gradient(90deg, #db2777, #fbcfe8, #f472b6, #fbcfe8, #db2777);
             background-size: 200% auto;
             -webkit-background-clip: text; background-clip: text; color: transparent;
             animation: shimmerNama 3s linear infinite; font-weight: 800;
@@ -5188,18 +5196,39 @@
             return getBorderDiklaim().includes(borderId);
         }
 
+        // ===== SAKELAR SEMENTARA: sumber poin per-border, override dari kategori asalnya =====
+        // Border pink ("prestasi_pink") kategorinya tetap 'prestasi' (supaya gampang
+        // dikembalikan lagi nanti), TAPI syarat poinnya untuk SEMENTARA dites dari
+        // POIN QUIZ (bukan poin sertifikat/piala) sesuai permintaan. Kalau nanti mau
+        // dibalik ke poin prestasi, tinggal hapus baris 'prestasi_pink' di bawah ini.
+        const OVERRIDE_SUMBER_POIN_BORDER = {
+            prestasi_pink: 'quiz'
+        };
+
+        function sumberPoinBorder(border) {
+            return OVERRIDE_SUMBER_POIN_BORDER[border.id] || border.kategori;
+        }
+
+        // Ambil poin siswa yang jadi acuan sebuah border, sesuai sumber poinnya
+        // (bisa beda dari kategori asli border itu — lihat OVERRIDE_SUMBER_POIN_BORDER).
+        // Border quiz yang tidak terikat 1 level spesifik (mis. border pink saat ini)
+        // pakai totalPoin keseluruhan (akumulasi semua level), bukan totalPoinByLevel.
+        function getPoinAcuanBorder(border) {
+            const sumber = sumberPoinBorder(border);
+            if (sumber === 'prestasi') return getTotalPoinPrestasiDisetujui();
+            if (sumber === 'quiz') {
+                const data = getQuizData();
+                if (border.level) return (data.totalPoinByLevel && data.totalPoinByLevel[border.level]) || 0;
+                return data.totalPoin || 0;
+            }
+            return 0;
+        }
+
         // Syarat poin border (prestasi ATAU quiz) terpenuhi, lepas dari sudah
         // diklaim atau belum.
         function poinCukupUntukBorder(border) {
-            if (border.kategori === 'prestasi') {
-                return getTotalPoinPrestasiDisetujui() >= border.minPoin;
-            }
-            if (border.kategori === 'quiz') {
-                const data = getQuizData();
-                const totalLevel = (data.totalPoinByLevel && data.totalPoinByLevel[border.level]) || 0;
-                return totalLevel >= border.minPoin;
-            }
-            return true; // admin
+            if (border.kategori === 'admin') return true;
+            return getPoinAcuanBorder(border) >= border.minPoin;
         }
 
         // Dipertahankan sebagai alias supaya pemanggilan lama (khusus prestasi)
@@ -5255,8 +5284,10 @@
             if (elNama) elNama.innerText = border.nama;
             if (elPreview) elPreview.src = border.file;
             if (elSyarat) {
-                const sisa = Math.max(0, border.minPoin - getTotalPoinPrestasiDisetujui());
-                elSyarat.innerHTML = `<i class="fa-solid fa-circle-info mr-1"></i>Butuh ${sisa} poin lagi dari sertifikat/piala yang disetujui &mdash; minimal 1 bukti prestasi (sertifikat atau piala, jenisnya boleh beragam) untuk membuka border ini.`;
+                const sisa = Math.max(0, border.minPoin - getPoinAcuanBorder(border));
+                elSyarat.innerHTML = sumberPoinBorder(border) === 'prestasi'
+                    ? `<i class="fa-solid fa-circle-info mr-1"></i>Butuh ${sisa} poin lagi dari sertifikat/piala yang disetujui &mdash; minimal 1 bukti prestasi (sertifikat atau piala, jenisnya boleh beragam) untuk membuka border ini.`
+                    : `<i class="fa-solid fa-circle-info mr-1"></i>Butuh ${sisa} poin lagi dari akumulasi poin main quiz untuk membuka border ini.`;
             }
 
             document.getElementById('form-ajukan-prestasi').reset();
@@ -5344,6 +5375,7 @@
         function getEfekNamaClass(border) {
             if (!border) return '';
             if (border.kategori === 'admin') return 'efek-nama-admin';
+            if (border.id === 'prestasi_pink') return 'efek-nama-pink';
             if (border.tierRank >= 3) return 'efek-nama-permata';
             if (border.tierRank === 2) return 'efek-nama-emas';
             if (border.tierRank === 1) return 'efek-nama-perak';
@@ -5372,11 +5404,13 @@
             if (border.kategori === 'admin') {
                 return `<i class="fa-solid fa-crown mr-1"></i>Khusus Admin/Developer`;
             }
-            if (border.kategori === 'prestasi') {
+            if (sumberPoinBorder(border) === 'prestasi') {
                 return `<i class="fa-solid fa-trophy mr-1"></i>Prestasi &middot; min. 1 sertifikat/piala beragam (&asymp;${border.minPoin} poin)`;
             }
             const meta = LEVEL_META_BORDER[border.level];
-            return `<i class="fa-solid fa-gamepad mr-1"></i>Quiz ${meta ? meta.label : ''} &middot; min. ${border.minPoin} poin (akumulasi total poin main quiz level ini)`;
+            return meta
+                ? `<i class="fa-solid fa-gamepad mr-1"></i>Quiz ${meta.label} &middot; min. ${border.minPoin} poin (akumulasi total poin main quiz level ini)`
+                : `<i class="fa-solid fa-gamepad mr-1"></i>Quiz &middot; min. ${border.minPoin} poin (akumulasi total poin main quiz)`;
         }
 
         // Render satu kartu border (dipakai bareng oleh grid Sudah Dimiliki & Belum Dimiliki)
@@ -5392,15 +5426,10 @@
 
             let labelKurang = '';
             if (!terbuka && !siapDiklaim) {
-                if (border.kategori === 'prestasi') {
-                    const sisa = Math.max(0, border.minPoin - getTotalPoinPrestasiDisetujui());
-                    labelKurang = `Butuh ${sisa} poin lagi (sertifikat/piala beragam)`;
-                } else {
-                    const data = getQuizData();
-                    const totalLevel = (data.totalPoinByLevel && data.totalPoinByLevel[border.level]) || 0;
-                    const sisa = Math.max(0, border.minPoin - totalLevel);
-                    labelKurang = `Butuh ${sisa} poin lagi`;
-                }
+                const sisa = Math.max(0, border.minPoin - getPoinAcuanBorder(border));
+                labelKurang = sumberPoinBorder(border) === 'prestasi'
+                    ? `Butuh ${sisa} poin lagi (sertifikat/piala beragam)`
+                    : `Butuh ${sisa} poin lagi`;
             }
 
             // Ceklis kecil syarat border (poin, & khusus prestasi: sertifikat) —
@@ -5413,8 +5442,8 @@
                     </p>`;
                 ceklisSyaratHtml = `
                     <div class="w-full text-[10px] font-semibold text-left mb-2.5 space-y-1">
-                        ${baris(true, border.kategori === 'prestasi' ? 'Poin mencukupi' : 'Poin quiz mencukupi')}
-                        ${border.kategori === 'prestasi' ? baris(true, 'Sertifikat/piala disetujui') : ''}
+                        ${baris(true, sumberPoinBorder(border) === 'prestasi' ? 'Poin mencukupi' : 'Poin quiz mencukupi')}
+                        ${sumberPoinBorder(border) === 'prestasi' ? baris(true, 'Sertifikat/piala disetujui') : ''}
                     </div>`;
             }
 
@@ -5435,7 +5464,7 @@
                     ? `<button onclick="pakaiBorder('${border.id}')" ${sedangDipakai ? 'disabled' : ''} class="w-full py-2 rounded-xl text-xs font-bold transition-all ${sedangDipakai ? 'bg-emerald-100 text-emerald-700 cursor-default' : 'bg-slate-800 hover:bg-slate-900 text-white'}">${sedangDipakai ? '<i class="fa-solid fa-check mr-1"></i>Sedang Dipakai' : 'Pakai Border'}</button>`
                     : (siapDiklaim
                         ? `<button onclick="klaimBorder('${border.id}')" class="w-full py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white transition-all"><i class="fa-solid fa-award mr-1"></i>Klaim Border</button>`
-                        : (border.kategori === 'prestasi'
+                        : (sumberPoinBorder(border) === 'prestasi'
                             ? `<p class="text-[10px] text-amber-600 font-semibold mb-2">${labelKurang}</p>
                                <button onclick="bukaModalBukaBorder('${border.id}')" class="w-full py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition-all"><i class="fa-solid fa-unlock mr-1"></i>Buka Border</button>`
                             : `<button disabled class="w-full py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed"><i class="fa-solid fa-lock mr-1"></i>${labelKurang}</button>`))
