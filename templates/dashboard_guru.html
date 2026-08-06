@@ -296,7 +296,10 @@
                     <div class="flex items-center gap-3">
                         <i class="fa-solid fa-trophy w-5 text-center"></i> Konfirmasi Prestasi
                     </div>
-                    <span id="badge-prestasi-menunggu" class="hidden px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold">0</span>
+                    <div class="flex items-center gap-1.5">
+                        <span id="badge-notif-pembatalan-prestasi" title="Ada keputusanmu yang dibatalkan guru lain" class="hidden px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold items-center gap-1"><i class="fa-solid fa-bell"></i><span id="badge-notif-pembatalan-prestasi-jumlah">0</span></span>
+                        <span id="badge-prestasi-menunggu" class="hidden px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold">0</span>
+                    </div>
                 </button>
             </div>
         </div>
@@ -990,7 +993,7 @@
         </div>
     </div>
 
-    <!-- Modal Konfirmasi Setujui / Tolak Prestasi -->
+    <!-- Modal Konfirmasi Setujui / Tolak / Batalkan Prestasi -->
     <div id="modal-konfirmasi-prestasi" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[70] flex items-center justify-center p-4 hidden">
         <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden flex flex-col">
             <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
@@ -1011,8 +1014,20 @@
                     <input type="text" id="input-nama-admin-prestasi" placeholder="Contoh: Ahmad, S.T" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
                 </div>
 
+                <div id="wrapper-target-batal" class="hidden">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Ubah Status Menjadi:</label>
+                    <select id="select-target-batal" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
+                        <option value="ditolak">Ditolak</option>
+                        <option value="menunggu">Pending (Menunggu)</option>
+                    </select>
+                    <p class="mt-2 text-[11px] text-orange-600 bg-orange-50 border border-orange-100 rounded-lg p-2 flex items-start gap-1.5">
+                        <i class="fa-solid fa-circle-info mt-0.5"></i>
+                        <span>Jika status saat ini <b>Disetujui</b>, reward (poin/border) yang sudah diberikan akan otomatis dicabut.</span>
+                    </p>
+                </div>
+
                 <div id="wrapper-catatan-tolak-prestasi" class="hidden">
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Catatan Penolakan (opsional):</label>
+                    <label id="label-catatan-tolak-prestasi" class="block text-xs font-bold text-slate-700 mb-1">Catatan Penolakan (opsional):</label>
                     <textarea id="input-catatan-tolak-prestasi" rows="2" placeholder="Contoh: Foto bukti kurang jelas, mohon upload ulang." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"></textarea>
                 </div>
             </div>
@@ -1025,6 +1040,22 @@
                     <i class="fa-solid fa-check"></i> Setujui
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Riwayat Perubahan Status Prestasi (log transparan) -->
+    <div id="modal-riwayat-prestasi" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[70] flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 flex-shrink-0">
+                <div>
+                    <h4 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-clock-rotate-left text-blue-500 mr-1.5"></i> Riwayat Perubahan</h4>
+                    <p id="riwayat-prestasi-subjudul" class="text-[11px] text-slate-400 mt-0.5"></p>
+                </div>
+                <button onclick="tutupModalRiwayatPrestasi()" class="text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div id="daftar-riwayat-prestasi" class="p-5 space-y-3 overflow-y-auto modal-scroll-smooth"></div>
         </div>
     </div>
 
@@ -2752,14 +2783,32 @@
         }
 
         function updateBadgePrestasiMenunggu() {
-            const jumlahMenunggu = getSemuaPengajuanPrestasi().filter(p => p.status === 'menunggu').length;
+            const semua = getSemuaPengajuanPrestasi();
+
+            const jumlahMenunggu = semua.filter(p => p.status === 'menunggu').length;
             const badge = document.getElementById('badge-prestasi-menunggu');
-            if (!badge) return;
-            if (jumlahMenunggu > 0) {
-                badge.innerText = String(jumlahMenunggu);
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
+            if (badge) {
+                if (jumlahMenunggu > 0) {
+                    badge.innerText = String(jumlahMenunggu);
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+
+            // Notifikasi: keputusan guru yang dibatalkan oleh guru LAIN, belum dibaca.
+            const jumlahNotifPembatalan = semua.filter(p => p.notifikasiPembatalan && !p.notifikasiPembatalan.dibaca).length;
+            const badgeNotif = document.getElementById('badge-notif-pembatalan-prestasi');
+            const badgeNotifJumlah = document.getElementById('badge-notif-pembatalan-prestasi-jumlah');
+            if (badgeNotif && badgeNotifJumlah) {
+                if (jumlahNotifPembatalan > 0) {
+                    badgeNotifJumlah.innerText = String(jumlahNotifPembatalan);
+                    badgeNotif.classList.remove('hidden');
+                    badgeNotif.classList.add('inline-flex');
+                } else {
+                    badgeNotif.classList.add('hidden');
+                    badgeNotif.classList.remove('inline-flex');
+                }
             }
         }
 
@@ -2787,6 +2836,9 @@
                 if (p.status === 'disetujui') {
                     badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-100 text-emerald-700 flex items-center gap-1 flex-shrink-0"><i class="fa-solid fa-circle-check"></i>Disetujui</span>`;
                     info = `<p class="text-[11px] text-emerald-600 font-semibold mt-1.5"><i class="fa-solid fa-user-shield mr-1"></i>Dikonfirmasi oleh ${p.adminPenyetuju || 'Admin'} &middot; ${p.tanggalKonfirmasi || ''}</p>`;
+                    if (p.rewardDiberikan) {
+                        info += `<p class="text-[11px] text-amber-600 font-semibold mt-1"><i class="fa-solid fa-award mr-1"></i>Reward diberikan: +${p.poinReward || 0} Poin & Border</p>`;
+                    }
                 } else if (p.status === 'ditolak') {
                     badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-rose-100 text-rose-700 flex items-center gap-1 flex-shrink-0"><i class="fa-solid fa-circle-xmark"></i>Ditolak</span>`;
                     info = `<p class="text-[11px] text-rose-600 font-semibold mt-1.5"><i class="fa-solid fa-user-shield mr-1"></i>Ditolak oleh ${p.adminPenyetuju || 'Admin'}${p.catatanAdmin ? ' &middot; ' + p.catatanAdmin : ''}</p>`;
@@ -2799,10 +2851,22 @@
                     if (p.pembatalanTerakhir) {
                         const statusSebelum = p.pembatalanTerakhir.statusSebelum === 'disetujui' ? 'disetujui' : 'ditolak';
                         info += `<p class="text-[11px] text-orange-500 font-semibold mt-1"><i class="fa-solid fa-rotate-left mr-1"></i>Sebelumnya ${statusSebelum}, dibatalkan oleh ${p.pembatalanTerakhir.oleh} &middot; ${p.pembatalanTerakhir.tanggal}</p>`;
+                        if (p.pembatalanTerakhir.statusSebelum === 'disetujui') {
+                            info += `<p class="text-[11px] text-orange-500 mt-0.5"><i class="fa-solid fa-award mr-1"></i>Reward yang sudah diberikan otomatis dicabut.</p>`;
+                        }
                     }
                 }
 
-                const tombolAksi = p.status === 'menunggu' ? `
+                // Notifikasi: keputusan guru ini dibatalkan oleh guru LAIN. Ditampilkan
+                // sampai guru pemilik keputusan awal menekan "Tandai sudah dibaca".
+                const notifPembatalan = (p.notifikasiPembatalan && !p.notifikasiPembatalan.dibaca) ? `
+                    <div class="mt-2 p-2.5 bg-rose-50 border border-rose-200 rounded-xl">
+                        <p class="text-[11px] font-bold text-rose-700"><i class="fa-solid fa-bell mr-1"></i>Untuk ${p.notifikasiPembatalan.untuk}: keputusanmu dibatalkan oleh ${p.notifikasiPembatalan.oleh}</p>
+                        <p class="text-[11px] text-rose-600 mt-1">Alasan: ${p.notifikasiPembatalan.alasan} &middot; ${p.notifikasiPembatalan.timestamp}</p>
+                        <button onclick="tandaiNotifPembatalanDibaca('${p._kelas}', '${p.id}')" class="mt-2 text-[10px] font-bold text-rose-500 hover:text-rose-700 underline">Tandai sudah dibaca</button>
+                    </div>` : '';
+
+                const tombolUtama = p.status === 'menunggu' ? `
                     <div class="flex gap-2 mt-3">
                         <button onclick="bukaModalKonfirmasiPrestasi('${p._kelas}', '${p.id}', 'disetujui')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all">
                             <i class="fa-solid fa-check mr-1"></i>Setujui
@@ -2813,7 +2877,15 @@
                     </div>` : `
                     <div class="mt-3">
                         <button onclick="bukaModalKonfirmasiPrestasi('${p._kelas}', '${p.id}', 'batalkan')" class="w-full py-2 rounded-xl text-xs font-bold bg-slate-50 hover:bg-orange-50 text-slate-500 hover:text-orange-600 border border-slate-200 hover:border-orange-200 transition-all">
-                            <i class="fa-solid fa-rotate-left mr-1"></i>Batalkan (salah pencet)
+                            <i class="fa-solid fa-rotate-left mr-1"></i>Tarik Kembali / Ubah Keputusan
+                        </button>
+                    </div>`;
+
+                const jumlahRiwayat = (p.riwayat && p.riwayat.length) || 0;
+                const tombolAksi = tombolUtama + `
+                    <div class="mt-2">
+                        <button onclick="bukaModalRiwayatPrestasi('${p._kelas}', '${p.id}')" class="w-full py-1.5 rounded-xl text-[11px] font-bold text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-clock-rotate-left"></i>Riwayat Perubahan${jumlahRiwayat ? ` (${jumlahRiwayat})` : ''}
                         </button>
                     </div>`;
 
@@ -2830,6 +2902,7 @@
                         </div>
                         ${p.keterangan ? `<p class="text-xs text-slate-500 mt-1.5">${p.keterangan}</p>` : ''}
                         ${info}
+                        ${notifPembatalan}
                         ${tombolAksi}
                     </div>
                 </div>`;
@@ -2846,6 +2919,28 @@
         }
 
         let _prosesPrestasiAktif = null; // { kelas, id, aksi }
+        const POIN_REWARD_PRESTASI = 10; // Poin default yang diberikan saat prestasi disetujui
+
+        function buatTimestampSekarang() {
+            const now = new Date();
+            const bulanSingkat = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+            return now.getDate() + ' ' + bulanSingkat[now.getMonth()] + ' ' + now.getFullYear() + ', ' +
+                   String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+        }
+
+        // Mencatat setiap perubahan status prestasi ke log riwayat transparan.
+        // Setiap entri WAJIB berisi: Nama Guru, Jenis Aksi, Alasan Revisi, dan Timestamp.
+        function catatRiwayatPrestasi(pengajuan, { namaGuru, aksi, alasanRevisi, statusSebelum, statusSesudah }) {
+            if (!pengajuan.riwayat) pengajuan.riwayat = [];
+            pengajuan.riwayat.push({
+                namaGuru: namaGuru,
+                aksi: aksi,
+                alasanRevisi: alasanRevisi || null,
+                statusSebelum: statusSebelum || null,
+                statusSesudah: statusSesudah || null,
+                timestamp: buatTimestampSekarang()
+            });
+        }
 
         function bukaModalKonfirmasiPrestasi(namaKelas, idPengajuan, aksi) {
             const daftar = getPengajuanPrestasiKelas(namaKelas);
@@ -2860,6 +2955,10 @@
 
             const judulModal = document.getElementById('judul-modal-konfirmasi-prestasi');
             const wrapperCatatan = document.getElementById('wrapper-catatan-tolak-prestasi');
+            const labelCatatan = document.getElementById('label-catatan-tolak-prestasi');
+            const inputCatatan = document.getElementById('input-catatan-tolak-prestasi');
+            const wrapperTargetBatal = document.getElementById('wrapper-target-batal');
+            const selectTargetBatal = document.getElementById('select-target-batal');
             const tombolProses = document.getElementById('btn-proses-konfirmasi-prestasi');
             const labelNamaAdmin = document.getElementById('label-nama-admin-prestasi');
 
@@ -2868,28 +2967,36 @@
                 judulModal.innerHTML = '<i class="fa-solid fa-trophy text-amber-500 mr-1.5"></i> Setujui Prestasi';
                 if (labelNamaAdmin) labelNamaAdmin.innerText = 'Nama Admin/Guru yang Mengonfirmasi:';
                 wrapperCatatan.classList.add('hidden');
+                wrapperTargetBatal.classList.add('hidden');
                 tombolProses.className = "px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-500/20 flex items-center gap-2";
                 tombolProses.innerHTML = '<i class="fa-solid fa-check"></i> Setujui';
             } else if (aksi === 'ditolak') {
                 document.getElementById('ringkasan-prestasi-judul').innerText = p.judul;
                 judulModal.innerHTML = '<i class="fa-solid fa-circle-xmark text-rose-500 mr-1.5"></i> Tolak Prestasi';
                 if (labelNamaAdmin) labelNamaAdmin.innerText = 'Nama Admin/Guru yang Mengonfirmasi:';
+                if (labelCatatan) labelCatatan.innerText = 'Catatan Penolakan (opsional):';
+                if (inputCatatan) inputCatatan.placeholder = 'Contoh: Foto bukti kurang jelas, mohon upload ulang.';
                 wrapperCatatan.classList.remove('hidden');
+                wrapperTargetBatal.classList.add('hidden');
                 tombolProses.className = "px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-rose-500/20 flex items-center gap-2";
                 tombolProses.innerHTML = '<i class="fa-solid fa-xmark"></i> Tolak';
             } else {
-                // aksi === 'batalkan' -> koreksi kalau ada guru salah pencet Setujui/Tolak.
-                // Status pengajuan dikembalikan ke "menunggu" supaya bisa diproses ulang,
-                // dan border yang sudah terpakai di sisi siswa otomatis kembali mengikuti
-                // border tertinggi yang MASIH terbuka (sama seperti siswa lain) begitu
-                // jumlah prestasi disetujuinya berkurang.
+                // aksi === 'batalkan' -> guru menarik kembali / mengubah keputusan yang
+                // sudah diambil (mis. salah pencet, atau bukti ternyata bermasalah).
+                // Guru memilih status baru: Ditolak atau Pending (Menunggu). Kalau status
+                // sebelumnya Disetujui, reward (poin/border) yang sudah diberikan otomatis
+                // dicabut. Alasan revisi WAJIB diisi supaya tercatat transparan di riwayat.
                 const statusSekarang = p.status === 'disetujui' ? 'Disetujui' : 'Ditolak';
                 document.getElementById('ringkasan-prestasi-judul').innerText = `${p.judul} (status saat ini: ${statusSekarang})`;
-                judulModal.innerHTML = '<i class="fa-solid fa-rotate-left text-orange-500 mr-1.5"></i> Batalkan Konfirmasi';
-                if (labelNamaAdmin) labelNamaAdmin.innerText = 'Nama Admin/Guru yang Membatalkan:';
-                wrapperCatatan.classList.add('hidden');
+                judulModal.innerHTML = '<i class="fa-solid fa-rotate-left text-orange-500 mr-1.5"></i> Tarik Kembali / Ubah Keputusan';
+                if (labelNamaAdmin) labelNamaAdmin.innerText = 'Nama Guru yang Membatalkan:';
+                if (labelCatatan) labelCatatan.innerText = 'Alasan Revisi (wajib diisi):';
+                if (inputCatatan) inputCatatan.placeholder = 'Contoh: Salah pencet, atau bukti prestasi ternyata tidak valid.';
+                wrapperCatatan.classList.remove('hidden');
+                wrapperTargetBatal.classList.remove('hidden');
+                if (selectTargetBatal) selectTargetBatal.value = p.status === 'disetujui' ? 'ditolak' : 'menunggu';
                 tombolProses.className = "px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-orange-500/20 flex items-center gap-2";
-                tombolProses.innerHTML = '<i class="fa-solid fa-rotate-left"></i> Batalkan';
+                tombolProses.innerHTML = '<i class="fa-solid fa-rotate-left"></i> Simpan Perubahan';
             }
 
             document.getElementById('modal-konfirmasi-prestasi').classList.remove('hidden');
@@ -2905,38 +3012,141 @@
             const { kelas, id, aksi } = _prosesPrestasiAktif;
 
             const namaAdmin = document.getElementById('input-nama-admin-prestasi').value.trim();
-            if (!namaAdmin) { alert('Nama admin/guru yang mengonfirmasi wajib diisi.'); return; }
+            if (!namaAdmin) { alert('Nama guru yang memproses wajib diisi.'); return; }
             const catatan = document.getElementById('input-catatan-tolak-prestasi').value.trim();
 
-            const now = new Date();
-            const bulanSingkat = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-            const timestamp = now.getDate() + ' ' + bulanSingkat[now.getMonth()] + ' ' + now.getFullYear() + ', ' +
-                               String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+            // Alasan revisi WAJIB diisi saat menarik kembali/mengubah keputusan,
+            // supaya riwayat tetap transparan dan bisa dipertanggungjawabkan.
+            if (aksi === 'batalkan' && !catatan) {
+                alert('Alasan revisi wajib diisi saat menarik kembali/mengubah keputusan.');
+                return;
+            }
 
             const daftar = getPengajuanPrestasiKelas(kelas);
             const idx = daftar.findIndex(x => x.id === id);
             if (idx === -1) { tutupModalKonfirmasiPrestasi(); return; }
+            const p = daftar[idx];
 
             if (aksi === 'batalkan') {
-                daftar[idx].pembatalanTerakhir = {
+                const statusSebelum = p.status;
+                const guruPengambilKeputusanAwal = p.adminPenyetuju; // guru yang set status saat ini
+                const selectTargetBatal = document.getElementById('select-target-batal');
+                const statusBaru = (selectTargetBatal && selectTargetBatal.value) || 'menunggu';
+
+                // Reward (poin/border) otomatis dicabut kalau statusnya sebelumnya Disetujui.
+                const rewardDicabut = statusSebelum === 'disetujui' && p.rewardDiberikan;
+                if (rewardDicabut) {
+                    p.rewardDiberikan = false;
+                }
+
+                // Kalau yang membatalkan BUKAN guru yang mengambil keputusan awal,
+                // pembatalan tetap langsung berlaku, tapi guru pemilik keputusan awal
+                // diberi notifikasi (tercatat) supaya tahu keputusannya diubah guru lain.
+                const bedaGuru = guruPengambilKeputusanAwal &&
+                    guruPengambilKeputusanAwal.trim().toLowerCase() !== namaAdmin.trim().toLowerCase();
+                if (bedaGuru) {
+                    p.notifikasiPembatalan = {
+                        untuk: guruPengambilKeputusanAwal,
+                        oleh: namaAdmin,
+                        statusSebelum: statusSebelum,
+                        statusBaru: statusBaru,
+                        alasan: catatan,
+                        timestamp: buatTimestampSekarang(),
+                        dibaca: false
+                    };
+                }
+
+                p.pembatalanTerakhir = {
                     oleh: namaAdmin,
-                    statusSebelum: daftar[idx].status,
-                    tanggal: timestamp
+                    statusSebelum: statusSebelum,
+                    tanggal: buatTimestampSekarang()
                 };
-                daftar[idx].status = 'menunggu';
-                daftar[idx].adminPenyetuju = null;
-                daftar[idx].tanggalKonfirmasi = null;
-                daftar[idx].catatanAdmin = null;
+
+                p.status = statusBaru;
+                if (statusBaru === 'ditolak') {
+                    p.adminPenyetuju = namaAdmin;
+                    p.tanggalKonfirmasi = buatTimestampSekarang();
+                    p.catatanAdmin = catatan;
+                } else {
+                    p.adminPenyetuju = null;
+                    p.tanggalKonfirmasi = null;
+                    p.catatanAdmin = null;
+                }
+
+                catatRiwayatPrestasi(p, {
+                    namaGuru: namaAdmin,
+                    aksi: `Tarik kembali/ubah keputusan (dari ${statusSebelum === 'disetujui' ? 'Disetujui' : 'Ditolak'} menjadi ${statusBaru === 'ditolak' ? 'Ditolak' : 'Pending'})${rewardDicabut ? ' — reward dicabut otomatis' : ''}${bedaGuru ? ` — notifikasi dikirim ke ${guruPengambilKeputusanAwal} (pengambil keputusan awal)` : ''}`,
+                    alasanRevisi: catatan,
+                    statusSebelum: statusSebelum,
+                    statusSesudah: statusBaru
+                });
             } else {
-                daftar[idx].status = aksi;
-                daftar[idx].adminPenyetuju = namaAdmin;
-                daftar[idx].tanggalKonfirmasi = timestamp;
-                daftar[idx].catatanAdmin = aksi === 'ditolak' ? (catatan || null) : null;
+                const statusSebelum = p.status;
+                p.status = aksi;
+                p.adminPenyetuju = namaAdmin;
+                p.tanggalKonfirmasi = buatTimestampSekarang();
+                p.catatanAdmin = aksi === 'ditolak' ? (catatan || null) : null;
+
+                if (aksi === 'disetujui') {
+                    // Sistem otomatis memberi reward (poin/border) saat prestasi disetujui.
+                    p.rewardDiberikan = true;
+                    p.poinReward = p.poinReward || POIN_REWARD_PRESTASI;
+                }
+
+                catatRiwayatPrestasi(p, {
+                    namaGuru: namaAdmin,
+                    aksi: aksi === 'disetujui' ? `Menyetujui prestasi (reward +${p.poinReward} poin diberikan)` : 'Menolak prestasi',
+                    alasanRevisi: catatan || null,
+                    statusSebelum: statusSebelum,
+                    statusSesudah: aksi
+                });
             }
 
             savePengajuanPrestasiKelas(kelas, daftar);
 
             tutupModalKonfirmasiPrestasi();
+            renderKonfirmasiPrestasi();
+        }
+
+        // ===== Modal Riwayat Perubahan (log transparan) =====
+        function bukaModalRiwayatPrestasi(namaKelas, idPengajuan) {
+            const daftar = getPengajuanPrestasiKelas(namaKelas);
+            const p = daftar.find(x => x.id === idPengajuan);
+            if (!p) return;
+
+            document.getElementById('riwayat-prestasi-subjudul').innerText = `${p.judul} — ${p.namaSiswa || 'Siswa'} · ${namaKelas}`;
+
+            const container = document.getElementById('daftar-riwayat-prestasi');
+            const riwayat = (p.riwayat || []).slice().reverse(); // terbaru di atas
+
+            if (riwayat.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs"><i class="fa-solid fa-inbox text-2xl mb-2 block"></i>Belum ada riwayat perubahan untuk pengajuan ini.</div>`;
+            } else {
+                container.innerHTML = riwayat.map(r => `
+                    <div class="border border-slate-200 rounded-xl p-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <p class="text-xs font-bold text-slate-800"><i class="fa-solid fa-user mr-1.5 text-blue-500"></i>${r.namaGuru}</p>
+                            <p class="text-[10px] text-slate-400 flex-shrink-0">${r.timestamp}</p>
+                        </div>
+                        <p class="text-[11px] text-slate-600 mt-1.5">${r.aksi}</p>
+                        ${r.alasanRevisi ? `<p class="text-[11px] text-slate-500 mt-1 bg-slate-50 border border-slate-100 rounded-lg p-2"><i class="fa-solid fa-quote-left mr-1 text-slate-300"></i>${r.alasanRevisi}</p>` : ''}
+                    </div>`).join('');
+            }
+
+            document.getElementById('modal-riwayat-prestasi').classList.remove('hidden');
+        }
+
+        function tutupModalRiwayatPrestasi() {
+            document.getElementById('modal-riwayat-prestasi').classList.add('hidden');
+        }
+
+        // Menandai notifikasi "keputusan dibatalkan guru lain" sebagai sudah dibaca.
+        function tandaiNotifPembatalanDibaca(namaKelas, idPengajuan) {
+            const daftar = getPengajuanPrestasiKelas(namaKelas);
+            const p = daftar.find(x => x.id === idPengajuan);
+            if (!p || !p.notifikasiPembatalan) return;
+            p.notifikasiPembatalan.dibaca = true;
+            savePengajuanPrestasiKelas(namaKelas, daftar);
             renderKonfirmasiPrestasi();
         }
 
