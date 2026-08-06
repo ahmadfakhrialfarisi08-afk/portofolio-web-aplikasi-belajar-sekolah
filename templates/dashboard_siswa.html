@@ -7,6 +7,8 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js"></script>
+    <!-- OCR (Ekstraksi Teks Otomatis) untuk verifikasi foto bukti prestasi -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     
@@ -1436,7 +1438,22 @@
                 <div class="field-kirim-prestasi" style="--delay:2">
                     <label class="text-xs font-bold text-slate-600 mb-1.5 block">Foto Sertifikat/Piala</label>
                     <input id="input-file-prestasi" type="file" accept="image/*" required class="w-full text-xs file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-amber-100 file:text-amber-700 file:text-xs file:font-bold border border-slate-200 rounded-xl">
+                    <!-- Panel hasil Ekstraksi Teks Otomatis (OCR) -- bagian dari verifikasi
+                         foto bukti prestasi: menunjukkan ke siswa teks apa yang berhasil
+                         terbaca sistem dari foto sertifikat/piala yang baru diupload. -->
+                    <div id="panel-ocr-prestasi" class="hidden mt-2 p-2.5 rounded-lg border border-slate-200 bg-slate-50">
+                        <div id="ocr-prestasi-loading" class="hidden flex items-center gap-2 text-[11px] text-slate-500 font-semibold">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Membaca teks dari foto (OCR)&hellip;
+                        </div>
+                        <div id="ocr-prestasi-hasil" class="hidden">
+                            <p class="text-[10px] uppercase tracking-wide text-slate-400 font-bold mb-1"><i class="fa-solid fa-text-height mr-1"></i>Teks terbaca dari foto</p>
+                            <p id="ocr-prestasi-teks" class="text-[11px] text-slate-600 leading-relaxed max-h-20 overflow-y-auto whitespace-pre-line"></p>
+                        </div>
+                        <div id="ocr-prestasi-peringatan" class="hidden text-[11px] text-amber-600 font-semibold mt-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Teks di foto ini kurang jelas terbaca sistem. Pastikan foto sertifikat/piala tidak buram/gelap sebelum dikirim.</div>
+                        <div id="ocr-prestasi-gagal" class="hidden text-[11px] text-slate-400"><i class="fa-solid fa-circle-info mr-1"></i>Ekstraksi teks otomatis tidak tersedia saat ini, tapi kamu tetap bisa lanjut mengirim.</div>
+                    </div>
                 </div>
+
 
                 <div class="field-kirim-prestasi" style="--delay:3">
                     <label class="text-xs font-bold text-slate-600 mb-1.5 block">Keterangan (opsional)</label>
@@ -4861,6 +4878,73 @@
             clearTimeout(_timeoutGagalPrestasi);
         }
 
+        /* ================= EKSTRAKSI TEKS OTOMATIS (OCR) UNTUK VERIFIKASI FOTO PRESTASI =================
+           Begitu siswa memilih file foto sertifikat/piala, foto langsung dibaca pakai
+           Tesseract.js (OCR jalan di browser, gak perlu server) supaya teks yang ada di
+           foto (nama lomba, nama siswa, tanggal, penyelenggara, dsb) ikut ke-ekstrak.
+           Tujuannya BUKAN buat otomatis nolak/nerima, tapi buat BANTU VERIFIKASI:
+           - siswa langsung lihat apa yang "terbaca" sistem dari fotonya (transparansi),
+           - kalau teks yang kebaca kosong/sangat pendek, siswa diingetin fotonya mungkin
+             buram/gelap SEBELUM sempat dikirim & ditolak guru gara-gara gak jelas,
+           - teks hasil OCR ikut disimpan (field teksOCR) di data pengajuan, supaya nanti
+             bisa dibaca juga di Dashboard Guru sebagai bahan cross-check tambahan.
+           Kalau OCR gagal/library gagal dimuat (mis. jaringan bermasalah), fitur ini
+           TIDAK memblokir pengiriman -- ekstraksi teks sifatnya pelengkap, bukan syarat. */
+        let teksOCRFotoPrestasiTerkini = null;
+        let ocrFotoPrestasiSedangProses = false;
+
+        function resetPanelOCRPrestasi() {
+            teksOCRFotoPrestasiTerkini = null;
+            ocrFotoPrestasiSedangProses = false;
+            const panel = document.getElementById('panel-ocr-prestasi');
+            if (panel) panel.classList.add('hidden');
+            ['ocr-prestasi-loading', 'ocr-prestasi-hasil', 'ocr-prestasi-peringatan', 'ocr-prestasi-gagal'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+        }
+
+        async function jalankanOCRFotoPrestasi(file) {
+            const panel = document.getElementById('panel-ocr-prestasi');
+            const elLoading = document.getElementById('ocr-prestasi-loading');
+            const elHasil = document.getElementById('ocr-prestasi-hasil');
+            const elTeks = document.getElementById('ocr-prestasi-teks');
+            const elPeringatan = document.getElementById('ocr-prestasi-peringatan');
+            const elGagal = document.getElementById('ocr-prestasi-gagal');
+            if (!panel) return;
+
+            resetPanelOCRPrestasi();
+            ocrFotoPrestasiSedangProses = true;
+            panel.classList.remove('hidden');
+            elLoading.classList.remove('hidden');
+
+            try {
+                if (typeof Tesseract === 'undefined') throw new Error('Library OCR belum termuat');
+
+                // 'ind+eng' -- sertifikat/piala di Indonesia umumnya campuran teks
+                // Bahasa Indonesia (nama lomba, penyelenggara) & istilah/angka Latin.
+                const { data } = await Tesseract.recognize(file, 'ind+eng');
+                const teksBersih = (data && data.text ? data.text : '').replace(/\s+/g, ' ').trim();
+                teksOCRFotoPrestasiTerkini = teksBersih || null;
+
+                elLoading.classList.add('hidden');
+                if (teksBersih.length >= 8) {
+                    elTeks.innerText = teksBersih;
+                    elHasil.classList.remove('hidden');
+                } else {
+                    // Teks yang kebaca terlalu sedikit/kosong -- kemungkinan foto
+                    // buram, gelap, kepotong, atau bukan foto sertifikat/piala.
+                    elPeringatan.classList.remove('hidden');
+                }
+            } catch (e) {
+                elLoading.classList.add('hidden');
+                elGagal.classList.remove('hidden');
+                teksOCRFotoPrestasiTerkini = null;
+            } finally {
+                ocrFotoPrestasiSedangProses = false;
+            }
+        }
+
         /* ================= VERIFIKASI ANTI-DUPLIKAT FILE BUKTI PRESTASI =================
            Metode: FileReader membaca isi file jadi string base64 (dataURL), lalu
            string base64 itu di-hash/checksum (bukan nama filenya) jadi satu
@@ -5147,6 +5231,19 @@
         // yang dikirim tetap prestasi umum (tidak terikat ke satu border tertentu),
         // sama seperti form lama, supaya prestasi yang sama bisa menyumbang ke border
         // manapun yang syaratnya terpenuhi setelah disetujui.
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputFotoPrestasi = document.getElementById('input-file-prestasi');
+            if (!inputFotoPrestasi) return;
+            inputFotoPrestasi.addEventListener('change', () => {
+                const file = inputFotoPrestasi.files && inputFotoPrestasi.files[0];
+                if (file) {
+                    jalankanOCRFotoPrestasi(file);
+                } else {
+                    resetPanelOCRPrestasi();
+                }
+            });
+        });
+
         function bukaModalBukaBorder(borderId) {
             const border = getSemuaBorder().find(b => b.id === borderId);
             if (!border) return;
@@ -5165,6 +5262,7 @@
             document.getElementById('input-jenis-prestasi').value = 'sertifikat';
             const radioSertifikat = document.querySelector('input[name="pilihan-jenis-prestasi"][value="sertifikat"]');
             if (radioSertifikat) radioSertifikat.checked = true;
+            resetPanelOCRPrestasi();
 
             const modal = document.getElementById('modal-buka-border-prestasi');
             if (!modal) return;
@@ -5468,10 +5566,8 @@
                 // walau sudah di-rename, hash yang dihasilkan tetap identik &
                 // otomatis kedetek + ditolak sebelum sempat tersimpan.
                 const hashFileBaru = hitungHashKontenFile(base64File);
-                // Dicek ke DUA sumber: (1) data prestasi yang masih ada sekarang,
-                // (2) registry hash permanen yang mencatat SEMUA file yang pernah
-                // pernah diajukan sepanjang sejarah, termasuk yang pengajuan aslinya
-                // sudah dihapus/ditolak/dibatalkan. Kalau salah satu ketemu, dianggap duplikat.
+                // HANYA diblok kalau file identik ini sebelumnya sudah pernah DISETUJUI.
+                // Kalau sebelumnya masih menunggu/ditolak, boleh dikirim ulang tanpa diblok.
                 const duplikatDisetujui = cariPrestasiDisetujuiDenganHashSama(hashFileBaru);
 
                 if (duplikatDisetujui) {
@@ -5494,6 +5590,11 @@
                     keterangan: keterangan || null,
                     foto: base64File,
                     hashFile: hashFileBaru,
+                    // Teks hasil Ekstraksi Teks Otomatis (OCR) dari foto -- bahan
+                    // cross-check tambahan buat guru saat menilai (mis. kalau nama
+                    // lomba yang diketik siswa gak nyambung sama teks di foto).
+                    // Bisa null kalau OCR gagal/belum sempat selesai saat submit.
+                    teksOCR: teksOCRFotoPrestasiTerkini,
                     namaSiswa: NAMA_PEMAIN_QUIZ,
                     tanggalAjukan,
                     status: 'menunggu'
@@ -5507,6 +5608,7 @@
                 saveStatusPrestasiTerlihat(snapshotStatus);
 
                 document.getElementById('form-ajukan-prestasi').reset();
+                resetPanelOCRPrestasi();
                 tutupModalBukaBorder();
                 renderKoleksiBorder();
                 tampilkanSuksesPrestasi(`Bukti "${judul}" berhasil dikirim dan sedang menunggu konfirmasi dari guru/admin.`);
