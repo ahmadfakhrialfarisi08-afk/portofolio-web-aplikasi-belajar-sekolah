@@ -1185,7 +1185,27 @@
 
                     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 mt-6 flex items-center gap-3">
                         <i class="fa-solid fa-circle-info text-indigo-500"></i>
-                        <p class="text-xs text-slate-400">Jawaban essay dicocokkan otomatis dengan kunci jawaban singkat (ketikkan intinya saja). Skor terbaik tersimpan di perangkat ini; belum tersedia leaderboard atau border koleksi untuk jalur Essay.</p>
+                        <p class="text-xs text-slate-400">Jawaban essay dicocokkan otomatis dengan kunci jawaban singkat (ketikkan intinya saja). Skor terbaik & leaderboard tersimpan seperti jalur Pilihan Ganda; border koleksi tetap khusus Pilihan Ganda.</p>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 mt-6">
+                        <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+                            <div>
+                                <h3 class="font-bold text-lg text-slate-900">🏆 Leaderboard Essay</h3>
+                                <p class="text-xs text-slate-400 mt-0.5" id="quiz-leaderboard-essay-subtitle">Poin kamu di masing-masing quiz essay. Pilih level untuk lihat peringkat semua siswa.</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2" id="quiz-leaderboard-essay-filter">
+                                <button onclick="setFilterLeaderboardQuizEssay('semua')" data-val="semua" class="quiz-filter-chip-essay px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-indigo-600 text-white border-indigo-600">Poin Saya</button>
+                                <button onclick="setFilterLeaderboardQuizEssay('easy')" data-val="easy" class="quiz-filter-chip-essay px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100">Easy</button>
+                                <button onclick="setFilterLeaderboardQuizEssay('medium')" data-val="medium" class="quiz-filter-chip-essay px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100">Medium</button>
+                                <button onclick="setFilterLeaderboardQuizEssay('hard')" data-val="hard" class="quiz-filter-chip-essay px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100">Hard</button>
+                            </div>
+                        </div>
+                        <div id="quiz-leaderboard-essay-list" class="space-y-2"></div>
+                        <div id="quiz-leaderboard-essay-kosong" class="hidden p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                            <i class="fa-solid fa-ranking-star text-2xl mb-2"></i>
+                            <p class="text-xs font-medium">Belum ada yang main quiz essay ini. Jadilah yang pertama!</p>
+                        </div>
                     </div>
                 </div>
 
@@ -2939,6 +2959,14 @@
                     renderKoleksiBorder();
                 }
             }
+            if (e.key === KEY_QUIZ_ESSAY_DATA) {
+                cekNotifDitikungQuizEssay();
+                if (!document.getElementById('tab-quiz').classList.contains('hidden') &&
+                    !document.getElementById('quiz-view-tingkat-essay').classList.contains('hidden')) {
+                    renderTingkatEssay();
+                    renderLeaderboardQuizEssay();
+                }
+            }
             if (e.key === KEY_PRESTASI_SISWA) {
                 // Guru menyetujui/menolak/membatalkan pengajuan prestasi dari Dashboard
                 // Guru. Border avatar langsung disesuaikan lagi di sini: kalau prestasi
@@ -3017,6 +3045,7 @@
             updateBerandaPoinQuiz();
             renderPanelDummyLeaderboard();
             pastikanBaselineSeenIdsQuiz();
+            pastikanBaselineSeenIdsQuizEssay();
             terapkanBorderKeAvatar();
             cekPembaruanTugasRealtime(); // set snapshot awal sebagai baseline
             updateGlobalCountdown();
@@ -3116,6 +3145,7 @@
              tetap dianggap benar.
            ============================================================ */
         const KEY_QUIZ_ESSAY_DATA = `quiz_essay_data_${KELAS_AKTIF_SISWA}`;
+        const KEY_QUIZ_ESSAY_SEEN_IDS = `quiz_essay_seen_ids_${KELAS_AKTIF_SISWA}`;
 
         const QUIZ_CONFIG_ESSAY = {
             easy:   { label: 'Easy',   poinDasar: 15, waktu: 40, warnaBadge: 'bg-emerald-100 text-emerald-700', warnaBar: 'bg-emerald-500' },
@@ -3154,12 +3184,27 @@
         };
 
         function getQuizEssayData() {
+            let data;
             try {
                 const raw = localStorage.getItem(KEY_QUIZ_ESSAY_DATA);
-                return raw ? JSON.parse(raw) : { bestByLevel: { easy: 0, medium: 0, hard: 0 } };
+                data = raw ? JSON.parse(raw) : { bestByLevel: { easy: 0, medium: 0, hard: 0 }, leaderboard: [] };
             } catch (e) {
-                return { bestByLevel: { easy: 0, medium: 0, hard: 0 } };
+                data = { bestByLevel: { easy: 0, medium: 0, hard: 0 }, leaderboard: [] };
             }
+
+            // Sama seperti getQuizData() milik Pilihan Ganda: rapikan leaderboard
+            // supaya cuma nyisain 1 entri (skor terbaik) per siswa per level.
+            if (data.leaderboard && data.leaderboard.length) {
+                const bersih = dedupLeaderboardQuiz(data.leaderboard);
+                if (bersih.length !== data.leaderboard.length) {
+                    data.leaderboard = bersih;
+                    try { localStorage.setItem(KEY_QUIZ_ESSAY_DATA, JSON.stringify(data)); } catch (e) {}
+                } else {
+                    data.leaderboard = bersih;
+                }
+            }
+
+            return data;
         }
 
         function saveQuizEssayData(data) {
@@ -3199,6 +3244,7 @@
 
         let quizState = null; // { jenis: 'pg'|'essay', level, soal[], index, skor, benar, waktuSisa, timerId }
         let quizFilterLeaderboardAktif = 'semua';
+        let quizFilterLeaderboardEssayAktif = 'semua';
 
         function getQuizData() {
             let data;
@@ -3277,6 +3323,7 @@
             if (jenis === 'essay') {
                 tampilkanViewQuiz('tingkat-essay');
                 renderTingkatEssay();
+                renderLeaderboardQuizEssay();
             } else {
                 tampilkanViewQuiz('tingkat-pg');
                 renderMenuQuiz();
@@ -3467,7 +3514,39 @@
 
             data.bestByLevel = data.bestByLevel || { easy: 0, medium: 0, hard: 0 };
             if (skor > (data.bestByLevel[level] || 0)) data.bestByLevel[level] = skor;
+
+            // Leaderboard Essay: sistemnya SAMA persis dengan leaderboard Pilihan
+            // Ganda -- cuma menyimpan SATU entri per siswa per level (skor
+            // terbaiknya), lengkap dengan snapshot foto/border/title/efek nama.
+            const borderAktif = getBorderTerpakai();
+            data.leaderboard = data.leaderboard || [];
+            const entriLamaSaya = data.leaderboard.find(e => e.nama === NAMA_PEMAIN_QUIZ && e.level === level);
+
+            const entriBaru = {
+                id: entriLamaSaya ? entriLamaSaya.id : `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                nama: NAMA_PEMAIN_QUIZ,
+                kelas: getKelasAktifQuiz(),
+                foto: getFotoProfilAktifQuiz(),
+                border: borderAktif.file,
+                borderTitle: borderAktif.rank,
+                efekNama: getEfekNamaClass(borderAktif),
+                badgeDev: getBadgeDevHtml(borderAktif),
+                level,
+                skor,
+                benar,
+                total: soal.length,
+                tanggal: new Date().toISOString()
+            };
+
+            if (!entriLamaSaya) {
+                data.leaderboard.push(entriBaru);
+            } else if (skor > entriLamaSaya.skor) {
+                Object.assign(entriLamaSaya, entriBaru);
+            }
+
             saveQuizEssayData(data);
+            tandaiIdSudahDilihatQuizEssay(entriBaru.id); // entri sendiri, jangan ikut memicu notif "ditikung"
+            renderLeaderboardQuizEssay();
 
             const persen = soal.length ? benar / soal.length : 0;
             document.getElementById('quiz-result-icon').innerText = persen >= 0.8 ? '🏆' : (persen >= 0.5 ? '🥈' : '💪');
@@ -3590,6 +3669,7 @@
             if (quizState && quizState.jenis === 'essay') {
                 tampilkanViewQuiz('tingkat-essay');
                 renderTingkatEssay();
+                renderLeaderboardQuizEssay();
             } else {
                 tampilkanViewQuiz('tingkat-pg');
                 renderMenuQuiz();
@@ -3781,6 +3861,253 @@
 
                 container.appendChild(baris);
             });
+        }
+
+        /* ============================================================
+           LEADERBOARD ESSAY -- sistemnya SAMA PERSIS dengan leaderboard
+           Pilihan Ganda di atas (filter chip, tab "Poin Saya", badge
+           medali, sinkron foto/border realtime untuk entri sendiri),
+           cuma sumber datanya dari KEY_QUIZ_ESSAY_DATA & QUIZ_CONFIG_ESSAY.
+           ============================================================ */
+        function setFilterLeaderboardQuizEssay(val) {
+            quizFilterLeaderboardEssayAktif = val;
+            document.querySelectorAll('.quiz-filter-chip-essay').forEach(btn => {
+                if (btn.dataset.val === val) {
+                    btn.className = 'quiz-filter-chip-essay px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-indigo-600 text-white border-indigo-600';
+                } else {
+                    btn.className = 'quiz-filter-chip-essay px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-100';
+                }
+            });
+
+            const subtitle = document.getElementById('quiz-leaderboard-essay-subtitle');
+            if (subtitle) {
+                subtitle.innerText = val === 'semua'
+                    ? 'Poin kamu di masing-masing quiz essay. Pilih level untuk lihat peringkat semua siswa.'
+                    : 'Peringkat semua siswa berdasarkan skor terbaik quiz essay.';
+            }
+
+            renderLeaderboardQuizEssay();
+        }
+
+        function renderLeaderboardQuizEssayMilikSaya(data) {
+            const container = document.getElementById('quiz-leaderboard-essay-list');
+            const kosongState = document.getElementById('quiz-leaderboard-essay-kosong');
+            if (!container || !kosongState) return;
+            container.innerHTML = '';
+            kosongState.classList.add('hidden');
+
+            const best = data.bestByLevel || { easy: 0, medium: 0, hard: 0 };
+            const semuaEntriSaya = (data.leaderboard || []).filter(e => e.nama === NAMA_PEMAIN_QUIZ);
+
+            ['easy', 'medium', 'hard'].forEach(level => {
+                const cfg = QUIZ_CONFIG_ESSAY[level];
+                const skorTerbaik = best[level] || 0;
+                const entriTerakhir = semuaEntriSaya
+                    .filter(e => e.level === level)
+                    .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))[0];
+
+                const baris = document.createElement('div');
+                baris.className = 'flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50';
+                baris.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold flex-shrink-0 ${cfg.warnaBadge}">${cfg.label}</span>
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold text-slate-800 truncate">Poin terbaik kamu</p>
+                            <p class="text-[10px] text-slate-400 truncate mt-0.5">${entriTerakhir ? `${entriTerakhir.benar}/${entriTerakhir.total} benar &middot; terakhir main ${new Date(entriTerakhir.tanggal).toLocaleDateString('id-ID')}` : 'Belum pernah main quiz essay ini'}</p>
+                        </div>
+                    </div>
+                    <span class="text-sm font-extrabold text-slate-900 flex-shrink-0">${skorTerbaik}</span>
+                `;
+                container.appendChild(baris);
+            });
+        }
+
+        function renderLeaderboardQuizEssay() {
+            const data = getQuizEssayData();
+
+            if (quizFilterLeaderboardEssayAktif === 'semua') {
+                renderLeaderboardQuizEssayMilikSaya(data);
+                return;
+            }
+
+            let daftar = [...(data.leaderboard || [])].filter(e => e.level === quizFilterLeaderboardEssayAktif);
+
+            daftar.sort((a, b) => b.skor - a.skor);
+            daftar = daftar.slice(0, 10);
+
+            const container = document.getElementById('quiz-leaderboard-essay-list');
+            const kosongState = document.getElementById('quiz-leaderboard-essay-kosong');
+            if (!container || !kosongState) return;
+            container.innerHTML = '';
+
+            if (daftar.length === 0) {
+                kosongState.classList.remove('hidden');
+                return;
+            }
+            kosongState.classList.add('hidden');
+
+            daftar.forEach((entri, i) => {
+                const cfg = QUIZ_CONFIG_ESSAY[entri.level];
+                const namaEntri = entri.nama;
+                const iniSayaSendiri = namaEntri === NAMA_PEMAIN_QUIZ;
+
+                // Entri milik saya sendiri selalu realtime (foto/border/title/efek
+                // nama terbaru), persis seperti perilaku leaderboard Pilihan Ganda.
+                const borderLiveSaya = iniSayaSendiri ? getBorderTerpakai() : null;
+                const fotoEntri = iniSayaSendiri
+                    ? getFotoProfilAktifQuiz()
+                    : (entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120`);
+                const borderEntri = iniSayaSendiri ? borderLiveSaya.file : (entri.border || '../static/img/border_polos.png');
+                const titleEntri = iniSayaSendiri ? borderLiveSaya.rank : (entri.borderTitle || '🔰 Pemula');
+                const kelasEntri = iniSayaSendiri ? getKelasAktifQuiz() : (entri.kelas || '-');
+                const efekNamaEntri = iniSayaSendiri ? getEfekNamaClass(borderLiveSaya) : (entri.efekNama || '');
+                const badgeDevEntri = iniSayaSendiri ? getBadgeDevHtml(borderLiveSaya) : (entri.badgeDev || '');
+                const kelasNamaEntri = `text-xs font-bold truncate ${efekNamaEntri || 'text-slate-800'}`;
+
+                const baris = document.createElement('div');
+                baris.className = `flex items-center justify-between gap-3 p-3 rounded-xl border ${i < 3 ? 'border-amber-200 bg-amber-50/50' : 'border-slate-100 bg-slate-50'} ${iniSayaSendiri ? 'ring-1 ring-indigo-300' : ''}`;
+                baris.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0">
+                        ${buatBadgeMedali(i + 1)}
+                        <div class="profile-wrapper w-10 h-10 flex-shrink-0">
+                            <img src="${fotoEntri}" class="user-avatar avatar-leaderboard-zoom cursor-zoom-in transition-transform hover:scale-110" title="Klik untuk perbesar foto" alt="Avatar ${namaEntri}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120'">
+                            <img src="${borderEntri}" class="user-border" alt="Border ${namaEntri}">
+                        </div>
+                        <div class="min-w-0">
+                            <p class="${kelasNamaEntri}">${namaEntri}${badgeDevEntri ? ' ' + badgeDevEntri : ''}${iniSayaSendiri ? ' <span class="text-indigo-500">(Kamu)</span>' : ''}</p>
+                            <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200 truncate max-w-full">${titleEntri}</span>
+                            <p class="text-[10px] text-slate-400 truncate mt-0.5">Kelas ${kelasEntri} &middot; ${entri.benar}/${entri.total} benar &middot; ${new Date(entri.tanggal).toLocaleDateString('id-ID')}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${cfg.warnaBadge}">${cfg.label}</span>
+                        <span class="text-sm font-extrabold text-slate-900">${entri.skor}</span>
+                    </div>
+                `;
+
+                const imgAvatarLeaderboard = baris.querySelector('.avatar-leaderboard-zoom');
+                if (imgAvatarLeaderboard) {
+                    imgAvatarLeaderboard.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        bukaZoomFotoPrestasi(imgAvatarLeaderboard.src, namaEntri);
+                    });
+                }
+
+                container.appendChild(baris);
+            });
+        }
+
+        /* ============================================================
+           NOTIFIKASI "DITIKUNG" DI LEADERBOARD ESSAY -- sama seperti
+           punya Pilihan Ganda, cuma dicek terpisah dari data & seen-ids
+           milik Essay sendiri (KEY_QUIZ_ESSAY_DATA / KEY_QUIZ_ESSAY_SEEN_IDS).
+           ============================================================ */
+        function getSeenIdsQuizEssay() {
+            const raw = localStorage.getItem(KEY_QUIZ_ESSAY_SEEN_IDS);
+            return raw ? JSON.parse(raw) : [];
+        }
+
+        function tandaiIdSudahDilihatQuizEssay(id) {
+            const seenIds = getSeenIdsQuizEssay();
+            if (!seenIds.includes(id)) {
+                seenIds.push(id);
+                localStorage.setItem(KEY_QUIZ_ESSAY_SEEN_IDS, JSON.stringify(seenIds));
+            }
+        }
+
+        function pastikanBaselineSeenIdsQuizEssay() {
+            const seenIds = getSeenIdsQuizEssay();
+            if (seenIds.length > 0) return;
+            const data = getQuizEssayData();
+            const idAwal = (data.leaderboard || []).filter(e => e.id).map(e => e.id);
+            if (idAwal.length > 0) localStorage.setItem(KEY_QUIZ_ESSAY_SEEN_IDS, JSON.stringify(idAwal));
+        }
+
+        function hitungPosisiPemainQuizEssay(level) {
+            const data = getQuizEssayData();
+            const daftar = (data.leaderboard || []).filter(e => e.level === level);
+            const skorTerbaikPerNama = {};
+            daftar.forEach(e => {
+                if (!skorTerbaikPerNama[e.nama] || e.skor > skorTerbaikPerNama[e.nama]) {
+                    skorTerbaikPerNama[e.nama] = e.skor;
+                }
+            });
+            const urutan = Object.entries(skorTerbaikPerNama).sort((a, b) => b[1] - a[1]);
+            const idx = urutan.findIndex(([nama]) => nama === NAMA_PEMAIN_QUIZ);
+            return idx === -1 ? null : idx + 1;
+        }
+
+        function cekNotifDitikungQuizEssay() {
+            const data = getQuizEssayData();
+            const seenIds = getSeenIdsQuizEssay();
+            const semuaEntri = data.leaderboard || [];
+
+            const entriBelumDilihat = semuaEntri.filter(e => e.id && !seenIds.includes(e.id) && e.nama !== NAMA_PEMAIN_QUIZ);
+            if (entriBelumDilihat.length === 0) return;
+
+            entriBelumDilihat.forEach((entri, i) => {
+                const skorTerbaikSaya = Math.max(
+                    0,
+                    ...semuaEntri.filter(e => e.nama === NAMA_PEMAIN_QUIZ && e.level === entri.level).map(e => e.skor)
+                );
+                if (entri.skor > skorTerbaikSaya) {
+                    setTimeout(() => tampilkanToastDitikungQuizEssay(entri), i * 400);
+                }
+                tandaiIdSudahDilihatQuizEssay(entri.id);
+            });
+        }
+
+        function tampilkanToastDitikungQuizEssay(entri) {
+            const container = document.getElementById('notif-toast-container');
+            if (!container) return;
+
+            const cfg = QUIZ_CONFIG_ESSAY[entri.level];
+            const posisi = hitungPosisiPemainQuizEssay(entri.level);
+            const idToast = `ditikung-essay-${entri.id}`;
+
+            const fotoPenikung = entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120`;
+            const borderPenikung = entri.border || '../static/img/border_polos.png';
+            const titlePenikung = entri.borderTitle || '🔰 Pemula';
+            const efekNamaPenikung = entri.efekNama || '';
+            const badgeDevPenikung = entri.badgeDev || '';
+            const kelasPenikung = entri.kelas ? ` &middot; Kelas ${entri.kelas}` : '';
+            const pesanRebut = PESAN_REBUT_POSISI_QUIZ[Math.floor(Math.random() * PESAN_REBUT_POSISI_QUIZ.length)];
+
+            const toast = document.createElement('div');
+            toast.className = 'notif-toast-ditarik notif-toast-ungu';
+            toast.id = `toast-${idToast}`;
+            toast.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <div class="profile-wrapper w-10 h-10 flex-shrink-0">
+                        <img src="${fotoPenikung}" class="user-avatar" alt="Avatar ${entri.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120'">
+                        <img src="${borderPenikung}" class="user-border" alt="Border ${entri.nama}">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-extrabold text-slate-900 dark:text-slate-100">😱 Kamu Ditikung di Leaderboard Essay!</p>
+                        <p class="text-[11px] font-bold mt-0.5"><i class="fa-solid fa-bolt mr-1 text-indigo-600"></i><span class="${efekNamaPenikung || 'text-indigo-600'}">${entri.nama}</span>${badgeDevPenikung ? ' ' + badgeDevPenikung : ''}<span class="text-indigo-600">${kelasPenikung} &middot; ${cfg.label} &middot; ${entri.skor} poin</span></p>
+                        <span class="inline-block mt-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200">${titlePenikung}</span>
+                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">${entri.nama} baru saja menyalip skor terbaikmu di level Essay ${cfg.label}${posisi ? `, posisimu sekarang turun ke peringkat #${posisi}` : ''}.</p>
+                        <p class="text-[11px] font-semibold text-slate-700 mt-1 leading-relaxed">${pesanRebut}</p>
+                        <button onclick="switchTab('quiz'); tutupToastDitikungQuizEssay('${idToast}')" class="mt-2 text-[11px] font-bold text-indigo-600 hover:underline">Balas Sekarang &rarr;</button>
+                    </div>
+                    <button onclick="tutupToastDitikungQuizEssay('${idToast}')" class="text-slate-300 hover:text-slate-500 flex-shrink-0">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>`;
+
+            container.appendChild(toast);
+
+            const badge = document.getElementById('badge-quiz-ditikung');
+            if (badge) badge.classList.remove('hidden');
+
+            setTimeout(() => tutupToastDitikungQuizEssay(idToast), 8000);
+        }
+
+        function tutupToastDitikungQuizEssay(idToast) {
+            const toast = document.getElementById(`toast-${idToast}`);
+            if (!toast) return;
+            toast.classList.add('notif-keluar');
+            setTimeout(() => toast.remove(), 300);
         }
 
         /* ============================================================
