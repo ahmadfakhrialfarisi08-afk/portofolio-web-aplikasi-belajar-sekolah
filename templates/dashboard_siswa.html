@@ -528,6 +528,32 @@
             100% { opacity: 0; transform: translate(var(--x, 0), 90px) rotate(var(--rot, 45deg)) scale(0.6); }
         }
 
+        /* --- 8b. ANIMASI GAGAL/DITOLAK (dipakai saat file bukti prestasi
+           terdeteksi duplikat lewat verifikasi hash/checksum) --- */
+        .modal-gagal-ring { animation: gagalRingPulse 1.4s ease-out infinite; }
+        @keyframes gagalRingPulse {
+            0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.35); }
+            100% { box-shadow: 0 0 0 20px rgba(244, 63, 94, 0); }
+        }
+        .crossmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 3;
+            stroke-miterlimit: 10;
+            stroke: #f43f5e;
+            fill: none;
+            animation: checkmarkStrokeCircle 0.5s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        .crossmark-x1, .crossmark-x2 {
+            transform-origin: 50% 50%;
+            stroke-width: 3;
+            stroke: #f43f5e;
+            stroke-linecap: round;
+            stroke-dasharray: 30;
+            stroke-dashoffset: 30;
+            animation: checkmarkStrokeCheck 0.3s 0.5s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+
         /* --- 10. ANIMASI FORM & TOMBOL KIRIM PRESTASI --- */
         .modal-kirim-prestasi-pop { animation: kirimPrestasiPopIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
         @keyframes kirimPrestasiPopIn {
@@ -1441,6 +1467,24 @@
             <h3 class="font-extrabold text-base text-slate-900">Berhasil Dikirim!</h3>
             <p id="pesan-sukses-prestasi" class="text-xs text-slate-500 leading-relaxed"></p>
             <button onclick="tutupSuksesPrestasi()" class="mt-2 w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-all">Oke, Mengerti</button>
+        </div>
+    </div>
+
+    <!-- Modal ditolak otomatis: file bukti prestasi terdeteksi duplikat (hash/checksum
+         isi filenya sama dengan bukti yang sudah pernah diupload, walau nama file
+         sudah diganti/di-rename). -->
+    <div id="modal-gagal-prestasi" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[105] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-7 shadow-2xl flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
+            <div class="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center modal-gagal-ring">
+                <svg class="w-11 h-11" viewBox="0 0 52 52">
+                    <circle class="crossmark-circle" cx="26" cy="26" r="23"/>
+                    <line class="crossmark-x1" x1="17" y1="17" x2="35" y2="35"/>
+                    <line class="crossmark-x2" x1="35" y1="17" x2="17" y2="35"/>
+                </svg>
+            </div>
+            <h3 class="font-extrabold text-base text-slate-900">Ditolak Otomatis</h3>
+            <p id="pesan-gagal-prestasi" class="text-xs text-slate-500 leading-relaxed"></p>
+            <button onclick="tutupGagalPrestasi()" class="mt-2 w-full py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition-all">Oke, Mengerti</button>
         </div>
     </div>
 
@@ -4785,6 +4829,65 @@
             clearTimeout(_timeoutSuksesPrestasi);
         }
 
+        /* ================= ANIMASI DITOLAK OTOMATIS (file bukti duplikat) ================= */
+        let _timeoutGagalPrestasi = null;
+
+        function tampilkanGagalPrestasi(pesan) {
+            const modal = document.getElementById('modal-gagal-prestasi');
+            const pesanEl = document.getElementById('pesan-gagal-prestasi');
+            if (!modal) return;
+            if (pesanEl) pesanEl.innerText = pesan || 'File ini terdeteksi duplikat dengan bukti yang sudah pernah diupload.';
+
+            modal.querySelectorAll('.crossmark-circle, .crossmark-x1, .crossmark-x2').forEach(el => {
+                el.style.animation = 'none';
+                void el.offsetWidth; // paksa reflow supaya animasi replay dari awal
+                el.style.animation = '';
+            });
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+
+            clearTimeout(_timeoutGagalPrestasi);
+            _timeoutGagalPrestasi = setTimeout(tutupGagalPrestasi, 6000);
+        }
+
+        function tutupGagalPrestasi() {
+            const modal = document.getElementById('modal-gagal-prestasi');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+            clearTimeout(_timeoutGagalPrestasi);
+        }
+
+        /* ================= VERIFIKASI ANTI-DUPLIKAT FILE BUKTI PRESTASI =================
+           Metode: FileReader membaca isi file jadi string base64 (dataURL), lalu
+           string base64 itu di-hash/checksum (bukan nama filenya) jadi satu
+           "sidik jari" pendek. Kalau ada file lain -- siapapun pengupload-nya,
+           kapanpun diupload -- yang isinya PERSIS SAMA, hash yang dihasilkan
+           akan identik juga, walau nama file sudah diganti/di-rename sebelum
+           diupload ulang. Ini BUKAN hash kriptografis (bukan buat keamanan),
+           cuma buat mendeteksi kesamaan isi file secara cepat & tanpa library. */
+        function hitungHashKontenFile(base64String) {
+            let h1 = 0xdeadbeef ^ 0, h2 = 0x41c6ce57 ^ 0;
+            for (let i = 0; i < base64String.length; i++) {
+                const ch = base64String.charCodeAt(i);
+                h1 = Math.imul(h1 ^ ch, 2654435761);
+                h2 = Math.imul(h2 ^ ch, 1597334677);
+            }
+            h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+            h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+            return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+        }
+
+        // Cek ke SELURUH data prestasi di kelas ini (semua siswa, semua status --
+        // menunggu/disetujui/ditolak) supaya file yang sama tidak bisa lolos cuma
+        // dengan ganti nama file maupun diajukan ulang oleh siswa yang sama/berbeda.
+        function cariPrestasiDenganHashSama(hash) {
+            return getPrestasiData().find(p => p.hashFile === hash);
+        }
+
         /* ================= NOTIFIKASI STATUS PRESTASI (disetujui/ditolak guru) =================
            Beda dengan notif tugas ditarik (yang dikirim guru lewat key notif terpisah),
            status prestasi diubah LANGSUNG di objek prestasi itu sendiri oleh Dashboard
@@ -5356,6 +5459,25 @@
 
             const reader = new FileReader();
             reader.onload = () => {
+                const base64File = reader.result;
+
+                // ===== VERIFIKASI ANTI-DUPLIKAT (checksum isi file) =====
+                // Hash dihitung dari ISI file (base64 hasil FileReader), BUKAN dari
+                // nama filenya -- jadi kalau file yang SAMA PERSIS diupload lagi
+                // walau sudah di-rename, hash yang dihasilkan tetap identik &
+                // otomatis kedetek + ditolak sebelum sempat tersimpan.
+                const hashFileBaru = hitungHashKontenFile(base64File);
+                const duplikat = cariPrestasiDenganHashSama(hashFileBaru);
+
+                if (duplikat) {
+                    const keteranganPemilik = duplikat.namaSiswa === NAMA_PEMAIN_QUIZ
+                        ? `bukti "${duplikat.judul}" yang sudah kamu ajukan sebelumnya`
+                        : `bukti milik siswa lain yang sudah pernah diupload`;
+                    tampilkanGagalPrestasi(`File ini terdeteksi SAMA PERSIS dengan ${keteranganPemilik} (walau nama file sudah diganti). Silakan upload foto bukti yang benar-benar berbeda.`);
+                    fileInput.value = '';
+                    return;
+                }
+
                 // Skema field di sini SAMA dengan yang dibaca Dashboard Guru
                 // (judul, jenis, keterangan, foto, namaSiswa, status, tanggalAjukan)
                 // supaya pengajuan ini langsung muncul & bisa dikonfirmasi di sana.
@@ -5365,7 +5487,8 @@
                     judul,
                     jenis,
                     keterangan: keterangan || null,
-                    foto: reader.result,
+                    foto: base64File,
+                    hashFile: hashFileBaru,
                     namaSiswa: NAMA_PEMAIN_QUIZ,
                     tanggalAjukan,
                     status: 'menunggu'
