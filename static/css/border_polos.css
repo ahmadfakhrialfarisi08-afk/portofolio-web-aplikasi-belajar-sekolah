@@ -39,11 +39,11 @@
   z-index: 2;           
   pointer-events: none; 
   
-  /* TAMBAHKAN BARIS INI SUPAYA GAMBAR BORDER KELUAR: */
-  background-image: url('../img/border_admin.jpg'); 
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  /* Gambar border sudah dikontrol lewat atribut src <img> oleh JS
+     (terapkanBorderKeAvatar), jadi TIDAK perlu background-image di sini.
+     Sebelumnya baris background-image di-hardcode ke border_admin.jpg,
+     itu yang bikin border admin ikut nongol di belakang border yang
+     sedang dipakai (mis. pink) karena PNG border punya area transparan. */
    
   /* Efek Glowing Emas */
   filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.7));
