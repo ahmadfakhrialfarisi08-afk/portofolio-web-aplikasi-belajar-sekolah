@@ -3860,8 +3860,30 @@
             fetch('/api/quiz/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ jenis, data })
-            }).catch(() => { /* offline/gagal kirim -> data tetap aman di localStorage */ });
+                body: JSON.stringify({ jenis, data, expected_username: USERNAME_SISWA_ASLI })
+            })
+                .then(res => res.json())
+                .then(hasil => {
+                    if (hasil && hasil.session_mismatch) tampilkanPeringatanSesiBerubah();
+                })
+                .catch(() => { /* offline/gagal kirim -> data tetap aman di localStorage */ });
+        }
+
+        // Ditampilkan kalau server nolak simpan karena akun yang login SEKARANG
+        // (di browser ini) sudah beda dari akun yang tadinya buka halaman ini --
+        // biasanya karena login akun lain di tab lain tanpa logout dulu. Skor
+        // yang barusan dimainkan TIDAK ikut kesimpen ke akun yang salah, tapi
+        // juga belum kesimpen ke server sama sekali sampai halaman dimuat ulang.
+        function tampilkanPeringatanSesiBerubah() {
+            if (document.getElementById('banner-sesi-berubah')) return; // jangan dobel
+            const banner = document.createElement('div');
+            banner.id = 'banner-sesi-berubah';
+            banner.className = 'fixed top-0 left-0 right-0 z-[9999] bg-rose-600 text-white text-xs sm:text-sm font-semibold px-4 py-3 flex items-center justify-center gap-3 shadow-lg';
+            banner.innerHTML = `
+                <span><i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Sesi login di browser ini sudah berubah (kemungkinan login akun lain di tab lain). Skor barusan belum tersimpan ke server. Muat ulang halaman untuk melanjutkan dengan akun yang benar.</span>
+                <button onclick="location.reload()" class="bg-white text-rose-600 px-3 py-1 rounded-lg text-xs font-bold flex-shrink-0">Muat Ulang</button>
+            `;
+            document.body.appendChild(banner);
         }
 
         // Tarik data quiz milik akun yang sedang login dari server (dipanggil
@@ -3870,8 +3892,9 @@
         async function sinkronkanQuizDenganServer() {
             for (const jenis of ['pg', 'essay']) {
                 try {
-                    const res = await fetch(`/api/quiz/load?jenis=${jenis}`);
+                    const res = await fetch(`/api/quiz/load?jenis=${jenis}&expected_username=${encodeURIComponent(USERNAME_SISWA_ASLI)}`);
                     const hasil = await res.json();
+                    if (hasil && hasil.session_mismatch) { tampilkanPeringatanSesiBerubah(); return; }
                     if (hasil && hasil.success && hasil.data) {
                         const key = jenis === 'essay' ? KEY_QUIZ_ESSAY_DATA : KEY_QUIZ_DATA;
                         localStorage.setItem(key, JSON.stringify(hasil.data));

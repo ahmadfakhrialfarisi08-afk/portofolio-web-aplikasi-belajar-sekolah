@@ -586,13 +586,38 @@ def api_forgot_password_reset_password():
 # ----------------------------------------------------
 # API: QUIZ & LEADERBOARD (per akun + gabungan semua siswa)
 # ----------------------------------------------------
+
+def _cek_sesi_masih_cocok(expected_username):
+    """Cegah bug 'kesave ke akun yang salah': Flask cuma punya SATU cookie
+    session per browser. Kalau di browser yang sama sempat login akun LAIN
+    (mis. tab dashboard Ahmad masih kebuka, terus di tab lain login sebagai
+    Syam), cookie session browser itu ikut berubah jadi milik akun yang
+    login belakangan -- padahal tab dashboard yang lama masih nampilin
+    nama akun sebelumnya. Tanpa pengecekan ini, quiz yang "keliatannya"
+    diselesaikan si A bisa kesimpen ke akun B di server.
+    expected_username dikirim dari halaman yang sudah ter-render (jadi
+    merekam akun siapa yang SEHARUSNYA sedang dipakai), dibandingkan
+    dengan session AKTUAL saat request ini masuk.
+    """
+    if 'user' not in session:
+        return False, jsonify(success=False, message='Belum login.'), 401
+    if expected_username and expected_username != session['user']['username']:
+        return False, jsonify(
+            success=False,
+            message='Sesi login sudah berubah (kemungkinan akun lain login di tab/perangkat yang sama pada browser ini). Muat ulang halaman ini dan login ulang sebelum lanjut.',
+            session_mismatch=True
+        ), 409
+    return True, None, None
+
+
 @app.route('/api/quiz/load', methods=['GET'])
 def api_quiz_load():
     """Ambil data quiz milik akun yang sedang login (dipanggil saat
     dashboard siswa dibuka, supaya progress akun ini ikut nyambung
     walau login dari perangkat/browser lain)."""
-    if 'user' not in session:
-        return jsonify(success=False, message='Belum login.'), 401
+    ok, err_resp, err_code = _cek_sesi_masih_cocok(request.args.get('expected_username'))
+    if not ok:
+        return err_resp, err_code
 
     jenis = request.args.get('jenis', 'pg')
     if jenis not in ('pg', 'essay'):
@@ -609,10 +634,12 @@ def api_quiz_save():
     setiap kali skor/leaderboard lokal di-update (pengganti localStorage
     sebagai sumber utama, biar tersimpan per akun & bisa dibaca akun lain
     lewat endpoint leaderboard-global di bawah)."""
-    if 'user' not in session:
-        return jsonify(success=False, message='Belum login.'), 401
-
     body = request.get_json(silent=True) or {}
+
+    ok, err_resp, err_code = _cek_sesi_masih_cocok(body.get('expected_username'))
+    if not ok:
+        return err_resp, err_code
+
     jenis = body.get('jenis')
     data = body.get('data')
     if jenis not in ('pg', 'essay') or not isinstance(data, dict):
