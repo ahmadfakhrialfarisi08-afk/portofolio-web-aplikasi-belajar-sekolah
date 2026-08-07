@@ -1900,6 +1900,27 @@
             } catch (e) { return null; }
         }
 
+        // BUG YANG DIPERBAIKI: ACTIVE_DUMMY_KEY di localStorage itu punya
+        // browser (bukan punya akun), jadi kalau browser ini PERNAH dipakai
+        // "coba sebagai akun dummy" (mis. bernama Syam), status dummy itu
+        // nyangkut terus -- bahkan setelah logout dan login lagi pakai akun
+        // ASLI yang berbeda (mis. akun 'siswa' / AHMAD FAKHRI AL FARISI).
+        // Makanya nama yang tampil bisa "ketiban" nama dummy lama walau
+        // login-nya sudah benar di sisi server.
+        //
+        // Fix: simpan username akun ASLI (dari session Flask) yang terakhir
+        // dipakai login DI BROWSER INI. Begitu login berikutnya pakai akun
+        // asli yang BEDA dari yang tersimpan, otomatis keluar dari mode
+        // dummy (sisa punya login sebelumnya) sebelum identitas dihitung.
+        const KEY_AKUN_ASLI_TERAKHIR = 'akun_asli_login_terakhir';
+        (function bersihkanSisaModeDummyJikaGantiAkun() {
+            const terakhir = localStorage.getItem(KEY_AKUN_ASLI_TERAKHIR);
+            if (terakhir !== USERNAME_SISWA_ASLI) {
+                localStorage.removeItem(ACTIVE_DUMMY_KEY);
+                localStorage.setItem(KEY_AKUN_ASLI_TERAKHIR, USERNAME_SISWA_ASLI);
+            }
+        })();
+
         const AKUN_DUMMY_AKTIF = getAkunDummyAktif();
 
         const NAMA_SISWA_AKTIF = AKUN_DUMMY_AKTIF ? AKUN_DUMMY_AKTIF.nama : NAMA_SISWA_ASLI;
