@@ -1910,6 +1910,18 @@
         // "kotak" data sendiri-sendiri karena ID ini unik per akun.
         const ID_SISWA_AKTIF = USERNAME_SISWA_AKTIF || 'siswa';
 
+        // ===== Border Admin/Developer: cuma untuk akun dev ASLI =====
+        // Username 'siswa' di app.py adalah akun dev (AHMAD FAKHRI AL FARISI).
+        // Border kategori "admin" HARUS selalu terbuka untuk dia, tapi TIDAK
+        // PERNAH untuk akun lain (mis. 'syam' / SYAM KHOERATUL MUKMIN) maupun
+        // untuk mode akun dummy manapun — walau browser yang sama pernah
+        // dipakai login sebagai dev. Dicek dari USERNAME_SISWA_ASLI (session
+        // Flask sungguhan), BUKAN dari nama tampilan, supaya tidak bisa
+        // "ditipu" cuma dengan bikin dummy bernama sama.
+        function akunIniAdminDev() {
+            return !AKUN_DUMMY_AKTIF && USERNAME_SISWA_ASLI === 'siswa';
+        }
+
         function pakaiAkunDummy(id) {
             const profil = getDaftarAkunDummy().find(p => p.id === id);
             if (!profil) return;
@@ -5670,10 +5682,12 @@
         // yang sudah naik dan bisa langsung membuka tier berikutnya (🥉 -> 🥈 -> 🏆) tanpa
         // perlu logika tambahan apa pun di sini.
         function isBorderTerbuka(border) {
-            // Akun siswa biasa TIDAK PERNAH memiliki border kategori admin,
-            // walaupun sebelumnya sempat tersimpan di localStorage (mis. dari
-            // akun dev/admin yang pernah login di browser yang sama).
-            if (border.kategori === 'admin') return false;
+            // Border admin/dev HANYA untuk akun dev asli (lihat akunIniAdminDev()).
+            // Akun siswa biasa (mis. syam) atau akun dummy manapun TIDAK PERNAH
+            // memiliki border ini, walaupun sebelumnya sempat tersimpan di
+            // localStorage (mis. dari akun dev yang pernah login di browser
+            // yang sama).
+            if (border.kategori === 'admin') return akunIniAdminDev();
             // Border tier dasar (minPoin 0, mis. "Polos") itu bawaan semua siswa
             // sejak awal — bukan pencapaian yang perlu diklaim, jadi tetap auto.
             if (border.minPoin === 0) return true;
@@ -5688,14 +5702,13 @@
         }
 
         function getBorderTertinggiTerbuka() {
-            // Border kategori "admin" SENGAJA dikecualikan dari kandidat auto-equip
-            // di sini. Admin selalu return true di isBorderTerbuka() (supaya kartunya
-            // bisa dipakai manual sama akun dev/admin), tapi tierRank-nya (99) paling
-            // tinggi dari semua border lain — kalau ikut masuk kandidat, border admin
-            // jadi SELALU menang tiap kali sistem fallback (mis. border pilihan siswa
-            // sempat dianggap belum valid). Efeknya siswa biasa ikut ke-auto-equip
-            // border Admin padahal bukan miliknya. Makanya di-filter keluar duluan.
-            const terbuka = getSemuaBorder().filter(b => b.kategori !== 'admin' && isBorderTerbuka(b));
+            // Border kategori "admin" sekarang aman diikutkan di sini karena
+            // isBorderTerbuka() sudah menggating-nya berdasarkan identitas asli
+            // (akunIniAdminDev()) — untuk akun dev, admin memang tierRank
+            // tertinggi (99) & otomatis ke-auto-equip. Untuk akun lain/dummy,
+            // isBorderTerbuka(admin) selalu false jadi tidak pernah ikut
+            // kandidat di sini.
+            const terbuka = getSemuaBorder().filter(b => isBorderTerbuka(b));
             if (!terbuka.length) return DAFTAR_BORDER_QUIZ[0];
             return terbuka.reduce((tertinggi, b) => (b.tierRank > tertinggi.tierRank ? b : tertinggi), terbuka[0]);
         }
