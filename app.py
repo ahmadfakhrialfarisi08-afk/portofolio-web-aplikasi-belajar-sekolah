@@ -1,6 +1,12 @@
 import uuid
-from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
+import os
+import random
+import string
+import smtplib
+import ssl
+from email.mime.text import MIMEText
+from datetime import datetime, timedelta
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response, jsonify
 
 app = Flask(__name__)
 # Key rahasia untuk menangani session dan flash message
@@ -41,6 +47,102 @@ users = {
 # Struktur: devices[username] = [ {token, name, ip, is_master, status, created_at}, ... ]
 # ----------------------------------------------------
 devices = {}
+
+# ----------------------------------------------------
+# KONFIGURASI OTP - LUPA PASSWORD
+# ----------------------------------------------------
+OTP_LENGTH = 6
+OTP_EXPIRY_MINUTES = 5
+OTP_MAX_ATTEMPTS = 5
+OTP_RESEND_COOLDOWN_SECONDS = 60
+RESET_TOKEN_EXPIRY_MINUTES = 10
+
+# Konfigurasi SMTP diambil dari environment variable.
+# Jika tidak diset, OTP hanya akan dicetak ke console (mode development).
+MAIL_SERVER = os.environ.get('MAIL_SERVER')
+MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
+MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() == 'true'
+MAIL_SENDER = os.environ.get('MAIL_SENDER', MAIL_USERNAME or 'no-reply@sekolah.sch.id')
+
+# ----------------------------------------------------
+# PENYIMPANAN OTP SEMENTARA (SIMULASI TABEL otp_requests)
+# Struktur: otp_store[username] = {
+#     'otp': '123456',
+#     'role': 'siswa',
+#     'email': 'siswa@sekolah.sch.id',
+#     'expires_at': datetime,
+#     'attempts': 0,
+#     'verified': False,
+#     'reset_token': None,
+#     'reset_token_expires_at': None,
+#     'last_sent_at': datetime,
+# }
+# CATATAN: di aplikasi production, simpan ini di database (misalnya tabel
+# password_resets) dengan kolom yang sama, bukan di memori proses seperti ini.
+# ----------------------------------------------------
+otp_store = {}
+
+
+def generate_otp():
+    """Membuat kode OTP numerik acak sepanjang OTP_LENGTH digit."""
+    return ''.join(random.choices(string.digits, k=OTP_LENGTH))
+
+
+def mask_email(email):
+    """Menyamarkan email untuk ditampilkan ke user, misal: si***@sekolah.sch.id"""
+    try:
+        local, domain = email.split('@', 1)
+    except ValueError:
+        return email
+    if len(local) <= 2:
+        masked_local = local[0] + '*' * max(len(local) - 1, 1)
+    else:
+        masked_local = local[:2] + '*' * (len(local) - 2)
+    return f"{masked_local}@{domain}"
+
+
+def send_otp_email(to_email, otp, fullname):
+    """
+    Mengirim kode OTP ke email user.
+    Jika kredensial SMTP tersedia di environment variable, email akan
+    dikirim sungguhan. Jika tidak, OTP dicetak ke console (mode demo/dev)
+    supaya fitur tetap bisa diuji tanpa server SMTP.
+    """
+    subject = 'Kode OTP Reset Password - Arcana Smart School'
+    body = (
+        f"Halo {fullname},\n\n"
+        f"Kami menerima permintaan untuk mereset password akun Anda.\n"
+        f"Kode OTP Anda adalah: {otp}\n\n"
+        f"Kode ini berlaku selama {OTP_EXPIRY_MINUTES} menit. "
+        f"Jangan bagikan kode ini kepada siapa pun.\n\n"
+        f"Jika Anda tidak merasa meminta reset password, abaikan email ini.\n\n"
+        f"Salam,\nArcana Smart School"
+    )
+
+    if not MAIL_SERVER or not MAIL_USERNAME or not MAIL_PASSWORD:
+        # Mode development: tidak ada konfigurasi SMTP, OTP dicetak ke console.
+        print(f"[DEV MODE] OTP untuk {to_email}: {otp}")
+        return False
+
+    try:
+        msg = MIMEText(body, 'plain', 'utf-8')
+        msg['Subject'] = subject
+        msg['From'] = MAIL_SENDER
+        msg['To'] = to_email
+
+        context = ssl.create_default_context()
+        with smtplib.SMTP(MAIL_SERVER, MAIL_PORT) as server:
+            if MAIL_USE_TLS:
+                server.starttls(context=context)
+            server.login(MAIL_USERNAME, MAIL_PASSWORD)
+            server.sendmail(MAIL_SENDER, [to_email], msg.as_string())
+        return True
+    except Exception as exc:
+        print(f"[ERROR] Gagal mengirim email OTP ke {to_email}: {exc}")
+        print(f"[DEV FALLBACK] OTP untuk {to_email}: {otp}")
+        return False
 
 
 def get_device_token():
@@ -271,6 +373,155 @@ def lupa_password():
         return redirect(url_for('lupa_password'))
 
     return render_template('lupa_password.html')
+
+
+def _find_user_by_role_username(role, username):
+    for u in users.values():
+        if u['username'] == username and u['role'] == role:
+            return u
+    return None
+
+
+# ----------------------------------------------------
+# API: KIRIM / KIRIM ULANG KODE OTP
+# ----------------------------------------------------
+@app.route('/api/forgot-password/send-otp', methods=['POST'])
+def api_forgot_password_send_otp():
+    data = request.get_json(silent=True) or {}
+    role = (data.get('role') or '').strip()
+    username = (data.get('username') or '').strip()
+    email = (data.get('email') or '').strip().lower()
+
+    if not role or not username or not email:
+        return jsonify(success=False, message='Semua field wajib diisi.'), 400
+
+    user = _find_user_by_role_username(role, username)
+    if not user:
+        return jsonify(success=False, message='Kombinasi Role dan Username tidak ditemukan.'), 404
+
+    if user['email'].strip().lower() != email:
+        return jsonify(success=False, message='Email tidak sesuai dengan yang terdaftar pada akun ini.'), 400
+
+    now = datetime.utcnow()
+    existing = otp_store.get(username)
+
+    # Batasi kirim ulang supaya tidak spam
+    if existing and existing.get('last_sent_at'):
+        elapsed = (now - existing['last_sent_at']).total_seconds()
+        if elapsed < OTP_RESEND_COOLDOWN_SECONDS:
+            remaining = int(OTP_RESEND_COOLDOWN_SECONDS - elapsed)
+            return jsonify(
+                success=False,
+                message=f'Mohon tunggu {remaining} detik sebelum meminta kode baru.',
+                cooldown=remaining
+            ), 429
+
+    otp = generate_otp()
+    otp_store[username] = {
+        'otp': otp,
+        'role': role,
+        'email': user['email'],
+        'expires_at': now + timedelta(minutes=OTP_EXPIRY_MINUTES),
+        'attempts': 0,
+        'verified': False,
+        'reset_token': None,
+        'reset_token_expires_at': None,
+        'last_sent_at': now,
+    }
+
+    send_otp_email(user['email'], otp, user.get('fullname', username))
+
+    return jsonify(
+        success=True,
+        message=f"Kode OTP telah dikirim ke {mask_email(user['email'])}.",
+        masked_email=mask_email(user['email']),
+        expires_in_seconds=OTP_EXPIRY_MINUTES * 60,
+        resend_cooldown_seconds=OTP_RESEND_COOLDOWN_SECONDS,
+    )
+
+
+# ----------------------------------------------------
+# API: VERIFIKASI KODE OTP
+# ----------------------------------------------------
+@app.route('/api/forgot-password/verify-otp', methods=['POST'])
+def api_forgot_password_verify_otp():
+    data = request.get_json(silent=True) or {}
+    username = (data.get('username') or '').strip()
+    otp_input = (data.get('otp') or '').strip()
+
+    if not username or not otp_input:
+        return jsonify(success=False, message='Kode OTP wajib diisi.'), 400
+
+    entry = otp_store.get(username)
+    if not entry:
+        return jsonify(success=False, message='Sesi OTP tidak ditemukan. Silakan minta kode baru.'), 400
+
+    now = datetime.utcnow()
+
+    if now > entry['expires_at']:
+        del otp_store[username]
+        return jsonify(success=False, message='Kode OTP sudah kedaluwarsa. Silakan minta kode baru.'), 400
+
+    if entry['attempts'] >= OTP_MAX_ATTEMPTS:
+        del otp_store[username]
+        return jsonify(success=False, message='Terlalu banyak percobaan salah. Silakan minta kode baru.'), 429
+
+    if otp_input != entry['otp']:
+        entry['attempts'] += 1
+        sisa = OTP_MAX_ATTEMPTS - entry['attempts']
+        if sisa <= 0:
+            del otp_store[username]
+            return jsonify(success=False, message='Terlalu banyak percobaan salah. Silakan minta kode baru.'), 429
+        return jsonify(success=False, message=f'Kode OTP salah. Sisa percobaan: {sisa}.'), 400
+
+    # OTP benar
+    entry['verified'] = True
+    entry['attempts'] = 0
+    reset_token = uuid.uuid4().hex
+    entry['reset_token'] = reset_token
+    entry['reset_token_expires_at'] = now + timedelta(minutes=RESET_TOKEN_EXPIRY_MINUTES)
+
+    return jsonify(success=True, message='Verifikasi OTP berhasil.', reset_token=reset_token)
+
+
+# ----------------------------------------------------
+# API: SET PASSWORD BARU (SETELAH OTP TERVERIFIKASI)
+# ----------------------------------------------------
+@app.route('/api/forgot-password/reset-password', methods=['POST'])
+def api_forgot_password_reset_password():
+    data = request.get_json(silent=True) or {}
+    username = (data.get('username') or '').strip()
+    reset_token = (data.get('reset_token') or '').strip()
+    new_password = data.get('new_password') or ''
+    confirm_password = data.get('confirm_password') or ''
+
+    entry = otp_store.get(username)
+    if not entry or not entry.get('verified'):
+        return jsonify(success=False, message='Verifikasi OTP diperlukan sebelum mengganti password.'), 400
+
+    now = datetime.utcnow()
+    if (not entry.get('reset_token')
+            or reset_token != entry['reset_token']
+            or not entry.get('reset_token_expires_at')
+            or now > entry['reset_token_expires_at']):
+        del otp_store[username]
+        return jsonify(success=False, message='Sesi reset password tidak valid atau sudah kedaluwarsa. Ulangi dari awal.'), 400
+
+    if len(new_password) < 6:
+        return jsonify(success=False, message='Password baru minimal 6 karakter.'), 400
+
+    if new_password != confirm_password:
+        return jsonify(success=False, message='Konfirmasi password tidak sama dengan password baru.'), 400
+
+    user = users.get(username)
+    if not user:
+        del otp_store[username]
+        return jsonify(success=False, message='Akun tidak ditemukan.'), 404
+
+    user['password'] = new_password
+    del otp_store[username]
+
+    return jsonify(success=True, message='Password berhasil diubah. Silakan masuk dengan password baru Anda.')
 
 # ----------------------------------------------------
 # ROUTE DAFTAR GURU
