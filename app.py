@@ -577,7 +577,12 @@ def dashboard():
 def dashboard_siswa():
     if 'user' not in session or session['user']['role'] != 'siswa':
         return redirect(url_for('login'))
-    return render_template('dashboard_siswa.html', username=session['user']['nama'])
+    return render_template(
+        'dashboard_siswa.html',
+        username=session['user']['nama'],
+        nama=session['user']['nama'],
+        login_username=session['user']['username']
+    )
 
 @app.route('/dashboard/guru')
 def dashboard_guru():
