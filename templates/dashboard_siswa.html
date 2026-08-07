@@ -850,7 +850,7 @@
             <div id="dynamic-notification-island" class="items-center gap-2 bg-amber-300 text-slate-900 px-3.5 py-1.5 rounded-2xl border-2 border-amber-500 lightning-border-yellow shadow-lg">
                 <div class="profile-wrapper w-6 h-6 flex-shrink-0">
                     <img id="island-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar" alt="Avatar">
-                    <img src="../static/img/border_polos.png" class="user-border" alt="Border_Polos">
+                    <img src="../static/img/border_pemula.jpg" class="user-border" alt="Border_Pemula">
                 </div>
                 <span id="island-notification-text" class="text-[11px] font-extrabold text-slate-900 tracking-wide truncate">Notifikasi Aktif</span>
             </div>
@@ -894,7 +894,7 @@
                     <div id="profile-menu-trigger" onclick="toggleProfileDropdown(event)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleProfileDropdown(event);}" aria-label="Buka menu profil" class="flex items-center gap-3 pl-3 border-l border-slate-200 cursor-pointer select-none py-1">
                         <div class="profile-wrapper">
                             <img id="header-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar" alt="Avatar">
-                            <img src="../static/img/border_polos.png" class="user-border" alt="Border_Polos">
+                            <img src="../static/img/border_pemula.jpg" class="user-border" alt="Border_Pemula">
                         </div>
 
                         <div class="hidden sm:block text-left min-w-0 max-w-[200px] lg:max-w-[280px]">
@@ -4462,7 +4462,7 @@
                 const fotoEntri = iniSayaSendiri
                     ? getFotoProfilAktifQuiz()
                     : (entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120`);
-                const borderEntri = iniSayaSendiri ? borderLiveSaya.file : (entri.border || '../static/img/border_polos.png');
+                const borderEntri = iniSayaSendiri ? borderLiveSaya.file : (entri.border || '../static/img/border_pemula.jpg');
                 const titleEntri = iniSayaSendiri ? borderLiveSaya.rank : (entri.borderTitle || '🔰 Pemula');
                 const kelasEntri = iniSayaSendiri ? getKelasAktifQuiz() : (entri.kelas || '-');
                 const efekNamaEntri = iniSayaSendiri ? getEfekNamaClass(borderLiveSaya) : (entri.efekNama || '');
@@ -4601,7 +4601,7 @@
                 const fotoEntri = iniSayaSendiri
                     ? getFotoProfilAktifQuiz()
                     : (entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120`);
-                const borderEntri = iniSayaSendiri ? borderLiveSaya.file : (entri.border || '../static/img/border_polos.png');
+                const borderEntri = iniSayaSendiri ? borderLiveSaya.file : (entri.border || '../static/img/border_pemula.jpg');
                 const titleEntri = iniSayaSendiri ? borderLiveSaya.rank : (entri.borderTitle || '🔰 Pemula');
                 const kelasEntri = iniSayaSendiri ? getKelasAktifQuiz() : (entri.kelas || '-');
                 const efekNamaEntri = iniSayaSendiri ? getEfekNamaClass(borderLiveSaya) : (entri.efekNama || '');
@@ -4711,7 +4711,7 @@
             const idToast = `ditikung-essay-${entri.id}`;
 
             const fotoPenikung = entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120`;
-            const borderPenikung = entri.border || '../static/img/border_polos.png';
+            const borderPenikung = entri.border || '../static/img/border_pemula.jpg';
             const titlePenikung = entri.borderTitle || '🔰 Pemula';
             const efekNamaPenikung = entri.efekNama || '';
             const titleBadgeClassPenikung = getTitleBadgeClass(efekNamaPenikung);
@@ -4825,7 +4825,7 @@
                 nama,
                 kelas,
                 foto: `https://ui-avatars.com/api/?name=${encodeURIComponent(nama)}&background=e0e7ff&color=3730a3&size=120`,
-                border: '../static/img/border_polos.png',
+                border: '../static/img/border_pemula.jpg',
                 borderTitle: '🔰 Pemula',
                 efekNama: '',
                 badgeDev: '',
@@ -4983,7 +4983,7 @@
             // Foto + border penikung disinkronkan dari data leaderboard-nya sendiri
             // (snapshot foto profil & border yang sedang dia pakai saat main quiz).
             const fotoPenikung = entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120`;
-            const borderPenikung = entri.border || '../static/img/border_polos.png';
+            const borderPenikung = entri.border || '../static/img/border_pemula.jpg';
             const titlePenikung = entri.borderTitle || '🔰 Pemula';
             const efekNamaPenikung = entri.efekNama || '';
             const titleBadgeClassPenikung = getTitleBadgeClass(efekNamaPenikung);
@@ -5062,21 +5062,35 @@
         const KEY_BORDER_DIKLAIM = `border_diklaim_${ID_SISWA_AKTIF}`;
 
         // Tingkatan/tier generik yang dipakai berulang di tiap level quiz.
+        // Tier "Polos" (tierRank 0) SUDAH DIPINDAH keluar dari sini — lihat
+        // DAFTAR_BORDER_STARTER di bawah. Alasannya: dulu tier 0 ini dibikin
+        // per-level (polos easy/medium/hard) dan minPoin-nya 0, jadi otomatis
+        // ke-3 nya kebuka bareng buat siswa baru sekaligus (kelihatan kayak
+        // sudah "unlock" 3 border padahal belum ngerjain apa-apa). Sekarang
+        // cukup SATU border starter global yang dipakai semua siswa baru.
         const BORDER_TIER_TEMPLATE = [
-            { tierId: 'polos',   nama: 'Polos',   file: '../static/img/border_polos.png',  minPoin: 0,   tierRank: 0 },
             { tierId: 'perak',   nama: 'Perak',   file: '../static/img/border_silver.jpg', minPoin: 100, tierRank: 1 },
             { tierId: 'emas',    nama: 'Emas',    file: '../static/img/border_gold.jpg',   minPoin: 250, tierRank: 2 },
             { tierId: 'permata', nama: 'Permata', file: '../static/img/border_bronze.jpg', minPoin: 500, tierRank: 3 }
         ];
 
         const LEVEL_META_BORDER = {
-            easy:   { label: 'Easy',   icon: 'fa-seedling',    warna: 'emerald', rankAwal: '🔰 Pemula Easy' },
-            medium: { label: 'Medium', icon: 'fa-bolt',        warna: 'amber',   rankAwal: '🔰 Pemula Medium' },
-            hard:   { label: 'Hard',   icon: 'fa-fire',        warna: 'rose',    rankAwal: '🔰 Pemula Hard' }
+            easy:   { label: 'Easy',   icon: 'fa-seedling',    warna: 'emerald' },
+            medium: { label: 'Medium', icon: 'fa-bolt',        warna: 'amber'   },
+            hard:   { label: 'Hard',   icon: 'fa-fire',        warna: 'rose'    }
         };
 
-        // Bangun daftar border quiz: 4 tier x 3 level = 12 border, masing2
-        // level (easy/medium/hard) punya jalur pembukaan sendiri2.
+        // Border starter (bawaan): SATU-SATUNYA border yang otomatis dimiliki &
+        // dipakai semua siswa sejak pertama kali masuk (mis. akun baru seperti
+        // Syam) — bukan pencapaian, jadi tidak perlu diklaim & tidak terikat
+        // level quiz manapun.
+        const DAFTAR_BORDER_STARTER = [
+            { id: 'starter_pemula', kategori: 'starter', nama: 'Pemula', file: '../static/img/border_pemula.jpg', minPoin: 0, tierRank: 0, rank: '🔰 Pemula' }
+        ];
+
+        // Bangun daftar border quiz: 3 tier (perak/emas/permata) x 3 level =
+        // 9 border, masing2 level (easy/medium/hard) punya jalur pembukaan
+        // sendiri2. Tier dasar/starter TIDAK ikut dibangun di sini lagi.
         function buatDaftarBorderQuiz() {
             const list = [];
             Object.keys(LEVEL_META_BORDER).forEach(level => {
@@ -5089,8 +5103,7 @@
                         file: tier.file,
                         minPoin: tier.minPoin,
                         tierRank: tier.tierRank,
-                        rank: tier.tierRank === 0 ? LEVEL_META_BORDER[level].rankAwal
-                            : tier.tierRank === 1 ? `📘 Pelajar Rajin ${LEVEL_META_BORDER[level].label}`
+                        rank: tier.tierRank === 1 ? `📘 Pelajar Rajin ${LEVEL_META_BORDER[level].label}`
                             : tier.tierRank === 2 ? `🧠 Master Quiz ${LEVEL_META_BORDER[level].label}`
                             : `👑 Legenda ${LEVEL_META_BORDER[level].label}`
                     });
@@ -5818,8 +5831,10 @@
             // localStorage (mis. dari akun dev yang pernah login di browser
             // yang sama).
             if (border.kategori === 'admin') return akunIniAdminDev();
-            // Border tier dasar (minPoin 0, mis. "Polos") itu bawaan semua siswa
-            // sejak awal — bukan pencapaian yang perlu diklaim, jadi tetap auto.
+            // Border starter (minPoin 0, "Pemula") itu bawaan semua siswa sejak
+            // awal — bukan pencapaian yang perlu diklaim, jadi tetap auto. Ini
+            // SEKARANG cuma satu border (lihat DAFTAR_BORDER_STARTER), bukan
+            // 3 tier per-level lagi seperti dulu.
             if (border.minPoin === 0) return true;
             // Prestasi maupun quiz: poin cukup saja belum cukup untuk "dimiliki" —
             // border baru resmi terbuka setelah siswa klik "Klaim Border" (lihat
@@ -5828,7 +5843,7 @@
         }
 
         function getSemuaBorder() {
-            return [...DAFTAR_BORDER_ADMIN, ...DAFTAR_BORDER_QUIZ, ...DAFTAR_BORDER_PRESTASI];
+            return [...DAFTAR_BORDER_ADMIN, ...DAFTAR_BORDER_STARTER, ...DAFTAR_BORDER_QUIZ, ...DAFTAR_BORDER_PRESTASI];
         }
 
         function getBorderTertinggiTerbuka() {
@@ -5839,7 +5854,11 @@
             // isBorderTerbuka(admin) selalu false jadi tidak pernah ikut
             // kandidat di sini.
             const terbuka = getSemuaBorder().filter(b => isBorderTerbuka(b));
-            if (!terbuka.length) return DAFTAR_BORDER_QUIZ[0];
+            // Fallback terakhir kalau somehow tidak ada satupun border terbuka:
+            // border starter (Pemula), bukan border tier quiz lagi seperti dulu
+            // (dulu DAFTAR_BORDER_QUIZ[0] itu tier "Polos" yg minPoin 0; sekarang
+            // tier pertama di DAFTAR_BORDER_QUIZ sudah butuh 100 poin).
+            if (!terbuka.length) return DAFTAR_BORDER_STARTER[0];
             return terbuka.reduce((tertinggi, b) => (b.tierRank > tertinggi.tierRank ? b : tertinggi), terbuka[0]);
         }
 
@@ -5940,6 +5959,9 @@
         function deskripsiSumberBorder(border) {
             if (border.kategori === 'admin') {
                 return `<i class="fa-solid fa-crown mr-1"></i>Khusus Admin/Developer`;
+            }
+            if (border.kategori === 'starter') {
+                return `<i class="fa-solid fa-seedling mr-1"></i>Bawaan semua siswa sejak pertama kali masuk`;
             }
             if (sumberPoinBorder(border) === 'prestasi') {
                 return `<i class="fa-solid fa-trophy mr-1"></i>Prestasi &middot; min. 1 sertifikat/piala beragam (&asymp;${border.minPoin} poin)`;
