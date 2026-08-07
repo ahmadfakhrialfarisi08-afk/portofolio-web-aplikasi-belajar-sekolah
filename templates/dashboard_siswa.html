@@ -126,6 +126,30 @@
             30%, 100% { top: -50px; left: 85px; }
         }
 
+        /* Badge title "Queen" (border pink / Kupu-kupu Prestasi) — dipasang
+           sebagai CSS class sendiri (bukan utility Tailwind kayak bg-pink-400)
+           karena badge ini disuntik lewat innerHTML setelah halaman selesai
+           load, dan class Tailwind yang baru pertama kali muncul lewat JS
+           kadang gagal ke-generate stylesheet-nya. Class fix di sini pasti
+           selalu ada dari awal, jadi warnanya selalu pink & konsisten,
+           senada sama efek-nama-pink & drop-shadow di border_pink.css. */
+        .badge-queen {
+            background: linear-gradient(90deg, #db2777, #f472b6);
+            color: #fff;
+        }
+
+        /* Badge title kecil di bawah nama (mis. "👑 Queen", "🥈 Siswa Berbakat")
+           — sama seperti .badge-queen di atas, dipasang sebagai CSS class
+           tetap (bukan kombinasi utility Tailwind baru) karena disuntik
+           lewat innerHTML setelah load. Dipetakan senada sama family warna
+           efek nama masing-masing tier. */
+        .title-badge-pink    { background: linear-gradient(90deg, #fce7f3, #fdf4ff); color: #be185d; border: 1px solid #fbcfe8; }
+        .title-badge-permata { background: linear-gradient(90deg, #cffafe, #f5f3ff); color: #6d28d9; border: 1px solid #ddd6fe; }
+        .title-badge-emas    { background: linear-gradient(90deg, #fef3c7, #fffbeb); color: #b45309; border: 1px solid #fde68a; }
+        .title-badge-perak   { background: linear-gradient(90deg, #e2e8f0, #f8fafc); color: #475569; border: 1px solid #cbd5e1; }
+        .title-badge-admin   { background: linear-gradient(90deg, #fde68a, #fefce8); color: #92400e; border: 1px solid #fcd34d; }
+        .title-badge-default { background: linear-gradient(90deg, #f1f5f9, #ffffff); color: #64748b; border: 1px solid #e2e8f0; }
+
         /* ============================================================
            STREAK TUGAS (menggantikan kartu "Kehadiran Bulan Ini")
            Kartu berubah warna & karakter api ikut "membara" (makin
@@ -5401,18 +5425,18 @@
         function getTitleBadgeClass(efekNamaClass) {
             switch (efekNamaClass) {
                 case 'efek-nama-pink':
-                    return 'bg-gradient-to-r from-pink-100 to-fuchsia-50 text-pink-700 border border-pink-200';
+                    return 'title-badge-pink';
                 case 'efek-nama-permata':
-                    return 'bg-gradient-to-r from-cyan-100 to-violet-50 text-violet-700 border border-violet-200';
+                    return 'title-badge-permata';
                 case 'efek-nama-emas':
                 case 'gold-name':
-                    return 'bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200';
+                    return 'title-badge-emas';
                 case 'efek-nama-perak':
-                    return 'bg-gradient-to-r from-slate-200 to-slate-50 text-slate-600 border border-slate-300';
+                    return 'title-badge-perak';
                 case 'efek-nama-admin':
-                    return 'bg-gradient-to-r from-amber-200 to-yellow-50 text-amber-800 border border-amber-300';
+                    return 'title-badge-admin';
                 default:
-                    return 'bg-gradient-to-r from-slate-100 to-white text-slate-500 border border-slate-200';
+                    return 'title-badge-default';
             }
         }
 
@@ -5425,7 +5449,7 @@
             // jadi tiap siswa yang pakai border ini langsung dapat badge ini
             // di semua tempat (header, leaderboard, toast) tanpa setting manual.
             if (border && border.id === 'prestasi_pink') {
-                return `<span class="badge-dev px-2 py-0.5 text-[10px] font-bold bg-pink-400 text-white rounded-md shadow-sm whitespace-nowrap flex-shrink-0"><i class="fa-solid fa-crown text-[8px] mr-0.5"></i> Queen</span>`;
+                return `<span class="badge-dev badge-queen px-2 py-0.5 text-[10px] font-bold rounded-md shadow-sm whitespace-nowrap flex-shrink-0"><i class="fa-solid fa-crown text-[8px] mr-0.5"></i> Queen</span>`;
             }
             return '';
         }
