@@ -792,9 +792,9 @@
                             <img src="../static/img/border_admin.jpg" class="user-border" alt="Border_Admin">
                         </div>
 
-                        <div class="hidden sm:block text-left">
-                            <h4 class="text-sm leading-snug flex items-center gap-1">
-                                <span id="header-user-nama-efek">AHMAD FAKHRI AL FARISI</span>
+                        <div class="hidden sm:block text-left min-w-0 max-w-[200px] lg:max-w-[280px]">
+                            <h4 class="text-sm leading-snug flex items-center gap-1 flex-wrap">
+                                <span id="header-user-nama-efek" class="truncate max-w-full">AHMAD FAKHRI AL FARISI</span>
                                 <span id="header-user-badge-dev"></span>
                             </h4>
                             <p id="header-user-kelas" class="text-xs text-slate-400">Siswa • XII TKJ 3/TAV</p>
@@ -4620,7 +4620,7 @@
             { id: 'prestasi_perunggu', kategori: 'prestasi', nama: 'Perunggu Prestasi', file: '../static/img/border_bronze.jpg', minPoin: 50,  tierRank: 1, rank: '🥉 Berprestasi' },
             { id: 'prestasi_perak',    kategori: 'prestasi', nama: 'Perak Prestasi',    file: '../static/img/border_silver.jpg', minPoin: 200, tierRank: 2, rank: '🥈 Siswa Berbakat' },
             { id: 'prestasi_emas',     kategori: 'prestasi', nama: 'Emas Prestasi',     file: '../static/img/border_gold.jpg',   minPoin: 400, tierRank: 3, rank: '🏆 Bintang Sekolah' },
-            { id: 'prestasi_pink',     kategori: 'prestasi', nama: 'Kupu-kupu Prestasi', file: '../static/img/border_pink.jpg',   minPoin: 600, tierRank: 4, rank: '🦋 Legenda Prestasi' }
+            { id: 'prestasi_pink',     kategori: 'prestasi', nama: 'Kupu-kupu Prestasi', file: '../static/img/border_pink.jpg',   minPoin: 600, tierRank: 4, rank: '👑 Queen' }
         ];
 
         function getPrestasiData() {
@@ -5392,7 +5392,14 @@
 
         function getBadgeDevHtml(border) {
             if (border && border.kategori === 'admin') {
-                return `<span class="badge-dev px-2 py-0.5 text-[10px] font-bold bg-amber-400 text-slate-900 rounded-md shadow-sm"><i class="fa-solid fa-crown text-[8px] mr-0.5"></i> DEV</span>`;
+                return `<span class="badge-dev px-2 py-0.5 text-[10px] font-bold bg-amber-400 text-slate-900 rounded-md shadow-sm whitespace-nowrap flex-shrink-0"><i class="fa-solid fa-crown text-[8px] mr-0.5"></i> DEV</span>`;
+            }
+            // Border pink (Kupu-kupu Prestasi) otomatis bawa title "Queen" —
+            // sinkron dengan border yang lagi dipakai, sama seperti badge DEV,
+            // jadi tiap siswa yang pakai border ini langsung dapat badge ini
+            // di semua tempat (header, leaderboard, toast) tanpa setting manual.
+            if (border && border.id === 'prestasi_pink') {
+                return `<span class="badge-dev px-2 py-0.5 text-[10px] font-bold bg-pink-400 text-white rounded-md shadow-sm whitespace-nowrap flex-shrink-0"><i class="fa-solid fa-crown text-[8px] mr-0.5"></i> Queen</span>`;
             }
             return '';
         }
@@ -5401,7 +5408,10 @@
             const elNama = document.getElementById('header-user-nama-efek');
             const elBadge = document.getElementById('header-user-badge-dev');
             const kelasEfek = getEfekNamaClass(border);
-            if (elNama) elNama.className = kelasEfek;
+            // "truncate max-w-full" sengaja dipertahankan (bukan ditimpa) supaya
+            // nama tetap terpotong rapi & badge (DEV/Queen) tidak pernah maksa
+            // header melebar ke kanan, walau efek nama/border-nya ganti-ganti.
+            if (elNama) elNama.className = `truncate max-w-full ${kelasEfek}`.trim();
             if (elBadge) elBadge.innerHTML = getBadgeDevHtml(border);
         }
 
