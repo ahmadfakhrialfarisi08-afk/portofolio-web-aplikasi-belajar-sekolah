@@ -3979,14 +3979,42 @@
         // level tertentu. Kalau server tidak bisa dihubungi, balik ke entri
         // lokal (data.leaderboard) milik akun ini saja sebagai fallback.
         async function ambilLeaderboardGabungan(jenis, level, dataLokal) {
+            let daftar = [];
+            let dariServer = false;
             try {
                 const res = await fetch(`/api/quiz/leaderboard-global?jenis=${jenis}`);
                 const hasil = await res.json();
                 if (hasil && hasil.success) {
-                    return hasil.leaderboard.filter(e => e.level === level);
+                    daftar = hasil.leaderboard.filter(e => e.level === level);
+                    dariServer = true;
                 }
             } catch (e) { /* fallback di bawah */ }
-            return (dataLokal.leaderboard || []).filter(e => e.level === level);
+
+            if (!dariServer) {
+                daftar = (dataLokal.leaderboard || []).filter(e => e.level === level);
+            }
+
+            // PENTING: entri milik akun yang SEDANG login harus selalu ikut
+            // tampil pakai skor TERTINGGI yang sudah tercatat di localStorage
+            // (dataLokal.leaderboard, sudah disinkronkan dengan bestByLevel
+            // lewat sinkronkanLeaderboardDenganPoinTerbaik) -- bukan cuma
+            // pasrah nunggu server. Ini yang bikin begitu siswa selesai quiz
+            // & dapat skor tertinggi baru, langsung nongol di leaderboard
+            // walau respons server belum/telat menyertakan entri terbaru itu
+            // (server lagi lambat, race condition saat menyimpan, dsb).
+            // Tanpa ini, "Skor terbaik" di kartu level bisa sudah kepakai
+            // tapi tab Leaderboard-nya tetap kosong.
+            const entriLokalSaya = (dataLokal.leaderboard || []).find(e => e.nama === NAMA_PEMAIN_QUIZ && e.level === level);
+            if (entriLokalSaya) {
+                const idxServer = daftar.findIndex(e => e.nama === NAMA_PEMAIN_QUIZ && e.level === level);
+                if (idxServer === -1) {
+                    daftar.push(entriLokalSaya);
+                } else if (entriLokalSaya.skor > daftar[idxServer].skor) {
+                    daftar[idxServer] = entriLokalSaya;
+                }
+            }
+
+            return daftar;
         }
 
         function getRankInfoQuiz(totalPoin) {
