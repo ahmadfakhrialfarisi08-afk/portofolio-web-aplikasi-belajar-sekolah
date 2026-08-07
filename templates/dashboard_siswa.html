@@ -1895,7 +1895,13 @@
         }
         function getAkunDummyAktif() {
             try {
-                const raw = localStorage.getItem(ACTIVE_DUMMY_KEY);
+                // sessionStorage (bukan localStorage) SENGAJA dipakai di sini supaya
+                // "akun dummy aktif" itu unik per-TAB, bukan kepakai bareng ke semua
+                // tab dalam 1 browser. Jadi tab 1 bisa jadi Ahmad, tab 2 bisa jadi
+                // Syam, tanpa saling timpa nama pas salah satu di-refresh. Daftar
+                // profil dummy (DUMMY_PROFILES_KEY) & data kelas (tasks_XII_TKJ_3)
+                // tetap di localStorage karena memang harus dibagi ke semua tab.
+                const raw = sessionStorage.getItem(ACTIVE_DUMMY_KEY);
                 return raw ? JSON.parse(raw) : null;
             } catch (e) { return null; }
         }
@@ -1916,7 +1922,7 @@
         (function bersihkanSisaModeDummyJikaGantiAkun() {
             const terakhir = localStorage.getItem(KEY_AKUN_ASLI_TERAKHIR);
             if (terakhir !== USERNAME_SISWA_ASLI) {
-                localStorage.removeItem(ACTIVE_DUMMY_KEY);
+                sessionStorage.removeItem(ACTIVE_DUMMY_KEY);
                 localStorage.setItem(KEY_AKUN_ASLI_TERAKHIR, USERNAME_SISWA_ASLI);
             }
         })();
@@ -1946,12 +1952,12 @@
         function pakaiAkunDummy(id) {
             const profil = getDaftarAkunDummy().find(p => p.id === id);
             if (!profil) return;
-            localStorage.setItem(ACTIVE_DUMMY_KEY, JSON.stringify(profil));
+            sessionStorage.setItem(ACTIVE_DUMMY_KEY, JSON.stringify(profil));
             location.reload();
         }
 
         function kembaliKeAkunAsli() {
-            localStorage.removeItem(ACTIVE_DUMMY_KEY);
+            sessionStorage.removeItem(ACTIVE_DUMMY_KEY);
             location.reload();
         }
 
@@ -1981,7 +1987,7 @@
             simpanDaftarAkunDummy(list);
             // Kalau yang dihapus lagi dipakai, otomatis balik ke akun asli.
             if (AKUN_DUMMY_AKTIF && AKUN_DUMMY_AKTIF.id === id) {
-                localStorage.removeItem(ACTIVE_DUMMY_KEY);
+                sessionStorage.removeItem(ACTIVE_DUMMY_KEY);
                 location.reload();
                 return;
             }
