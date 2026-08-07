@@ -746,6 +746,36 @@
 
         <div class="p-3 border-t border-slate-100 space-y-2.5">
             <!-- ============================================================
+                 PANEL AKUN DUMMY (PROFIL LOGIN LOKAL)
+                 Beda dari "Panel Dummy Leaderboard" di bawah ini: panel ini
+                 bikin profil dummy yang BENERAN bisa "dipakai" (nama & progres
+                 di header ikut berubah) dan punya save quiz/essay/border/
+                 prestasi SENDIRI-SENDIRI (localStorage dinamespace per ID
+                 profil, lihat ID_SISWA_AKTIF). Akun asli (login Flask) tidak
+                 pernah ikut berubah — cuma tampilan & localStorage browser.
+                 ============================================================ -->
+            <div class="bg-indigo-50/70 border border-indigo-200/70 rounded-xl overflow-hidden">
+                <button onclick="toggleAkunDummyPanel()" class="w-full flex items-center justify-between px-3 py-2.5 text-left" aria-expanded="false" aria-controls="panel-akun-dummy-profil">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-users text-indigo-600 text-xs"></i>
+                        <h4 class="text-xs font-bold text-slate-900">Akun Dummy (Profil Login)</h4>
+                    </div>
+                    <i id="icon-toggle-akun-dummy-panel" class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform"></i>
+                </button>
+                <div id="panel-akun-dummy-profil" class="hidden px-3.5 pb-3.5 space-y-2.5">
+                    <form onsubmit="buatAkunDummy(event)" class="space-y-1.5">
+                        <input id="dummy-profil-nama" type="text" placeholder="Nama akun dummy" required maxlength="60" class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 bg-white">
+                        <input id="dummy-profil-kelas" type="text" placeholder="Kelas (mis. XII TKJ 2)" maxlength="40" class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 bg-white">
+                        <button type="submit" class="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-user-plus text-[10px]"></i> Buat Akun Dummy
+                        </button>
+                    </form>
+                    <div id="list-akun-dummy-profil" class="space-y-1.5 max-h-48 overflow-y-auto"></div>
+                    <p class="text-[9px] text-slate-400 text-center leading-relaxed">Tiap akun dummy punya progress quiz/prestasi sendiri (localStorage browser ini), terpisah dari akun asli.</p>
+                </div>
+            </div>
+
+            <!-- ============================================================
                  PANEL DUMMY LEADERBOARD (khusus kontrol dari sidebar)
                  Akun dummy disimpan sebagai entri biasa di leaderboard quiz
                  (localStorage, key sama dgn KEY_QUIZ_DATA) tapi diberi flag
@@ -869,7 +899,7 @@
 
                         <div class="hidden sm:block text-left min-w-0 max-w-[200px] lg:max-w-[280px]">
                             <h4 class="text-sm leading-snug flex items-center gap-1 flex-wrap">
-                                <span id="header-user-nama-efek" class="truncate max-w-full">{{ nama }}</span>
+                                <span id="header-user-nama-efek" class="nama-siswa-efektif truncate max-w-full">{{ nama }}</span>
                                 <span id="header-user-badge-dev"></span>
                             </h4>
                             <p id="header-user-kelas" class="text-xs text-slate-400">Siswa • XII TKJ 3/TAV</p>
@@ -918,12 +948,17 @@
         </header>
 
         <main id="main-content" class="p-5 sm:p-7 lg:p-8 space-y-6">
+
+            <div id="banner-mode-dummy" class="hidden flex items-center justify-between gap-3 bg-purple-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm">
+                <span><i class="fa-solid fa-user-astronaut mr-1.5"></i> Sedang login sebagai akun dummy: <span id="banner-mode-dummy-nama"></span> — progress quiz &amp; prestasi disimpan terpisah dari akun asli kamu.</span>
+                <button onclick="kembaliKeAkunAsli()" class="flex-shrink-0 bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-lg transition-colors">Kembali ke Akun Asli</button>
+            </div>
             
             <section id="tab-beranda" class="tab-content space-y-6">
                 <div class="relative rounded-2xl bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-700 p-7 sm:p-8 text-white overflow-hidden">
                     <div class="max-w-xl relative z-10">
                         <span class="bg-white/15 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider mb-3 inline-block">Tahun Ajaran 2026/2027</span>
-                        <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 leading-tight">Selamat Pagi, {{ nama }}! 👋</h2>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 leading-tight">Selamat Pagi, <span class="nama-siswa-efektif">{{ nama }}</span>! 👋</h2>
                         <p class="text-blue-100 text-sm leading-relaxed">Jangan lupa masuk sebelum jam 06:30 WIB hari ini. Semoga harimu menyenangkan di sekolah!</p>
                     </div>
                     <i class="fa-solid fa-shapes absolute -right-8 -bottom-10 text-white/10 text-8xl" aria-hidden="true"></i>
@@ -1506,7 +1541,7 @@
             <div class="w-64 h-64 rounded-2xl overflow-hidden border-4 border-blue-500 shadow-lg">
                 <img id="expanded-photo-img" src="" class="w-full h-full object-cover" alt="Expanded Avatar">
             </div>
-            <p class="text-xs text-slate-400 text-center">{{ nama }}</p>
+            <p class="text-xs text-slate-400 text-center nama-siswa-efektif">{{ nama }}</p>
         </div>
     </div>
 
@@ -1763,18 +1798,21 @@
             }
         }
 
+        // Fungsi (bukan const) supaya aman dari urutan deklarasi ID_SISWA_AKTIF.
+        function keyStudentBio() { return `student_bio_${ID_SISWA_AKTIF}`; }
+
         function simpanBioSiswa() {
             const inputBio = document.getElementById('input-bio-siswa');
             if (!inputBio) return;
             const bioText = inputBio.value.trim();
-            localStorage.setItem('student_bio', bioText);
+            localStorage.setItem(keyStudentBio(), bioText);
             triggerDynamicIsland('Bio berhasil disimpan!');
         }
 
         function loadBioSiswa() {
             const inputBio = document.getElementById('input-bio-siswa');
             if (!inputBio) return;
-            inputBio.value = localStorage.getItem('student_bio') || '';
+            inputBio.value = localStorage.getItem(keyStudentBio()) || '';
         }
 
         window.addEventListener('click', (e) => {
@@ -1785,13 +1823,15 @@
             }
         });
 
+        function keyStudentProfilePhoto() { return `student_profile_photo_${ID_SISWA_AKTIF}`; }
+
         function updateProfilePhoto(event) {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const base64Image = e.target.result;
-                    localStorage.setItem('student_profile_photo', base64Image);
+                    localStorage.setItem(keyStudentProfilePhoto(), base64Image);
                     
                     const headerAvatar = document.getElementById('header-user-avatar');
                     const dropdownAvatar = document.getElementById('dropdown-user-avatar');
@@ -1815,7 +1855,7 @@
         }
 
         function loadSavedProfilePhoto() {
-            const savedPhoto = localStorage.getItem('student_profile_photo');
+            const savedPhoto = localStorage.getItem(keyStudentProfilePhoto());
             if (savedPhoto) {
                 const headerAvatar = document.getElementById('header-user-avatar');
                 const dropdownAvatar = document.getElementById('dropdown-user-avatar');
@@ -1830,13 +1870,134 @@
         // Dipakai supaya nama yang tampil & data progres (quiz/border/prestasi)
         // benar-benar ikut akun yang login, bukan data dummy/akun lain yang
         // kebetulan pernah login di browser yang sama.
-        const NAMA_SISWA_AKTIF = "{{ nama }}";
-        const USERNAME_SISWA_AKTIF = "{{ login_username }}";
+        const NAMA_SISWA_ASLI = "{{ nama }}";
+        const USERNAME_SISWA_ASLI = "{{ login_username }}";
+
+        // ===== PROFIL AKUN DUMMY (khusus mode "coba sebagai akun lain") =====
+        // Kalau user sedang "memakai" salah satu profil dummy (lewat Panel Akun
+        // Dummy di sidebar), identitas efektif di-override DI SINI, SEBELUM
+        // ID_SISWA_AKTIF dihitung. Karena SEMUA key localStorage progres pribadi
+        // (quiz, essay, border, prestasi, riwayat, bell, dst) di bawah diturunkan
+        // dari ID_SISWA_AKTIF, otomatis tiap profil dummy punya "kotak" save
+        // sendiri-sendiri, terpisah dari akun asli maupun dummy lain — tanpa
+        // perlu ubah 1 pun key yang sudah ada. Akun asli (session Flask) TIDAK
+        // pernah ikut berubah oleh ini, cuma tampilan & localStorage di browser.
+        const DUMMY_PROFILES_KEY = 'akun_dummy_profil_list';
+        const ACTIVE_DUMMY_KEY = 'akun_dummy_aktif';
+
+        function getDaftarAkunDummy() {
+            try {
+                return JSON.parse(localStorage.getItem(DUMMY_PROFILES_KEY) || '[]');
+            } catch (e) { return []; }
+        }
+        function simpanDaftarAkunDummy(list) {
+            localStorage.setItem(DUMMY_PROFILES_KEY, JSON.stringify(list));
+        }
+        function getAkunDummyAktif() {
+            try {
+                const raw = localStorage.getItem(ACTIVE_DUMMY_KEY);
+                return raw ? JSON.parse(raw) : null;
+            } catch (e) { return null; }
+        }
+
+        const AKUN_DUMMY_AKTIF = getAkunDummyAktif();
+
+        const NAMA_SISWA_AKTIF = AKUN_DUMMY_AKTIF ? AKUN_DUMMY_AKTIF.nama : NAMA_SISWA_ASLI;
+        const USERNAME_SISWA_AKTIF = AKUN_DUMMY_AKTIF ? AKUN_DUMMY_AKTIF.id : USERNAME_SISWA_ASLI;
         // Dipakai HANYA untuk namespace localStorage data pribadi siswa (quiz,
-        // border, prestasi, dll). Kalau ada beberapa akun login gantian di
-        // browser yang sama, tiap akun tetap punya "kotak" data sendiri-sendiri
-        // karena username itu unik per akun.
+        // border, prestasi, dll). Kalau ada beberapa akun (asli maupun dummy)
+        // login/dipakai gantian di browser yang sama, tiap akun tetap punya
+        // "kotak" data sendiri-sendiri karena ID ini unik per akun.
         const ID_SISWA_AKTIF = USERNAME_SISWA_AKTIF || 'siswa';
+
+        function pakaiAkunDummy(id) {
+            const profil = getDaftarAkunDummy().find(p => p.id === id);
+            if (!profil) return;
+            localStorage.setItem(ACTIVE_DUMMY_KEY, JSON.stringify(profil));
+            location.reload();
+        }
+
+        function kembaliKeAkunAsli() {
+            localStorage.removeItem(ACTIVE_DUMMY_KEY);
+            location.reload();
+        }
+
+        function buatAkunDummy(event) {
+            event.preventDefault();
+            const inputNama = document.getElementById('dummy-profil-nama');
+            const inputKelas = document.getElementById('dummy-profil-kelas');
+            const nama = inputNama.value.trim();
+            const kelas = inputKelas.value.trim() || '-';
+            if (!nama) return;
+
+            const list = getDaftarAkunDummy();
+            const profilBaru = {
+                id: `dummy_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                nama,
+                kelas
+            };
+            list.push(profilBaru);
+            simpanDaftarAkunDummy(list);
+            inputNama.value = '';
+            inputKelas.value = '';
+            renderDaftarAkunDummy();
+        }
+
+        function hapusAkunDummy(id) {
+            const list = getDaftarAkunDummy().filter(p => p.id !== id);
+            simpanDaftarAkunDummy(list);
+            // Kalau yang dihapus lagi dipakai, otomatis balik ke akun asli.
+            if (AKUN_DUMMY_AKTIF && AKUN_DUMMY_AKTIF.id === id) {
+                localStorage.removeItem(ACTIVE_DUMMY_KEY);
+                location.reload();
+                return;
+            }
+            renderDaftarAkunDummy();
+        }
+
+        function renderDaftarAkunDummy() {
+            const container = document.getElementById('list-akun-dummy-profil');
+            if (!container) return;
+            const list = getDaftarAkunDummy();
+
+            if (!list.length) {
+                container.innerHTML = `<p class="text-[10px] text-slate-400 text-center py-2">Belum ada akun dummy. Buat lewat form di atas.</p>`;
+            } else {
+                container.innerHTML = '';
+                list.forEach(profil => {
+                    const aktif = AKUN_DUMMY_AKTIF && AKUN_DUMMY_AKTIF.id === profil.id;
+                    const row = document.createElement('div');
+                    row.className = `flex items-center justify-between gap-2 p-2 bg-white border rounded-lg ${aktif ? 'border-purple-400 ring-1 ring-purple-300' : 'border-slate-200'}`;
+                    row.innerHTML = `
+                        <div class="min-w-0">
+                            <p class="text-[11px] font-bold text-slate-800 truncate">${profil.nama} ${aktif ? '<span class="text-purple-600">(sedang dipakai)</span>' : ''}</p>
+                            <p class="text-[9px] text-slate-400 truncate">${profil.kelas}</p>
+                        </div>
+                        <div class="flex items-center gap-1 flex-shrink-0">
+                            ${aktif ? '' : `<button class="btn-pakai-dummy text-purple-600 hover:text-purple-800 px-1.5 py-1" title="Login sebagai akun dummy ini"><i class="fa-solid fa-right-to-bracket text-[11px]"></i></button>`}
+                            <button class="btn-hapus-dummy text-rose-500 hover:text-rose-700 px-1.5 py-1" title="Hapus akun dummy ini"><i class="fa-solid fa-trash text-[11px]"></i></button>
+                        </div>
+                    `;
+                    if (!aktif) row.querySelector('.btn-pakai-dummy').addEventListener('click', () => pakaiAkunDummy(profil.id));
+                    row.querySelector('.btn-hapus-dummy').addEventListener('click', () => hapusAkunDummy(profil.id));
+                    container.appendChild(row);
+                });
+            }
+
+            const banner = document.getElementById('banner-mode-dummy');
+            if (banner) banner.classList.toggle('hidden', !AKUN_DUMMY_AKTIF);
+            const bannerNama = document.getElementById('banner-mode-dummy-nama');
+            if (bannerNama && AKUN_DUMMY_AKTIF) bannerNama.textContent = AKUN_DUMMY_AKTIF.nama;
+        }
+
+        function terapkanIdentitasEfektif() {
+            // Timpa semua tempat yang nampilin nama supaya konsisten dengan
+            // profil yang sedang aktif (asli atau dummy), tanpa perlu render
+            // ulang dari server.
+            document.querySelectorAll('.nama-siswa-efektif').forEach(el => {
+                el.textContent = NAMA_SISWA_AKTIF;
+            });
+        }
 
         // ===== Penyimpanan Tugas Multi (Banyak Tugas per Kelas) =====
         // Kelas ini nyimpen ARRAY tugas, bukan 1 objek tunggal, jadi tugas baru dari
@@ -3383,6 +3544,8 @@
 
         /* ================= INIT ================= */
         document.addEventListener('DOMContentLoaded', () => {
+            terapkanIdentitasEfektif();
+            renderDaftarAkunDummy();
             loadDarkModePreference();
             loadBioSiswa();
             renderDaftarGuru();
@@ -4478,6 +4641,16 @@
              karena event 'storage' bawaan browser tidak nyala di
              tab yang sama dengan yang melakukan localStorage.setItem).
            ============================================================ */
+
+        function toggleAkunDummyPanel() {
+            const panel = document.getElementById('panel-akun-dummy-profil');
+            const icon = document.getElementById('icon-toggle-akun-dummy-panel');
+            const trigger = document.querySelector('[aria-controls="panel-akun-dummy-profil"]');
+            if (!panel) return;
+            panel.classList.toggle('hidden');
+            if (icon) icon.classList.toggle('rotate-180');
+            if (trigger) trigger.setAttribute('aria-expanded', String(!panel.classList.contains('hidden')));
+        }
 
         function toggleDummyPanel() {
             const panel = document.getElementById('panel-dummy-leaderboard');
