@@ -263,54 +263,16 @@ def login():
             flash('Username, password, atau role salah!', 'error')
             return redirect(url_for('login'))
 
+        # ------------------------------------------------------------
+        # NOTE: Verifikasi Master Device / approval device DINONAKTIFKAN
+        # SEMENTARA karena UI untuk approve/reject device di dashboard
+        # belum dibuat. Begitu fitur approve/reject-nya sudah ada,
+        # kembalikan logic pengecekan device (lihat versi lama file ini
+        # untuk referensi). Untuk sekarang, begitu kredensial valid,
+        # langsung login tanpa cek status device sama sekali.
+        # ------------------------------------------------------------
         device_token = get_device_token()
-        existing_device = find_device(username, device_token)
-
-        # Kasus 1: device ini sudah pernah terdaftar sebelumnya
-        if existing_device:
-            if existing_device['status'] == 'approved':
-                existing_device['last_login_at'] = datetime.utcnow()
-                return _finish_login(user, device_token)
-
-            if existing_device['status'] == 'pending':
-                flash('Perangkat ini masih menunggu persetujuan dari Master Device.', 'error')
-                return redirect(url_for('login'))
-
-            if existing_device['status'] == 'rejected':
-                flash('Perangkat ini ditolak aksesnya. Hubungi admin.', 'error')
-                return redirect(url_for('login'))
-
-        # Kasus 2: user belum punya device sama sekali -> jadikan Master Device
-        user_devices = devices.setdefault(username, [])
-
-        if not user_devices:
-            user_devices.append({
-                'token': device_token,
-                'name': build_device_name(),
-                'ip': request.remote_addr,
-                'is_master': True,
-                'status': 'approved',
-                'created_at': datetime.utcnow(),
-                'last_login_at': datetime.utcnow(),
-            })
-            flash('Perangkat ini telah didaftarkan sebagai Master Device.', 'success')
-            return _finish_login(user, device_token)
-
-        # Kasus 3: sudah ada Master Device, tapi device ini baru -> minta approval
-        user_devices.append({
-            'token': device_token,
-            'name': build_device_name(),
-            'ip': request.remote_addr,
-            'is_master': False,
-            'status': 'pending',
-            'created_at': datetime.utcnow(),
-            'last_login_at': None,
-        })
-        flash(
-            'Login dari perangkat baru terdeteksi. Menunggu persetujuan dari Master Device sebelum akses diberikan.',
-            'error'
-        )
-        return redirect(url_for('login'))
+        return _finish_login(user, device_token)
 
 
 def _finish_login(user, device_token):
