@@ -8,6 +8,14 @@ from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response, jsonify
 
+# Muat variabel dari file .env jika tersedia (opsional, untuk kemudahan development).
+# Kalau python-dotenv belum terinstall / file .env tidak ada, baris ini aman diabaikan.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 app = Flask(__name__)
 # Key rahasia untuk menangani session dan flash message
 app.secret_key = 'arcana_smart_school_secret_key'
