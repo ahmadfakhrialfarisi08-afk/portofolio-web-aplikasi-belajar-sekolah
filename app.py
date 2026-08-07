@@ -36,7 +36,7 @@ users = {
         'username': 'siswa', 
         'password': 'siswa123', 
         'role': 'siswa',
-        'email': 'siswa@sekolah.sch.id',
+        'email': 'ahmad.fakhrialfarisi08@gmail.com',
         'fullname': 'AHMAD FAKHRI AL FARISI',
         'identity_number': '0051234567'
     },
@@ -49,6 +49,14 @@ users = {
         'email': 'staf1@sekolah.sch.id',
         'fullname': 'Staf Kebersihan 01',
         'identity_number': 'STAF-001'
+    },
+    'syam': {
+        'username': 'syam',
+        'password': 'semBandung',
+        'role': 'siswa',
+        'email': 'syam@sekolah.sch.id',
+        'fullname': 'SYAM KHOERATUL MUKMIN',
+        'identity_number': '0059999999'
     }
 }
 
