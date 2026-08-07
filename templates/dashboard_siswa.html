@@ -4002,6 +4002,7 @@
                 const titleEntri = iniSayaSendiri ? borderLiveSaya.rank : (entri.borderTitle || '🔰 Pemula');
                 const kelasEntri = iniSayaSendiri ? getKelasAktifQuiz() : (entri.kelas || '-');
                 const efekNamaEntri = iniSayaSendiri ? getEfekNamaClass(borderLiveSaya) : (entri.efekNama || '');
+                const titleBadgeClassEntri = getTitleBadgeClass(efekNamaEntri);
                 const badgeDevEntri = iniSayaSendiri ? getBadgeDevHtml(borderLiveSaya) : (entri.badgeDev || '');
                 const kelasNamaEntri = `text-xs font-bold truncate ${efekNamaEntri || 'text-slate-800'}`;
 
@@ -4016,7 +4017,7 @@
                         </div>
                         <div class="min-w-0">
                             <p class="${kelasNamaEntri}">${namaEntri}${badgeDevEntri ? ' ' + badgeDevEntri : ''}${iniSayaSendiri ? ' <span class="text-purple-500">(Kamu)</span>' : ''}</p>
-                            <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200 truncate max-w-full">${titleEntri}</span>
+                            <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold ${titleBadgeClassEntri} truncate max-w-full">${titleEntri}</span>
                             <p class="text-[10px] text-slate-400 truncate mt-0.5">Kelas ${kelasEntri} &middot; ${entri.benar}/${entri.total} benar &middot; ${new Date(entri.tanggal).toLocaleDateString('id-ID')}</p>
                         </div>
                     </div>
@@ -4138,6 +4139,7 @@
                 const titleEntri = iniSayaSendiri ? borderLiveSaya.rank : (entri.borderTitle || '🔰 Pemula');
                 const kelasEntri = iniSayaSendiri ? getKelasAktifQuiz() : (entri.kelas || '-');
                 const efekNamaEntri = iniSayaSendiri ? getEfekNamaClass(borderLiveSaya) : (entri.efekNama || '');
+                const titleBadgeClassEntri = getTitleBadgeClass(efekNamaEntri);
                 const badgeDevEntri = iniSayaSendiri ? getBadgeDevHtml(borderLiveSaya) : (entri.badgeDev || '');
                 const kelasNamaEntri = `text-xs font-bold truncate ${efekNamaEntri || 'text-slate-800'}`;
 
@@ -4152,7 +4154,7 @@
                         </div>
                         <div class="min-w-0">
                             <p class="${kelasNamaEntri}">${namaEntri}${badgeDevEntri ? ' ' + badgeDevEntri : ''}${iniSayaSendiri ? ' <span class="text-indigo-500">(Kamu)</span>' : ''}</p>
-                            <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200 truncate max-w-full">${titleEntri}</span>
+                            <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold ${titleBadgeClassEntri} truncate max-w-full">${titleEntri}</span>
                             <p class="text-[10px] text-slate-400 truncate mt-0.5">Kelas ${kelasEntri} &middot; ${entri.benar}/${entri.total} benar &middot; ${new Date(entri.tanggal).toLocaleDateString('id-ID')}</p>
                         </div>
                     </div>
@@ -4246,6 +4248,7 @@
             const borderPenikung = entri.border || '../static/img/border_polos.png';
             const titlePenikung = entri.borderTitle || '🔰 Pemula';
             const efekNamaPenikung = entri.efekNama || '';
+            const titleBadgeClassPenikung = getTitleBadgeClass(efekNamaPenikung);
             const badgeDevPenikung = entri.badgeDev || '';
             const kelasPenikung = entri.kelas ? ` &middot; Kelas ${entri.kelas}` : '';
             const pesanRebut = PESAN_REBUT_POSISI_QUIZ[Math.floor(Math.random() * PESAN_REBUT_POSISI_QUIZ.length)];
@@ -4262,7 +4265,7 @@
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-extrabold text-slate-900 dark:text-slate-100">😱 Kamu Ditikung di Leaderboard Essay!</p>
                         <p class="text-[11px] font-bold mt-0.5"><i class="fa-solid fa-bolt mr-1 text-indigo-600"></i><span class="${efekNamaPenikung || 'text-indigo-600'}">${entri.nama}</span>${badgeDevPenikung ? ' ' + badgeDevPenikung : ''}<span class="text-indigo-600">${kelasPenikung} &middot; ${cfg.label} &middot; ${entri.skor} poin</span></p>
-                        <span class="inline-block mt-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200">${titlePenikung}</span>
+                        <span class="inline-block mt-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold ${titleBadgeClassPenikung}">${titlePenikung}</span>
                         <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">${entri.nama} baru saja menyalip skor terbaikmu di level Essay ${cfg.label}${posisi ? `, posisimu sekarang turun ke peringkat #${posisi}` : ''}.</p>
                         <p class="text-[11px] font-semibold text-slate-700 mt-1 leading-relaxed">${pesanRebut}</p>
                         <button onclick="switchTab('quiz'); tutupToastDitikungQuizEssay('${idToast}')" class="mt-2 text-[11px] font-bold text-indigo-600 hover:underline">Balas Sekarang &rarr;</button>
@@ -4494,6 +4497,7 @@
             const borderPenikung = entri.border || '../static/img/border_polos.png';
             const titlePenikung = entri.borderTitle || '🔰 Pemula';
             const efekNamaPenikung = entri.efekNama || '';
+            const titleBadgeClassPenikung = getTitleBadgeClass(efekNamaPenikung);
             const badgeDevPenikung = entri.badgeDev || '';
             const kelasPenikung = entri.kelas ? ` &middot; Kelas ${entri.kelas}` : '';
             const pesanRebut = PESAN_REBUT_POSISI_QUIZ[Math.floor(Math.random() * PESAN_REBUT_POSISI_QUIZ.length)];
@@ -4510,7 +4514,7 @@
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-extrabold text-slate-900 dark:text-slate-100">😱 Kamu Ditikung di Leaderboard!</p>
                         <p class="text-[11px] font-bold mt-0.5"><i class="fa-solid fa-bolt mr-1 text-purple-600"></i><span class="${efekNamaPenikung || 'text-purple-600'}">${entri.nama}</span>${badgeDevPenikung ? ' ' + badgeDevPenikung : ''}<span class="text-purple-600">${kelasPenikung} &middot; ${cfg.label} &middot; ${entri.skor} poin</span></p>
-                        <span class="inline-block mt-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200">${titlePenikung}</span>
+                        <span class="inline-block mt-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold ${titleBadgeClassPenikung}">${titlePenikung}</span>
                         <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">${entri.nama} baru saja menyalip skor terbaikmu di level ${cfg.label}${posisi ? `, posisimu sekarang turun ke peringkat #${posisi}` : ''}.</p>
                         <p class="text-[11px] font-semibold text-slate-700 mt-1 leading-relaxed">${pesanRebut}</p>
                         <button onclick="switchTab('quiz'); tutupToastDitikungQuiz('${idToast}')" class="mt-2 text-[11px] font-bold text-purple-600 hover:underline">Balas Sekarang &rarr;</button>
@@ -5388,6 +5392,28 @@
             if (border.tierRank === 2) return 'efek-nama-emas';
             if (border.tierRank === 1) return 'efek-nama-perak';
             return '';
+        }
+
+        // Warna badge title (di bawah nama, mis. "👑 Queen", "🥈 Siswa Berbakat")
+        // SELALU ngikutin efek nama/warna border yang lagi aktif — bukan gold
+        // statis buat semua orang. Dipetakan 1:1 sama family warna efek nama
+        // di atas, supaya title & border/nama-nya selalu senada.
+        function getTitleBadgeClass(efekNamaClass) {
+            switch (efekNamaClass) {
+                case 'efek-nama-pink':
+                    return 'bg-gradient-to-r from-pink-100 to-fuchsia-50 text-pink-700 border border-pink-200';
+                case 'efek-nama-permata':
+                    return 'bg-gradient-to-r from-cyan-100 to-violet-50 text-violet-700 border border-violet-200';
+                case 'efek-nama-emas':
+                case 'gold-name':
+                    return 'bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200';
+                case 'efek-nama-perak':
+                    return 'bg-gradient-to-r from-slate-200 to-slate-50 text-slate-600 border border-slate-300';
+                case 'efek-nama-admin':
+                    return 'bg-gradient-to-r from-amber-200 to-yellow-50 text-amber-800 border border-amber-300';
+                default:
+                    return 'bg-gradient-to-r from-slate-100 to-white text-slate-500 border border-slate-200';
+            }
         }
 
         function getBadgeDevHtml(border) {
