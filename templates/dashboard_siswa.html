@@ -10,7 +10,7 @@
     <!-- OCR (Ekstraksi Teks Otomatis) untuk verifikasi foto bukti prestasi -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="../static/css/border_polos.css">
     <link rel="stylesheet" href="../static/css/border_pink.css">
@@ -25,13 +25,17 @@
            ============================================================ */
         :root {
             --surface: #ffffff;
-            --page-bg: #f7f8fb;
-            --border-subtle: #e9ebf1;
-            --border-strong: #dde1ea;
-            --text-primary: #0f172a;
-            --text-secondary: #667085;
-            --text-tertiary: #98a2b3;
-            --brand: #2563eb; /* dipertahankan sama dgn blue-600 asli, tidak mengubah branding */
+            --page-bg: #f8f7fc;
+            --border-subtle: #ece9f5;
+            --border-strong: #ddd8ee;
+            --text-primary: #1e1b2e;
+            --text-secondary: #6b6580;
+            --text-tertiary: #9891ab;
+            --brand: #5b4fe9; /* indigo-violet hangat, pengganti biru korporat #2563eb */
+            --brand-dark: #4338ca;
+            --brand-tint-50: #f0eeff;
+            --brand-tint-100: #e3defe;
+            --font-display: 'Fraunces', ui-serif, Georgia, serif;
             --radius-card: 1rem;
             --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.03);
             --shadow-card-hover: 0 8px 20px -6px rgba(16, 24, 40, 0.10), 0 2px 6px -2px rgba(16, 24, 40, 0.05);
@@ -44,6 +48,36 @@
         /* Skala tipografi lebih rapat & konsisten ala Linear/Notion */
         h1, h2, h3, h4 { letter-spacing: -0.012em; }
         .tab-content h3.font-bold { color: var(--text-primary); }
+
+        /* Sentuhan tipografi: h2 dipakai utk sapaan & judul section besar
+           (mis. "Selamat Pagi, ...", "Border Avatar Kamu") — pakai serif
+           hangat di sini saja sbg momen "hero", bukan di seluruh body,
+           supaya area padat data (tabel, badge, tombol) tetap sans yg
+           ringkas & legible. h1 (wordmark sidebar) sengaja tidak disentuh. */
+        h2 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
+
+        /* ============================================================
+           PALET BRAND BARU: indigo-violet hangat menggantikan biru
+           korporat generik. Menimpa utility Tailwind blue-* dengan cara
+           yg sama seperti override border-slate-200 & shadow di atas —
+           tidak menyentuh HTML/JS, hanya lapisan visual.
+           ============================================================ */
+        .bg-blue-600, .from-blue-600, .via-blue-600 { background-color: var(--brand) !important; }
+        .bg-blue-700, .hover\:bg-blue-700:hover { background-color: var(--brand-dark) !important; }
+        .bg-blue-50, .file\:bg-blue-50, .hover\:bg-blue-50:hover { background-color: var(--brand-tint-50) !important; }
+        .bg-blue-100, .hover\:file\:bg-blue-100:hover { background-color: var(--brand-tint-100) !important; }
+        .text-blue-600, .text-blue-700 { color: var(--brand) !important; }
+        .text-blue-500 { color: #7c72ef !important; }
+        .text-blue-100 { color: var(--brand-tint-100) !important; }
+        .file\:text-blue-700 { color: var(--brand-dark) !important; }
+        .border-blue-600, .border-blue-500, .focus\:border-blue-500:focus { border-color: var(--brand) !important; }
+        .border-blue-100 { border-color: var(--brand-tint-100) !important; }
+        .border-blue-200, .focus-within\:border-blue-300:focus-within { border-color: #cdc6f7 !important; }
+        .border-blue-300 { border-color: #cdc6f7 !important; }
+        .shadow-blue-500 { --tw-shadow-color: var(--brand) !important; }
+        html.dark .bg-blue-50, html.dark .file\:bg-blue-50 { background-color: rgba(91, 79, 233, 0.16) !important; }
+        html.dark .bg-blue-100 { background-color: rgba(91, 79, 233, 0.24) !important; }
+        html.dark .text-blue-600, html.dark .text-blue-700 { color: #a79dff !important; }
 
         /* Refine warna netral global (perbedaan sangat tipis dari default
            Tailwind, tujuannya cuma bikin permukaan terasa lebih premium &
