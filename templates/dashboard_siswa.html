@@ -3817,15 +3817,74 @@
             // kesulitan (easy/medium/hard) tiap kali data quiz dibaca.
             if (data.leaderboard && data.leaderboard.length) {
                 const bersih = dedupLeaderboardQuiz(data.leaderboard);
-                if (bersih.length !== data.leaderboard.length) {
-                    data.leaderboard = bersih;
-                    try { localStorage.setItem(KEY_QUIZ_DATA, JSON.stringify(data)); } catch (e) {}
-                } else {
-                    data.leaderboard = bersih;
-                }
+                data.leaderboard = bersih;
+            }
+
+            // SELF-HEAL: kadang bestByLevel (poin tertinggi yang tercatat) sudah
+            // lebih tinggi daripada entri milik siswa ini di data.leaderboard --
+            // misalnya karena data lama sebelum leaderboard-array ini ada, atau
+            // sinkronisasi ke server sempat gagal. Kalau dibiarkan, poin tertinggi
+            // itu TIDAK akan muncul di leaderboard sampai siswa main quiz lagi.
+            // Untuk itu, setiap kali data quiz dibaca, entri leaderboard milik
+            // siswa ini disamakan otomatis dengan bestByLevel -- jadi poin
+            // tertinggi yang SUDAH tercatat langsung kelihatan tanpa perlu
+            // ngerjain ulang.
+            const berubah = sinkronkanLeaderboardDenganPoinTerbaik(data);
+
+            if (berubah) {
+                try { localStorage.setItem(KEY_QUIZ_DATA, JSON.stringify(data)); } catch (e) {}
+                simpanQuizKeServer('pg', data);
             }
 
             return data;
+        }
+
+        // Menyamakan data.leaderboard milik SISWA INI dengan data.bestByLevel:
+        // kalau di suatu level bestByLevel-nya lebih tinggi dari skor yang ada
+        // di leaderboard (atau entrinya belum ada sama sekali), entri leaderboard
+        // dibuat/ditimpa pakai poin tertinggi yang sudah tercatat itu. Skor milik
+        // siswa lain tidak disentuh. Mengembalikan true kalau ada perubahan.
+        function sinkronkanLeaderboardDenganPoinTerbaik(data) {
+            const best = data.bestByLevel || { easy: 0, medium: 0, hard: 0 };
+            data.leaderboard = data.leaderboard || [];
+            let berubah = false;
+
+            ['easy', 'medium', 'hard'].forEach(level => {
+                const poinTerbaik = best[level] || 0;
+                if (poinTerbaik <= 0) return; // belum pernah main level ini sama sekali
+
+                const entriLama = data.leaderboard.find(e => e.nama === NAMA_PEMAIN_QUIZ && e.level === level);
+                if (entriLama && entriLama.skor >= poinTerbaik) return; // sudah sinkron
+
+                const borderAktif = getBorderTerpakai();
+                const entriBaru = {
+                    id: entriLama ? entriLama.id : `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                    nama: NAMA_PEMAIN_QUIZ,
+                    kelas: getKelasAktifQuiz(),
+                    foto: getFotoProfilAktifQuiz(),
+                    border: borderAktif.file,
+                    borderTitle: borderAktif.rank,
+                    efekNama: getEfekNamaClass(borderAktif),
+                    badgeDev: getBadgeDevHtml(borderAktif),
+                    level,
+                    skor: poinTerbaik,
+                    // Detail jumlah soal benar tidak diketahui kalau entrinya baru
+                    // dibuat dari bestByLevel (bukan dari sesi main barusan) --
+                    // dibiarkan kosong, ditangani oleh tampilan (fallback "-").
+                    benar: entriLama ? entriLama.benar : null,
+                    total: entriLama ? entriLama.total : null,
+                    tanggal: entriLama ? entriLama.tanggal : new Date().toISOString()
+                };
+
+                if (entriLama) {
+                    Object.assign(entriLama, entriBaru);
+                } else {
+                    data.leaderboard.push(entriBaru);
+                }
+                berubah = true;
+            });
+
+            return berubah;
         }
 
         // Sisakan 1 entri per kombinasi nama+level di leaderboard, yaitu yang
@@ -4482,7 +4541,7 @@
                         <div class="min-w-0">
                             <p class="${kelasNamaEntri}">${namaEntri}${badgeDevEntri ? ' ' + badgeDevEntri : ''}${iniSayaSendiri ? ' <span class="text-purple-500">(Kamu)</span>' : ''}</p>
                             <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold ${titleBadgeClassEntri} truncate max-w-full">${titleEntri}</span>
-                            <p class="text-[10px] text-slate-400 truncate mt-0.5">Kelas ${kelasEntri} &middot; ${entri.benar}/${entri.total} benar &middot; ${new Date(entri.tanggal).toLocaleDateString('id-ID')}</p>
+                            <p class="text-[10px] text-slate-400 truncate mt-0.5">Kelas ${kelasEntri}${(entri.benar != null && entri.total != null) ? ` &middot; ${entri.benar}/${entri.total} benar` : ''} &middot; ${new Date(entri.tanggal).toLocaleDateString('id-ID')}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2 flex-shrink-0">
