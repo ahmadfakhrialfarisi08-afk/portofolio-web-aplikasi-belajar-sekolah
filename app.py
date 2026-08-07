@@ -40,6 +40,8 @@ users = {
         'fullname': 'AHMAD FAKHRI AL FARISI',
         'identity_number': '0051234567'
     },
+
+    
     'staf1': {
         'username': 'staf1', 
         'password': 'passstaf', 
