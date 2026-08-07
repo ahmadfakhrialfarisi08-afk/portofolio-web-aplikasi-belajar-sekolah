@@ -36,6 +36,39 @@
             background-color: #94a3b8;
         }
 
+        /* ============================================================
+           TAB "Beri Tugas" — pemilih Jenis Konten (Tugas / Catatan)
+           di dalam modal Beri Tugas. Sengaja dibuat RINGAN:
+           - transisi cuma di background-color & color (bukan transition-all,
+             yang bikin browser ngecek semua properti tiap frame)
+           - box-shadow tipis, bukan shadow besar
+           - tanpa blur/filter apapun
+           supaya tetap mulus dipakai di laptop maupun HP.
+           ============================================================ */
+        .tab-beri-tugas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background-color: #f1f5f9; /* slate-100 */
+            padding: 4px;
+            border-radius: 0.75rem;
+        }
+        .tab-beri-tugas-opsi {
+            padding: 0.5rem 0;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 0.5rem;
+            background-color: transparent;
+            color: #64748b; /* slate-500 */
+            cursor: pointer;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .tab-beri-tugas-opsi.aktif {
+            background-color: #ffffff;
+            color: #2563eb; /* blue-600 */
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+
         /* Border Emas untuk AHMAD FAKHRI AL FARISI — dibuat mandiri (bukan bergantung file luar)
            supaya selalu tampil rapi & konsisten di mana pun file ini dibuka. */
         .border-emas-avatar {
@@ -672,11 +705,11 @@
             <div class="p-6 space-y-4 overflow-y-auto flex-1 modal-scroll-smooth">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-2">Pilih Jenis Konten:</label>
-                    <div class="grid grid-cols-2 bg-slate-100 p-1 rounded-xl">
-                        <button id="tab-opt-tugas" onclick="setJenisKonten('tugas')" class="py-2 text-xs font-bold rounded-lg bg-white text-blue-600 shadow transition-all">
+                    <div class="tab-beri-tugas">
+                        <button id="tab-opt-tugas" onclick="setJenisKonten('tugas')" class="tab-beri-tugas-opsi aktif">
                             <i class="fa-solid fa-file-pen mr-1"></i> Tugas
                         </button>
-                        <button id="tab-opt-catatan" onclick="setJenisKonten('catatan')" class="py-2 text-xs font-bold rounded-lg text-slate-500 transition-all">
+                        <button id="tab-opt-catatan" onclick="setJenisKonten('catatan')" class="tab-beri-tugas-opsi">
                             <i class="fa-solid fa-note-sticky mr-1"></i> Catatan
                         </button>
                     </div>
@@ -1567,13 +1600,10 @@
             jenisKontenAktif = type;
             const btnTugas = document.getElementById('tab-opt-tugas');
             const btnCatatan = document.getElementById('tab-opt-catatan');
-            if (type === 'tugas') {
-                btnTugas.className = "py-2 text-xs font-bold rounded-lg bg-white text-blue-600 shadow transition-all";
-                btnCatatan.className = "py-2 text-xs font-bold rounded-lg text-slate-500 transition-all";
-            } else {
-                btnCatatan.className = "py-2 text-xs font-bold rounded-lg bg-white text-blue-600 shadow transition-all";
-                btnTugas.className = "py-2 text-xs font-bold rounded-lg text-slate-500 transition-all";
-            }
+            // Cukup toggle class 'aktif' — lebih ringan daripada ganti
+            // className penuh tiap klik, terutama kerasa di HP.
+            btnTugas.classList.toggle('aktif', type === 'tugas');
+            btnCatatan.classList.toggle('aktif', type === 'catatan');
         }
 
         async function toggleVoiceRecord() {
