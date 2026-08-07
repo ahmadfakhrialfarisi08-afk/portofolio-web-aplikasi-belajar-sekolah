@@ -3568,6 +3568,7 @@
             checkTaskBadgeStatus();
             updateTaskCounter();
             updateBerandaPoinQuiz();
+            sinkronkanQuizDenganServer(); // tarik progress & leaderboard akun ini dari server
             renderPanelDummyLeaderboard();
             pastikanBaselineSeenIdsQuiz();
             pastikanBaselineSeenIdsQuizEssay();
@@ -3735,6 +3736,7 @@
 
         function saveQuizEssayData(data) {
             localStorage.setItem(KEY_QUIZ_ESSAY_DATA, JSON.stringify(data));
+            simpanQuizKeServer('essay', data);
         }
 
         function acakSoalQuizEssay(level, jumlah) {
@@ -3816,6 +3818,66 @@
 
         function saveQuizData(data) {
             localStorage.setItem(KEY_QUIZ_DATA, JSON.stringify(data));
+            simpanQuizKeServer('pg', data);
+        }
+
+        // ============================================================
+        // SINKRONISASI SERVER: dulu leaderboard cuma hidup di localStorage
+        // (per browser, dan bahkan dinamespace per akun) sehingga akun lain
+        // -- apalagi dari perangkat lain -- tidak akan pernah lihat entri
+        // akun ini. Sekarang tiap kali data quiz disimpan, dikirim juga ke
+        // server (per akun yang sedang login lewat session Flask) supaya:
+        //   1) Progress akun ini ikut tersimpan di server (bukan cuma
+        //      browser ini), dan
+        //   2) Leaderboard bisa digabung dari SEMUA akun siswa lewat
+        //      /api/quiz/leaderboard-global, jadi benar-benar keliatan
+        //      lintas akun.
+        // Dikirim "fire-and-forget" (tidak menghalangi UI) -- localStorage
+        // tetap jadi cache lokal biar quiz tetap kerasa instan/responsif.
+        // ============================================================
+        function simpanQuizKeServer(jenis, data) {
+            fetch('/api/quiz/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jenis, data })
+            }).catch(() => { /* offline/gagal kirim -> data tetap aman di localStorage */ });
+        }
+
+        // Tarik data quiz milik akun yang sedang login dari server (dipanggil
+        // sekali saat dashboard dibuka) supaya progress akun ini tetap nyambung
+        // walau sebelumnya terakhir main di perangkat/browser lain.
+        async function sinkronkanQuizDenganServer() {
+            for (const jenis of ['pg', 'essay']) {
+                try {
+                    const res = await fetch(`/api/quiz/load?jenis=${jenis}`);
+                    const hasil = await res.json();
+                    if (hasil && hasil.success && hasil.data) {
+                        const key = jenis === 'essay' ? KEY_QUIZ_ESSAY_DATA : KEY_QUIZ_DATA;
+                        localStorage.setItem(key, JSON.stringify(hasil.data));
+                    }
+                } catch (e) { /* offline -> lanjut pakai data lokal yang ada */ }
+            }
+
+            // Refresh tampilan yang bergantung pada data quiz, setelah data
+            // server (kalau ada) sudah dituang ke localStorage di atas.
+            if (typeof renderMenuQuiz === 'function') renderMenuQuiz();
+            if (typeof updateBerandaPoinQuiz === 'function') updateBerandaPoinQuiz();
+            if (typeof renderLeaderboardQuiz === 'function') renderLeaderboardQuiz();
+            if (typeof renderLeaderboardQuizEssay === 'function') renderLeaderboardQuizEssay();
+        }
+
+        // Ambil leaderboard GABUNGAN semua akun siswa dari server untuk satu
+        // level tertentu. Kalau server tidak bisa dihubungi, balik ke entri
+        // lokal (data.leaderboard) milik akun ini saja sebagai fallback.
+        async function ambilLeaderboardGabungan(jenis, level, dataLokal) {
+            try {
+                const res = await fetch(`/api/quiz/leaderboard-global?jenis=${jenis}`);
+                const hasil = await res.json();
+                if (hasil && hasil.success) {
+                    return hasil.leaderboard.filter(e => e.level === level);
+                }
+            } catch (e) { /* fallback di bawah */ }
+            return (dataLokal.leaderboard || []).filter(e => e.level === level);
         }
 
         function getRankInfoQuiz(totalPoin) {
@@ -4306,7 +4368,7 @@
             });
         }
 
-        function renderLeaderboardQuiz() {
+        async function renderLeaderboardQuiz() {
             const data = getQuizData();
 
             if (quizFilterLeaderboardAktif === 'semua') {
@@ -4314,7 +4376,10 @@
                 return;
             }
 
-            let daftar = [...(data.leaderboard || [])].filter(e => e.level === quizFilterLeaderboardAktif);
+            // Diambil dari server (gabungan SEMUA akun siswa), bukan cuma
+            // entri lokal milik akun ini -- ini yang bikin siswa lain bisa
+            // kelihatan di leaderboard siswa yang sedang login.
+            let daftar = await ambilLeaderboardGabungan('pg', quizFilterLeaderboardAktif, data);
 
             daftar.sort((a, b) => b.skor - a.skor);
             daftar = daftar.slice(0, 10);
@@ -4449,7 +4514,7 @@
             });
         }
 
-        function renderLeaderboardQuizEssay() {
+        async function renderLeaderboardQuizEssay() {
             const data = getQuizEssayData();
 
             if (quizFilterLeaderboardEssayAktif === 'semua') {
@@ -4457,7 +4522,9 @@
                 return;
             }
 
-            let daftar = [...(data.leaderboard || [])].filter(e => e.level === quizFilterLeaderboardEssayAktif);
+            // Sama seperti leaderboard Pilihan Ganda: gabungan dari server,
+            // bukan cuma entri lokal milik akun ini.
+            let daftar = await ambilLeaderboardGabungan('essay', quizFilterLeaderboardEssayAktif, data);
 
             daftar.sort((a, b) => b.skor - a.skor);
             daftar = daftar.slice(0, 10);

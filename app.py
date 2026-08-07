@@ -67,6 +67,42 @@ users = {
 devices = {}
 
 # ----------------------------------------------------
+# DATA QUIZ SISWA (SIMULASI TABEL quiz_scores)
+# Struktur: quiz_store[username][jenis] = { ...struktur data quiz milik siswa
+# itu sendiri, PERSIS sama seperti objek "data" yang dulu cuma disimpan di
+# localStorage browser (totalPoin, bestByLevel, totalPoinByLevel,
+# leaderboard) }.
+#
+# KENAPA INI PERLU:
+# Sebelumnya leaderboard cuma disimpan di localStorage yang dinamespace per
+# ID siswa (key `quiz_data_<id>`) -- artinya tiap akun sebenarnya punya
+# salinan leaderboard-nya SENDIRI-SENDIRI di browser, jadi siswa lain
+# (apalagi beda perangkat/browser) TIDAK PERNAH bisa lihat entri milik
+# siswa lain. Dengan disimpan di sini (server, dalam memori proses Flask):
+#   1) Progress tiap akun (poin, skor terbaik) ikut akun itu sendiri --
+#      login dari perangkat/browser mana pun, datanya sama.
+#   2) Leaderboard digabung dari SEMUA akun siswa yang pernah menyimpan
+#      data, jadi kalau siswa A dapat peringkat 1, siswa B yang login
+#      (di perangkat manapun) bisa lihat itu.
+# CATATAN: ini masih penyimpanan in-memory (hilang kalau server direstart),
+# sama seperti dict `users` dan `devices` di atas. Untuk produksi sungguhan,
+# ganti dengan tabel database (mis. quiz_scores, quiz_leaderboard_entries).
+# ----------------------------------------------------
+quiz_store = {}
+
+
+def _default_quiz_blob(jenis):
+    if jenis == 'essay':
+        return {'bestByLevel': {'easy': 0, 'medium': 0, 'hard': 0}, 'leaderboard': []}
+    return {
+        'totalPoin': 0,
+        'bestByLevel': {'easy': 0, 'medium': 0, 'hard': 0},
+        'totalPoinByLevel': {'easy': 0, 'medium': 0, 'hard': 0},
+        'leaderboard': []
+    }
+
+
+# ----------------------------------------------------
 # KONFIGURASI OTP - LUPA PASSWORD
 # ----------------------------------------------------
 OTP_LENGTH = 6
@@ -546,6 +582,73 @@ def api_forgot_password_reset_password():
     del otp_store[username]
 
     return jsonify(success=True, message='Password berhasil diubah. Silakan masuk dengan password baru Anda.')
+
+# ----------------------------------------------------
+# API: QUIZ & LEADERBOARD (per akun + gabungan semua siswa)
+# ----------------------------------------------------
+@app.route('/api/quiz/load', methods=['GET'])
+def api_quiz_load():
+    """Ambil data quiz milik akun yang sedang login (dipanggil saat
+    dashboard siswa dibuka, supaya progress akun ini ikut nyambung
+    walau login dari perangkat/browser lain)."""
+    if 'user' not in session:
+        return jsonify(success=False, message='Belum login.'), 401
+
+    jenis = request.args.get('jenis', 'pg')
+    if jenis not in ('pg', 'essay'):
+        return jsonify(success=False, message='Jenis quiz tidak valid.'), 400
+
+    username = session['user']['username']
+    blob = quiz_store.get(username, {}).get(jenis)
+    return jsonify(success=True, data=blob)  # null kalau memang belum pernah main/simpan
+
+
+@app.route('/api/quiz/save', methods=['POST'])
+def api_quiz_save():
+    """Simpan data quiz milik akun yang sedang login ke server. Dipanggil
+    setiap kali skor/leaderboard lokal di-update (pengganti localStorage
+    sebagai sumber utama, biar tersimpan per akun & bisa dibaca akun lain
+    lewat endpoint leaderboard-global di bawah)."""
+    if 'user' not in session:
+        return jsonify(success=False, message='Belum login.'), 401
+
+    body = request.get_json(silent=True) or {}
+    jenis = body.get('jenis')
+    data = body.get('data')
+    if jenis not in ('pg', 'essay') or not isinstance(data, dict):
+        return jsonify(success=False, message='Data quiz tidak valid.'), 400
+
+    username = session['user']['username']
+    quiz_store.setdefault(username, {})[jenis] = data
+    return jsonify(success=True)
+
+
+@app.route('/api/quiz/leaderboard-global', methods=['GET'])
+def api_quiz_leaderboard_global():
+    """Gabungkan entri leaderboard dari SEMUA akun siswa yang sudah pernah
+    menyimpan data, supaya siswa manapun yang login bisa lihat peringkat
+    siswa lain -- bukan cuma peringkat dirinya sendiri seperti sebelumnya."""
+    if 'user' not in session:
+        return jsonify(success=False, message='Belum login.'), 401
+
+    jenis = request.args.get('jenis', 'pg')
+    if jenis not in ('pg', 'essay'):
+        return jsonify(success=False, message='Jenis quiz tidak valid.'), 400
+
+    gabungan = {}  # kunci "nama||level" -> entri skor tertinggi
+    for username, per_jenis in quiz_store.items():
+        blob = per_jenis.get(jenis)
+        if not blob:
+            continue
+        for entri in blob.get('leaderboard', []):
+            kunci = f"{entri.get('nama')}||{entri.get('level')}"
+            existing = gabungan.get(kunci)
+            if not existing or (entri.get('skor', 0) > existing.get('skor', 0)):
+                gabungan[kunci] = entri
+
+    daftar = list(gabungan.values())
+    return jsonify(success=True, leaderboard=daftar)
+
 
 # ----------------------------------------------------
 # ROUTE DAFTAR GURU
