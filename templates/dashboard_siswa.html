@@ -4794,6 +4794,19 @@
             const skor = parseInt(skorInput, 10);
             if (!nama || isNaN(skor) || skor < 0) return;
 
+            // PENGAMAN: dummy dengan nama PERSIS SAMA dengan akun asli yang
+            // sedang login sengaja ditolak. Kalau diizinkan, dedup leaderboard
+            // (yang cuma nyisain 1 entri per nama+level) bisa "menimpa" entri
+            // ASLI milikmu sendiri dengan entri dummy ini -- dan karena live
+            // photo-override di leaderboard dicocokkan lewat NAMA, entri dummy
+            // itu bisa keliru dianggap "milikmu" (atau, kalau dummy ini dibuat
+            // waktu login sebagai akun lain, malah nyangkut ke akun lain itu).
+            // Itu penyebab bug foto profil "gak sinkron" yang pernah dilaporkan.
+            if (nama.toLowerCase() === NAMA_PEMAIN_QUIZ.trim().toLowerCase()) {
+                alert(`Nama dummy tidak boleh sama persis dengan akun yang sedang login (${NAMA_PEMAIN_QUIZ}). Pakai nama lain untuk simulasi siswa dummy.`);
+                return;
+            }
+
             // Perkiraan kasar jumlah benar dari skor, cuma buat tampilan
             // "x/5 benar" di baris leaderboard supaya wajar dilihat.
             const poinDasar = QUIZ_CONFIG[level].poinDasar;
