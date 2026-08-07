@@ -3626,7 +3626,7 @@
         // disimpan ke tiap entri leaderboard selalu sinkron sama foto terbaru,
         // bukan foto lama yang sudah diganti).
         function getFotoProfilAktifQuiz() {
-            return localStorage.getItem('student_profile_photo') || AVATAR_DEFAULT_QUIZ;
+            return localStorage.getItem(keyStudentProfilePhoto()) || AVATAR_DEFAULT_QUIZ;
         }
 
         // Ambil kelas LANGSUNG dari teks di kartu profil header (id="header-user-kelas"),
