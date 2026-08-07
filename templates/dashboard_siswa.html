@@ -820,7 +820,7 @@
             <div id="dynamic-notification-island" class="items-center gap-2 bg-amber-300 text-slate-900 px-3.5 py-1.5 rounded-2xl border-2 border-amber-500 lightning-border-yellow shadow-lg">
                 <div class="profile-wrapper w-6 h-6 flex-shrink-0">
                     <img id="island-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar" alt="Avatar">
-                    <img src="../static/img/border_admin.jpg" class="user-border" alt="Border_Admin">
+                    <img src="../static/img/border_polos.png" class="user-border" alt="Border_Polos">
                 </div>
                 <span id="island-notification-text" class="text-[11px] font-extrabold text-slate-900 tracking-wide truncate">Notifikasi Aktif</span>
             </div>
@@ -864,7 +864,7 @@
                     <div id="profile-menu-trigger" onclick="toggleProfileDropdown(event)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleProfileDropdown(event);}" aria-label="Buka menu profil" class="flex items-center gap-3 pl-3 border-l border-slate-200 cursor-pointer select-none py-1">
                         <div class="profile-wrapper">
                             <img id="header-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar" alt="Avatar">
-                            <img src="../static/img/border_admin.jpg" class="user-border" alt="Border_Admin">
+                            <img src="../static/img/border_polos.png" class="user-border" alt="Border_Polos">
                         </div>
 
                         <div class="hidden sm:block text-left min-w-0 max-w-[200px] lg:max-w-[280px]">
@@ -5477,7 +5477,10 @@
         // yang sudah naik dan bisa langsung membuka tier berikutnya (🥉 -> 🥈 -> 🏆) tanpa
         // perlu logika tambahan apa pun di sini.
         function isBorderTerbuka(border) {
-            if (border.kategori === 'admin') return true;
+            // Akun siswa biasa TIDAK PERNAH memiliki border kategori admin,
+            // walaupun sebelumnya sempat tersimpan di localStorage (mis. dari
+            // akun dev/admin yang pernah login di browser yang sama).
+            if (border.kategori === 'admin') return false;
             // Border tier dasar (minPoin 0, mis. "Polos") itu bawaan semua siswa
             // sejak awal — bukan pencapaian yang perlu diklaim, jadi tetap auto.
             if (border.minPoin === 0) return true;
