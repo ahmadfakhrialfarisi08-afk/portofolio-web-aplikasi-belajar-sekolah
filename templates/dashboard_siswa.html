@@ -869,7 +869,7 @@
 
                         <div class="hidden sm:block text-left min-w-0 max-w-[200px] lg:max-w-[280px]">
                             <h4 class="text-sm leading-snug flex items-center gap-1 flex-wrap">
-                                <span id="header-user-nama-efek" class="truncate max-w-full">AHMAD FAKHRI AL FARISI</span>
+                                <span id="header-user-nama-efek" class="truncate max-w-full">{{ nama }}</span>
                                 <span id="header-user-badge-dev"></span>
                             </h4>
                             <p id="header-user-kelas" class="text-xs text-slate-400">Siswa • XII TKJ 3/TAV</p>
@@ -906,6 +906,12 @@
                                 <i class="fa-solid fa-floppy-disk text-[10px]"></i> Simpan Bio
                             </button>
                         </div>
+
+                        <div class="pt-2 border-t border-slate-100">
+                            <a href="{{ url_for('logout') }}" class="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-right-from-bracket text-[10px]"></i> Keluar / Logout
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -917,7 +923,7 @@
                 <div class="relative rounded-2xl bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-700 p-7 sm:p-8 text-white overflow-hidden">
                     <div class="max-w-xl relative z-10">
                         <span class="bg-white/15 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider mb-3 inline-block">Tahun Ajaran 2026/2027</span>
-                        <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 leading-tight">Selamat Pagi, AHMAD FAKHRI AL FARISI! 👋</h2>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 leading-tight">Selamat Pagi, {{ nama }}! 👋</h2>
                         <p class="text-blue-100 text-sm leading-relaxed">Jangan lupa masuk sebelum jam 06:30 WIB hari ini. Semoga harimu menyenangkan di sekolah!</p>
                     </div>
                     <i class="fa-solid fa-shapes absolute -right-8 -bottom-10 text-white/10 text-8xl" aria-hidden="true"></i>
@@ -1500,7 +1506,7 @@
             <div class="w-64 h-64 rounded-2xl overflow-hidden border-4 border-blue-500 shadow-lg">
                 <img id="expanded-photo-img" src="" class="w-full h-full object-cover" alt="Expanded Avatar">
             </div>
-            <p class="text-xs text-slate-400 text-center">AHMAD FAKHRI AL FARISI</p>
+            <p class="text-xs text-slate-400 text-center">{{ nama }}</p>
         </div>
     </div>
 
@@ -1718,7 +1724,7 @@
                               String(now.getMinutes()).padStart(2, '0') + ' WIB';
 
             daftarSaran.push({
-                nama: 'AHMAD FAKHRI AL FARISI',
+                nama: NAMA_SISWA_AKTIF,
                 kelas: 'XII TKJ 3',
                 saran: textSaran,
                 waktu: timestamp
@@ -1820,9 +1826,23 @@
             }
         }
 
+        // ===== Identitas akun yang sedang login (dikirim dari Flask session) =====
+        // Dipakai supaya nama yang tampil & data progres (quiz/border/prestasi)
+        // benar-benar ikut akun yang login, bukan data dummy/akun lain yang
+        // kebetulan pernah login di browser yang sama.
+        const NAMA_SISWA_AKTIF = "{{ nama }}";
+        const USERNAME_SISWA_AKTIF = "{{ login_username }}";
+        // Dipakai HANYA untuk namespace localStorage data pribadi siswa (quiz,
+        // border, prestasi, dll). Kalau ada beberapa akun login gantian di
+        // browser yang sama, tiap akun tetap punya "kotak" data sendiri-sendiri
+        // karena username itu unik per akun.
+        const ID_SISWA_AKTIF = USERNAME_SISWA_AKTIF || 'siswa';
+
         // ===== Penyimpanan Tugas Multi (Banyak Tugas per Kelas) =====
         // Kelas ini nyimpen ARRAY tugas, bukan 1 objek tunggal, jadi tugas baru dari
         // guru MENAMBAH ke daftar dan tugas lama yang belum dikerjakan tetap muncul.
+        // CATATAN: tugas & notifikasi tugas SENGAJA tetap dinamespace per KELAS
+        // (bukan per akun) karena memang data ini dibagikan bersama ke satu kelas.
         const KELAS_AKTIF_SISWA = 'XII_TKJ_3';
         function getTasksSiswa() {
             const raw = localStorage.getItem(`tasks_${KELAS_AKTIF_SISWA}`);
@@ -1929,7 +1949,7 @@
            setelah lonceng dibuka. Sumber datanya dipakai bareng dgn notif
            toast (notif_tugas_XII_TKJ_3) & status isViewedByStudent tugas,
            jadi tidak perlu data baru dari Dashboard Guru. */
-        const KEY_BELL_SEEN = `lonceng_dilihat_${KELAS_AKTIF_SISWA}`;
+        const KEY_BELL_SEEN = `lonceng_dilihat_${ID_SISWA_AKTIF}`;
 
         function getBellSeenIds() {
             const raw = localStorage.getItem(KEY_BELL_SEEN);
@@ -3013,7 +3033,7 @@
 
         /* ================= 3. RIWAYAT PENGUMPULAN ================= */
         function getRiwayatPengumpulan() {
-            return JSON.parse(localStorage.getItem('riwayat_pengumpulan_XII_TKJ_3') || '[]');
+            return JSON.parse(localStorage.getItem(`riwayat_pengumpulan_${ID_SISWA_AKTIF}`) || '[]');
         }
 
         function tambahRiwayatPengumpulan(judul, tipe, waktuKirim, nowObj, taskId) {
@@ -3030,7 +3050,7 @@
                 taskId: taskId || null
             });
 
-            localStorage.setItem('riwayat_pengumpulan_XII_TKJ_3', JSON.stringify(riwayat));
+            localStorage.setItem(`riwayat_pengumpulan_${ID_SISWA_AKTIF}`, JSON.stringify(riwayat));
             renderRiwayatPengumpulan();
         }
 
@@ -3088,7 +3108,7 @@
             const riwayat = getRiwayatPengumpulan();
             const riwayatBaru = riwayat.filter(r => !r.taskId || idTugasAktif.has(r.taskId));
             if (riwayatBaru.length !== riwayat.length) {
-                localStorage.setItem('riwayat_pengumpulan_XII_TKJ_3', JSON.stringify(riwayatBaru));
+                localStorage.setItem(`riwayat_pengumpulan_${ID_SISWA_AKTIF}`, JSON.stringify(riwayatBaru));
                 renderRiwayatPengumpulan();
             }
         }
@@ -3264,7 +3284,7 @@
         // otomatis ikut ter-update (tugas baru langsung muncul, tugas ditarik langsung
         // dapat notif), tanpa siswa perlu me-refresh halaman secara manual.
         window.addEventListener('storage', (e) => {
-            if (e.key === `tasks_${KELAS_AKTIF_SISWA}` || e.key === 'riwayat_pengumpulan_XII_TKJ_3') {
+            if (e.key === `tasks_${KELAS_AKTIF_SISWA}` || e.key === `riwayat_pengumpulan_${ID_SISWA_AKTIF}`) {
                 sinkronkanRiwayatDenganTugasAktif();
                 renderRiwayatPengumpulan();
                 renderLiveTaskContent();
@@ -3401,8 +3421,8 @@
              fitur Tugas & Catatan di file ini.
            ============================================================ */
 
-        const NAMA_PEMAIN_QUIZ = 'AHMAD FAKHRI AL FARISI';
-        const KEY_QUIZ_DATA = `quiz_data_${KELAS_AKTIF_SISWA}`;
+        const NAMA_PEMAIN_QUIZ = NAMA_SISWA_AKTIF;
+        const KEY_QUIZ_DATA = `quiz_data_${ID_SISWA_AKTIF}`;
         const AVATAR_DEFAULT_QUIZ = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120';
 
         // Ambil foto profil siswa yang sedang aktif SEKARANG (biar snapshot yang
@@ -3475,8 +3495,8 @@
              berlebih, supaya variasi kecil (kapital, spasi, titik)
              tetap dianggap benar.
            ============================================================ */
-        const KEY_QUIZ_ESSAY_DATA = `quiz_essay_data_${KELAS_AKTIF_SISWA}`;
-        const KEY_QUIZ_ESSAY_SEEN_IDS = `quiz_essay_seen_ids_${KELAS_AKTIF_SISWA}`;
+        const KEY_QUIZ_ESSAY_DATA = `quiz_essay_data_${ID_SISWA_AKTIF}`;
+        const KEY_QUIZ_ESSAY_SEEN_IDS = `quiz_essay_seen_ids_${ID_SISWA_AKTIF}`;
 
         const QUIZ_CONFIG_ESSAY = {
             easy:   { label: 'Easy',   poinDasar: 15, waktu: 40, warnaBadge: 'bg-emerald-100 text-emerald-700', warnaBar: 'bg-emerald-500' },
@@ -4567,7 +4587,7 @@
            ini) yang skornya melampaui skor terbaik kita di level tsb.
            ============================================================ */
 
-        const KEY_QUIZ_SEEN_IDS = `quiz_seen_ids_${KELAS_AKTIF_SISWA}`;
+        const KEY_QUIZ_SEEN_IDS = `quiz_seen_ids_${ID_SISWA_AKTIF}`;
 
         function getSeenIdsQuiz() {
             const raw = localStorage.getItem(KEY_QUIZ_SEEN_IDS);
@@ -4713,18 +4733,18 @@
            ../static/img/.
            ============================================================ */
 
-        const KEY_BORDER_TERPAKAI = `border_terpakai_${KELAS_AKTIF_SISWA}`;
+        const KEY_BORDER_TERPAKAI = `border_terpakai_${ID_SISWA_AKTIF}`;
         // Key & skema data di bawah harus SAMA PERSIS dengan yang dipakai Dashboard
         // Guru (lihat keyPrestasiKelas() & renderKonfirmasiPrestasi() di dashboard_guru.html),
         // supaya prestasi yang diajukan siswa di sini benar2 muncul & bisa dikonfirmasi
         // oleh guru manapun di sana, dan status/nama guru penyetuju bisa kebaca balik di sini.
-        const KEY_PRESTASI_SISWA = `pengajuan_prestasi_${KELAS_AKTIF_SISWA}`;
+        const KEY_PRESTASI_SISWA = `pengajuan_prestasi_${ID_SISWA_AKTIF}`;
 
         // Border prestasi MAUPUN quiz TIDAK auto-terbuka lagi hanya karena poin
         // sudah cukup — siswa harus klik tombol "Klaim Border" secara manual dulu.
         // Key ini menyimpan daftar id semua border (prestasi & quiz) yang sudah
         // pernah diklaim.
-        const KEY_BORDER_DIKLAIM = `border_diklaim_${KELAS_AKTIF_SISWA}`;
+        const KEY_BORDER_DIKLAIM = `border_diklaim_${ID_SISWA_AKTIF}`;
 
         // Tingkatan/tier generik yang dipakai berulang di tiap level quiz.
         const BORDER_TIER_TEMPLATE = [
@@ -5148,7 +5168,7 @@
            id prestasi, lalu setiap kali data prestasi berubah (event 'storage', polling,
            tab aktif lagi) kita bandingkan: kalau status barusan berubah jadi 'disetujui'
            atau 'ditolak', munculkan toast bernama guru & pesan yang diwarnai hijau/merah. */
-        const KEY_STATUS_PRESTASI_TERLIHAT = `status_prestasi_terlihat_${KELAS_AKTIF_SISWA}`;
+        const KEY_STATUS_PRESTASI_TERLIHAT = `status_prestasi_terlihat_${ID_SISWA_AKTIF}`;
 
         function getStatusPrestasiTerlihat() {
             try {
