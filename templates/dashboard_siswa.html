@@ -4647,7 +4647,9 @@
             // kelihatan di leaderboard siswa yang sedang login.
             let daftar = await ambilLeaderboardGabungan('pg', quizFilterLeaderboardAktif, data);
 
-            daftar.sort((a, b) => b.skor - a.skor);
+            // Skor sama -> yang lebih DULU mencapai skor itu (tanggal lebih awal)
+            // naik lebih tinggi, bukan urutan acak dari hasil gabungan server.
+            daftar.sort((a, b) => b.skor - a.skor || new Date(a.tanggal) - new Date(b.tanggal));
             daftar = daftar.slice(0, 10);
 
             const container = document.getElementById('quiz-leaderboard-list');
@@ -4792,7 +4794,9 @@
             // bukan cuma entri lokal milik akun ini.
             let daftar = await ambilLeaderboardGabungan('essay', quizFilterLeaderboardEssayAktif, data);
 
-            daftar.sort((a, b) => b.skor - a.skor);
+            // Sama seperti leaderboard Pilihan Ganda: skor sama -> yang lebih
+            // dulu mencapainya naik lebih tinggi.
+            daftar.sort((a, b) => b.skor - a.skor || new Date(a.tanggal) - new Date(b.tanggal));
             daftar = daftar.slice(0, 10);
 
             const container = document.getElementById('quiz-leaderboard-essay-list');
@@ -5084,7 +5088,7 @@
             const data = getQuizData();
             const daftarDummy = (data.leaderboard || [])
                 .filter(e => e.dummy)
-                .sort((a, b) => b.skor - a.skor);
+                .sort((a, b) => b.skor - a.skor || new Date(a.tanggal) - new Date(b.tanggal));
 
             if (!daftarDummy.length) {
                 container.innerHTML = `<p class="text-[10px] text-slate-400 text-center py-2">Belum ada akun dummy. Tambahkan lewat form di atas.</p>`;
@@ -5936,11 +5940,43 @@
         // (bisa beda dari kategori asli border itu — lihat OVERRIDE_SUMBER_POIN_BORDER).
         // Border quiz yang tidak terikat 1 level spesifik (mis. border pink saat ini)
         // pakai totalPoin keseluruhan (akumulasi semua level), bukan totalPoinByLevel.
+        //
+        // BUG YANG DIPERBAIKI (infinite loop / "Maximum call stack size exceeded"):
+        // fungsi ini dulu manggil getQuizData() -- padahal getQuizData() PUNYA
+        // langkah self-heal (sinkronkanLeaderboardDenganPoinTerbaik) yang manggil
+        // getBorderTerpakai() untuk snapshot border ke entri leaderboard. Kalau
+        // siswa BELUM PERNAH pilih border manual (akun baru pertama kali main,
+        // mis. Syam pas login pertama di browser/incognito baru), getBorderTerpakai()
+        // jatuh ke getBorderTertinggiTerbuka() yang mengecek SEMUA border --
+        // termasuk border "Kupu-kupu Prestasi" yang sumber poinnya di-override ke
+        // 'quiz' (lihat OVERRIDE_SUMBER_POIN_BORDER) -- yang lewat sini lagi manggil
+        // getQuizData() dari awal. Hasilnya muter balik ke diri sendiri terus-terusan
+        // sampai stack overflow, PERSIS pas siswa baru saja selesai main quiz (saat
+        // itulah bestByLevel > 0 sehingga self-heal ini aktif). Efeknya: skor SEMPAT
+        // kesimpen ke localStorage, tapi tiap kali dicoba ditampilkan ulang
+        // (renderMenuQuiz -> getQuizData) fungsi itu crash duluan sebelum sempat
+        // update angka di layar -- kelihatan seperti "poin ga kecatat" padahal
+        // sebenarnya kesimpen, cuma ga bisa ditampilkan. Akun yang SUDAH PERNAH
+        // pilih/pakai border (mis. akun dev yang sering dipakai testing) tidak
+        // kena ini karena getBorderTerpakai() sudah punya jalan pintas (border
+        // tersimpan valid) sebelum sempat masuk ke getBorderTertinggiTerbuka().
+        // Fix: baca poin quiz langsung dari localStorage (bacaMentahDataQuiz),
+        // BUKAN lewat getQuizData() -- cukup buat baca angka poin, tidak perlu
+        // ikut memicu self-heal border yang jadi sumber muter baliknya.
+        function bacaMentahDataQuiz() {
+            try {
+                const raw = localStorage.getItem(KEY_QUIZ_DATA);
+                return raw ? JSON.parse(raw) : { totalPoin: 0, totalPoinByLevel: { easy: 0, medium: 0, hard: 0 } };
+            } catch (e) {
+                return { totalPoin: 0, totalPoinByLevel: { easy: 0, medium: 0, hard: 0 } };
+            }
+        }
+
         function getPoinAcuanBorder(border) {
             const sumber = sumberPoinBorder(border);
             if (sumber === 'prestasi') return getTotalPoinPrestasiDisetujui();
             if (sumber === 'quiz') {
-                const data = getQuizData();
+                const data = bacaMentahDataQuiz();
                 if (border.level) return (data.totalPoinByLevel && data.totalPoinByLevel[border.level]) || 0;
                 return data.totalPoin || 0;
             }
