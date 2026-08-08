@@ -1,5 +1,6 @@
 import uuid
 import os
+import json
 import random
 import string
 import smtplib
@@ -84,11 +85,44 @@ devices = {}
 #   2) Leaderboard digabung dari SEMUA akun siswa yang pernah menyimpan
 #      data, jadi kalau siswa A dapat peringkat 1, siswa B yang login
 #      (di perangkat manapun) bisa lihat itu.
-# CATATAN: ini masih penyimpanan in-memory (hilang kalau server direstart),
-# sama seperti dict `users` dan `devices` di atas. Untuk produksi sungguhan,
+# CATATAN: dulu ini murni in-memory (hilang kalau server direstart) --
+# gara-gara Flask jalan dengan debug=True, reloader-nya otomatis me-restart
+# proses SETIAP KALI ada file source yang berubah. Efeknya: begitu ada
+# siswa lain login/main quiz saat developer lagi ngedit-ngedit file,
+# quiz_store keburu kosong lagi sebelum sempat digabung -- makanya
+# leaderboard "gabungan semua siswa" kelihatannya cuma nampilin diri
+# sendiri padahal logic gabungnya sendiri sudah benar. Sekarang
+# quiz_store dibaca dari & ditulis ke file JSON di disk (lihat
+# _muat_quiz_store / _simpan_quiz_store) supaya progres semua siswa tetap
+# ada walau server restart. Untuk produksi sungguhan, tetap sebaiknya
 # ganti dengan tabel database (mis. quiz_scores, quiz_leaderboard_entries).
 # ----------------------------------------------------
-quiz_store = {}
+QUIZ_STORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'quiz_store.json')
+
+
+def _muat_quiz_store():
+    """Baca quiz_store dari file JSON di disk (kalau ada). Dipanggil sekali
+    saat modul ini di-load, termasuk setiap kali reloader Flask restart
+    proses -- jadi data siswa yang sudah pernah tersimpan tidak hilang."""
+    try:
+        with open(QUIZ_STORE_PATH, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _simpan_quiz_store():
+    """Tulis quiz_store saat ini ke file JSON di disk. Dipanggil setiap
+    kali ada perubahan (lihat api_quiz_save) supaya data langsung awet,
+    tidak nunggu server dimatikan dengan rapi dulu."""
+    os.makedirs(os.path.dirname(QUIZ_STORE_PATH), exist_ok=True)
+    tmp_path = QUIZ_STORE_PATH + '.tmp'
+    with open(tmp_path, 'w', encoding='utf-8') as f:
+        json.dump(quiz_store, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, QUIZ_STORE_PATH)  # atomic, hindari file JSON korup kalau nulis lagi ketiban proses lain
+
+
+quiz_store = _muat_quiz_store()
 
 
 def _default_quiz_blob(jenis):
@@ -609,6 +643,7 @@ def api_quiz_save():
 
     username = session['user']['username']
     quiz_store.setdefault(username, {})[jenis] = data
+    _simpan_quiz_store()
     return jsonify(success=True)
 
 
