@@ -606,11 +606,34 @@ def _cek_sesi_masih_cocok(expected_username):
     return True, None, None
 
 
+def _kunci_slot_quiz(username, slot_id):
+    """Bikin kunci penyimpanan di quiz_store untuk SATU 'slot' progres quiz.
+
+    Kenapa perlu 'slot' (bukan langsung pakai username akun Flask)?
+    Fitur "Akun Dummy (Profil Login)" di dashboard cuma ganti NAMA/tampilan
+    di browser -- akun yang BENAR-BENAR login ke Flask (session) tetap 1
+    akun yang sama. Kalau kunci penyimpanan cuma pakai username akun asli,
+    maka 2 profil dummy yang dipakai gantian di akun asli yang sama akan
+    SALING TIMPA di server (dummy B main -> nimpa slot dummy A), padahal di
+    localStorage browser masing-masing dummy sudah punya "kotak" sendiri
+    (dinamespace dari ID_SISWA_AKTIF). slot_id di sini adalah ID_SISWA_AKTIF
+    yang dikirim dari client -- sama dengan username akun asli kalau memang
+    tidak sedang "coba sebagai akun dummy", atau id profil dummy kalau
+    sedang aktif. Hasilnya tiap profil (akun asli maupun tiap akun dummy)
+    dapat slot server sendiri-sendiri, tapi tetap di balik 1 login Flask
+    yang sudah divalidasi _cek_sesi_masih_cocok -- jadi bukan celah keamanan
+    baru, cuma granularitas penyimpanan.
+    """
+    slot_id = (slot_id or '').strip() or username
+    return f"{username}::{slot_id}"
+
+
 @app.route('/api/quiz/load', methods=['GET'])
 def api_quiz_load():
-    """Ambil data quiz milik akun yang sedang login (dipanggil saat
-    dashboard siswa dibuka, supaya progress akun ini ikut nyambung
-    walau login dari perangkat/browser lain)."""
+    """Ambil data quiz milik SLOT yang sedang aktif (akun asli, atau profil
+    dummy yang sedang dipakai) di akun yang sedang login. Dipanggil saat
+    dashboard siswa dibuka, supaya progress slot ini ikut nyambung walau
+    dibuka dari perangkat/browser lain."""
     ok, err_resp, err_code = _cek_sesi_masih_cocok(request.args.get('expected_username'))
     if not ok:
         return err_resp, err_code
@@ -620,16 +643,18 @@ def api_quiz_load():
         return jsonify(success=False, message='Jenis quiz tidak valid.'), 400
 
     username = session['user']['username']
-    blob = quiz_store.get(username, {}).get(jenis)
+    kunci = _kunci_slot_quiz(username, request.args.get('slot_id'))
+    blob = quiz_store.get(kunci, {}).get(jenis)
     return jsonify(success=True, data=blob)  # null kalau memang belum pernah main/simpan
 
 
 @app.route('/api/quiz/save', methods=['POST'])
 def api_quiz_save():
-    """Simpan data quiz milik akun yang sedang login ke server. Dipanggil
-    setiap kali skor/leaderboard lokal di-update (pengganti localStorage
-    sebagai sumber utama, biar tersimpan per akun & bisa dibaca akun lain
-    lewat endpoint leaderboard-global di bawah)."""
+    """Simpan data quiz milik SLOT yang sedang aktif (lihat _kunci_slot_quiz)
+    ke server. Dipanggil setiap kali skor/leaderboard lokal di-update
+    (pengganti localStorage sebagai sumber utama, biar tersimpan per slot &
+    bisa dibaca slot/akun lain lewat endpoint leaderboard-global di
+    bawah)."""
     body = request.get_json(silent=True) or {}
 
     ok, err_resp, err_code = _cek_sesi_masih_cocok(body.get('expected_username'))
@@ -642,7 +667,8 @@ def api_quiz_save():
         return jsonify(success=False, message='Data quiz tidak valid.'), 400
 
     username = session['user']['username']
-    quiz_store.setdefault(username, {})[jenis] = data
+    kunci = _kunci_slot_quiz(username, body.get('slot_id'))
+    quiz_store.setdefault(kunci, {})[jenis] = data
     _simpan_quiz_store()
     return jsonify(success=True)
 

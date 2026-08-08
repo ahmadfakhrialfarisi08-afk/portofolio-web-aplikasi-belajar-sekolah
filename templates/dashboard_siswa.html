@@ -3922,10 +3922,15 @@
         // tetap jadi cache lokal biar quiz tetap kerasa instan/responsif.
         // ============================================================
         function simpanQuizKeServer(jenis, data) {
+            // slot_id: ID_SISWA_AKTIF (akun asli, ATAU id profil dummy kalau
+            // sedang "coba sebagai akun dummy"). Ini yang bikin tiap profil
+            // dummy punya slot penyimpanan sendiri di server -- kalau tidak
+            // dikirim, semua profil dummy di 1 akun asli yang sama bakal
+            // saling timpa (lihat _kunci_slot_quiz di app.py).
             fetch('/api/quiz/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ jenis, data, expected_username: USERNAME_SISWA_ASLI })
+                body: JSON.stringify({ jenis, data, expected_username: USERNAME_SISWA_ASLI, slot_id: ID_SISWA_AKTIF })
             })
                 .then(res => res.json())
                 .then(hasil => {
@@ -3957,7 +3962,7 @@
         async function sinkronkanQuizDenganServer() {
             for (const jenis of ['pg', 'essay']) {
                 try {
-                    const res = await fetch(`/api/quiz/load?jenis=${jenis}&expected_username=${encodeURIComponent(USERNAME_SISWA_ASLI)}`);
+                    const res = await fetch(`/api/quiz/load?jenis=${jenis}&expected_username=${encodeURIComponent(USERNAME_SISWA_ASLI)}&slot_id=${encodeURIComponent(ID_SISWA_AKTIF)}`);
                     const hasil = await res.json();
                     if (hasil && hasil.session_mismatch) { tampilkanPeringatanSesiBerubah(); return; }
                     if (hasil && hasil.success && hasil.data) {
