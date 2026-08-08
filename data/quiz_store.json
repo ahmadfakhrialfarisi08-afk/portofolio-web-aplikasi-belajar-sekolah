@@ -4,11 +4,26 @@
       "bestByLevel": {
         "easy": 45,
         "hard": 0,
-        "medium": 0
+        "medium": 145
       },
       "leaderboard": [
         {
+          "badgeDev": "",
+          "benar": null,
+          "border": "../static/img/border_pemula.jpg",
+          "borderTitle": "🔰 Pemula",
+          "efekNama": "",
+          "foto": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120",
           "id": "1786183177906_7janb8",
+          "kelas": "XII TKJ 3/TAV",
+          "level": "easy",
+          "nama": "SYAM KHOERATUL MUKMIN",
+          "skor": 45,
+          "tanggal": "2026-08-08T09:59:37.906Z",
+          "total": null
+        },
+        {
+          "id": "1786200216559_yhl2n3",
           "nama": "SYAM KHOERATUL MUKMIN",
           "kelas": "XII TKJ 3/TAV",
           "foto": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120",
@@ -16,18 +31,18 @@
           "borderTitle": "🔰 Pemula",
           "efekNama": "",
           "badgeDev": "",
-          "level": "easy",
-          "skor": 45,
-          "benar": null,
-          "total": null,
-          "tanggal": "2026-08-08T09:59:37.906Z"
+          "level": "medium",
+          "skor": 145,
+          "benar": 5,
+          "total": 5,
+          "tanggal": "2026-08-08T14:43:36.559Z"
         }
       ],
-      "totalPoin": 45,
+      "totalPoin": 190,
       "totalPoinByLevel": {
         "easy": 45,
         "hard": 0,
-        "medium": 0
+        "medium": 145
       }
     }
   }

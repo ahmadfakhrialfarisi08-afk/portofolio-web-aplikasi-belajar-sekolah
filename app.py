@@ -768,4 +768,11 @@ def logout():
 # RUN APP
 # ----------------------------------------------------
 if __name__ == '__main__':
-    app.run(debug=True)
+    # threaded=True: penting supaya server bisa proses BEBERAPA request
+    # sekaligus (mis. beberapa siswa main quiz bersamaan, atau beberapa
+    # request /api/quiz/save menumpuk cepat saat main level Hard yang
+    # waktunya singkat). Tanpa ini, Flask dev server default cuma proses
+    # 1 request pada satu waktu -- kalau ada 1 request yang lambat/nyangkut,
+    # SEMUA request lain (termasuk dari siswa lain) ikut antre "pending"
+    # sampai request pertama itu selesai, walau sebenarnya tidak ada error.
+    app.run(debug=True, threaded=True)
