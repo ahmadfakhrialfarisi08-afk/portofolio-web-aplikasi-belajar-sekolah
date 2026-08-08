@@ -3921,22 +3921,43 @@
         // Dikirim "fire-and-forget" (tidak menghalangi UI) -- localStorage
         // tetap jadi cache lokal biar quiz tetap kerasa instan/responsif.
         // ============================================================
-        function simpanQuizKeServer(jenis, data) {
+        function simpanQuizKeServer(jenis, data, percobaanUlang) {
             // slot_id: ID_SISWA_AKTIF (akun asli, ATAU id profil dummy kalau
             // sedang "coba sebagai akun dummy"). Ini yang bikin tiap profil
             // dummy punya slot penyimpanan sendiri di server -- kalau tidak
             // dikirim, semua profil dummy di 1 akun asli yang sama bakal
             // saling timpa (lihat _kunci_slot_quiz di app.py).
+            //
+            // BUG YANG DIPERBAIKI: request ini dulu "fire-and-forget" TANPA
+            // keepalive & TANPA retry -- kalau tab langsung pindah halaman
+            // (mis. klik "kembali ke beranda" langsung setelah selesai quiz)
+            // atau server sempat restart di tengah jalan (lihat catatan
+            // debug=True di app.py: reloader Flask auto-restart proses tiap
+            // ada file berubah), request ini bisa ke-drop diam-diam. Efeknya:
+            // skor sudah kesimpen di localStorage (jadi kelihatan di layar
+            // hasil quiz), tapi TIDAK PERNAH nyampe ke server -- sehingga
+            // (a) hilang lagi begitu sinkronkanQuizDenganServer() menarik
+            // data server yang masih lama, dan (b) tidak pernah muncul di
+            // leaderboard gabungan buat siswa lain. keepalive:true bikin
+            // request tetap dicoba jalan walau halaman langsung ditinggal,
+            // dan retry 1x menutup celah kalau percobaan pertama gagal
+            // (mis. pas server pas restart).
             fetch('/api/quiz/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                keepalive: true,
                 body: JSON.stringify({ jenis, data, expected_username: USERNAME_SISWA_ASLI, slot_id: ID_SISWA_AKTIF })
             })
                 .then(res => res.json())
                 .then(hasil => {
                     if (hasil && hasil.session_mismatch) tampilkanPeringatanSesiBerubah();
                 })
-                .catch(() => { /* offline/gagal kirim -> data tetap aman di localStorage */ });
+                .catch(() => {
+                    if (!percobaanUlang) {
+                        setTimeout(() => simpanQuizKeServer(jenis, data, true), 1500);
+                    }
+                    /* sudah retry & masih gagal juga -> data tetap aman di localStorage */
+                });
         }
 
         // Ditampilkan kalau server nolak simpan karena akun yang login SEKARANG
@@ -3959,15 +3980,85 @@
         // Tarik data quiz milik akun yang sedang login dari server (dipanggil
         // sekali saat dashboard dibuka) supaya progress akun ini tetap nyambung
         // walau sebelumnya terakhir main di perangkat/browser lain.
+        // Gabungkan data quiz LOKAL (localStorage) dengan data dari SERVER,
+        // ambil yang lebih tinggi per level -- bukan timpa mentah-mentah.
+        //
+        // BUG YANG DIPERBAIKI: sebelum ini, sinkronkanQuizDenganServer()
+        // langsung `localStorage.setItem(key, JSON.stringify(hasil.data))`
+        // begitu server balas -- kalau kebetulan server BELUM sempat punya
+        // skor terbaru (mis. request simpanQuizKeServer sebelumnya masih di
+        // jalan / sempat gagal & belum retry), data lokal yang sudah BENAR
+        // (baru saja selesai main quiz) ikut KETIMPA data server yang masih
+        // lama. Ini yang bikin "abis quiz, poinnya ilang lagi begitu halaman
+        // di-reload". Dengan merge (ambil skor tertinggi), data lokal yang
+        // lebih baru tidak akan pernah kalah sama data server yang basi --
+        // dan kalau hasil gabungan ternyata lebih tinggi dari punya server,
+        // langsung dikirim ulang supaya server (dan siswa lain) ikut update.
+        function gabungkanDataQuiz(dataLokal, dataServer, adaTotalPoin) {
+            if (!dataServer) return dataLokal;
+            if (!dataLokal) return dataServer;
+
+            const hasil = { ...dataServer };
+
+            if (adaTotalPoin) {
+                hasil.totalPoin = Math.max(dataLokal.totalPoin || 0, dataServer.totalPoin || 0);
+                hasil.totalPoinByLevel = {};
+                ['easy', 'medium', 'hard'].forEach(level => {
+                    hasil.totalPoinByLevel[level] = Math.max(
+                        (dataLokal.totalPoinByLevel || {})[level] || 0,
+                        (dataServer.totalPoinByLevel || {})[level] || 0
+                    );
+                });
+            }
+
+            hasil.bestByLevel = {};
+            ['easy', 'medium', 'hard'].forEach(level => {
+                hasil.bestByLevel[level] = Math.max(
+                    (dataLokal.bestByLevel || {})[level] || 0,
+                    (dataServer.bestByLevel || {})[level] || 0
+                );
+            });
+
+            // Leaderboard: entri siswa LAIN ikut versi server (server = gabungan
+            // semua siswa, lokal cuma tau dirinya sendiri). Entri milik SAYA
+            // ambil yang skornya lebih tinggi antara lokal vs server.
+            const gabunganLB = new Map();
+            (dataServer.leaderboard || []).forEach(e => gabunganLB.set(`${e.nama}||${e.level}`, e));
+            (dataLokal.leaderboard || []).forEach(e => {
+                const kunci = `${e.nama}||${e.level}`;
+                const existing = gabunganLB.get(kunci);
+                if (!existing || e.skor > existing.skor) gabunganLB.set(kunci, e);
+            });
+            hasil.leaderboard = Array.from(gabunganLB.values());
+
+            return hasil;
+        }
+
         async function sinkronkanQuizDenganServer() {
             for (const jenis of ['pg', 'essay']) {
                 try {
                     const res = await fetch(`/api/quiz/load?jenis=${jenis}&expected_username=${encodeURIComponent(USERNAME_SISWA_ASLI)}&slot_id=${encodeURIComponent(ID_SISWA_AKTIF)}`);
                     const hasil = await res.json();
                     if (hasil && hasil.session_mismatch) { tampilkanPeringatanSesiBerubah(); return; }
-                    if (hasil && hasil.success && hasil.data) {
+                    if (hasil && hasil.success) {
                         const key = jenis === 'essay' ? KEY_QUIZ_ESSAY_DATA : KEY_QUIZ_DATA;
-                        localStorage.setItem(key, JSON.stringify(hasil.data));
+                        let dataLokal = null;
+                        try {
+                            const raw = localStorage.getItem(key);
+                            dataLokal = raw ? JSON.parse(raw) : null;
+                        } catch (e) { /* data lokal korup -> anggap tidak ada, pakai punya server */ }
+
+                        const gabungan = gabungkanDataQuiz(dataLokal, hasil.data, jenis === 'pg');
+                        if (gabungan) {
+                            localStorage.setItem(key, JSON.stringify(gabungan));
+                            // Kalau hasil gabungan beda dari yang server tau (berarti
+                            // lokal tadinya lebih unggul), kirim ulang biar server &
+                            // siswa lain ikut ke-update -- nutup celah save yang
+                            // sempat gagal/ke-drop sebelumnya.
+                            if (JSON.stringify(gabungan) !== JSON.stringify(hasil.data)) {
+                                simpanQuizKeServer(jenis, gabungan);
+                            }
+                        }
                     }
                 } catch (e) { /* offline -> lanjut pakai data lokal yang ada */ }
             }
