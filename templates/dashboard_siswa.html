@@ -4240,150 +4240,183 @@
         function selesaikanQuizEssay() {
             const { level, skor, benar, soal } = quizState;
             const cfg = QUIZ_CONFIG_ESSAY[level];
-            const data = getQuizEssayData();
 
-            data.bestByLevel = data.bestByLevel || { easy: 0, medium: 0, hard: 0 };
-            if (skor > (data.bestByLevel[level] || 0)) data.bestByLevel[level] = skor;
-
-            // Leaderboard Essay: sistemnya SAMA persis dengan leaderboard Pilihan
-            // Ganda -- cuma menyimpan SATU entri per siswa per level (skor
-            // terbaiknya), lengkap dengan snapshot foto/border/title/efek nama.
-            const borderAktif = getBorderTerpakai();
-            data.leaderboard = data.leaderboard || [];
-            const entriLamaSaya = data.leaderboard.find(e => e.nama === NAMA_PEMAIN_QUIZ && e.level === level);
-
-            const entriBaru = {
-                id: entriLamaSaya ? entriLamaSaya.id : `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-                nama: NAMA_PEMAIN_QUIZ,
-                kelas: getKelasAktifQuiz(),
-                foto: getFotoProfilAktifQuiz(),
-                border: borderAktif.file,
-                borderTitle: borderAktif.rank,
-                efekNama: getEfekNamaClass(borderAktif),
-                badgeDev: getBadgeDevHtml(borderAktif),
-                level,
-                skor,
-                benar,
-                total: soal.length,
-                tanggal: new Date().toISOString()
-            };
-
-            if (!entriLamaSaya) {
-                data.leaderboard.push(entriBaru);
-            } else if (skor > entriLamaSaya.skor) {
-                Object.assign(entriLamaSaya, entriBaru);
-            }
-
-            saveQuizEssayData(data);
-            tandaiIdSudahDilihatQuizEssay(entriBaru.id); // entri sendiri, jangan ikut memicu notif "ditikung"
-            renderLeaderboardQuizEssay();
-
+            // LANGKAH 1 (WAJIB, PALING DULU) -- lihat komentar panjang di
+            // selesaikanQuiz() versi Pilihan Ganda: angka hasil quiz harus
+            // selalu ke-render duluan sebelum simpan progres/leaderboard,
+            // supaya layar hasil tidak blank kalau ada error di langkah 2.
             const persen = soal.length ? benar / soal.length : 0;
             document.getElementById('quiz-result-icon').innerText = persen >= 0.8 ? '🏆' : (persen >= 0.5 ? '🥈' : '💪');
             document.getElementById('quiz-result-subtitle').innerText = persen >= 0.8 ? 'Luar biasa, kamu jagoan quiz!' : (persen >= 0.5 ? 'Bagus, terus tingkatkan lagi!' : 'Tetap semangat, coba lagi yuk!');
             document.getElementById('quiz-result-benar').innerText = `${benar}/${soal.length}`;
             document.getElementById('quiz-result-poin').innerText = String(skor);
             document.getElementById('quiz-result-level').innerText = `${cfg.label} · Essay`;
-
             tampilkanViewQuiz('result');
+
+            // LANGKAH 2: simpan progres & leaderboard, dibungkus try/catch
+            // supaya error di sini tidak bikin layar hasil (langkah 1) blank.
+            try {
+                const data = getQuizEssayData();
+
+                data.bestByLevel = data.bestByLevel || { easy: 0, medium: 0, hard: 0 };
+                if (skor > (data.bestByLevel[level] || 0)) data.bestByLevel[level] = skor;
+
+                // Leaderboard Essay: sistemnya SAMA persis dengan leaderboard Pilihan
+                // Ganda -- cuma menyimpan SATU entri per siswa per level (skor
+                // terbaiknya), lengkap dengan snapshot foto/border/title/efek nama.
+                const borderAktif = getBorderTerpakai();
+                data.leaderboard = data.leaderboard || [];
+                const entriLamaSaya = data.leaderboard.find(e => e.nama === NAMA_PEMAIN_QUIZ && e.level === level);
+
+                const entriBaru = {
+                    id: entriLamaSaya ? entriLamaSaya.id : `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                    nama: NAMA_PEMAIN_QUIZ,
+                    kelas: getKelasAktifQuiz(),
+                    foto: getFotoProfilAktifQuiz(),
+                    border: borderAktif.file,
+                    borderTitle: borderAktif.rank,
+                    efekNama: getEfekNamaClass(borderAktif),
+                    badgeDev: getBadgeDevHtml(borderAktif),
+                    level,
+                    skor,
+                    benar,
+                    total: soal.length,
+                    tanggal: new Date().toISOString()
+                };
+
+                if (!entriLamaSaya) {
+                    data.leaderboard.push(entriBaru);
+                } else if (skor > entriLamaSaya.skor) {
+                    Object.assign(entriLamaSaya, entriBaru);
+                }
+
+                saveQuizEssayData(data);
+                tandaiIdSudahDilihatQuizEssay(entriBaru.id); // entri sendiri, jangan ikut memicu notif "ditikung"
+                renderLeaderboardQuizEssay();
+            } catch (err) {
+                console.error('selesaikanQuizEssay: gagal simpan progres/leaderboard (hasil quiz di layar tetap aman):', err);
+            }
         }
 
         function selesaikanQuiz() {
             const { level, skor, benar, soal } = quizState;
             const cfg = QUIZ_CONFIG[level];
-            const data = getQuizData();
 
-            data.totalPoin = (data.totalPoin || 0) + skor;
-            data.bestByLevel = data.bestByLevel || { easy: 0, medium: 0, hard: 0 };
-            if (skor > (data.bestByLevel[level] || 0)) data.bestByLevel[level] = skor;
-
-            // Akumulasi total poin PER LEVEL (beda dari bestByLevel yang cuma nyimpen
-            // skor tertinggi 1x main) -- ini yang dipakai buat syarat buka Border Quiz,
-            // supaya makin sering & makin bagus main di level itu, poinnya kepakai/
-            // kesinkron ke arah buka border, bukan cuma "mentok" di skor 1x main
-            // (yang max-nya per level memang jauh di bawah 250/500).
-            // Poin SEBELUM ditambah skor sesi ini disimpan dulu, supaya sesudahnya
-            // kita bisa tahu border level ini mana saja yang BARU SAJA jadi cukup
-            // poinnya (buat notif "Selamat! border X siap diklaim").
-            data.totalPoinByLevel = data.totalPoinByLevel || { easy: 0, medium: 0, hard: 0 };
-            const poinLevelSebelum = data.totalPoinByLevel[level] || 0;
-            data.totalPoinByLevel[level] = poinLevelSebelum + skor;
-            const poinLevelSesudah = data.totalPoinByLevel[level];
-
-            // Border level ini yang tadinya BELUM cukup poin, dan sekarang (setelah
-            // skor sesi ini ditambahkan) JADI cukup poin -- ini yang baru "kebuka"
-            // syaratnya & siap diklaim siswa. Border minPoin 0 dilewati karena
-            // memang selalu otomatis terbuka (bukan pencapaian yang perlu diklaim).
-            const borderBaruBisaDiklaim = DAFTAR_BORDER_QUIZ.filter(b =>
-                b.level === level && b.minPoin > 0 &&
-                poinLevelSebelum < b.minPoin && poinLevelSesudah >= b.minPoin
-            );
-
-            // Simpan dulu skor terbaru SEBELUM ambil border, supaya kalau skor ini
-            // baru saja membuka border/title tier berikutnya, entri leaderboard
-            // langsung sinkron pakai border+title yang paling baru itu juga.
-            saveQuizData(data);
-            const borderAktif = getBorderTerpakai();
-
-            data.leaderboard = data.leaderboard || [];
-
-            // Leaderboard cuma menyimpan SATU entri per siswa per level, yaitu
-            // skor terbaiknya. Kalau siswa main ulang & skornya lebih rendah
-            // dari skor terbaik yang sudah tersimpan, skor itu TIDAK ditambah
-            // sebagai baris baru maupun menimpa entri lama -- entri lama
-            // (skor tertinggi) tetap bertahan di leaderboard.
-            const entriLamaSaya = data.leaderboard.find(e => e.nama === NAMA_PEMAIN_QUIZ && e.level === level);
-
-            const entriBaru = {
-                id: entriLamaSaya ? entriLamaSaya.id : `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-                nama: NAMA_PEMAIN_QUIZ,
-                kelas: getKelasAktifQuiz(),
-                foto: getFotoProfilAktifQuiz(),
-                border: borderAktif.file,
-                borderTitle: borderAktif.rank,
-                efekNama: getEfekNamaClass(borderAktif),
-                badgeDev: getBadgeDevHtml(borderAktif),
-                level,
-                skor,
-                benar,
-                total: soal.length,
-                tanggal: new Date().toISOString()
-            };
-
-            if (!entriLamaSaya) {
-                // Belum pernah main quiz level ini -> catat sebagai entri baru.
-                data.leaderboard.push(entriBaru);
-            } else if (skor > entriLamaSaya.skor) {
-                // Skor baru mengalahkan skor terbaik sebelumnya -> entri lama
-                // diganti (bukan ditambah baris baru) supaya leaderboard tetap
-                // cuma menampilkan satu baris berisi skor terbaik siswa ini.
-                Object.assign(entriLamaSaya, entriBaru);
-            }
-            // Kalau skor <= skor terbaik sebelumnya: sengaja tidak melakukan
-            // apa-apa, biar entri lama (poin tertinggi) yang bertahan.
-
-            saveQuizData(data);
-            tandaiIdSudahDilihatQuiz(entriBaru.id); // entri sendiri, jangan ikut memicu notif "ditikung"
-            updateBerandaPoinQuiz();
-            terapkanBorderKeAvatar();
-
-            const persen = benar / soal.length;
+            // ============================================================
+            // LANGKAH 1 (WAJIB, PALING DULU, TIDAK BOLEH GAGAL):
+            // Tampilkan angka hasil quiz (skor, benar/salah, jumlah soal)
+            // duluan, SEBELUM hal-hal lain yang lebih rawan error (simpan ke
+            // localStorage/server, hitung leaderboard, border, notifikasi).
+            // Dulu urutannya kebalik -- kalau salah satu langkah "tambahan" di
+            // bawah situ error/exception, seluruh fungsi berhenti di tengah
+            // jalan SEBELUM sempat isi angka hasil, sehingga layar hasil quiz
+            // muncul kosong/blank (skor, jumlah benar-salah, jumlah soal tidak
+            // pernah ke-render). Dengan urutan baru ini, siswa SELALU lihat
+            // hasil quiz-nya walau ada masalah di bagian lain.
+            // ============================================================
+            const persen = soal.length ? benar / soal.length : 0;
             document.getElementById('quiz-result-icon').innerText = persen >= 0.8 ? '🏆' : (persen >= 0.5 ? '🥈' : '💪');
             document.getElementById('quiz-result-subtitle').innerText = persen >= 0.8 ? 'Luar biasa, kamu jagoan quiz!' : (persen >= 0.5 ? 'Bagus, terus tingkatkan lagi!' : 'Tetap semangat, coba lagi yuk!');
             document.getElementById('quiz-result-benar').innerText = `${benar}/${soal.length}`;
             document.getElementById('quiz-result-poin').innerText = String(skor);
             document.getElementById('quiz-result-level').innerText = cfg.label;
-
             tampilkanViewQuiz('result');
 
-            // Notif "Selamat" kalau ada border baru yang syarat poinnya baru saja
-            // terpenuhi dari sesi quiz ini -- selalu tampil apa pun jumlah border
-            // yang baru bisa diklaim (1 atau lebih, nama-namanya digabung jadi satu).
-            if (borderBaruBisaDiklaim.length > 0) {
-                const daftarNama = borderBaruBisaDiklaim.map(b => b.nama).join(', ');
-                setTimeout(() => {
-                    triggerDynamicIsland(`🎉 Selamat! Border ${daftarNama} siap diklaim!`);
-                }, 600);
+            // ============================================================
+            // LANGKAH 2: simpan progres, update leaderboard, border, & notif.
+            // Dibungkus try/catch supaya kalau ADA yang error di sini, siswa
+            // tetap sudah lihat hasil quiznya (langkah 1 di atas sudah aman),
+            // errornya cuma dicatat ke console buat ditelusuri developer --
+            // TIDAK bikin layar hasil jadi blank lagi.
+            // ============================================================
+            try {
+                const data = getQuizData();
+
+                data.totalPoin = (data.totalPoin || 0) + skor;
+                data.bestByLevel = data.bestByLevel || { easy: 0, medium: 0, hard: 0 };
+                if (skor > (data.bestByLevel[level] || 0)) data.bestByLevel[level] = skor;
+
+                // Akumulasi total poin PER LEVEL (beda dari bestByLevel yang cuma nyimpen
+                // skor tertinggi 1x main) -- ini yang dipakai buat syarat buka Border Quiz,
+                // supaya makin sering & makin bagus main di level itu, poinnya kepakai/
+                // kesinkron ke arah buka border, bukan cuma "mentok" di skor 1x main
+                // (yang max-nya per level memang jauh di bawah 250/500).
+                // Poin SEBELUM ditambah skor sesi ini disimpan dulu, supaya sesudahnya
+                // kita bisa tahu border level ini mana saja yang BARU SAJA jadi cukup
+                // poinnya (buat notif "Selamat! border X siap diklaim").
+                data.totalPoinByLevel = data.totalPoinByLevel || { easy: 0, medium: 0, hard: 0 };
+                const poinLevelSebelum = data.totalPoinByLevel[level] || 0;
+                data.totalPoinByLevel[level] = poinLevelSebelum + skor;
+                const poinLevelSesudah = data.totalPoinByLevel[level];
+
+                // Border level ini yang tadinya BELUM cukup poin, dan sekarang (setelah
+                // skor sesi ini ditambahkan) JADI cukup poin -- ini yang baru "kebuka"
+                // syaratnya & siap diklaim siswa. Border minPoin 0 dilewati karena
+                // memang selalu otomatis terbuka (bukan pencapaian yang perlu diklaim).
+                const borderBaruBisaDiklaim = DAFTAR_BORDER_QUIZ.filter(b =>
+                    b.level === level && b.minPoin > 0 &&
+                    poinLevelSebelum < b.minPoin && poinLevelSesudah >= b.minPoin
+                );
+
+                // Simpan dulu skor terbaru SEBELUM ambil border, supaya kalau skor ini
+                // baru saja membuka border/title tier berikutnya, entri leaderboard
+                // langsung sinkron pakai border+title yang paling baru itu juga.
+                saveQuizData(data);
+                const borderAktif = getBorderTerpakai();
+
+                data.leaderboard = data.leaderboard || [];
+
+                // Leaderboard cuma menyimpan SATU entri per siswa per level, yaitu
+                // skor terbaiknya. Kalau siswa main ulang & skornya lebih rendah
+                // dari skor terbaik yang sudah tersimpan, skor itu TIDAK ditambah
+                // sebagai baris baru maupun menimpa entri lama -- entri lama
+                // (skor tertinggi) tetap bertahan di leaderboard.
+                const entriLamaSaya = data.leaderboard.find(e => e.nama === NAMA_PEMAIN_QUIZ && e.level === level);
+
+                const entriBaru = {
+                    id: entriLamaSaya ? entriLamaSaya.id : `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                    nama: NAMA_PEMAIN_QUIZ,
+                    kelas: getKelasAktifQuiz(),
+                    foto: getFotoProfilAktifQuiz(),
+                    border: borderAktif.file,
+                    borderTitle: borderAktif.rank,
+                    efekNama: getEfekNamaClass(borderAktif),
+                    badgeDev: getBadgeDevHtml(borderAktif),
+                    level,
+                    skor,
+                    benar,
+                    total: soal.length,
+                    tanggal: new Date().toISOString()
+                };
+
+                if (!entriLamaSaya) {
+                    // Belum pernah main quiz level ini -> catat sebagai entri baru.
+                    data.leaderboard.push(entriBaru);
+                } else if (skor > entriLamaSaya.skor) {
+                    // Skor baru mengalahkan skor terbaik sebelumnya -> entri lama
+                    // diganti (bukan ditambah baris baru) supaya leaderboard tetap
+                    // cuma menampilkan satu baris berisi skor terbaik siswa ini.
+                    Object.assign(entriLamaSaya, entriBaru);
+                }
+                // Kalau skor <= skor terbaik sebelumnya: sengaja tidak melakukan
+                // apa-apa, biar entri lama (poin tertinggi) yang bertahan.
+
+                saveQuizData(data);
+                tandaiIdSudahDilihatQuiz(entriBaru.id); // entri sendiri, jangan ikut memicu notif "ditikung"
+                updateBerandaPoinQuiz();
+                terapkanBorderKeAvatar();
+
+                // Notif "Selamat" kalau ada border baru yang syarat poinnya baru saja
+                // terpenuhi dari sesi quiz ini -- selalu tampil apa pun jumlah border
+                // yang baru bisa diklaim (1 atau lebih, nama-namanya digabung jadi satu).
+                if (borderBaruBisaDiklaim.length > 0) {
+                    const daftarNama = borderBaruBisaDiklaim.map(b => b.nama).join(', ');
+                    setTimeout(() => {
+                        triggerDynamicIsland(`🎉 Selamat! Border ${daftarNama} siap diklaim!`);
+                    }, 600);
+                }
+            } catch (err) {
+                console.error('selesaikanQuiz: gagal simpan progres/leaderboard/border (hasil quiz di layar tetap aman):', err);
             }
         }
 

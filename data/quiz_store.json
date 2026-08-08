@@ -1,0 +1,18 @@
+{
+  "syam::syam": {
+    "pg": {
+      "totalPoin": 45,
+      "bestByLevel": {
+        "easy": 45,
+        "medium": 0,
+        "hard": 0
+      },
+      "totalPoinByLevel": {
+        "easy": 45,
+        "medium": 0,
+        "hard": 0
+      },
+      "leaderboard": []
+    }
+  }
+}
