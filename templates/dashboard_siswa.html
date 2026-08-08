@@ -4074,17 +4074,33 @@
         // Ambil leaderboard GABUNGAN semua akun siswa dari server untuk satu
         // level tertentu. Kalau server tidak bisa dihubungi, balik ke entri
         // lokal (data.leaderboard) milik akun ini saja sebagai fallback.
+        //
+        // BUG YANG DIPERBAIKI: request ini dulu cuma dicoba SEKALI -- kalau
+        // gagal (mis. server dev sempat auto-restart di tengah jalan gara-gara
+        // debug=True, lihat catatan panjang soal ini di app.py & tempat lain
+        // di file ini), langsung nyerah dan fallback ke leaderboard LOKAL
+        // (cuma berisi entri milik akun sendiri). Ini yang bikin satu siswa
+        // (mis. yang browsernya kena hiccup pas request ini) leaderboard-nya
+        // kelihatan cuma nampilin dirinya sendiri, padahal siswa lain (yang
+        // requestnya kebetulan mulus) leaderboard-nya normal berisi semua
+        // orang -- backend-nya sendiri sudah benar & sudah dicoba langsung,
+        // datanya memang sudah tergabung di server. Sekarang dicoba 2x (jeda
+        // singkat di antaranya) sebelum benar-benar pasrah ke fallback lokal.
         async function ambilLeaderboardGabungan(jenis, level, dataLokal) {
             let daftar = [];
             let dariServer = false;
-            try {
-                const res = await fetch(`/api/quiz/leaderboard-global?jenis=${jenis}`);
-                const hasil = await res.json();
-                if (hasil && hasil.success) {
-                    daftar = hasil.leaderboard.filter(e => e.level === level);
-                    dariServer = true;
-                }
-            } catch (e) { /* fallback di bawah */ }
+            for (let percobaan = 0; percobaan < 2 && !dariServer; percobaan++) {
+                try {
+                    if (percobaan > 0) await new Promise(r => setTimeout(r, 500));
+                    const res = await fetch(`/api/quiz/leaderboard-global?jenis=${jenis}`);
+                    if (!res.ok) throw new Error(`status ${res.status}`);
+                    const hasil = await res.json();
+                    if (hasil && hasil.success) {
+                        daftar = hasil.leaderboard.filter(e => e.level === level);
+                        dariServer = true;
+                    }
+                } catch (e) { /* coba lagi (kalau masih ada kesempatan), atau fallback di bawah */ }
+            }
 
             if (!dariServer) {
                 daftar = (dataLokal.leaderboard || []).filter(e => e.level === level);

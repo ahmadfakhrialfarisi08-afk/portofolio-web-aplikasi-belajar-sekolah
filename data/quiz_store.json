@@ -1,18 +1,34 @@
 {
   "syam::syam": {
     "pg": {
-      "totalPoin": 45,
       "bestByLevel": {
         "easy": 45,
-        "medium": 0,
-        "hard": 0
+        "hard": 0,
+        "medium": 0
       },
+      "leaderboard": [
+        {
+          "id": "1786183177906_7janb8",
+          "nama": "SYAM KHOERATUL MUKMIN",
+          "kelas": "XII TKJ 3/TAV",
+          "foto": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120",
+          "border": "../static/img/border_pemula.jpg",
+          "borderTitle": "🔰 Pemula",
+          "efekNama": "",
+          "badgeDev": "",
+          "level": "easy",
+          "skor": 45,
+          "benar": null,
+          "total": null,
+          "tanggal": "2026-08-08T09:59:37.906Z"
+        }
+      ],
+      "totalPoin": 45,
       "totalPoinByLevel": {
         "easy": 45,
-        "medium": 0,
-        "hard": 0
-      },
-      "leaderboard": []
+        "hard": 0,
+        "medium": 0
+      }
     }
   }
 }
