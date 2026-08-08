@@ -1912,8 +1912,56 @@
             // sedang tidak aktif (elemennya tetap ada di DOM, cuma disembunyikan).
             if (typeof renderLeaderboardQuiz === 'function') renderLeaderboardQuiz();
 
+            // BUG YANG DIPERBAIKI: renderLeaderboardQuiz() di atas cuma
+            // memperbarui TAMPILAN foto untuk entri "milik saya sendiri" saat
+            // dilihat DI BROWSER INI (lihat renderLeaderboardQuiz: iniSayaSendiri
+            // ? getFotoProfilAktifQuiz() : entri.foto). Untuk siswa LAIN yang
+            // melihat leaderboard (mis. Ahmad melihat leaderboard-nya Syam),
+            // yang dipakai adalah entri.foto -- snapshot foto yang dibekukan
+            // di data.leaderboard sejak TERAKHIR KALI quiz itu diselesaikan &
+            // disimpan ke server. Tanpa langkah di bawah ini, snapshot lama itu
+            // tidak pernah ikut berubah sampai siswa main quiz lagi -- jadi
+            // siswa lain tetap melihat foto LAMA walau siswa ini sudah ganti
+            // foto profilnya. Di sini kita update field "foto" pada SEMUA
+            // entri leaderboard milik siswa ini (baik jenis Pilihan Ganda
+            // maupun Essay) lalu simpan ulang ke localStorage & server, supaya
+            // foto baru langsung kelihatan oleh siswa lain juga.
+            sebarkanFotoTerbaruKeSnapshotLeaderboard();
+
             alert('Foto profil berhasil diperbarui!');
             triggerDynamicIsland("Foto profil diperbarui!");
+        }
+
+        function sebarkanFotoTerbaruKeSnapshotLeaderboard() {
+            const fotoBaru = getFotoProfilAktifQuiz();
+
+            try {
+                const dataPg = getQuizData();
+                if (dataPg && Array.isArray(dataPg.leaderboard)) {
+                    let berubah = false;
+                    dataPg.leaderboard.forEach(entri => {
+                        if (entri.nama === NAMA_PEMAIN_QUIZ && entri.foto !== fotoBaru) {
+                            entri.foto = fotoBaru;
+                            berubah = true;
+                        }
+                    });
+                    if (berubah) saveQuizData(dataPg);
+                }
+            } catch (e) { console.error('Gagal sebar foto ke leaderboard PG:', e); }
+
+            try {
+                const dataEssay = getQuizEssayData();
+                if (dataEssay && Array.isArray(dataEssay.leaderboard)) {
+                    let berubah = false;
+                    dataEssay.leaderboard.forEach(entri => {
+                        if (entri.nama === NAMA_PEMAIN_QUIZ && entri.foto !== fotoBaru) {
+                            entri.foto = fotoBaru;
+                            berubah = true;
+                        }
+                    });
+                    if (berubah) saveQuizEssayData(dataEssay);
+                }
+            } catch (e) { console.error('Gagal sebar foto ke leaderboard Essay:', e); }
         }
 
         function loadSavedProfilePhoto() {
