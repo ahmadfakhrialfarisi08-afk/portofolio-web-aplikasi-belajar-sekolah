@@ -1825,33 +1825,95 @@
 
         function keyStudentProfilePhoto() { return `student_profile_photo_${ID_SISWA_AKTIF}`; }
 
-        function updateProfilePhoto(event) {
-            const file = event.target.files[0];
-            if (file) {
+        // Foto profil dikompres dulu lewat canvas sebelum disimpan (sisi terpanjang
+        // dibatasi 400px, JPEG kualitas 0.8) -- sama prinsipnya dengan
+        // kompresGambarUntukTugas(), tapi ukurannya dibuat lebih kecil lagi karena
+        // foto profil cuma tampil sebagai avatar bulat kecil, tidak perlu resolusi
+        // tinggi.
+        //
+        // BUG YANG DIPERBAIKI: sebelum ini, foto profil disimpan MENTAH-MENTAH dari
+        // hasil reader.readAsDataURL(file) -- kalau diambil langsung dari kamera HP
+        // bisa beberapa MB. Foto ini disisipkan PENUH ke setiap entri leaderboard
+        // (lihat sinkronkanLeaderboardDenganPoinTerbaik: foto: getFotoProfilAktifQuiz()),
+        // dikali 3 level (easy/medium/hard) -- jadi payload yang dikirim ke
+        // /api/quiz/save lewat simpanQuizKeServer() bisa membengkak sampai beberapa MB.
+        // Request itu dikirim dengan fetch(..., { keepalive: true }), dan browser
+        // (Chrome) MEMBATASI ukuran total request yang pakai keepalive:true sekitar
+        // 64 KB saja -- lewat dari situ, request gagal terkirim (bahkan bisa
+        // nyangkut "pending" tanpa error yang jelas ke pemakai), sehingga skor/​
+        // leaderboard siswa yang fotonya besar TIDAK PERNAH tersimpan ke server,
+        // walau siswa lain (yang fotonya kecil/pakai avatar default) baik-baik saja.
+        // Dengan kompres ke ~400px & JPEG 0.8, ukuran foto jadi cuma beberapa KB,
+        // jauh di bawah batas 64 KB itu.
+        function kompresFotoProfil(file) {
+            return new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    const base64Image = e.target.result;
-                    localStorage.setItem(keyStudentProfilePhoto(), base64Image);
-                    
-                    const headerAvatar = document.getElementById('header-user-avatar');
-                    const dropdownAvatar = document.getElementById('dropdown-user-avatar');
-                    const islandAvatar = document.getElementById('island-user-avatar');
-                    if (headerAvatar) headerAvatar.src = base64Image;
-                    if (dropdownAvatar) dropdownAvatar.src = base64Image;
-                    if (islandAvatar) islandAvatar.src = base64Image;
-
-                    // Foto baru langsung disebar ke SEMUA entri leaderboard milik
-                    // siswa ini (bukan cuma foto di header/dropdown) supaya foto
-                    // di leaderboard tersinkron realtime, tanpa perlu main quiz
-                    // ulang. renderLeaderboardQuiz() aman dipanggil walau tab Quiz
-                    // sedang tidak aktif (elemennya tetap ada di DOM, cuma disembunyikan).
-                    if (typeof renderLeaderboardQuiz === 'function') renderLeaderboardQuiz();
-
-                    alert('Foto profil berhasil diperbarui!');
-                    triggerDynamicIsland("Foto profil diperbarui!");
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const SISI_MAKS = 400;
+                        let { width, height } = img;
+                        if (width > SISI_MAKS || height > SISI_MAKS) {
+                            if (width >= height) {
+                                height = Math.round(height * (SISI_MAKS / width));
+                                width = SISI_MAKS;
+                            } else {
+                                width = Math.round(width * (SISI_MAKS / height));
+                                height = SISI_MAKS;
+                            }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                    };
+                    img.onerror = () => reject(new Error('Gagal memuat gambar'));
+                    img.src = e.target.result;
                 };
+                reader.onerror = () => reject(new Error('Gagal membaca file'));
                 reader.readAsDataURL(file);
+            });
+        }
+
+        async function updateProfilePhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            let base64Image;
+            try {
+                base64Image = await kompresFotoProfil(file);
+            } catch (err) {
+                console.error('updateProfilePhoto: gagal kompres foto, pakai file asli sebagai fallback:', err);
+                base64Image = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = () => reject(new Error('Gagal membaca file'));
+                    reader.readAsDataURL(file);
+                });
             }
+
+            localStorage.setItem(keyStudentProfilePhoto(), base64Image);
+
+            const headerAvatar = document.getElementById('header-user-avatar');
+            const dropdownAvatar = document.getElementById('dropdown-user-avatar');
+            const islandAvatar = document.getElementById('island-user-avatar');
+            if (headerAvatar) headerAvatar.src = base64Image;
+            if (dropdownAvatar) dropdownAvatar.src = base64Image;
+            if (islandAvatar) islandAvatar.src = base64Image;
+
+            // Foto baru langsung disebar ke SEMUA entri leaderboard milik
+            // siswa ini (bukan cuma foto di header/dropdown) supaya foto
+            // di leaderboard tersinkron realtime, tanpa perlu main quiz
+            // ulang. renderLeaderboardQuiz() aman dipanggil walau tab Quiz
+            // sedang tidak aktif (elemennya tetap ada di DOM, cuma disembunyikan).
+            if (typeof renderLeaderboardQuiz === 'function') renderLeaderboardQuiz();
+
+            alert('Foto profil berhasil diperbarui!');
+            triggerDynamicIsland("Foto profil diperbarui!");
         }
 
         function loadSavedProfilePhoto() {
