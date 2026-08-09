@@ -5399,7 +5399,7 @@
         // Guru (lihat keyPrestasiKelas() & renderKonfirmasiPrestasi() di dashboard_guru.html),
         // supaya prestasi yang diajukan siswa di sini benar2 muncul & bisa dikonfirmasi
         // oleh guru manapun di sana, dan status/nama guru penyetuju bisa kebaca balik di sini.
-        const KEY_PRESTASI_SISWA = `pengajuan_prestasi_${ID_SISWA_AKTIF}`;
+        const KEY_PRESTASI_SISWA = `pengajuan_prestasi_${KELAS_AKTIF_SISWA}`;
 
         // Border prestasi MAUPUN quiz TIDAK auto-terbuka lagi hanya karena poin
         // sudah cukup — siswa harus klik tombol "Klaim Border" secara manual dulu.
@@ -6497,7 +6497,12 @@
                         <p class="text-[11px] text-slate-400">${item.jenis === 'piala' ? 'Piala' : 'Sertifikat'} &middot; diajukan ${item.tanggalAjukan}</p>
                         ${ketAdmin}
                     </div>
-                    <span class="text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0 self-start ${status.kelas}">${status.teks}</span>
+                    <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
+                        <span class="text-[10px] font-bold px-2.5 py-1 rounded-full self-end ${status.kelas}">${status.teks}</span>
+                        <button type="button" title="Hapus pengajuan ini" class="btn-hapus-prestasi text-slate-300 hover:text-rose-500 w-6 h-6 flex items-center justify-center rounded-lg hover:bg-rose-50 transition-all">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
                 `;
                 // Pakai addEventListener + closure (bukan atribut onclick) supaya foto
                 // base64 yang bisa panjang tidak perlu diduplikasi lagi ke dalam HTML string.
@@ -6505,8 +6510,38 @@
                 if (imgThumb) {
                     imgThumb.addEventListener('click', () => bukaZoomFotoPrestasi(item.foto, item.judul));
                 }
+                const btnHapus = row.querySelector('.btn-hapus-prestasi');
+                if (btnHapus) {
+                    btnHapus.addEventListener('click', () => hapusPengajuanPrestasi(item.id));
+                }
                 container.appendChild(row);
             });
+        }
+
+        // Hapus satu pengajuan prestasi dari Riwayat (dipicu tombol ikon tempat sampah).
+        // Kalau prestasi itu statusnya sudah 'disetujui', poin & border yang bergantung
+        // padanya ikut dihitung ulang otomatis lewat renderKoleksiBorder() di akhir --
+        // makanya user diberi peringatan tambahan sebelum konfirmasi.
+        function hapusPengajuanPrestasi(id) {
+            const list = getPrestasiData();
+            const item = list.find(x => x.id === id);
+            if (!item) return;
+
+            let pesan = `Yakin mau hapus pengajuan "${item.judul}" dari riwayat? Tindakan ini tidak bisa dibatalkan.`;
+            if (item.status === 'disetujui') {
+                pesan += ' Prestasi ini statusnya sudah DISETUJUI -- menghapusnya bisa mengurangi poin akumulasi & menutup border yang terbuka karenanya.';
+            }
+            if (!confirm(pesan)) return;
+
+            savePrestasiData(list.filter(x => x.id !== id));
+
+            // Bersihkan juga snapshot status supaya id yang sudah dihapus gak nyangkut
+            // di KEY_STATUS_PRESTASI_TERLIHAT (mencegah toast notif "nyasar" nanti).
+            const snapshot = getStatusPrestasiTerlihat() || {};
+            delete snapshot[id];
+            saveStatusPrestasiTerlihat(snapshot);
+
+            renderKoleksiBorder();
         }
 
         function ajukanPrestasi(event) {
