@@ -598,6 +598,16 @@
            yang sudah ada di atas (poin 4), cuma beda isi: nama guru penyetuju &
            pesan sama-sama diwarnai merah (ditolak) / hijau (disetujui). */
 
+        /* --- ANIMASI CEKLIS: tombol tambah teman inline di hasil "Cari Teman" ---
+           Dipakai saat permintaan pertemanan berhasil terkirim, ikon orang+
+           berubah jadi ceklis abu-abu dengan efek pop-in singkat. */
+        .animasi-ceklis-terkirim { animation: ceklisTerkirimPopIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes ceklisTerkirimPopIn {
+            0% { transform: scale(0.4); opacity: 0; }
+            60% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
         /* --- 8. ANIMASI BERHASIL KIRIM BUKTI PRESTASI --- */
         .modal-sukses-pop { animation: suksesPopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
         @keyframes suksesPopIn {
@@ -2650,8 +2660,10 @@
                 listState.innerHTML = '';
 
                 hasil.forEach(item => {
-                    const row = document.createElement('button');
-                    row.className = 'w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/40 transition-colors text-left';
+                    const row = document.createElement('div');
+                    row.className = 'w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/40 transition-colors cursor-pointer';
+                    row.setAttribute('role', 'button');
+                    row.setAttribute('tabindex', '0');
                     row.innerHTML = `
                         <div class="w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
                             <i class="fa-solid fa-user text-sm"></i>
@@ -2660,9 +2672,23 @@
                             <p class="text-sm font-bold text-slate-800 truncate">${item.nama}</p>
                             <p class="text-[11px] text-slate-400">${item.kelas}</p>
                         </div>
-                        ${labelStatusPertemanan(item.status)}
+                        ${labelStatusPertemanan(item.status, item.username)}
                     `;
                     row.addEventListener('click', () => bukaIdCardTeman(item.username));
+                    row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bukaIdCardTeman(item.username); } });
+
+                    // Tombol "orang+" (status belum berteman): klik LANGSUNG kirim
+                    // permintaan pertemanan di tempat (tanpa buka ID card dulu),
+                    // lalu ikonnya berubah jadi ceklis abu-abu dengan animasi pop-in
+                    // sebagai tanda permintaan sudah terkirim ke siswa itu.
+                    const btnTambahInline = row.querySelector('.btn-tambah-teman-inline');
+                    if (btnTambahInline) {
+                        btnTambahInline.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            kirimPermintaanTemanInline(item.username, btnTambahInline);
+                        });
+                    }
+
                     listState.appendChild(row);
                 });
             } catch (e) {
@@ -2670,14 +2696,65 @@
             }
         }
 
-        function labelStatusPertemanan(status) {
+        function labelStatusPertemanan(status, username) {
+            if (status === 'belum') {
+                return `<button type="button" class="btn-tambah-teman-inline w-9 h-9 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-500 hover:text-blue-600 flex items-center justify-center flex-shrink-0 transition-colors" data-username="${username}" title="Tambah teman">
+                    <i class="fa-solid fa-user-plus text-xs icon-tambah-teman"></i>
+                </button>`;
+            }
             const peta = {
                 berteman: '<span class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600 flex-shrink-0">Teman</span>',
-                menunggu_dikirim: '<span class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-600 flex-shrink-0">Menunggu</span>',
-                menunggu_diterima: '<span class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 flex-shrink-0">Merespon</span>',
-                belum: '<span class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 flex-shrink-0"><i class="fa-solid fa-user-plus"></i></span>'
+                // Sudah pernah dikirim (baik baru saja diklik atau dari sesi sebelumnya)
+                // -> tampil sebagai ceklis abu-abu, menandakan "sudah terkirim, tinggal tunggu".
+                menunggu_dikirim: '<span class="w-9 h-9 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center flex-shrink-0" title="Permintaan sudah terkirim, menunggu direspon"><i class="fa-solid fa-check text-xs"></i></span>',
+                menunggu_diterima: '<span class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 flex-shrink-0">Merespon</span>'
             };
-            return peta[status] || peta.belum;
+            return peta[status] || peta.berteman;
+        }
+
+        async function kirimPermintaanTemanInline(username, btnEl) {
+            if (btnEl.disabled) return;
+            btnEl.disabled = true;
+            btnEl.classList.add('opacity-60', 'cursor-wait');
+
+            try {
+                const res = await fetch('/api/teman/kirim', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to_username: username })
+                });
+                const json = await res.json();
+
+                if (!json.success) {
+                    // Gagal (mis. sudah berteman/sudah dikirim dari tab lain) -> kembalikan
+                    // tombol seperti semula supaya siswa bisa lihat pesan errornya, lalu
+                    // muat ulang hasil pencarian biar status ikut sinkron ke kondisi terbaru.
+                    btnEl.disabled = false;
+                    btnEl.classList.remove('opacity-60', 'cursor-wait');
+                    alert(json.message || 'Gagal mengirim permintaan pertemanan.');
+                    const inputCari = document.getElementById('input-cari-teman');
+                    if (inputCari && inputCari.value.trim()) jalankanPencarianTeman(inputCari.value.trim());
+                    return;
+                }
+
+                // Berhasil terkirim -> ganti ikon orang+ jadi ceklis abu-abu dengan
+                // animasi pop-in singkat sebagai tanda "sudah terkirim ke siswa ini".
+                // Kalau ternyata langsung jadi teman (siswa itu sudah lebih dulu ngirim
+                // ke kita), tampilkan badge "Teman" alih-alih ceklis.
+                btnEl.classList.remove('opacity-60', 'cursor-wait', 'hover:bg-blue-100', 'hover:text-blue-600');
+                if (json.status === 'berteman') {
+                    btnEl.outerHTML = '<span class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600 flex-shrink-0 animasi-ceklis-terkirim">Teman</span>';
+                } else {
+                    btnEl.title = 'Permintaan sudah terkirim, menunggu direspon';
+                    btnEl.innerHTML = '<i class="fa-solid fa-check text-xs animasi-ceklis-terkirim icon-tambah-teman"></i>';
+                }
+
+                renderPermintaanTeman(); // sinkronkan badge dropdown juga (buat sisi siswa ini)
+            } catch (e) {
+                console.error('Gagal mengirim permintaan pertemanan:', e);
+                btnEl.disabled = false;
+                btnEl.classList.remove('opacity-60', 'cursor-wait');
+            }
         }
 
         /* ---------- ID Card statistik siswa ---------- */
