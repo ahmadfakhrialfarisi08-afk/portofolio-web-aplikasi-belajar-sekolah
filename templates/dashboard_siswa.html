@@ -96,6 +96,36 @@
         main .bg-white.border.rounded-2xl, main .bg-white.border.rounded-3xl { transition: box-shadow .2s ease, border-color .2s ease; }
         main a[href], main button { transition-timing-function: cubic-bezier(.4,0,.2,1); }
 
+        /* ============================================================
+           EFEK GESER TEKS MENU SIDEBAR (hover "maju ke depan")
+           Cuma pakai transform (GPU-accelerated) + text-shadow, jadi
+           ringan di laptop maupun HP (sama di kedua ukuran layar,
+           tidak ada perbedaan behavior antara desktop & mobile).
+           Saat hover: label ikon+teks geser sedikit ke kanan (translateX).
+           Saat item itu jadi AKTIF/terpilih (klik -> aria-current="page"):
+           posisi label dikembalikan normal (translateX kembali ke 0),
+           tapi diberi text-shadow tipis sebagai penanda "sedang terpilih".
+           ============================================================ */
+        .nav-btn-label {
+            transform: translateX(0);
+            transition: transform .18s cubic-bezier(.4,0,.2,1), text-shadow .18s ease;
+            will-change: transform;
+        }
+        .nav-btn:hover .nav-btn-label,
+        #btn-it-support:hover .nav-btn-label {
+            transform: translateX(5px);
+        }
+        .nav-btn[aria-current="page"] .nav-btn-label {
+            transform: translateX(0);
+            text-shadow: 0 1px 3px rgba(91, 79, 233, 0.35);
+        }
+        .nav-btn[aria-current="page"]:hover .nav-btn-label {
+            transform: translateX(0);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .nav-btn-label { transition-duration: .01ms !important; }
+        }
+
         /* Scrollbar tipis & senyap, konsisten di semua panel scrollable */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -688,39 +718,39 @@
 
             <nav class="px-3 py-5 space-y-0.5" id="sidebar-menu" aria-label="Menu">
                 <button onclick="switchTab('beranda')" id="btn-beranda" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-blue-50 text-blue-700 font-semibold text-sm transition-colors duration-150" aria-current="page">
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 nav-btn-label">
                         <i class="fa-solid fa-house w-4 text-center text-[13px]"></i> Beranda
                     </div>
                 </button>
 
                 <button onclick="switchTab('akademik')" id="btn-akademik" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium text-sm transition-colors duration-150">
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 nav-btn-label">
                         <i class="fa-solid fa-crown w-4 text-center text-[13px]"></i> Koleksi Border
                     </div>
                 </button>
 
                 <button onclick="switchTab('tugas')" id="btn-tugas" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium text-sm transition-colors duration-150 relative">
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 nav-btn-label">
                         <i class="fa-solid fa-book w-4 text-center text-[13px]"></i> Tugas & Catatan
                     </div>
                     <span id="badge-tugas-baru" class="w-2 h-2 bg-rose-600 rounded-full hidden shadow-sm shadow-rose-500/50" aria-label="Ada tugas baru"></span>
                 </button>
 
                 <button onclick="switchTab('guru')" id="btn-guru" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium text-sm transition-colors duration-150">
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 nav-btn-label">
                         <i class="fa-solid fa-clipboard-check w-4 text-center text-[13px]"></i> Daftar Guru
                     </div>
                 </button>
 
                 <button onclick="switchTab('quiz')" id="btn-quiz" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium text-sm transition-colors duration-150 relative">
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 nav-btn-label">
                         <i class="fa-solid fa-gamepad w-4 text-center text-[13px]"></i> Quiz & Leaderboard
                     </div>
                     <span id="badge-quiz-ditikung" class="w-2 h-2 bg-rose-600 rounded-full hidden shadow-sm shadow-rose-500/50" aria-label="Ada perubahan peringkat"></span>
                 </button>
 
                 <button onclick="switchTab('pengumuman')" id="btn-pengumuman" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium text-sm transition-colors duration-150">
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 nav-btn-label">
                         <i class="fa-solid fa-bullhorn w-4 text-center text-[13px]"></i> Pengumuman
                     </div>
                 </button>
@@ -729,13 +759,13 @@
                     <p class="px-3.5 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wide">Bantuan</p>
 
                     <button onclick="switchTab('ai-support')" id="btn-ai-support" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium text-sm transition-colors duration-150">
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-3 nav-btn-label">
                             <i class="fa-solid fa-robot w-4 text-center text-[13px]"></i> AI Support
                         </div>
                     </button>
 
                     <a href="https://wa.me/6283181977131?text=Halo%20Admin%2C%20saya%20butuh%20bantuan%20IT%20terkait%20aplikasi%20Sekolah." target="_blank" rel="noopener noreferrer" id="btn-it-support" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-700 font-medium text-sm transition-colors duration-150">
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-3 nav-btn-label">
                             <i class="fa-brands fa-whatsapp w-4 text-center text-[13px]"></i> IT Support
                         </div>
                         <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-300"></i>
