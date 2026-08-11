@@ -1120,7 +1120,7 @@
             </section>
 
             <section id="tab-akademik" class="tab-content space-y-6 hidden">
-                <div class="relative rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 p-8 text-white overflow-hidden shadow-xl shadow-amber-500/10">
+                <div class="relative rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 p-5 sm:p-8 text-white overflow-hidden shadow-xl shadow-amber-500/10">
                     <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                         <div class="max-w-md">
                             <span class="bg-white/25 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 inline-block">Koleksi Border</span>
@@ -1142,7 +1142,7 @@
                 </div>
 
                 <!-- ================= BORDER YANG SUDAH DIMILIKI ================= -->
-                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6">
                     <div class="flex items-center justify-between gap-3 mb-6">
                         <div>
                             <h3 class="font-bold text-lg text-slate-900"><i class="fa-solid fa-box-open text-emerald-500 mr-1.5"></i>Border yang Sudah Dimiliki</h3>
@@ -1155,7 +1155,7 @@
                 </div>
 
                 <!-- ================= BORDER YANG BELUM DIMILIKI (collapsible) ================= -->
-                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6">
                     <div class="flex items-center justify-between gap-3">
                         <div>
                             <h3 class="font-bold text-lg text-slate-900"><i class="fa-solid fa-lock text-slate-400 mr-1.5"></i>Border yang Belum Dimiliki</h3>
@@ -1174,7 +1174,7 @@
                      disisipkan di id (prestasi_<timestamp>) lalu dipetakan ke tahun ajaran (Jul—Jun)
                      sesuai kelas yang dipilih. Tidak ada perbandingan ke siswa lain — semua angka di
                      sini murni progress diri sendiri. -->
-                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
                         <div>
                             <h3 class="font-bold text-lg text-slate-900"><i class="fa-solid fa-route text-amber-500 mr-1.5"></i>Journey Prestasi</h3>
@@ -1213,7 +1213,7 @@
                 </div>
 
                 <div class="space-y-6">
-                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6">
                         <h3 class="font-bold text-lg text-slate-900 mb-4">Riwayat Pengajuan Prestasi</h3>
                         <div id="list-riwayat-prestasi" class="space-y-3"></div>
                     </div>
@@ -1221,7 +1221,7 @@
             </section>
 
             <section id="tab-tugas" class="tab-content space-y-6 hidden">
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm">
                     <div class="flex items-center justify-between mb-6">
                         <div>
                             <h3 class="font-bold text-xl text-slate-900">📚 Semua Tugas & Catatan Belajar</h3>
@@ -1231,14 +1231,14 @@
                     </div>
 
                     <div id="container-live-tugas" class="space-y-4">
-                        <div class="p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                        <div class="p-5 sm:p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
                             <i class="fa-solid fa-inbox text-3xl mb-2"></i>
                             <p class="text-xs font-medium">Belum ada tugas/catatan baru dikirimkan oleh guru.</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm">
                     <div class="flex items-center justify-between mb-1">
                         <div>
                             <h3 class="font-bold text-xl text-slate-900">🗂️ Riwayat Pengumpulan</h3>
@@ -1251,7 +1251,7 @@
             </section>
 
             <section id="tab-guru" class="tab-content space-y-6 hidden">
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm">
                     <div class="flex items-center justify-between flex-wrap gap-3">
                         <div>
                             <h3 class="font-bold text-xl text-slate-900">👨‍🏫 Daftar Guru & Tenaga Pengajar</h3>
@@ -1284,7 +1284,7 @@
                     </div>
 
                     <div id="grid-daftar-guru" class="columns-1 sm:columns-2 lg:columns-3 gap-6 mt-6"></div>
-                    <div id="guru-kosong-state" class="hidden p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400 mt-6">
+                    <div id="guru-kosong-state" class="hidden p-5 sm:p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400 mt-6">
                         <i class="fa-solid fa-user-slash text-2xl mb-2"></i>
                         <p class="text-xs font-medium">Tidak ada guru yang cocok dengan filter ini.</p>
                     </div>
@@ -1292,7 +1292,7 @@
             </section>
 
             <section id="tab-cari-teman" class="tab-content space-y-6 hidden">
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm">
                     <div class="flex items-start justify-between gap-3">
                         <div>
                             <h3 class="font-bold text-xl text-slate-900">🔎 Cari Teman</h3>
@@ -1327,7 +1327,7 @@
                         </div>
                     </div>
 
-                    <div id="hasil-cari-teman-kosong" class="p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                    <div id="hasil-cari-teman-kosong" class="p-5 sm:p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
                         <i class="fa-solid fa-user-group text-2xl mb-2"></i>
                         <p class="text-xs font-medium">Ketik nama di kolom pencarian untuk mulai mencari teman.</p>
                     </div>
@@ -1340,7 +1340,7 @@
 
                 <!-- ============ VIEW 0: PILIH JENIS QUIZ ============ -->
                 <div id="quiz-view-jenis">
-                    <div class="relative rounded-3xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 p-8 text-white overflow-hidden shadow-xl shadow-purple-500/10">
+                    <div class="relative rounded-3xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 p-5 sm:p-8 text-white overflow-hidden shadow-xl shadow-purple-500/10">
                         <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                             <div class="max-w-md">
                                 <span class="bg-white/25 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 inline-block">Quiz & Leaderboard</span>
@@ -1362,7 +1362,7 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
-                        <button type="button" onclick="pilihJenisQuiz('pg')" class="text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-purple-200 transition-shadow p-6 flex flex-col">
+                        <button type="button" onclick="pilihJenisQuiz('pg')" class="text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-purple-200 transition-shadow p-4 sm:p-6 flex flex-col">
                             <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-list-check"></i></div>
                             <h3 class="font-bold text-lg text-slate-900">Pilihan Ganda</h3>
                             <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Jawab dengan memilih 1 dari 4 opsi. Ada leaderboard & border koleksi yang bisa dibuka lewat jalur ini.</p>
@@ -1371,7 +1371,7 @@
                             </span>
                         </button>
 
-                        <button type="button" onclick="pilihJenisQuiz('essay')" class="text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-indigo-200 transition-shadow p-6 flex flex-col">
+                        <button type="button" onclick="pilihJenisQuiz('essay')" class="text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-indigo-200 transition-shadow p-4 sm:p-6 flex flex-col">
                             <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-pen-to-square"></i></div>
                             <h3 class="font-bold text-lg text-slate-900">Essay</h3>
                             <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Ketik sendiri jawabanmu, langsung dicocokkan otomatis dengan kunci jawaban.</p>
@@ -1393,7 +1393,7 @@
                     <h3 class="font-bold text-xl text-slate-900 mb-4">Pilih Tingkat Kesulitan</h3>
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 flex flex-col">
                             <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-seedling"></i></div>
                             <div class="flex items-center gap-2">
                                 <h3 class="font-bold text-lg text-slate-900">Easy</h3>
@@ -1406,7 +1406,7 @@
                             </button>
                         </div>
 
-                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 flex flex-col">
                             <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-fire"></i></div>
                             <div class="flex items-center gap-2">
                                 <h3 class="font-bold text-lg text-slate-900">Medium</h3>
@@ -1419,7 +1419,7 @@
                             </button>
                         </div>
 
-                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 flex flex-col">
                             <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-skull"></i></div>
                             <div class="flex items-center gap-2">
                                 <h3 class="font-bold text-lg text-slate-900">Hard</h3>
@@ -1433,7 +1433,7 @@
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 mt-6">
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 mt-6">
                         <div class="flex items-center justify-between flex-wrap gap-3 mb-5">
                             <div>
                                 <h3 class="font-bold text-lg text-slate-900">🏆 Leaderboard</h3>
@@ -1447,7 +1447,7 @@
                             </div>
                         </div>
                         <div id="quiz-leaderboard-list" class="space-y-2"></div>
-                        <div id="quiz-leaderboard-kosong" class="hidden p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                        <div id="quiz-leaderboard-kosong" class="hidden p-5 sm:p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
                             <i class="fa-solid fa-ranking-star text-2xl mb-2"></i>
                             <p class="text-xs font-medium">Belum ada yang main quiz ini. Jadilah yang pertama!</p>
                         </div>
@@ -1465,7 +1465,7 @@
                     <h3 class="font-bold text-xl text-slate-900 mb-4">Pilih Tingkat Kesulitan</h3>
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 flex flex-col">
                             <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-seedling"></i></div>
                             <div class="flex items-center gap-2">
                                 <h3 class="font-bold text-lg text-slate-900">Easy</h3>
@@ -1478,7 +1478,7 @@
                             </button>
                         </div>
 
-                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 flex flex-col">
                             <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-fire"></i></div>
                             <div class="flex items-center gap-2">
                                 <h3 class="font-bold text-lg text-slate-900">Medium</h3>
@@ -1491,7 +1491,7 @@
                             </button>
                         </div>
 
-                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 flex flex-col">
                             <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-skull"></i></div>
                             <div class="flex items-center gap-2">
                                 <h3 class="font-bold text-lg text-slate-900">Hard</h3>
@@ -1505,12 +1505,12 @@
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 mt-6 flex items-center gap-3">
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 mt-6 flex items-center gap-3">
                         <i class="fa-solid fa-circle-info text-indigo-500"></i>
                         <p class="text-xs text-slate-400">Jawaban essay dicocokkan otomatis dengan kunci jawaban singkat (ketikkan intinya saja). Skor terbaik & leaderboard tersimpan seperti jalur Pilihan Ganda; border koleksi tetap khusus Pilihan Ganda.</p>
                     </div>
 
-                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 mt-6">
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 mt-6">
                         <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
                             <div>
                                 <h3 class="font-bold text-lg text-slate-900">🏆 Leaderboard Essay</h3>
@@ -1524,7 +1524,7 @@
                             </div>
                         </div>
                         <div id="quiz-leaderboard-essay-list" class="space-y-2"></div>
-                        <div id="quiz-leaderboard-essay-kosong" class="hidden p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                        <div id="quiz-leaderboard-essay-kosong" class="hidden p-5 sm:p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
                             <i class="fa-solid fa-ranking-star text-2xl mb-2"></i>
                             <p class="text-xs font-medium">Belum ada yang main quiz essay ini. Jadilah yang pertama!</p>
                         </div>
@@ -1604,14 +1604,14 @@
             </section>
 
             <section id="tab-pengumuman" class="tab-content space-y-6 hidden">
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm">
                     <h3 class="font-bold text-xl text-slate-900 mb-2">📢 Pengumuman Sekolah</h3>
                     <p class="text-xs text-slate-400">Informasi penting dari pihak sekolah.</p>
                 </div>
             </section>
 
             <section id="tab-perangkat" class="tab-content space-y-6 hidden">
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm">
                     <div class="flex items-start justify-between gap-3 flex-wrap">
                         <div>
                             <h3 class="font-bold text-xl text-slate-900">📱 Perangkat</h3>
@@ -1627,7 +1627,7 @@
                         <span>Perangkat yang sedang kamu pakai ini <b>bukan Master Device</b>, jadi kamu cuma bisa melihat daftarnya. Menyetujui atau menolak perangkat baru hanya bisa dilakukan dari Master Device.</span>
                     </div>
 
-                    <div id="perangkat-list-wrapper" class="mt-5 overflow-x-auto">
+                    <div id="perangkat-list-wrapper" class="hidden sm:block mt-5 overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="text-[10px] uppercase tracking-wide text-slate-400 border-b border-slate-100">
@@ -1642,7 +1642,12 @@
                         </table>
                     </div>
 
-                    <div id="perangkat-kosong" class="hidden p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400 mt-3">
+                    <!-- Versi kartu khusus HP -- tabel 5 kolom kalau dipaksa muat di layar
+                         sempit jadi kepotong/harus geser horizontal, jadi di HP dipecah
+                         per-perangkat sebagai kartu yang gampang dibaca dari atas ke bawah. -->
+                    <div id="list-perangkat-mobile" class="sm:hidden mt-5 space-y-3"></div>
+
+                    <div id="perangkat-kosong" class="hidden p-5 sm:p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400 mt-3">
                         <i class="fa-solid fa-mobile-screen-button text-2xl mb-2"></i>
                         <p class="text-xs font-medium">Belum ada data perangkat.</p>
                     </div>
@@ -1651,7 +1656,7 @@
 
             <section id="tab-ai-support" class="tab-content space-y-6 hidden">
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                    <div class="p-6 border-b border-slate-100 flex items-center gap-3 bg-gradient-to-br from-indigo-50 to-white">
+                    <div class="p-4 sm:p-6 border-b border-slate-100 flex items-center gap-3 bg-gradient-to-br from-indigo-50 to-white">
                         <div class="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center text-white text-lg shadow-md shadow-blue-500/25 flex-shrink-0">
                             <i class="fa-solid fa-robot"></i>
                         </div>
@@ -1685,7 +1690,7 @@
     </div>
 
     <div id="modalJadwal" class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl space-y-4">
             <div class="flex items-center justify-between">
                 <h3 class="font-bold text-lg text-slate-900">Jadwal Pelajaran Lengkap</h3>
                 <button onclick="closeModalJadwal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
@@ -1704,7 +1709,7 @@
     </div>
 
     <div id="modalExpandedPhoto" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
-        <div class="relative bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl flex flex-col items-center space-y-4">
+        <div class="relative bg-white rounded-3xl max-w-sm w-full p-4 sm:p-6 shadow-2xl flex flex-col items-center space-y-4">
             <button onclick="closeExpandedPhoto()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
                 <i class="fa-solid fa-xmark"></i>
             </button>
@@ -1722,7 +1727,7 @@
          fungsi ajukanPrestasi() yang sudah ada tidak perlu diubah sama sekali. -->
     <div id="modal-buka-border-prestasi" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[103] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupModalBukaBorder()">
         <div class="modal-kirim-prestasi-pop bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden">
-            <div class="relative bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 p-6 text-white">
+            <div class="relative bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 p-4 sm:p-6 text-white">
                 <button onclick="tutupModalBukaBorder()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -1738,7 +1743,7 @@
                 <p id="modal-buka-border-syarat" class="text-xs text-amber-50 mt-3 leading-relaxed"><i class="fa-solid fa-circle-info mr-1"></i>-</p>
             </div>
 
-            <form id="form-ajukan-prestasi" onsubmit="ajukanPrestasi(event)" class="p-6 space-y-4">
+            <form id="form-ajukan-prestasi" onsubmit="ajukanPrestasi(event)" class="p-4 sm:p-6 space-y-4">
                 <div class="field-kirim-prestasi" style="--delay:0">
                     <label class="text-xs font-bold text-slate-600 mb-1.5 block">Nama Lomba / Prestasi</label>
                     <input id="input-judul-prestasi" type="text" required placeholder="Contoh: Juara 1 LKS Tingkat Provinsi" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 transition-shadow">
@@ -1797,7 +1802,7 @@
 
     <!-- Animasi berhasil kirim bukti prestasi -->
     <div id="modal-sukses-prestasi" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[105] hidden items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-xs w-full p-7 shadow-2xl flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-5 sm:p-7 shadow-2xl flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
             <span class="confetti-sukses" style="--x:-38px; --rot:-30deg; --c:#f59e0b; animation-delay:0s;"></span>
             <span class="confetti-sukses" style="--x:34px; --rot:20deg; --c:#10b981; animation-delay:.08s;"></span>
             <span class="confetti-sukses" style="--x:-18px; --rot:60deg; --c:#f43f5e; animation-delay:.16s;"></span>
@@ -1819,7 +1824,7 @@
          isi filenya sama dengan bukti yang sudah pernah diupload, walau nama file
          sudah diganti/di-rename). -->
     <div id="modal-gagal-prestasi" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[105] hidden items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-xs w-full p-7 shadow-2xl flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-5 sm:p-7 shadow-2xl flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
             <div class="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center modal-gagal-ring">
                 <svg class="w-11 h-11" viewBox="0 0 52 52">
                     <circle class="crossmark-circle" cx="26" cy="26" r="23"/>
@@ -1858,7 +1863,7 @@
          menampilkan identitas + statistik quiz siswa tersebut -->
     <div id="modal-id-card-teman" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[106] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupIdCardTeman()">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
-            <div class="relative bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-700 p-6 text-white text-center">
+            <div class="relative bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-700 p-4 sm:p-6 text-white text-center">
                 <button onclick="tutupIdCardTeman()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors" aria-label="Tutup">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
@@ -1868,7 +1873,7 @@
                 <h3 id="idcard-nama" class="font-extrabold text-lg mt-3 leading-tight">-</h3>
                 <p id="idcard-kelas" class="text-xs text-blue-100 mt-0.5">-</p>
             </div>
-            <div class="p-6 space-y-4">
+            <div class="p-4 sm:p-6 space-y-4">
                 <div class="grid grid-cols-3 gap-2 text-center">
                     <div class="bg-slate-50 rounded-xl p-2.5">
                         <p id="idcard-poin-pg" class="text-lg font-extrabold text-slate-900">0</p>
@@ -2703,9 +2708,10 @@
 
         async function renderPerangkat() {
             const tbody = document.getElementById('list-perangkat');
+            const listMobile = document.getElementById('list-perangkat-mobile');
             const kosong = document.getElementById('perangkat-kosong');
             const infoBukanMaster = document.getElementById('perangkat-bukan-master-info');
-            if (!tbody) return;
+            if (!tbody || !listMobile) return;
 
             let json;
             try {
@@ -2724,6 +2730,7 @@
             updateBadgePerangkatNav(jumlahPending);
 
             tbody.innerHTML = '';
+            listMobile.innerHTML = '';
             if (daftar.length === 0) {
                 kosong?.classList.remove('hidden');
                 return;
@@ -2731,24 +2738,11 @@
             kosong?.classList.add('hidden');
 
             daftar.forEach(d => {
+                const aksiHtml = tombolAksiPerangkat(d, sayaMaster);
+
+                // ---- Baris tabel (tablet ke atas) ----
                 const tr = document.createElement('tr');
                 tr.className = 'border-b border-slate-50 last:border-0';
-
-                let aksiHtml = '<span class="text-slate-300 text-xs">&mdash;</span>';
-                if (sayaMaster && !d.is_master) {
-                    if (d.status === 'pending') {
-                        aksiHtml = `
-                            <div class="flex items-center justify-end gap-1.5">
-                                <button class="btn-setujui-perangkat px-2.5 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] font-bold transition-colors">Setujui</button>
-                                <button class="btn-tolak-perangkat px-2.5 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-[10px] font-bold transition-colors">Tolak</button>
-                            </div>`;
-                    } else if (d.status === 'approved') {
-                        aksiHtml = `<div class="flex justify-end"><button class="btn-tolak-perangkat px-2.5 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-[10px] font-bold transition-colors">Cabut Akses</button></div>`;
-                    } else {
-                        aksiHtml = `<div class="flex justify-end"><button class="btn-setujui-perangkat px-2.5 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] font-bold transition-colors">Setujui</button></div>`;
-                    }
-                }
-
                 tr.innerHTML = `
                     <td class="py-2.5 pr-3 align-top">
                         <p class="text-xs font-semibold text-slate-800 max-w-[220px] truncate" title="${d.nama}">${d.nama}</p>
@@ -2760,15 +2754,67 @@
                     <td class="py-2.5 pr-3 align-top text-xs text-slate-500">${d.ip || '-'}</td>
                     <td class="py-2.5 pr-3 align-top">${badgeStatusPerangkat(d.status)}</td>
                     <td class="py-2.5 pr-3 align-top text-[10px] text-slate-400">${formatWaktuPerangkat(d.created_at)}</td>
-                    <td class="py-2.5 pl-3 align-top text-right">${aksiHtml}</td>`;
-
-                const btnSetujui = tr.querySelector('.btn-setujui-perangkat');
-                if (btnSetujui) btnSetujui.addEventListener('click', () => tanggapiPerangkat(d.token, 'approve'));
-                const btnTolak = tr.querySelector('.btn-tolak-perangkat');
-                if (btnTolak) btnTolak.addEventListener('click', () => tanggapiPerangkat(d.token, 'reject'));
-
+                    <td class="py-2.5 pl-3 align-top text-right">${aksiHtml.tabel}</td>`;
+                pasangHandlerAksiPerangkat(tr, d);
                 tbody.appendChild(tr);
+
+                // ---- Kartu (khusus HP) ----
+                const card = document.createElement('div');
+                card.className = 'p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/60';
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="text-xs font-semibold text-slate-800 truncate" title="${d.nama}">${d.nama}</p>
+                            <div class="flex items-center flex-wrap gap-1.5 mt-1">
+                                ${d.is_master ? '<span class="inline-flex items-center gap-1 text-[9px] font-bold text-blue-600"><i class="fa-solid fa-crown"></i> Master Device</span>' : ''}
+                                ${d.perangkat_ini ? '<span class="text-[9px] font-semibold text-slate-400">(perangkat ini)</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">${badgeStatusPerangkat(d.status)}</div>
+                    </div>
+                    <div class="flex items-center justify-between gap-2 mt-2 text-[10px] text-slate-400">
+                        <span>${d.ip || '-'}</span>
+                        <span>${formatWaktuPerangkat(d.created_at)}</span>
+                    </div>
+                    <div class="mt-2.5">${aksiHtml.kartu}</div>`;
+                pasangHandlerAksiPerangkat(card, d);
+                listMobile.appendChild(card);
             });
+        }
+
+        function tombolAksiPerangkat(d, sayaMaster) {
+            if (!sayaMaster || d.is_master) {
+                return { tabel: '<span class="text-slate-300 text-xs">&mdash;</span>', kartu: '' };
+            }
+            if (d.status === 'pending') {
+                return {
+                    tabel: `<div class="flex items-center justify-end gap-1.5">
+                                <button class="btn-setujui-perangkat px-2.5 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] font-bold transition-colors">Setujui</button>
+                                <button class="btn-tolak-perangkat px-2.5 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-[10px] font-bold transition-colors">Tolak</button>
+                            </div>`,
+                    kartu: `<div class="flex items-center gap-2">
+                                <button class="btn-setujui-perangkat flex-1 py-2 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-xs font-bold transition-colors">Setujui</button>
+                                <button class="btn-tolak-perangkat flex-1 py-2 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-xs font-bold transition-colors">Tolak</button>
+                            </div>`
+                };
+            }
+            if (d.status === 'approved') {
+                return {
+                    tabel: `<div class="flex justify-end"><button class="btn-tolak-perangkat px-2.5 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-[10px] font-bold transition-colors">Cabut Akses</button></div>`,
+                    kartu: `<button class="btn-tolak-perangkat w-full py-2 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-xs font-bold transition-colors">Cabut Akses</button>`
+                };
+            }
+            return {
+                tabel: `<div class="flex justify-end"><button class="btn-setujui-perangkat px-2.5 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] font-bold transition-colors">Setujui</button></div>`,
+                kartu: `<button class="btn-setujui-perangkat w-full py-2 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-xs font-bold transition-colors">Setujui</button>`
+            };
+        }
+
+        function pasangHandlerAksiPerangkat(container, d) {
+            const btnSetujui = container.querySelector('.btn-setujui-perangkat');
+            if (btnSetujui) btnSetujui.addEventListener('click', () => tanggapiPerangkat(d.token, 'approve'));
+            const btnTolak = container.querySelector('.btn-tolak-perangkat');
+            if (btnTolak) btnTolak.addEventListener('click', () => tanggapiPerangkat(d.token, 'reject'));
         }
 
         async function updateBadgePerangkatNavSaja() {
@@ -3353,7 +3399,7 @@
 
             if (tasks.length === 0) {
                 container.innerHTML = `
-                    <div class="p-6 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                    <div class="p-4 sm:p-6 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
                         <i class="fa-solid fa-calendar-check text-2xl mb-1 text-slate-300"></i>
                         <p class="text-xs font-medium">Belum ada tugas terdekat. Semua aman!</p>
                     </div>`;
@@ -3424,7 +3470,7 @@
             }
 
             container.innerHTML = `
-                <div class="p-6 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                <div class="p-4 sm:p-6 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
                     <i class="fa-solid fa-calendar-check text-2xl mb-1 text-slate-300"></i>
                     <p class="text-xs font-medium">Belum ada tugas terdekat. Semua aman!</p>
                 </div>`;
@@ -3450,7 +3496,7 @@
 
             if (listJadwal.length === 0) {
                 container.innerHTML = `
-                    <div class="p-6 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                    <div class="p-4 sm:p-6 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
                         <i class="fa-solid fa-mug-hot text-2xl mb-1 text-slate-300"></i>
                         <p class="text-xs font-medium">${hariLibur ? `Hari ${hariIni} libur, tidak ada jadwal pelajaran.` : 'Tidak ada jadwal pelajaran hari ini.'}</p>
                     </div>`;
@@ -3538,7 +3584,7 @@
 
             if (tasks.length === 0) {
                 container.innerHTML = `
-                    <div class="p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                    <div class="p-5 sm:p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
                         <i class="fa-solid fa-inbox text-3xl mb-2"></i>
                         <p class="text-xs font-medium">Belum ada tugas/catatan baru dikirimkan oleh guru.</p>
                     </div>`;
@@ -3655,7 +3701,7 @@
             }
 
             return `
-                <div class="p-6 rounded-2xl border-2 border-blue-200 bg-blue-50/25 space-y-4 shadow-sm" data-task-id="${data.id}">
+                <div class="p-4 sm:p-6 rounded-2xl border-2 border-blue-200 bg-blue-50/25 space-y-4 shadow-sm" data-task-id="${data.id}">
                     <div class="flex items-center justify-between">
                         <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-lg uppercase">${tipeKonten}</span>
                         <span class="text-xs text-amber-800 font-extrabold font-mono bg-amber-50 border border-amber-200 px-3 py-1 rounded-xl">
@@ -4135,7 +4181,7 @@
 
             if (riwayat.length === 0) {
                 container.innerHTML = `
-                    <div class="p-6 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                    <div class="p-4 sm:p-6 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
                         <i class="fa-solid fa-clock-rotate-left text-2xl mb-1 text-slate-300"></i>
                         <p class="text-xs font-medium">Belum ada riwayat pengumpulan tugas.</p>
                     </div>`;
