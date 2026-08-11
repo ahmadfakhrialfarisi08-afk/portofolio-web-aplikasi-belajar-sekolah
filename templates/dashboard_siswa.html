@@ -762,6 +762,12 @@
                     </div>
                 </button>
 
+                <button onclick="switchTab('cari-teman')" id="btn-cari-teman" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium text-sm transition-colors duration-150">
+                    <div class="flex items-center gap-3 nav-btn-label">
+                        <i class="fa-solid fa-user w-4 text-center text-[13px]"></i> Cari Teman
+                    </div>
+                </button>
+
                 <button onclick="switchTab('quiz')" id="btn-quiz" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium text-sm transition-colors duration-150 relative">
                     <div class="flex items-center gap-3 nav-btn-label">
                         <i class="fa-solid fa-gamepad w-4 text-center text-[13px]"></i> Quiz & Leaderboard
@@ -889,14 +895,16 @@
                 <button id="btn-toggle-sidebar" onclick="toggleSidebarMobile()" title="Buka menu" aria-label="Buka menu navigasi" class="md:hidden p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors flex-shrink-0">
                     <i class="fa-solid fa-bars"></i>
                 </button>
-                <div class="relative flex items-center bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-1.5 w-40 sm:w-64 transition-all duration-300 dynamic-island-container focus-within:border-blue-300 focus-within:bg-white" id="search-bar-container">
-                    <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs mr-2.5" aria-hidden="true"></i>
-                    <label for="header-search-input" class="sr-only">Cari nama teman</label>
-                    <input id="header-search-input" type="text" placeholder="Cari nama temenmu ..." class="bg-transparent text-xs text-slate-800 focus:outline-none w-full">
+                <div class="flex flex-col items-start justify-center bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-xl transition-all duration-300 dynamic-island-container" id="header-clock-container">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-regular fa-clock text-blue-600 text-xs" aria-hidden="true"></i>
+                        <span id="header-realtime-clock" class="font-bold text-slate-800 text-sm tracking-wider font-mono">00:00:00 WIB</span>
+                    </div>
+                    <span id="header-realtime-date" class="text-[10px] font-semibold text-slate-400 -mt-0.5">Memuat tanggal...</span>
                 </div>
             </div>
 
-            <!-- Dynamic Island notifikasi: nangkring di tengah header, antara search bar & jam realtime -->
+            <!-- Dynamic Island notifikasi: nangkring di tengah header, antara jam realtime & menu profil -->
             <div id="dynamic-notification-island" class="items-center gap-2 bg-amber-300 text-slate-900 px-3.5 py-1.5 rounded-2xl border-2 border-amber-500 lightning-border-yellow shadow-lg">
                 <div class="profile-wrapper w-6 h-6 flex-shrink-0">
                     <img id="island-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar" alt="Avatar">
@@ -906,14 +914,6 @@
             </div>
 
             <div class="flex items-center gap-2 sm:gap-3" id="header-right-group">
-                <div class="hidden sm:flex flex-col items-start justify-center bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-xl transition-all duration-300" id="header-clock-container">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-regular fa-clock text-blue-600 text-xs" aria-hidden="true"></i>
-                        <span id="header-realtime-clock" class="font-bold text-slate-800 text-sm tracking-wider font-mono">00:00:00 WIB</span>
-                    </div>
-                    <span id="header-realtime-date" class="text-[10px] font-semibold text-slate-400 -mt-0.5">Memuat tanggal...</span>
-                </div>
-
                 <div class="relative">
                     <button id="btn-bell" onclick="toggleBellDropdown(event)" class="p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 relative transition-colors" aria-label="Notifikasi" aria-haspopup="true" aria-expanded="false">
                         <i class="fa-regular fa-bell" aria-hidden="true"></i>
@@ -1253,7 +1253,46 @@
                     </div>
                 </div>
             </section>
-            
+
+            <section id="tab-cari-teman" class="tab-content space-y-6 hidden">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div>
+                        <h3 class="font-bold text-xl text-slate-900">🔎 Cari Teman</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Cari nama teman sekolahmu di sini.</p>
+                    </div>
+
+                    <div class="relative w-full sm:max-w-md mt-5 mb-8" id="search-cari-teman-wrapper">
+                        <div class="relative flex items-center bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2.5 focus-within:border-blue-300 focus-within:bg-white transition-all duration-300">
+                            <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs mr-2.5" aria-hidden="true"></i>
+                            <label for="input-cari-teman" class="sr-only">Cari nama teman</label>
+                            <input id="input-cari-teman" type="text" placeholder="Cari nama temenmu ..." class="bg-transparent text-xs text-slate-800 focus:outline-none w-full">
+                        </div>
+
+                        <!-- Ikon orang di pojok kanan bawah search bar: nunjukin permintaan pertemanan masuk -->
+                        <div class="absolute -bottom-3 -right-3">
+                            <button onclick="toggleDropdownPermintaanTeman(event)" id="btn-permintaan-teman" class="relative w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg border-2 border-white flex items-center justify-center transition-colors" aria-haspopup="true" aria-expanded="false" title="Permintaan pertemanan">
+                                <i class="fa-solid fa-user text-xs" aria-hidden="true"></i>
+                                <span id="badge-permintaan-teman" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full items-center justify-center border-2 border-white">0</span>
+                            </button>
+
+                            <div id="dropdown-permintaan-teman" class="hidden absolute right-0 top-full mt-3 w-80 max-w-[calc(100vw-2rem)] bg-white border border-slate-200 rounded-2xl shadow-xl z-40" role="menu" aria-label="Daftar permintaan pertemanan">
+                                <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                                    <span class="text-xs font-bold text-slate-800">Permintaan Pertemanan</span>
+                                    <button onclick="toggleDropdownPermintaanTeman(event)" class="text-slate-400 hover:text-slate-600" aria-label="Tutup"><i class="fa-solid fa-xmark text-xs"></i></button>
+                                </div>
+                                <div id="list-permintaan-teman" class="max-h-80 overflow-y-auto p-2 space-y-1"></div>
+                                <p id="permintaan-teman-kosong" class="hidden text-xs text-slate-400 text-center py-8">Belum ada permintaan pertemanan masuk.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="hasil-cari-teman-kosong" class="p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                        <i class="fa-solid fa-user-group text-2xl mb-2"></i>
+                        <p class="text-xs font-medium">Ketik nama di kolom pencarian untuk mulai mencari teman.</p>
+                    </div>
+                </div>
+            </section>
+
             <section id="tab-quiz" class="tab-content space-y-6 hidden">
 
                 <!-- ============ VIEW 0: PILIH JENIS QUIZ ============ -->
@@ -2401,6 +2440,117 @@
                 container.appendChild(row);
             });
         }
+
+        /* ================= CARI TEMAN: PERMINTAAN PERTEMANAN ================= */
+        // Data awal (dummy) permintaan pertemanan yang masuk ke siswa aktif.
+        // Status terima/tolak disimpan per-siswa di localStorage supaya tidak
+        // muncul lagi begitu sudah ditanggapi.
+        const DATA_PERMINTAAN_PERTEMANAN_AWAL = [
+            { id: 'pt_001', nama: 'Rafi Ardiansyah', kelas: 'XI TKJ 1' },
+            { id: 'pt_002', nama: 'Salsabila Putri', kelas: 'X TAV 2' },
+            { id: 'pt_003', nama: 'Bagas Firmansyah', kelas: 'XII TKR 1' }
+        ];
+        const KEY_PERMINTAAN_TEMAN_DITANGANI = `permintaan_pertemanan_ditangani_${ID_SISWA_AKTIF}`;
+
+        function getPermintaanTemanDitangani() {
+            try {
+                return JSON.parse(localStorage.getItem(KEY_PERMINTAAN_TEMAN_DITANGANI) || '{}');
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function savePermintaanTemanDitangani(data) {
+            localStorage.setItem(KEY_PERMINTAAN_TEMAN_DITANGANI, JSON.stringify(data));
+        }
+
+        function getPermintaanTemanPending() {
+            const ditangani = getPermintaanTemanDitangani();
+            return DATA_PERMINTAAN_PERTEMANAN_AWAL.filter(item => !ditangani[item.id]);
+        }
+
+        function updateBadgePermintaanTeman() {
+            const badge = document.getElementById('badge-permintaan-teman');
+            if (!badge) return;
+            const jumlah = getPermintaanTemanPending().length;
+            if (jumlah > 0) {
+                badge.innerText = String(jumlah);
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+            } else {
+                badge.classList.add('hidden');
+                badge.classList.remove('flex');
+            }
+        }
+
+        function renderPermintaanTeman() {
+            const list = document.getElementById('list-permintaan-teman');
+            const kosong = document.getElementById('permintaan-teman-kosong');
+            if (!list) return;
+
+            const pending = getPermintaanTemanPending();
+            list.innerHTML = '';
+
+            if (pending.length === 0) {
+                if (kosong) kosong.classList.remove('hidden');
+                updateBadgePermintaanTeman();
+                return;
+            }
+            if (kosong) kosong.classList.add('hidden');
+
+            pending.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 transition-colors';
+                row.innerHTML = `
+                    <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-user text-xs"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-bold text-slate-800 truncate">${item.nama}</p>
+                        <p class="text-[10px] text-slate-400">${item.kelas}</p>
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <button onclick="tanggapiPermintaanTeman('${item.id}', 'diterima')" class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 hover:bg-emerald-200 flex items-center justify-center transition-colors" title="Terima">
+                            <i class="fa-solid fa-check text-[10px]"></i>
+                        </button>
+                        <button onclick="tanggapiPermintaanTeman('${item.id}', 'ditolak')" class="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 hover:bg-rose-200 flex items-center justify-center transition-colors" title="Tolak">
+                            <i class="fa-solid fa-xmark text-[10px]"></i>
+                        </button>
+                    </div>`;
+                list.appendChild(row);
+            });
+
+            updateBadgePermintaanTeman();
+        }
+
+        function tanggapiPermintaanTeman(id, aksi) {
+            const ditangani = getPermintaanTemanDitangani();
+            ditangani[id] = aksi;
+            savePermintaanTemanDitangani(ditangani);
+            renderPermintaanTeman();
+        }
+
+        function toggleDropdownPermintaanTeman(event) {
+            if (event) event.stopPropagation();
+            const dropdown = document.getElementById('dropdown-permintaan-teman');
+            const trigger = document.getElementById('btn-permintaan-teman');
+            if (!dropdown) return;
+
+            const akanDibuka = dropdown.classList.contains('hidden');
+            dropdown.classList.toggle('hidden');
+            if (trigger) trigger.setAttribute('aria-expanded', String(akanDibuka));
+
+            if (akanDibuka) renderPermintaanTeman();
+        }
+
+        window.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('dropdown-permintaan-teman');
+            const trigger = document.getElementById('btn-permintaan-teman');
+            if (dropdown && trigger && !trigger.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+                trigger.setAttribute('aria-expanded', 'false');
+            }
+        });
 
         function toggleBellDropdown(event) {
             if (event) event.stopPropagation();
@@ -3754,7 +3904,7 @@
             renderRiwayatPengumpulan();
             renderLiveTaskContent(); // render awal: langsung munculin status tugas terdekat saat halaman baru dibuka
             checkTaskBadgeStatus();
-            updateTaskCounter();
+            updateBadgePermintaanTeman();
             updateBerandaPoinQuiz();
             sinkronkanQuizDenganServer(); // tarik progress & leaderboard akun ini dari server
             renderPanelDummyLeaderboard();
