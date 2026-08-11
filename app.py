@@ -324,6 +324,15 @@ def find_device(username, token):
         if d['token'] == token:
             return d
     return None
+
+
+def is_master_device(username, token):
+    """Cek apakah token device yang dipakai sekarang adalah Master Device
+    yang berstatus approved milik username tsb. Dipakai buat mengunci
+    fitur approve/reject perangkat supaya cuma bisa dilakukan dari
+    Master Device (bukan sembarang device yang sedang login)."""
+    d = find_device(username, token)
+    return bool(d and d.get('is_master') and d.get('status') == 'approved')
  
  
 def set_device_cookie(resp, token):
@@ -374,15 +383,60 @@ def login():
             return redirect(url_for('login'))
  
         # ------------------------------------------------------------
-        # NOTE: Verifikasi Master Device / approval device DINONAKTIFKAN
-        # SEMENTARA karena UI untuk approve/reject device di dashboard
-        # belum dibuat. Begitu fitur approve/reject-nya sudah ada,
-        # kembalikan logic pengecekan device (lihat versi lama file ini
-        # untuk referensi). Untuk sekarang, begitu kredensial valid,
-        # langsung login tanpa cek status device sama sekali.
+        # Verifikasi Master Device / approval device kedua.
+        # Device pertama yang dipakai login otomatis jadi Master Device.
+        # Device lain butuh persetujuan dari Master Device sebelum bisa
+        # masuk -- walau username/password/role yang dimasukkan benar.
         # ------------------------------------------------------------
         device_token = get_device_token()
-        return _finish_login(user, device_token)
+        existing_device = find_device(username, device_token)
+
+        if existing_device:
+            if existing_device['status'] == 'approved':
+                existing_device['last_login_at'] = datetime.utcnow()
+                return _finish_login(user, device_token)
+
+            if existing_device['status'] == 'pending':
+                flash('Perangkat ini masih menunggu persetujuan dari Master Device. Buka Portal di Master Device untuk menyetujuinya lewat menu "Perangkat".', 'error')
+                resp = make_response(redirect(url_for('login')))
+                return set_device_cookie(resp, device_token)
+
+            # status == 'rejected'
+            flash('Perangkat ini ditolak aksesnya oleh Master Device. Hubungi pemilik akun.', 'error')
+            resp = make_response(redirect(url_for('login')))
+            return set_device_cookie(resp, device_token)
+
+        # Device ini belum pernah terdaftar untuk akun ini sama sekali
+        daftar_device_user = devices.get(username, [])
+
+        if not daftar_device_user:
+            # Belum ada device sama sekali -> device ini otomatis jadi Master Device
+            devices.setdefault(username, []).append({
+                'token': device_token,
+                'name': build_device_name(),
+                'ip': request.remote_addr,
+                'is_master': True,
+                'status': 'approved',
+                'created_at': datetime.utcnow(),
+                'last_login_at': datetime.utcnow(),
+            })
+            flash('Perangkat ini telah didaftarkan sebagai Master Device.', 'success')
+            return _finish_login(user, device_token)
+
+        # Sudah ada Master Device lain, tapi device ini belum pernah login
+        # -> buat permintaan approval, JANGAN login dulu
+        devices[username].append({
+            'token': device_token,
+            'name': build_device_name(),
+            'ip': request.remote_addr,
+            'is_master': False,
+            'status': 'pending',
+            'created_at': datetime.utcnow(),
+            'last_login_at': None,
+        })
+        flash('Login dari perangkat baru terdeteksi. Menunggu persetujuan dari Master Device sebelum akses diberikan.', 'error')
+        resp = make_response(redirect(url_for('login')))
+        return set_device_cookie(resp, device_token)
  
  
 def _finish_login(user, device_token):
@@ -439,7 +493,82 @@ def reset_device():
         return _finish_login(user, new_token)
  
     return render_template('reset_device.html')
- 
+
+
+# ----------------------------------------------------
+# API PERANGKAT (approval device dari sidebar dashboard)
+# Cuma Master Device (device_token cookie yang sedang dipakai == device
+# ber-flag is_master & status approved) yang boleh lihat & menyetujui/
+# menolak device lain milik akun yang sama.
+# ----------------------------------------------------
+@app.route('/api/perangkat/list', methods=['GET'])
+def api_perangkat_list():
+    if 'user' not in session:
+        return jsonify(success=False, message='Belum login.'), 401
+
+    username = session['user']['username']
+    token_saya = request.cookies.get('device_token')
+    saya_master = is_master_device(username, token_saya)
+
+    daftar = []
+    for d in sorted(devices.get(username, []), key=lambda x: x.get('created_at') or datetime.min, reverse=True):
+        daftar.append({
+            'token': d['token'],
+            'nama': d.get('name') or 'Perangkat Tidak Dikenal',
+            'ip': d.get('ip'),
+            'is_master': bool(d.get('is_master')),
+            'status': d.get('status'),
+            'perangkat_ini': d['token'] == token_saya,
+            'created_at': d['created_at'].isoformat() if d.get('created_at') else None,
+            'last_login_at': d['last_login_at'].isoformat() if d.get('last_login_at') else None,
+        })
+
+    return jsonify(success=True, is_master=saya_master, devices=daftar)
+
+
+@app.route('/api/perangkat/approve', methods=['POST'])
+def api_perangkat_approve():
+    if 'user' not in session:
+        return jsonify(success=False, message='Belum login.'), 401
+
+    username = session['user']['username']
+    token_saya = request.cookies.get('device_token')
+    if not is_master_device(username, token_saya):
+        return jsonify(success=False, message='Hanya Master Device yang bisa menyetujui perangkat.'), 403
+
+    data = request.get_json(silent=True) or {}
+    target_token = (data.get('token') or '').strip()
+    target = find_device(username, target_token)
+    if not target:
+        return jsonify(success=False, message='Perangkat tidak ditemukan.'), 404
+
+    target['status'] = 'approved'
+    return jsonify(success=True, message=f"Perangkat '{target.get('name', 'ini')}' telah disetujui.")
+
+
+@app.route('/api/perangkat/reject', methods=['POST'])
+def api_perangkat_reject():
+    if 'user' not in session:
+        return jsonify(success=False, message='Belum login.'), 401
+
+    username = session['user']['username']
+    token_saya = request.cookies.get('device_token')
+    if not is_master_device(username, token_saya):
+        return jsonify(success=False, message='Hanya Master Device yang bisa menolak perangkat.'), 403
+
+    data = request.get_json(silent=True) or {}
+    target_token = (data.get('token') or '').strip()
+    target = find_device(username, target_token)
+    if not target:
+        return jsonify(success=False, message='Perangkat tidak ditemukan.'), 404
+
+    if target.get('is_master'):
+        return jsonify(success=False, message='Master Device tidak bisa menolak dirinya sendiri.'), 400
+
+    target['status'] = 'rejected'
+    return jsonify(success=True, message=f"Perangkat '{target.get('name', 'ini')}' telah ditolak.")
+
+
 # ----------------------------------------------------
 # ROUTE REGISTER / BUAT AKUN BARU
 # ----------------------------------------------------

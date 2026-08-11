@@ -792,6 +792,13 @@
                     </div>
                 </button>
 
+                <button onclick="switchTab('perangkat')" id="btn-perangkat" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium text-sm transition-colors duration-150 relative">
+                    <div class="flex items-center gap-3 nav-btn-label">
+                        <i class="fa-solid fa-mobile-screen-button w-4 text-center text-[13px]"></i> Perangkat
+                    </div>
+                    <span id="badge-perangkat-pending-nav" class="w-2 h-2 bg-rose-600 rounded-full hidden shadow-sm shadow-rose-500/50" aria-label="Ada perangkat baru menunggu persetujuan"></span>
+                </button>
+
                 <div class="pt-3 mt-2 border-t border-slate-100 space-y-0.5">
                     <p class="px-3.5 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wide">Bantuan</p>
 
@@ -1581,6 +1588,45 @@
                 <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
                     <h3 class="font-bold text-xl text-slate-900 mb-2">📢 Pengumuman Sekolah</h3>
                     <p class="text-xs text-slate-400">Informasi penting dari pihak sekolah.</p>
+                </div>
+            </section>
+
+            <section id="tab-perangkat" class="tab-content space-y-6 hidden">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-start justify-between gap-3 flex-wrap">
+                        <div>
+                            <h3 class="font-bold text-xl text-slate-900">📱 Perangkat</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Kelola perangkat yang login ke akun ini. Perangkat pertama yang dipakai login otomatis jadi <b>Master Device</b>; perangkat lain butuh persetujuan dari Master Device dulu sebelum bisa masuk.</p>
+                        </div>
+                        <button onclick="renderPerangkat()" class="flex-shrink-0 px-3 py-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 text-xs font-semibold transition-colors flex items-center gap-1.5">
+                            <i class="fa-solid fa-rotate text-[10px]"></i> Muat Ulang
+                        </button>
+                    </div>
+
+                    <div id="perangkat-bukan-master-info" class="hidden mt-4 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5">
+                        <i class="fa-solid fa-circle-info mt-0.5"></i>
+                        <span>Perangkat yang sedang kamu pakai ini <b>bukan Master Device</b>, jadi kamu cuma bisa melihat daftarnya. Menyetujui atau menolak perangkat baru hanya bisa dilakukan dari Master Device.</span>
+                    </div>
+
+                    <div id="perangkat-list-wrapper" class="mt-5 overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-[10px] uppercase tracking-wide text-slate-400 border-b border-slate-100">
+                                    <th class="py-2 pr-3 font-bold">Nama Perangkat</th>
+                                    <th class="py-2 pr-3 font-bold">IP</th>
+                                    <th class="py-2 pr-3 font-bold">Status</th>
+                                    <th class="py-2 pr-3 font-bold">Terdaftar</th>
+                                    <th class="py-2 pl-3 font-bold text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="list-perangkat"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="perangkat-kosong" class="hidden p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400 mt-3">
+                        <i class="fa-solid fa-mobile-screen-button text-2xl mb-2"></i>
+                        <p class="text-xs font-medium">Belum ada data perangkat.</p>
+                    </div>
                 </div>
             </section>
 
@@ -2613,6 +2659,128 @@
                 console.error('Gagal menanggapi permintaan pertemanan:', e);
             }
             renderPermintaanTeman();
+        }
+
+        /* ================= PERANGKAT (Master Device & Approval Device Kedua) ================= */
+        function updateBadgePerangkatNav(jumlahPending) {
+            const badgeNav = document.getElementById('badge-perangkat-pending-nav');
+            if (badgeNav) badgeNav.classList.toggle('hidden', jumlahPending <= 0);
+        }
+
+        function formatWaktuPerangkat(iso) {
+            if (!iso) return '-';
+            try {
+                return new Date(iso).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                return '-';
+            }
+        }
+
+        function badgeStatusPerangkat(status) {
+            if (status === 'approved') return '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Disetujui</span>';
+            if (status === 'pending') return '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">Menunggu</span>';
+            return '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">Ditolak</span>';
+        }
+
+        async function renderPerangkat() {
+            const tbody = document.getElementById('list-perangkat');
+            const kosong = document.getElementById('perangkat-kosong');
+            const infoBukanMaster = document.getElementById('perangkat-bukan-master-info');
+            if (!tbody) return;
+
+            let json;
+            try {
+                const res = await fetch('/api/perangkat/list');
+                json = await res.json();
+            } catch (e) {
+                console.error('Gagal ambil data perangkat:', e);
+                return;
+            }
+            if (!json || !json.success) return;
+
+            const { is_master: sayaMaster, devices: daftar } = json;
+            if (infoBukanMaster) infoBukanMaster.classList.toggle('hidden', sayaMaster);
+
+            const jumlahPending = daftar.filter(d => d.status === 'pending').length;
+            updateBadgePerangkatNav(jumlahPending);
+
+            tbody.innerHTML = '';
+            if (daftar.length === 0) {
+                kosong?.classList.remove('hidden');
+                return;
+            }
+            kosong?.classList.add('hidden');
+
+            daftar.forEach(d => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-slate-50 last:border-0';
+
+                let aksiHtml = '<span class="text-slate-300 text-xs">&mdash;</span>';
+                if (sayaMaster && !d.is_master) {
+                    if (d.status === 'pending') {
+                        aksiHtml = `
+                            <div class="flex items-center justify-end gap-1.5">
+                                <button class="btn-setujui-perangkat px-2.5 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] font-bold transition-colors">Setujui</button>
+                                <button class="btn-tolak-perangkat px-2.5 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-[10px] font-bold transition-colors">Tolak</button>
+                            </div>`;
+                    } else if (d.status === 'approved') {
+                        aksiHtml = `<div class="flex justify-end"><button class="btn-tolak-perangkat px-2.5 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-[10px] font-bold transition-colors">Cabut Akses</button></div>`;
+                    } else {
+                        aksiHtml = `<div class="flex justify-end"><button class="btn-setujui-perangkat px-2.5 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] font-bold transition-colors">Setujui</button></div>`;
+                    }
+                }
+
+                tr.innerHTML = `
+                    <td class="py-2.5 pr-3 align-top">
+                        <p class="text-xs font-semibold text-slate-800 max-w-[220px] truncate" title="${d.nama}">${d.nama}</p>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            ${d.is_master ? '<span class="inline-flex items-center gap-1 text-[9px] font-bold text-blue-600"><i class="fa-solid fa-crown"></i> Master Device</span>' : ''}
+                            ${d.perangkat_ini ? '<span class="text-[9px] font-semibold text-slate-400">(perangkat ini)</span>' : ''}
+                        </div>
+                    </td>
+                    <td class="py-2.5 pr-3 align-top text-xs text-slate-500">${d.ip || '-'}</td>
+                    <td class="py-2.5 pr-3 align-top">${badgeStatusPerangkat(d.status)}</td>
+                    <td class="py-2.5 pr-3 align-top text-[10px] text-slate-400">${formatWaktuPerangkat(d.created_at)}</td>
+                    <td class="py-2.5 pl-3 align-top text-right">${aksiHtml}</td>`;
+
+                const btnSetujui = tr.querySelector('.btn-setujui-perangkat');
+                if (btnSetujui) btnSetujui.addEventListener('click', () => tanggapiPerangkat(d.token, 'approve'));
+                const btnTolak = tr.querySelector('.btn-tolak-perangkat');
+                if (btnTolak) btnTolak.addEventListener('click', () => tanggapiPerangkat(d.token, 'reject'));
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function updateBadgePerangkatNavSaja() {
+            // Versi ringan dari renderPerangkat(): cuma update titik merah di
+            // sidebar, tidak menulis ulang isi tabel supaya tidak mengganggu
+            // kalau Master Device sedang lihat/klik tabel Perangkat tiap 3 detik.
+            try {
+                const res = await fetch('/api/perangkat/list');
+                const json = await res.json();
+                if (!json || !json.success) return;
+                const jumlahPending = json.devices.filter(d => d.status === 'pending').length;
+                updateBadgePerangkatNav(jumlahPending);
+            } catch (e) {
+                console.error('Gagal cek badge perangkat:', e);
+            }
+        }
+
+        async function tanggapiPerangkat(token, aksi) {
+            if (aksi === 'reject' && !confirm('Yakin mau menolak/mencabut akses perangkat ini?')) return;
+            try {
+                const res = await fetch(`/api/perangkat/${aksi}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const json = await res.json();
+                if (!json.success) alert(json.message || 'Gagal memproses perangkat.');
+            } catch (e) {
+                console.error('Gagal menanggapi perangkat:', e);
+            }
+            renderPerangkat();
         }
 
         function toggleDropdownPermintaanTeman(event) {
@@ -4228,6 +4396,7 @@
             renderLiveTaskContent(); // render awal: langsung munculin status tugas terdekat saat halaman baru dibuka
             checkTaskBadgeStatus();
             renderPermintaanTeman(); // sekalian isi badge dropdown pertemanan dari server saat halaman dibuka
+            renderPerangkat(); // isi badge & tabel perangkat dari server saat halaman dibuka
             updateBerandaPoinQuiz();
             sinkronkanQuizDenganServer(); // tarik progress & leaderboard akun ini dari server
             renderPanelDummyLeaderboard();
@@ -4243,6 +4412,7 @@
                 cekNotifBaruStatusPrestasi();
                 updateTaskCounter(); // biar streak otomatis putus/berubah warna begitu deadline lewat, tanpa perlu refresh
                 renderPermintaanTeman(); // cek permintaan pertemanan baru dari server -- biar titik merah di sidebar & badge dropdown langsung muncul di sisi penerima walau dashboard sudah kebuka duluan
+                updateBadgePerangkatNavSaja(); // cek ada tidaknya perangkat baru yang pending, tanpa nge-render ulang tabel penuh tiap 3 detik
             }, 3000);
             cekNotifBaruTugasDitarik();
             cekNotifBaruStatusPrestasi();
