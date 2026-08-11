@@ -772,10 +772,11 @@
                     </div>
                 </button>
 
-                <button onclick="switchTab('cari-teman')" id="btn-cari-teman" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium text-sm transition-colors duration-150">
+                <button onclick="switchTab('cari-teman')" id="btn-cari-teman" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium text-sm transition-colors duration-150 relative">
                     <div class="flex items-center gap-3 nav-btn-label">
                         <i class="fa-solid fa-user w-4 text-center text-[13px]"></i> Cari Teman
                     </div>
+                    <span id="badge-permintaan-teman-nav" class="w-2 h-2 bg-rose-600 rounded-full hidden shadow-sm shadow-rose-500/50" aria-label="Ada permintaan pertemanan baru"></span>
                 </button>
 
                 <button onclick="switchTab('quiz')" id="btn-quiz" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium text-sm transition-colors duration-150 relative">
@@ -2520,16 +2521,24 @@
 
         function updateBadgePermintaanTeman(jumlah) {
             const badge = document.getElementById('badge-permintaan-teman');
-            if (!badge) return;
+            const badgeNav = document.getElementById('badge-permintaan-teman-nav');
             JUMLAH_PERMINTAAN_MASUK_TERAKHIR = jumlah;
-            if (jumlah > 0) {
-                badge.innerText = String(jumlah);
-                badge.classList.remove('hidden');
-                badge.classList.add('flex');
-            } else {
-                badge.classList.add('hidden');
-                badge.classList.remove('flex');
+
+            if (badge) {
+                if (jumlah > 0) {
+                    badge.innerText = String(jumlah);
+                    badge.classList.remove('hidden');
+                    badge.classList.add('flex');
+                } else {
+                    badge.classList.add('hidden');
+                    badge.classList.remove('flex');
+                }
             }
+
+            // Titik merah kecil di menu sidebar "Cari Teman" -- munculnya di sinilah
+            // yang bikin siswa penerima (mis. Syam) langsung tahu ada permintaan
+            // pertemanan baru MASUK (mis. dari Ahmad) tanpa harus buka tab itu dulu.
+            if (badgeNav) badgeNav.classList.toggle('hidden', jumlah <= 0);
         }
 
         async function ambilRelasiPertemanan() {
@@ -4233,6 +4242,7 @@
                 cekPembaruanTugasRealtime();
                 cekNotifBaruStatusPrestasi();
                 updateTaskCounter(); // biar streak otomatis putus/berubah warna begitu deadline lewat, tanpa perlu refresh
+                renderPermintaanTeman(); // cek permintaan pertemanan baru dari server -- biar titik merah di sidebar & badge dropdown langsung muncul di sisi penerima walau dashboard sudah kebuka duluan
             }, 3000);
             cekNotifBaruTugasDitarik();
             cekNotifBaruStatusPrestasi();
