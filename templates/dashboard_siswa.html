@@ -722,6 +722,25 @@
            belum ada asetnya, dsb), jangan sampai teks "alt" numpuk kelihatan di
            atas frame border seperti sebelumnya — cukup disembunyikan saja. */
         .user-border, .user-avatar { color: transparent; font-size: 0; }
+
+        /* --- 11. ANIMASI "SEOLAH KEPILIH" SAAT SIDEBAR DISCROLL DI HP.
+           Efek picker-wheel: menu yang posisinya paling dekat ke tengah area
+           sidebar sedikit membesar & kena tint biru selama jari masih
+           scroll/nempel. Ini CUMA feedback visual sementara -- beda dari
+           status "tab aktif" beneran (bg-blue-600 solid) yang tidak berubah. */
+        .nav-btn {
+            transition: transform 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+        }
+        .nav-btn-picking {
+            transform: scale(1.025);
+            box-shadow: inset 0 0 0 1.5px rgba(59, 130, 246, 0.35);
+        }
+        .nav-btn-picking:not([aria-current="page"]) {
+            background-color: rgba(59, 130, 246, 0.08);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .nav-btn, .nav-btn-picking { transition: none !important; transform: none !important; }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden">
@@ -3090,6 +3109,59 @@
             sidebar.classList.add('-translate-x-full');
             overlay.classList.add('hidden');
         }
+
+        /* ================= ANIMASI "SEOLAH KEPILIH" SAAT SCROLL SIDEBAR DI HP =================
+           Selama nav sidebar lagi discroll (jari nempel/geser ke atas-bawah),
+           menu yang posisinya paling dekat ke tengah area sidebar dikasih efek
+           picker-wheel (sedikit membesar + tint biru) sebagai feedback visual
+           sementara. Begitu scroll berhenti, efeknya hilang lagi -- tidak ikut
+           mengubah tab yang beneran aktif. */
+        (function setupAnimasiPickerSidebar() {
+            const sidebar = document.getElementById('sidebar-utama');
+            const nav = document.getElementById('sidebar-menu');
+            if (!sidebar || !nav) return;
+
+            let idleTimerPicker = null;
+
+            function ambilTombolNav() {
+                return Array.from(nav.querySelectorAll('.nav-btn'));
+            }
+
+            function sorotTombolTerdekatKeTengah() {
+                const tombolList = ambilTombolNav();
+                if (tombolList.length === 0) return;
+
+                const rectSidebar = sidebar.getBoundingClientRect();
+                const titikTengah = rectSidebar.top + (rectSidebar.height / 2);
+
+                let terdekat = null;
+                let jarakTerdekat = Infinity;
+
+                tombolList.forEach(tombol => {
+                    const rect = tombol.getBoundingClientRect();
+                    const tengahTombol = rect.top + (rect.height / 2);
+                    const jarak = Math.abs(tengahTombol - titikTengah);
+                    if (jarak < jarakTerdekat) {
+                        jarakTerdekat = jarak;
+                        terdekat = tombol;
+                    }
+                    tombol.classList.remove('nav-btn-picking');
+                });
+
+                if (terdekat) terdekat.classList.add('nav-btn-picking');
+            }
+
+            function saatAdaAktivitasScroll() {
+                sorotTombolTerdekatKeTengah();
+                clearTimeout(idleTimerPicker);
+                idleTimerPicker = setTimeout(() => {
+                    // Scroll berhenti -> lepas semua efek sorot sementara
+                    ambilTombolNav().forEach(tombol => tombol.classList.remove('nav-btn-picking'));
+                }, 350);
+            }
+
+            sidebar.addEventListener('scroll', saatAdaAktivitasScroll, { passive: true });
+        })();
 
         // Kalau layar di-resize jadi ukuran desktop, pastikan overlay & state mobile ke-reset
         window.addEventListener('resize', () => {
