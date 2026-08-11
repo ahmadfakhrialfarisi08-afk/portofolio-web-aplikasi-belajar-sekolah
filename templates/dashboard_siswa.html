@@ -75,6 +75,7 @@
         .border-blue-200, .focus-within\:border-blue-300:focus-within { border-color: #cdc6f7 !important; }
         .border-blue-300 { border-color: #cdc6f7 !important; }
         .shadow-blue-500 { --tw-shadow-color: var(--brand) !important; }
+        .shadow-blue-500\/25 { --tw-shadow-color: rgba(91, 79, 233, 0.25) !important; }
         html.dark .bg-blue-50, html.dark .file\:bg-blue-50 { background-color: rgba(91, 79, 233, 0.16) !important; }
         html.dark .bg-blue-100 { background-color: rgba(91, 79, 233, 0.24) !important; }
         html.dark .text-blue-600, html.dark .text-blue-700 { color: #a79dff !important; }
@@ -98,28 +99,47 @@
 
         /* ============================================================
            EFEK GESER TEKS MENU SIDEBAR (hover "maju ke depan")
-           Cuma pakai transform (GPU-accelerated) + text-shadow, jadi
-           ringan di laptop maupun HP (sama di kedua ukuran layar,
-           tidak ada perbedaan behavior antara desktop & mobile).
-           Saat hover: label ikon+teks geser sedikit ke kanan (translateX).
-           Saat item itu jadi AKTIF/terpilih (klik -> aria-current="page"):
-           posisi label dikembalikan normal (translateX kembali ke 0),
-           tapi diberi text-shadow tipis sebagai penanda "sedang terpilih".
+           Cuma pakai transform (GPU-accelerated, tidak memicu reflow/
+           repaint berat), jadi ringan & responsif di laptop maupun HP.
+
+           - Durasi dipersingkat (100ms, ease-out) supaya kerasa "nempel"
+             di kursor pas mouse digerakkan naik-turun cepat lintas menu
+             (transisi lama = 180ms bikin sebagian menu kelihatan diem
+             karena belum sempat selesai animasi sebelum hover pindah).
+           - Hover (:hover) HANYA aktif di perangkat yang beneran punya
+             mouse (media query hover:hover+pointer:fine). Di HP, :hover
+             sering "nyangkut" nempel setelah disentuh (browser mobile
+             mensimulasikan hover saat tap) -- makanya kelihatan ada yg
+             diem/macet. Sebagai gantinya, HP pakai :active (durasi tap)
+             yang otomatis lepas begitu jari diangkat, jadi tetap smooth.
+           - text-shadow item aktif TIDAK ikut ditransisikan (langsung
+             muncul), supaya animasi transform tetap satu-satunya beban
+             render tiap hover berpindah -- ini yang bikin gesernya mulus.
            ============================================================ */
         .nav-btn-label {
             transform: translateX(0);
-            transition: transform .18s cubic-bezier(.4,0,.2,1), text-shadow .18s ease;
+            transition: transform .1s ease-out;
             will-change: transform;
         }
-        .nav-btn:hover .nav-btn-label,
-        #btn-it-support:hover .nav-btn-label {
-            transform: translateX(5px);
+        @media (hover: hover) and (pointer: fine) {
+            .nav-btn:hover .nav-btn-label,
+            #btn-it-support:hover .nav-btn-label {
+                transform: translateX(5px);
+            }
+        }
+        @media (hover: none) {
+            .nav-btn:active .nav-btn-label,
+            #btn-it-support:active .nav-btn-label {
+                transform: translateX(5px);
+                transition-duration: .06s;
+            }
         }
         .nav-btn[aria-current="page"] .nav-btn-label {
             transform: translateX(0);
-            text-shadow: 0 1px 3px rgba(91, 79, 233, 0.35);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
-        .nav-btn[aria-current="page"]:hover .nav-btn-label {
+        .nav-btn[aria-current="page"]:hover .nav-btn-label,
+        .nav-btn[aria-current="page"]:active .nav-btn-label {
             transform: translateX(0);
         }
         @media (prefers-reduced-motion: reduce) {
@@ -704,20 +724,20 @@
 
     <aside id="sidebar-utama" class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between fixed md:static inset-y-0 left-0 z-40 flex-shrink-0 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto overscroll-contain" aria-label="Navigasi utama">
         <div>
-            <div class="px-5 py-5 flex items-center gap-3 border-b border-slate-100">
+            <div class="px-5 py-5 flex items-start gap-3 border-b border-slate-100">
                 <a href="#" class="block flex-shrink-0" aria-label="Beranda Portal Sekolah">
                     <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-500/25 overflow-hidden">
                         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSeyF2mMXxr-Rex9wZLBTU8eRGAelTMK_FPJ0aRJOxzUg&s" alt="Logo Sekolah" class="w-full h-full object-contain" />
                     </div>
                 </a>
-                <div class="min-w-0">
-                    <h1 class="font-bold text-sm leading-tight text-slate-900 truncate">SMK Banjar Asri Cimaung</h1>
+                <div class="min-w-0 pt-0.5">
+                    <h1 class="font-bold text-sm leading-tight text-slate-900">SMK Banjar Asri Cimaung</h1>
                     <p class="text-[11px] text-slate-400 font-medium">School App</p>
                 </div>
             </div>
 
             <nav class="px-3 py-5 space-y-0.5" id="sidebar-menu" aria-label="Menu">
-                <button onclick="switchTab('beranda')" id="btn-beranda" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-blue-50 text-blue-700 font-semibold text-sm transition-colors duration-150" aria-current="page">
+                <button onclick="switchTab('beranda')" id="btn-beranda" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-blue-600 text-white font-semibold text-sm shadow-sm shadow-blue-500/25 transition-colors duration-150" aria-current="page">
                     <div class="flex items-center gap-3 nav-btn-label">
                         <i class="fa-solid fa-house w-4 text-center text-[13px]"></i> Beranda
                     </div>
@@ -758,7 +778,7 @@
                 <div class="pt-3 mt-2 border-t border-slate-100 space-y-0.5">
                     <p class="px-3.5 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wide">Bantuan</p>
 
-                    <button onclick="switchTab('ai-support')" id="btn-ai-support" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium text-sm transition-colors duration-150">
+                    <button onclick="switchTab('ai-support')" id="btn-ai-support" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-700 font-medium text-sm transition-colors duration-150">
                         <div class="flex items-center gap-3 nav-btn-label">
                             <i class="fa-solid fa-robot w-4 text-center text-[13px]"></i> AI Support
                         </div>
@@ -2441,7 +2461,8 @@
             closeSidebarMobile(); // otomatis tutup sidebar mobile setelah pilih menu
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.className = "nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium text-sm transition-colors duration-150";
+                const hoverClass = btn.id === 'btn-ai-support' ? 'hover:bg-blue-50 hover:text-blue-700' : 'hover:bg-slate-100 hover:text-slate-900';
+                btn.className = `nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 ${hoverClass} font-medium text-sm transition-colors duration-150`;
                 btn.removeAttribute('aria-current');
             });
 
@@ -2450,7 +2471,7 @@
 
             if (targetTab) targetTab.classList.remove('hidden');
             if (targetBtn) {
-                targetBtn.className = "nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-blue-50 text-blue-700 font-semibold text-sm transition-colors duration-150";
+                targetBtn.className = "nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-blue-600 text-white font-semibold text-sm shadow-sm shadow-blue-500/25 transition-colors duration-150";
                 targetBtn.setAttribute('aria-current', 'page');
             }
 
