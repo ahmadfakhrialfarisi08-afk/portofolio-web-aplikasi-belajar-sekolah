@@ -1256,22 +1256,17 @@
 
             <section id="tab-cari-teman" class="tab-content space-y-6 hidden">
                 <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <div>
-                        <h3 class="font-bold text-xl text-slate-900">🔎 Cari Teman</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">Cari nama teman sekolahmu di sini.</p>
-                    </div>
-
-                    <div class="relative w-full sm:max-w-md mt-5 mb-8" id="search-cari-teman-wrapper">
-                        <div class="relative flex items-center bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2.5 focus-within:border-blue-300 focus-within:bg-white transition-all duration-300">
-                            <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs mr-2.5" aria-hidden="true"></i>
-                            <label for="input-cari-teman" class="sr-only">Cari nama teman</label>
-                            <input id="input-cari-teman" type="text" placeholder="Cari nama temenmu ..." class="bg-transparent text-xs text-slate-800 focus:outline-none w-full">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h3 class="font-bold text-xl text-slate-900">🔎 Cari Teman</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Cari nama teman sekolahmu di sini.</p>
                         </div>
 
-                        <!-- Ikon orang di pojok kanan bawah search bar: nunjukin permintaan pertemanan masuk -->
-                        <div class="absolute -bottom-3 -right-3">
-                            <button onclick="toggleDropdownPermintaanTeman(event)" id="btn-permintaan-teman" class="relative w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg border-2 border-white flex items-center justify-center transition-colors" aria-haspopup="true" aria-expanded="false" title="Permintaan pertemanan">
-                                <i class="fa-solid fa-user text-xs" aria-hidden="true"></i>
+                        <!-- Tombol permintaan pertemanan masuk: sekarang di pojok kanan atas kartu
+                             (dulu nempel di sudut kanan-bawah search bar yang sempit) -->
+                        <div class="relative flex-shrink-0">
+                            <button onclick="toggleDropdownPermintaanTeman(event)" id="btn-permintaan-teman" class="relative w-11 h-11 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg border-2 border-white flex items-center justify-center transition-colors" aria-haspopup="true" aria-expanded="false" title="Permintaan pertemanan">
+                                <i class="fa-solid fa-user-group text-sm" aria-hidden="true"></i>
                                 <span id="badge-permintaan-teman" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full items-center justify-center border-2 border-white">0</span>
                             </button>
 
@@ -1286,10 +1281,21 @@
                         </div>
                     </div>
 
+                    <!-- Search bar sekarang full-width kartu (dulu dibatasi sm:max-w-md, jadi kelihatan kecil & sisa area kanan kosong) -->
+                    <div class="relative w-full mt-5 mb-6" id="search-cari-teman-wrapper">
+                        <div class="relative flex items-center bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 focus-within:border-blue-300 focus-within:bg-white transition-all duration-300">
+                            <i class="fa-solid fa-magnifying-glass text-slate-400 text-sm mr-3" aria-hidden="true"></i>
+                            <label for="input-cari-teman" class="sr-only">Cari nama teman</label>
+                            <input id="input-cari-teman" type="text" placeholder="Cari nama temenmu ..." class="bg-transparent text-sm text-slate-800 focus:outline-none w-full" oninput="onInputCariTeman(this.value)" autocomplete="off">
+                        </div>
+                    </div>
+
                     <div id="hasil-cari-teman-kosong" class="p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
                         <i class="fa-solid fa-user-group text-2xl mb-2"></i>
                         <p class="text-xs font-medium">Ketik nama di kolom pencarian untuk mulai mencari teman.</p>
                     </div>
+
+                    <div id="hasil-cari-teman-list" class="hidden space-y-2"></div>
                 </div>
             </section>
 
@@ -1770,6 +1776,53 @@
         </div>
         <p id="judul-zoom-foto-prestasi" class="absolute bottom-5 left-0 right-0 text-center text-white/80 text-xs font-semibold px-4 pointer-events-none"></p>
         <p class="absolute bottom-1 left-0 right-0 text-center text-white/40 text-[10px] pointer-events-none">Scroll / cubit untuk zoom &middot; geser untuk memindahkan &middot; dobel klik untuk reset</p>
+    </div>
+
+    <!-- ID CARD: muncul saat nama siswa di hasil pencarian "Cari Teman" diklik,
+         menampilkan identitas + statistik quiz siswa tersebut -->
+    <div id="modal-id-card-teman" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[106] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupIdCardTeman()">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div class="relative bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-700 p-6 text-white text-center">
+                <button onclick="tutupIdCardTeman()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors" aria-label="Tutup">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+                <div class="w-20 h-20 rounded-full bg-white/15 border-4 border-white/30 mx-auto flex items-center justify-center">
+                    <i class="fa-solid fa-user text-3xl"></i>
+                </div>
+                <h3 id="idcard-nama" class="font-extrabold text-lg mt-3 leading-tight">-</h3>
+                <p id="idcard-kelas" class="text-xs text-blue-100 mt-0.5">-</p>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-slate-50 rounded-xl p-2.5">
+                        <p id="idcard-poin-pg" class="text-lg font-extrabold text-slate-900">0</p>
+                        <p class="text-[9px] text-slate-400 font-semibold uppercase mt-0.5">Poin PG</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-2.5">
+                        <p id="idcard-best-essay" class="text-lg font-extrabold text-slate-900">0</p>
+                        <p class="text-[9px] text-slate-400 font-semibold uppercase mt-0.5">Best Essay</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-2.5">
+                        <p id="idcard-jumlah-teman" class="text-lg font-extrabold text-slate-900">0</p>
+                        <p class="text-[9px] text-slate-400 font-semibold uppercase mt-0.5">Teman</p>
+                    </div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <p class="text-[11px] font-bold text-slate-600">Skor Terbaik Quiz PG</p>
+                    <div class="flex items-center gap-1.5 text-[10px]">
+                        <span class="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold flex-1 text-center">Easy: <span id="idcard-pg-easy">0</span></span>
+                        <span class="px-2 py-1 rounded-lg bg-amber-50 text-amber-700 font-bold flex-1 text-center">Medium: <span id="idcard-pg-medium">0</span></span>
+                        <span class="px-2 py-1 rounded-lg bg-rose-50 text-rose-700 font-bold flex-1 text-center">Hard: <span id="idcard-pg-hard">0</span></span>
+                    </div>
+                </div>
+
+                <button id="idcard-btn-aksi" onclick="klikAksiIdCardTeman()" class="w-full py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-user-plus text-[10px]"></i> <span>Tambah Teman</span>
+                </button>
+                <p id="idcard-pesan" class="hidden text-[10px] text-center text-slate-400"></p>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -2441,38 +2494,24 @@
             });
         }
 
-        /* ================= CARI TEMAN: PERMINTAAN PERTEMANAN ================= */
-        // Data awal (dummy) permintaan pertemanan yang masuk ke siswa aktif.
-        // Status terima/tolak disimpan per-siswa di localStorage supaya tidak
-        // muncul lagi begitu sudah ditanggapi.
-        const DATA_PERMINTAAN_PERTEMANAN_AWAL = [
-            { id: 'pt_001', nama: 'Rafi Ardiansyah', kelas: 'XI TKJ 1' },
-            { id: 'pt_002', nama: 'Salsabila Putri', kelas: 'X TAV 2' },
-            { id: 'pt_003', nama: 'Bagas Firmansyah', kelas: 'XII TKR 1' }
-        ];
-        const KEY_PERMINTAAN_TEMAN_DITANGANI = `permintaan_pertemanan_ditangani_${ID_SISWA_AKTIF}`;
+        /* ================= CARI TEMAN: PERMINTAAN PERTEMANAN (BACKEND) =================
+           Beda dari fitur "Akun Dummy (Profil Login)" di atas (yang cuma efek lokal di
+           browser sendiri), pertemanan di sini BENERAN nyambung ke server (lihat
+           /api/teman/* di app.py) memakai akun ASLI yang login (USERNAME_SISWA_ASLI) --
+           jadi 2 akun beneran (mis. akun 'siswa' & akun 'syam', login di
+           browser/tab/perangkat BERBEDA) bisa saling kirim & terima permintaan
+           pertemanan, dan hasilnya kelihatan di kedua sisi begitu masing-masing buka
+           tab "Cari Teman" / dropdown permintaan pertemanan.
+           CATATAN: sengaja pakai USERNAME_SISWA_ASLI (bukan ID_SISWA_AKTIF) karena
+           pertemanan adalah relasi antar akun sungguhan, bukan antar profil dummy
+           lokal yang cuma efek tampilan. */
 
-        function getPermintaanTemanDitangani() {
-            try {
-                return JSON.parse(localStorage.getItem(KEY_PERMINTAAN_TEMAN_DITANGANI) || '{}');
-            } catch (e) {
-                return {};
-            }
-        }
+        let JUMLAH_PERMINTAAN_MASUK_TERAKHIR = 0;
 
-        function savePermintaanTemanDitangani(data) {
-            localStorage.setItem(KEY_PERMINTAAN_TEMAN_DITANGANI, JSON.stringify(data));
-        }
-
-        function getPermintaanTemanPending() {
-            const ditangani = getPermintaanTemanDitangani();
-            return DATA_PERMINTAAN_PERTEMANAN_AWAL.filter(item => !ditangani[item.id]);
-        }
-
-        function updateBadgePermintaanTeman() {
+        function updateBadgePermintaanTeman(jumlah) {
             const badge = document.getElementById('badge-permintaan-teman');
             if (!badge) return;
-            const jumlah = getPermintaanTemanPending().length;
+            JUMLAH_PERMINTAAN_MASUK_TERAKHIR = jumlah;
             if (jumlah > 0) {
                 badge.innerText = String(jumlah);
                 badge.classList.remove('hidden');
@@ -2483,17 +2522,29 @@
             }
         }
 
-        function renderPermintaanTeman() {
+        async function ambilRelasiPertemanan() {
+            try {
+                const res = await fetch('/api/teman/relasi');
+                const json = await res.json();
+                if (!json.success) return { permintaan_masuk: [], teman: [] };
+                return json;
+            } catch (e) {
+                console.error('Gagal ambil data pertemanan:', e);
+                return { permintaan_masuk: [], teman: [] };
+            }
+        }
+
+        async function renderPermintaanTeman() {
             const list = document.getElementById('list-permintaan-teman');
             const kosong = document.getElementById('permintaan-teman-kosong');
             if (!list) return;
 
-            const pending = getPermintaanTemanPending();
+            const { permintaan_masuk: pending } = await ambilRelasiPertemanan();
             list.innerHTML = '';
 
             if (pending.length === 0) {
                 if (kosong) kosong.classList.remove('hidden');
-                updateBadgePermintaanTeman();
+                updateBadgePermintaanTeman(0);
                 return;
             }
             if (kosong) kosong.classList.add('hidden');
@@ -2502,31 +2553,46 @@
                 const row = document.createElement('div');
                 row.className = 'flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 transition-colors';
                 row.innerHTML = `
-                    <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                    <button class="btn-lihat-idcard w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0" title="Lihat statistik">
                         <i class="fa-solid fa-user text-xs"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
+                    </button>
+                    <button class="btn-lihat-idcard flex-1 min-w-0 text-left">
                         <p class="text-xs font-bold text-slate-800 truncate">${item.nama}</p>
                         <p class="text-[10px] text-slate-400">${item.kelas}</p>
-                    </div>
+                    </button>
                     <div class="flex items-center gap-1.5 flex-shrink-0">
-                        <button onclick="tanggapiPermintaanTeman('${item.id}', 'diterima')" class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 hover:bg-emerald-200 flex items-center justify-center transition-colors" title="Terima">
+                        <button class="btn-terima-teman w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 hover:bg-emerald-200 flex items-center justify-center transition-colors" title="Terima">
                             <i class="fa-solid fa-check text-[10px]"></i>
                         </button>
-                        <button onclick="tanggapiPermintaanTeman('${item.id}', 'ditolak')" class="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 hover:bg-rose-200 flex items-center justify-center transition-colors" title="Tolak">
+                        <button class="btn-tolak-teman w-7 h-7 rounded-lg bg-rose-100 text-rose-600 hover:bg-rose-200 flex items-center justify-center transition-colors" title="Tolak">
                             <i class="fa-solid fa-xmark text-[10px]"></i>
                         </button>
                     </div>`;
+                row.querySelectorAll('.btn-lihat-idcard').forEach(el => {
+                    el.addEventListener('click', () => bukaIdCardTeman(item.username));
+                });
+                row.querySelector('.btn-terima-teman').addEventListener('click', () => tanggapiPermintaanTeman(item.username, 'terima'));
+                row.querySelector('.btn-tolak-teman').addEventListener('click', () => tanggapiPermintaanTeman(item.username, 'tolak'));
                 list.appendChild(row);
             });
 
-            updateBadgePermintaanTeman();
+            updateBadgePermintaanTeman(pending.length);
         }
 
-        function tanggapiPermintaanTeman(id, aksi) {
-            const ditangani = getPermintaanTemanDitangani();
-            ditangani[id] = aksi;
-            savePermintaanTemanDitangani(ditangani);
+        async function tanggapiPermintaanTeman(fromUsername, aksi) {
+            try {
+                const res = await fetch('/api/teman/tanggapi', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ from_username: fromUsername, aksi })
+                });
+                const json = await res.json();
+                if (!json.success) {
+                    alert(json.message || 'Gagal menanggapi permintaan pertemanan.');
+                }
+            } catch (e) {
+                console.error('Gagal menanggapi permintaan pertemanan:', e);
+            }
             renderPermintaanTeman();
         }
 
@@ -2541,6 +2607,177 @@
             if (trigger) trigger.setAttribute('aria-expanded', String(akanDibuka));
 
             if (akanDibuka) renderPermintaanTeman();
+        }
+
+        /* ---------- Search bar "Cari Teman" ---------- */
+        let TIMER_DEBOUNCE_CARI_TEMAN = null;
+
+        function onInputCariTeman(nilai) {
+            clearTimeout(TIMER_DEBOUNCE_CARI_TEMAN);
+            const q = nilai.trim();
+            const kosongState = document.getElementById('hasil-cari-teman-kosong');
+            const listState = document.getElementById('hasil-cari-teman-list');
+
+            if (!q) {
+                kosongState.querySelector('p').textContent = 'Ketik nama di kolom pencarian untuk mulai mencari teman.';
+                kosongState.classList.remove('hidden');
+                listState.classList.add('hidden');
+                listState.innerHTML = '';
+                return;
+            }
+
+            TIMER_DEBOUNCE_CARI_TEMAN = setTimeout(() => jalankanPencarianTeman(q), 250);
+        }
+
+        async function jalankanPencarianTeman(q) {
+            const kosongState = document.getElementById('hasil-cari-teman-kosong');
+            const listState = document.getElementById('hasil-cari-teman-list');
+            try {
+                const res = await fetch(`/api/teman/cari?q=${encodeURIComponent(q)}`);
+                const json = await res.json();
+                const hasil = json.success ? json.hasil : [];
+
+                if (hasil.length === 0) {
+                    listState.classList.add('hidden');
+                    listState.innerHTML = '';
+                    kosongState.classList.remove('hidden');
+                    kosongState.querySelector('p').textContent = `Tidak ada siswa dengan nama "${q}".`;
+                    return;
+                }
+
+                kosongState.classList.add('hidden');
+                listState.classList.remove('hidden');
+                listState.innerHTML = '';
+
+                hasil.forEach(item => {
+                    const row = document.createElement('button');
+                    row.className = 'w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/40 transition-colors text-left';
+                    row.innerHTML = `
+                        <div class="w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-user text-sm"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-bold text-slate-800 truncate">${item.nama}</p>
+                            <p class="text-[11px] text-slate-400">${item.kelas}</p>
+                        </div>
+                        ${labelStatusPertemanan(item.status)}
+                    `;
+                    row.addEventListener('click', () => bukaIdCardTeman(item.username));
+                    listState.appendChild(row);
+                });
+            } catch (e) {
+                console.error('Gagal mencari teman:', e);
+            }
+        }
+
+        function labelStatusPertemanan(status) {
+            const peta = {
+                berteman: '<span class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600 flex-shrink-0">Teman</span>',
+                menunggu_dikirim: '<span class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-600 flex-shrink-0">Menunggu</span>',
+                menunggu_diterima: '<span class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 flex-shrink-0">Merespon</span>',
+                belum: '<span class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 flex-shrink-0"><i class="fa-solid fa-user-plus"></i></span>'
+            };
+            return peta[status] || peta.belum;
+        }
+
+        /* ---------- ID Card statistik siswa ---------- */
+        let USERNAME_ID_CARD_TERBUKA = null;
+
+        async function bukaIdCardTeman(username) {
+            try {
+                const res = await fetch(`/api/teman/profil/${encodeURIComponent(username)}`);
+                const json = await res.json();
+                if (!json.success) {
+                    alert(json.message || 'Gagal memuat statistik siswa.');
+                    return;
+                }
+                renderIdCardTeman(json.profil);
+                document.getElementById('modal-id-card-teman').classList.remove('hidden');
+                document.getElementById('modal-id-card-teman').classList.add('flex');
+            } catch (e) {
+                console.error('Gagal memuat ID card teman:', e);
+            }
+        }
+
+        function renderIdCardTeman(profil) {
+            USERNAME_ID_CARD_TERBUKA = profil.username;
+            document.getElementById('idcard-nama').textContent = profil.nama;
+            document.getElementById('idcard-kelas').textContent = `Siswa • ${profil.kelas}`;
+            document.getElementById('idcard-poin-pg').textContent = profil.quiz_pg_total_poin;
+            document.getElementById('idcard-jumlah-teman').textContent = profil.jumlah_teman;
+
+            const bestEssay = Object.values(profil.quiz_essay_best_by_level || {});
+            document.getElementById('idcard-best-essay').textContent = bestEssay.length ? Math.max(...bestEssay) : 0;
+
+            const pgBest = profil.quiz_pg_best_by_level || {};
+            document.getElementById('idcard-pg-easy').textContent = pgBest.easy || 0;
+            document.getElementById('idcard-pg-medium').textContent = pgBest.medium || 0;
+            document.getElementById('idcard-pg-hard').textContent = pgBest.hard || 0;
+
+            const btn = document.getElementById('idcard-btn-aksi');
+            const pesan = document.getElementById('idcard-pesan');
+            pesan.classList.add('hidden');
+
+            const konfigStatus = {
+                diri_sendiri: { teks: 'Ini Kamu', kelas: 'bg-slate-100 text-slate-400 cursor-not-allowed', nonaktif: true, ikon: 'fa-solid fa-id-badge' },
+                berteman: { teks: 'Sudah Berteman', kelas: 'bg-emerald-50 text-emerald-600 cursor-default', nonaktif: true, ikon: 'fa-solid fa-user-check' },
+                menunggu_dikirim: { teks: 'Menunggu Direspon', kelas: 'bg-amber-50 text-amber-600 cursor-default', nonaktif: true, ikon: 'fa-solid fa-clock' },
+                menunggu_diterima: { teks: 'Terima Permintaan', kelas: 'bg-blue-600 hover:bg-blue-700 text-white', nonaktif: false, ikon: 'fa-solid fa-user-check' },
+                belum: { teks: 'Tambah Teman', kelas: 'bg-blue-600 hover:bg-blue-700 text-white', nonaktif: false, ikon: 'fa-solid fa-user-plus' }
+            };
+            const cfg = konfigStatus[profil.status_pertemanan] || konfigStatus.belum;
+            btn.className = `w-full py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5 ${cfg.kelas}`;
+            btn.innerHTML = `<i class="${cfg.ikon} text-[10px]"></i> <span>${cfg.teks}</span>`;
+            btn.disabled = cfg.nonaktif;
+            btn.dataset.status = profil.status_pertemanan;
+        }
+
+        function tutupIdCardTeman() {
+            const modal = document.getElementById('modal-id-card-teman');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            USERNAME_ID_CARD_TERBUKA = null;
+        }
+
+        async function klikAksiIdCardTeman() {
+            const btn = document.getElementById('idcard-btn-aksi');
+            const pesan = document.getElementById('idcard-pesan');
+            if (!USERNAME_ID_CARD_TERBUKA || btn.disabled) return;
+
+            const status = btn.dataset.status;
+            try {
+                let json;
+                if (status === 'menunggu_diterima') {
+                    const res = await fetch('/api/teman/tanggapi', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ from_username: USERNAME_ID_CARD_TERBUKA, aksi: 'terima' })
+                    });
+                    json = await res.json();
+                } else {
+                    const res = await fetch('/api/teman/kirim', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ to_username: USERNAME_ID_CARD_TERBUKA })
+                    });
+                    json = await res.json();
+                }
+
+                if (!json.success) {
+                    pesan.textContent = json.message || 'Terjadi kesalahan.';
+                    pesan.classList.remove('hidden');
+                    return;
+                }
+
+                pesan.classList.add('hidden');
+                const usernameAktif = USERNAME_ID_CARD_TERBUKA;
+                await bukaIdCardTeman(usernameAktif); // refresh tampilan tombol sesuai status terbaru
+                renderPermintaanTeman();
+                const inputCari = document.getElementById('input-cari-teman');
+                if (inputCari && inputCari.value.trim()) jalankanPencarianTeman(inputCari.value.trim());
+            } catch (e) {
+                console.error('Gagal memproses aksi pertemanan:', e);
+            }
         }
 
         window.addEventListener('click', (e) => {
@@ -3904,7 +4141,7 @@
             renderRiwayatPengumpulan();
             renderLiveTaskContent(); // render awal: langsung munculin status tugas terdekat saat halaman baru dibuka
             checkTaskBadgeStatus();
-            updateBadgePermintaanTeman();
+            renderPermintaanTeman(); // sekalian isi badge dropdown pertemanan dari server saat halaman dibuka
             updateBerandaPoinQuiz();
             sinkronkanQuizDenganServer(); // tarik progress & leaderboard akun ini dari server
             renderPanelDummyLeaderboard();

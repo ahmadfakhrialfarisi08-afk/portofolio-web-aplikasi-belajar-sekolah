@@ -39,7 +39,8 @@ users = {
         'role': 'siswa',
         'email': 'ahmad.fakhrialfarisi08@gmail.com',
         'fullname': 'AHMAD FAKHRI AL FARISI',
-        'identity_number': '0051234567'
+        'identity_number': '0051234567',
+        'kelas': 'XII TKJ 3/TAV'
     },
  
     
@@ -57,7 +58,8 @@ users = {
         'role': 'siswa',
         'email': 'syam@sekolah.sch.id',
         'fullname': 'SYAM KHOERATUL MUKMIN',
-        'identity_number': '0059999999'
+        'identity_number': '0059999999',
+        'kelas': 'XII TKJ 3/TAV'
     }
 }
  
@@ -136,6 +138,80 @@ def _default_quiz_blob(jenis):
     }
  
  
+# ----------------------------------------------------
+# DATA PERTEMANAN SISWA (SIMULASI TABEL friendships & friend_requests)
+# Dipakai fitur "Cari Teman" supaya 2 akun BENERAN (login berbeda,
+# browser/tab berbeda -- bukan sekadar profil dummy lokal) bisa saling
+# kirim & terima permintaan pertemanan, dan hasilnya kelihatan di kedua
+# sisi. Sama seperti quiz_store di atas, ini ditulis ke file JSON di
+# disk (bukan cuma in-memory) supaya progres tidak hilang kalau Flask
+# reloader restart proses saat file source lagi diedit developer.
+# Struktur:
+#   friendships[username]     = set/list username teman (2 arah, disimpan
+#                                di kedua sisi supaya query cepat)
+#   friend_requests[username] = list permintaan pertemanan yang MASUK ke
+#                                username ini, tiap entri:
+#                                { 'from': <username pengirim>, 'created_at': iso-string }
+# ----------------------------------------------------
+FRIENDS_STORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'friends_store.json')
+
+
+def _muat_friends_store():
+    try:
+        with open(FRIENDS_STORE_PATH, 'r', encoding='utf-8') as f:
+            raw = json.load(f)
+            return (
+                {k: set(v) for k, v in raw.get('friendships', {}).items()},
+                raw.get('friend_requests', {})
+            )
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}, {}
+
+
+def _simpan_friends_store():
+    os.makedirs(os.path.dirname(FRIENDS_STORE_PATH), exist_ok=True)
+    tmp_path = FRIENDS_STORE_PATH + '.tmp'
+    serializable = {
+        'friendships': {k: sorted(v) for k, v in friendships.items()},
+        'friend_requests': friend_requests
+    }
+    with open(tmp_path, 'w', encoding='utf-8') as f:
+        json.dump(serializable, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, FRIENDS_STORE_PATH)
+
+
+friendships, friend_requests = _muat_friends_store()
+
+
+def _apakah_berteman(a, b):
+    return b in friendships.get(a, set())
+
+
+def _cari_request_pending(dari_username, ke_username):
+    for r in friend_requests.get(ke_username, []):
+        if r['from'] == dari_username:
+            return r
+    return None
+
+
+def _tambah_pertemanan(a, b):
+    friendships.setdefault(a, set()).add(b)
+    friendships.setdefault(b, set()).add(a)
+
+
+def _status_pertemanan(me, target):
+    """Status hubungan pertemanan dari sudut pandang `me` terhadap `target`."""
+    if me == target:
+        return 'diri_sendiri'
+    if _apakah_berteman(me, target):
+        return 'berteman'
+    if _cari_request_pending(me, target):
+        return 'menunggu_dikirim'  # aku yang ngirim, nunggu target terima
+    if _cari_request_pending(target, me):
+        return 'menunggu_diterima'  # target yang ngirim, nunggu aku terima
+    return 'belum'
+
+
 # ----------------------------------------------------
 # KONFIGURASI OTP - LUPA PASSWORD
 # ----------------------------------------------------
@@ -700,6 +776,148 @@ def api_quiz_leaderboard_global():
     return jsonify(success=True, leaderboard=daftar)
  
  
+# ----------------------------------------------------
+# API: CARI TEMAN (pencarian siswa, permintaan pertemanan, profil statistik)
+# ----------------------------------------------------
+@app.route('/api/teman/cari', methods=['GET'])
+def api_teman_cari():
+    """Cari siswa lain berdasarkan nama (dipakai search bar 'Cari Teman').
+    Punya session sendiri per akun -- jadi akun Ahmad login di satu browser
+    dan akun Syam login di browser/tab lain bisa saling temukan satu sama
+    lain lewat data users[] yang sama di server."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login.'), 401
+
+    q = (request.args.get('q') or '').strip().lower()
+    me = session['user']['username']
+    if not q:
+        return jsonify(success=True, hasil=[])
+
+    hasil = []
+    for u in users.values():
+        if u['role'] != 'siswa' or u['username'] == me:
+            continue
+        if q in u['fullname'].lower():
+            hasil.append({
+                'username': u['username'],
+                'nama': u['fullname'],
+                'kelas': u.get('kelas', '-'),
+                'status': _status_pertemanan(me, u['username'])
+            })
+    return jsonify(success=True, hasil=hasil)
+
+
+@app.route('/api/teman/relasi', methods=['GET'])
+def api_teman_relasi():
+    """Ambil daftar permintaan pertemanan yang MASUK ke akun ini + daftar
+    teman yang sudah terkonfirmasi. Dipanggil buat isi dropdown lonceng
+    'Permintaan Pertemanan' & badge angkanya."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login.'), 401
+
+    me = session['user']['username']
+    masuk = []
+    for r in friend_requests.get(me, []):
+        u = users.get(r['from'])
+        if u:
+            masuk.append({'username': u['username'], 'nama': u['fullname'], 'kelas': u.get('kelas', '-')})
+
+    teman = []
+    for uname in sorted(friendships.get(me, set())):
+        u = users.get(uname)
+        if u:
+            teman.append({'username': u['username'], 'nama': u['fullname'], 'kelas': u.get('kelas', '-')})
+
+    return jsonify(success=True, permintaan_masuk=masuk, teman=teman)
+
+
+@app.route('/api/teman/kirim', methods=['POST'])
+def api_teman_kirim():
+    """Kirim permintaan pertemanan ke siswa lain. Kalau ternyata siswa itu
+    sudah LEBIH DULU ngirim permintaan ke kita, langsung dianggap saling
+    setuju (auto jadi teman) daripada bikin 2 permintaan nyilang."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login.'), 401
+
+    me = session['user']['username']
+    data = request.get_json(silent=True) or {}
+    target = (data.get('to_username') or '').strip()
+
+    if not target or target == me or target not in users or users[target]['role'] != 'siswa':
+        return jsonify(success=False, message='Siswa tujuan tidak valid.'), 400
+    if _apakah_berteman(me, target):
+        return jsonify(success=False, message='Kalian sudah berteman.'), 400
+    if _cari_request_pending(me, target):
+        return jsonify(success=False, message='Permintaan pertemanan sudah pernah dikirim, tinggal tunggu direspon.'), 400
+
+    if _cari_request_pending(target, me):
+        # Dia sudah lebih dulu ngirim permintaan ke kita -> langsung berteman
+        friend_requests[me] = [r for r in friend_requests.get(me, []) if r['from'] != target]
+        _tambah_pertemanan(me, target)
+        _simpan_friends_store()
+        return jsonify(success=True, message='Kalian sekarang berteman!', status='berteman')
+
+    friend_requests.setdefault(target, []).append({
+        'from': me,
+        'created_at': datetime.utcnow().isoformat()
+    })
+    _simpan_friends_store()
+    return jsonify(success=True, message='Permintaan pertemanan terkirim.', status='menunggu_dikirim')
+
+
+@app.route('/api/teman/tanggapi', methods=['POST'])
+def api_teman_tanggapi():
+    """Terima/tolak permintaan pertemanan yang masuk ke akun yang sedang login."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login.'), 401
+
+    me = session['user']['username']
+    data = request.get_json(silent=True) or {}
+    from_username = (data.get('from_username') or '').strip()
+    aksi = data.get('aksi')
+
+    if aksi not in ('terima', 'tolak'):
+        return jsonify(success=False, message='Aksi tidak valid.'), 400
+    if not _cari_request_pending(from_username, me):
+        return jsonify(success=False, message='Permintaan pertemanan tidak ditemukan (mungkin sudah ditanggapi).'), 404
+
+    friend_requests[me] = [r for r in friend_requests.get(me, []) if r['from'] != from_username]
+    if aksi == 'terima':
+        _tambah_pertemanan(me, from_username)
+    _simpan_friends_store()
+    return jsonify(success=True, status=_status_pertemanan(me, from_username))
+
+
+@app.route('/api/teman/profil/<username>', methods=['GET'])
+def api_teman_profil(username):
+    """Data buat ID card statistik siswa yang muncul saat nama di hasil
+    pencarian diklik: identitas, kelas, jumlah teman, dan skor quiz
+    (diambil dari quiz_store, slot akun asli siswa itu -- lihat
+    _kunci_slot_quiz)."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login.'), 401
+
+    me = session['user']['username']
+    u = users.get(username)
+    if not u or u['role'] != 'siswa':
+        return jsonify(success=False, message='Siswa tidak ditemukan.'), 404
+
+    kunci_slot = f"{username}::{username}"
+    blob_pg = quiz_store.get(kunci_slot, {}).get('pg') or _default_quiz_blob('pg')
+    blob_essay = quiz_store.get(kunci_slot, {}).get('essay') or _default_quiz_blob('essay')
+
+    return jsonify(success=True, profil={
+        'username': u['username'],
+        'nama': u['fullname'],
+        'kelas': u.get('kelas', '-'),
+        'jumlah_teman': len(friendships.get(username, set())),
+        'quiz_pg_total_poin': blob_pg.get('totalPoin', 0),
+        'quiz_pg_best_by_level': blob_pg.get('bestByLevel', {'easy': 0, 'medium': 0, 'hard': 0}),
+        'quiz_essay_best_by_level': blob_essay.get('bestByLevel', {'easy': 0, 'medium': 0, 'hard': 0}),
+        'status_pertemanan': _status_pertemanan(me, username)
+    })
+
+
 # ----------------------------------------------------
 # ROUTE DAFTAR GURU
 # ----------------------------------------------------
