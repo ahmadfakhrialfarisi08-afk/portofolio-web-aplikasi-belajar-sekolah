@@ -208,6 +208,16 @@
     <a href="{{ url_for('register') }}" class="link">Buat Akun Baru</a>
   </div>
 </div>
-
+...
+  <!-- Taruh script tepat DI ATAS tag penutup body -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('SW terdaftar:', reg.scope))
+          .catch(err => console.error('SW gagal terdaftar:', err));
+      });
+    }
+  </script>
 </body>
 </html>
