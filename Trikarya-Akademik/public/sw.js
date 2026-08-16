@@ -1,60 +1,39 @@
-importScripts(
-    'https://storage.googleapis.com/workbox-cdn/releases/7.4.1/workbox-sw.js'
-);
+const CACHE_NAME = 'trikarya-v1';
+const ASSETS_TO_CACHE = [
+  '/login',
+  '/manifest.json',
+  '/static/img/logo_aplikasi.jpg'
+];
 
-// This is your Service Worker, you can put any of your custom Service Worker
-// code in this file, above the `precacheAndRoute` line.
-
-// When widget is installed/pinned, push initial state.
-self.addEventListener('widgetinstall', (event) => {
-    event.waitUntil(updateWidget(event));
+// Install Event
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
+  );
+  self.skipWaiting();
 });
 
-// When widget is shown, update content to ensure it is up-to-date.
-self.addEventListener('widgetresume', (event) => {
-    event.waitUntil(updateWidget(event));
+// Activate Event
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) return caches.delete(key);
+        })
+      );
+    })
+  );
+  self.clients.claim();
 });
 
-// When the user clicks an element with an associated Action.Execute,
-// handle according to the 'verb' in event.action.
-self.addEventListener('widgetclick', (event) => {
-if (event.action == "updateName") {
-    event.waitUntil(updateName(event));
-}
+// Fetch Event (Syarat Wajib PWABuilder)
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      return cachedResponse || fetch(event.request);
+    })
+  );
 });
-
-// When the widget is uninstalled/unpinned, clean up any unnecessary
-// periodic sync or widget-related state.
-self.addEventListener('widgetuninstall', (event) => {});
-
-const updateWidget = async (event) => {
-// The widget definition represents the fields specified in the manifest.
-    const widgetDefinition = event.widget.definition;
-
-    // Fetch the template and data defined in the manifest to generate the payload.
-    const payload = {
-        template: JSON.stringify(await (await fetch(widgetDefinition.msAcTemplate)).json()),
-        data: JSON.stringify(await (await fetch(widgetDefinition.data)).json()),
-    };
-
-    // Push payload to widget.
-    await self.widgets.updateByInstanceId(event.instanceId, payload);
-}
-
-const updateName = async (event) => {
-    const name = event.data.json().name;
-
-    // The widget definition represents the fields specified in the manifest.
-    const widgetDefinition = event.widget.definition;
-
-    // Fetch the template and data defined in the manifest to generate the payload.
-    const payload = {
-        template: JSON.stringify(await (await fetch(widgetDefinition.msAcTemplate)).json()),
-        data: JSON.stringify({name}),
-    };
-
-    // Push payload to widget.
-    await self.widgets.updateByInstanceId(event.instanceId, payload);
-}
-
-workbox.precaching.precacheAndRoute(self.__WB_MANIFEST || []);
