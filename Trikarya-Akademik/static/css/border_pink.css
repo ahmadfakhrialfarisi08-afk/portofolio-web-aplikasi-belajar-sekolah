@@ -1,0 +1,89 @@
+/* ==========================================
+   BORDER PINK — Kupu-kupu Prestasi
+   ==========================================
+   File border_polos.css memasang glow EMAS (drop-shadow
+   kuning ala frame MLBB) langsung ke class `.user-border`.
+   Karena semua jenis border (polos/admin/pink/dst) sama-sama
+   pakai class itu — cuma beda `src` gambar lewat JS — glow
+   emas itu ikut nempel ke border pink walau gambar
+   border_pink.jpg sendiri sudah bersih (bukan gambarnya yang
+   kotor, tapi filter globalnya).
+
+   Fix di sini: timpa `filter` HANYA saat <img class="user-border">
+   sedang memuat border_pink.jpg, pakai selector atribut
+   `[src*="border_pink"]`. Selector ini otomatis lebih spesifik
+   dari `.user-border` polos, jadi menang tanpa !important dan
+   tidak peduli urutan <link> di <head> (asal file ini tetap
+   di-include, boleh sebelum atau sesudah border_polos.css).
+   ========================================== */
+
+.user-border[src*="border_pink"] {
+  /* Ganti glow emas -> glow pink/ungu, senada sama efek-nama-pink
+     dan warna dominan border_pink.jpg (magenta/pink + ungu muda) */
+  filter: drop-shadow(0 0 4px rgba(219, 39, 119, 0.55))
+          drop-shadow(0 0 7px rgba(216, 180, 254, 0.35));
+}
+
+.profile-wrapper:hover .user-border[src*="border_pink"] {
+  filter: drop-shadow(0 0 8px rgba(219, 39, 119, 0.8))
+          drop-shadow(0 0 12px rgba(216, 180, 254, 0.5));
+}
+
+/* ==========================================
+   EFEK HIDUP: sparkle + kupu-kupu kecil
+   ==========================================
+   Dipasang otomatis oleh border_pink_fx.js ke .profile-wrapper
+   mana pun yang isinya lagi pakai border_pink.jpg (header,
+   leaderboard, modal profil, dll). Kalau border-nya ganti,
+   layer ini otomatis dicopot lagi oleh script yang sama.
+   :has() dipasang sebagai jaring pengaman posisi; JS juga
+   set position:relative manual buat browser yang belum
+   dukung :has(). */
+.profile-wrapper:has(.user-border[src*="border_pink"]) {
+  position: relative;
+}
+
+.pink-fx-layer {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.pink-fx-sparkle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, #ffe9f7 40%, transparent 75%);
+  opacity: 0;
+  will-change: opacity, transform;
+  animation: pinkFxTwinkle 2.4s ease-in-out infinite;
+}
+@keyframes pinkFxTwinkle {
+  0%, 100% { opacity: 0; transform: scale(0.4); }
+  50%      { opacity: 1; transform: scale(1.2); }
+}
+
+.pink-fx-butterfly {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform, opacity;
+}
+.pink-fx-butterfly .wing {
+  position: absolute;
+  top: 0;
+  background: radial-gradient(ellipse at 30% 30%, #ffe3f5, #e8a6d8 55%, #b077c9 100%);
+  clip-path: polygon(0% 20%, 90% 0%, 100% 45%, 60% 55%, 100% 100%, 85% 100%, 0% 60%);
+  animation: pinkFxKepak 0.3s ease-in-out infinite alternate;
+}
+.pink-fx-butterfly .wing.kiri  { left: 0; transform-origin: right center; }
+.pink-fx-butterfly .wing.kanan {
+  right: 0;
+  transform-origin: left center;
+  transform: scaleX(-1);
+  animation-name: pinkFxKepakKanan;
+  animation-delay: 0.04s;
+}
+@keyframes pinkFxKepak       { from { transform: scaleX(1)  rotateY(0deg); } to { transform: scaleX(1)  rotateY(60deg); } }
+@keyframes pinkFxKepakKanan  { from { transform: scaleX(-1) rotateY(0deg); } to { transform: scaleX(-1) rotateY(60deg); } }

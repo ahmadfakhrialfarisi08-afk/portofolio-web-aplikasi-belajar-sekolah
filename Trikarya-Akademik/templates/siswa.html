@@ -1,0 +1,21 @@
+<!-- Contoh di halaman siswa.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard Siswa</title>
+</head>
+<body>
+<h1>Dashboard Siswa</h1>
+<div id="userInfo"></div>
+<script>
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (user) {
+    document.getElementById('userInfo').innerText = 'Selamat datang, ' + user.nama + ' (' + user.role + ')';
+  } else {
+    window.location.href = '/login'; // Jika tidak ada data, redirect ke login
+  }
+</script>
+</body>
+</html>

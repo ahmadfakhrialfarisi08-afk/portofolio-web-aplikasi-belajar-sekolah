@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "scope": "/",
+  "name": "TriKarya Akademik - SMK Banjar Asri",
+  "short_name": "TriKarya Akademik",
+  "display": "standalone",
+  "start_url": "/login",
+  "theme_color": "#004494",
+  "description": "Aplikasi Integrasi Siswa SMK Tri Karya Pembangunan Banjar Asri",
+  "orientation": "any",
+  "background_color": "#0a192f",
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "display_override": [
+    "window-controls-overlay"
+  ],
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "icons": [
+    {
+      "src": "/static/img/logo_aplikasi.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

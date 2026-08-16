@@ -7,7 +7,7 @@ import smtplib
 import ssl
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response, jsonify, send_from_directory
  
 # Muat variabel dari file .env jika tersedia (opsional, untuk kemudahan development).
 # Kalau python-dotenv belum terinstall / file .env tidak ada, baris ini aman diabaikan.
@@ -1110,6 +1110,21 @@ def logout():
     session.pop('user', None)
     flash('Anda telah keluar dari sistem.', 'success')
     return redirect(url_for('login'))
+
+# ----------------------------------------------------
+# ROUTE PWA & MANIFEST SUPPORT
+# ----------------------------------------------------
+@app.route('/manifest.json')
+def manifest():
+    """Mengalirkan file manifest.json dari folder public ke URL utama /manifest.json"""
+    return send_from_directory(os.path.join(app.root_path, 'public'), 'manifest.json', mimetype='application/json')
+
+@app.route('/pwabuilder-sw.js')
+@app.route('/sw.js')
+def service_worker():
+    """Mengalirkan file Service Worker dari folder public agar PWA berjalan offline/PWABuilder mengenali SW."""
+    return send_from_directory(os.path.join(app.root_path, 'public'), 'sw.js', mimetype='application/javascript')
+
  
 # ----------------------------------------------------
 # RUN APP

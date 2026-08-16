@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Arcana Smart School</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* Reset & Background */
+    * {
+      box-sizing: border-box;
+      font-family: 'Poppins', Arial, sans-serif;
+    }
+
+    body {
+      height: 100vh;
+      margin: 0;
+      /* Background gradient bersih ala dashboard */
+      background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Card Login Clean */
+    .login-container {
+      background-color: #ffffff;
+      padding: 35px 30px;
+      border-radius: 16px;
+      width: 380px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .logo {
+      width: 150px;
+      margin-bottom: 15px;
+      object-fit: contain;
+    }
+
+    h2 {
+      color: #1e293b;
+      margin-bottom: 20px;
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      text-align: left;
+      margin-top: 12px;
+      margin-bottom: 6px;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1.5px solid #cbd5e1;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    select:focus, input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    /* Tombol Login Biru Dashboard */
+    button {
+      margin-top: 22px;
+      width: 100%;
+      padding: 12px;
+      background-color: #2563eb;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 15px;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    button:hover {
+      background-color: #1d4ed8;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    /* Style Flash Message Flask */
+    .flash-container {
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    .flash-msg {
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      text-align: center;
+      font-weight: 500;
+      animation: shake 0.4s ease-in-out;
+    }
+
+    .flash-msg.error {
+      background-color: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+
+    .flash-msg.success {
+      background-color: #f0fdf4;
+      color: #16a34a;
+      border: 1px solid #bbf7d0;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+
+    /* Link Bawah */
+    .bottom-links {
+      margin-top: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+
+    .link {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .link:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        width: 90%;
+        padding: 25px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-container">
+  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSeyF2mMXxr-Rex9wZLBTU8eRGAelTMK_FPJ0aRJOxzUg&s " alt="Logo Sekolah" class="logo" />
+  
+  <h2>LOGIN SEKOLAH</h2>
+
+  <form id="loginForm" action="{{ url_for('login') }}" method="POST">
+    
+    <label for="role">Pilih Role</label>
+    <select id="role" name="role" required>
+      <option value="" disabled selected>-- Pilih Role --</option>
+      <option value="guru">Guru</option>
+      <option value="siswa">Siswa</option>
+      <option value="staf_kebersihan">Staf Kebersihan</option>
+    </select>
+
+    <label for="username">Username / NISN / NIP</label>
+    <input type="text" id="username" name="username" placeholder="Masukkan username" required autocomplete="off" />
+
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" placeholder="Masukkan password" required />
+
+    <button type="submit">Masuk ke Sistem</button>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash-msg {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+  </form>
+
+  <div class="bottom-links">
+    <a href="{{ url_for('lupa_password') }}" class="link">Lupa Password?</a>
+    <a href="{{ url_for('register') }}" class="link">Buat Akun Baru</a>
+  </div>
+</div>
+
+</body>
+</html>
