@@ -4,7 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - Arcana Smart School</title>
-  
+
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#004494">
+  <link rel="apple-touch-icon" href="/static/img/logo_aplikasi.jpg">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js');
+      });
+    }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -165,9 +176,6 @@
       }
     }
   </style>
-<!-- Tag PWA Manifest -->
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#004494">
 </head>
 <body>
 
@@ -211,16 +219,6 @@
     <a href="{{ url_for('register') }}" class="link">Buat Akun Baru</a>
   </div>
 </div>
-...
-  <!-- Taruh script tepat DI ATAS tag penutup body -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('SW terdaftar:', reg.scope))
-          .catch(err => console.error('SW gagal terdaftar:', err));
-      });
-    }
-  </script>
+
 </body>
 </html>
