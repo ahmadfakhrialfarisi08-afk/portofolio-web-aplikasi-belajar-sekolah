@@ -60,6 +60,15 @@ users = {
         'fullname': 'SYAM KHOERATUL MUKMIN',
         'identity_number': '0059999999',
         'kelas': 'XII TKJ 3/TAV'
+    },
+    'waldi': {
+        'username': 'waldi',
+        'password': 'waldi123',
+        'role': 'siswa',
+        'email': 'waldi@sekolah.sch.id',
+        'fullname': 'WALDI WAHIDIN',
+        'identity_number': '0059999998',
+        'kelas': 'XII TKJ 3/TAV'
     }
 }
  
