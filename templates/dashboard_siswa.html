@@ -806,6 +806,20 @@
             0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.35); }
             100% { box-shadow: 0 0 0 20px rgba(244, 63, 94, 0); }
         }
+        /* --- Ring statis (TANPA animasi) khusus modal peringatan kata kasar.
+           Modal ini sengaja tidak auto-close, jadi kalau dipakaikan ring yang
+           animasinya infinite (kayak .modal-gagal-ring di atas), box-shadow-nya
+           bakal terus-menerus di-repaint browser selama modal dibiarkan
+           terbuka -> lag/gak smooth di HP & laptop yang kurang kencang.
+           Cukup 1x fade-in ringan pas modal muncul, habis itu diam. --- */
+        .modal-kata-kasar-ring {
+            box-shadow: 0 0 0 8px rgba(244, 63, 94, 0.12);
+            animation: kataKasarRingMuncul 0.3s ease-out;
+        }
+        @keyframes kataKasarRingMuncul {
+            0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+            100% { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0.12); }
+        }
         .crossmark-circle {
             stroke-dasharray: 166;
             stroke-dashoffset: 166;
@@ -2037,7 +2051,7 @@
          supaya siswa benar-benar sadar & sempat baca peringatannya sebelum lanjut. -->
     <div id="modal-kata-kasar" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[108] hidden items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-xs w-full p-5 sm:p-7 shadow-2xl flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
-            <div class="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center modal-gagal-ring">
+            <div class="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center modal-kata-kasar-ring">
                 <svg class="w-11 h-11" viewBox="0 0 52 52">
                     <circle class="crossmark-circle" cx="26" cy="26" r="23"/>
                     <line class="crossmark-x1" x1="17" y1="17" x2="35" y2="35"/>
@@ -2313,9 +2327,10 @@
             const modal = document.getElementById('modal-kata-kasar');
             if (!modal) return;
 
-            // Restart animasi X tiap kali modal dibuka lagi (kalau cuma
-            // classList show, animasi CSS-nya tidak akan replay dari awal).
-            modal.querySelectorAll('.crossmark-circle, .crossmark-x1, .crossmark-x2').forEach(el => {
+            // Restart animasi X & ring (satu kali putar, BUKAN infinite) tiap
+            // kali modal dibuka lagi (kalau cuma classList show, animasi CSS-nya
+            // tidak akan replay dari awal).
+            modal.querySelectorAll('.crossmark-circle, .crossmark-x1, .crossmark-x2, .modal-kata-kasar-ring').forEach(el => {
                 el.style.animation = 'none';
                 void el.offsetWidth; // paksa reflow
                 el.style.animation = '';
