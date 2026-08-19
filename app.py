@@ -69,6 +69,15 @@ users = {
         'fullname': 'WALDI WAHIDIN',
         'identity_number': '0059999998',
         'kelas': 'XII TKJ 3/TAV'
+    },
+    'fadzri': {
+        'username': 'fadzri',
+        'password': 'fadzri123',
+        'role': 'siswa',
+        'email': 'fadzri@sekolah.sch.id',
+        'fullname': 'MUHAMMAD FADZRI',
+        'identity_number': '0059999997',
+        'kelas': 'XII TKJ 3/TAV'
     }
 }
  
