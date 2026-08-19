@@ -628,13 +628,14 @@
 
         /* ============================================================
            MODAL "Beri Saran / Evaluasi": Dark Minimalist TETAP (tidak
-           ikut toggle mode terang/gelap situs) — background gelap +
-           border cyan tipis + font Plus Jakarta Sans + tombol kirim
-           Cyan Neon dengan hover smooth, sesuai spek.
+           ikut toggle mode terang/gelap situs) — warna SOLID #0f172a
+           (bukan gradient) + border cyan tipis + font Plus Jakarta Sans
+           + tombol kirim Cyan Neon dengan hover smooth. Sengaja tanpa
+           gradient/blur kaca supaya ringan di HP & laptop low-end.
            ============================================================ */
         .modal-saran-guru-card {
-            background: linear-gradient(135deg, #0f172a, #1e293b);
-            border: 1px solid rgba(6, 182, 212, 0.35);
+            background: #0f172a;
+            border: 1px solid rgba(6, 182, 212, 0.3);
             border-radius: 16px;
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
@@ -2138,27 +2139,40 @@
 
             <div class="p-5 space-y-4 overflow-y-auto flex-1 modal-scroll-smooth-saran-guru">
                 <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-2">Rating</label>
-                    <div id="saran-guru-bintang" class="flex items-center gap-2 text-2xl">
-                        <button type="button" onclick="pilihRatingSaranGuru(1)" data-bintang="1" class="bintang-saran-guru" aria-label="1 bintang"><i class="fa-solid fa-star"></i></button>
-                        <button type="button" onclick="pilihRatingSaranGuru(2)" data-bintang="2" class="bintang-saran-guru" aria-label="2 bintang"><i class="fa-solid fa-star"></i></button>
-                        <button type="button" onclick="pilihRatingSaranGuru(3)" data-bintang="3" class="bintang-saran-guru" aria-label="3 bintang"><i class="fa-solid fa-star"></i></button>
-                        <button type="button" onclick="pilihRatingSaranGuru(4)" data-bintang="4" class="bintang-saran-guru" aria-label="4 bintang"><i class="fa-solid fa-star"></i></button>
-                        <button type="button" onclick="pilihRatingSaranGuru(5)" data-bintang="5" class="bintang-saran-guru" aria-label="5 bintang"><i class="fa-solid fa-star"></i></button>
+                    <label class="block text-xs font-bold text-slate-300 mb-2">Penjelasan Materi</label>
+                    <div class="flex items-center gap-2 text-2xl" data-grup-bintang="penjelasan">
+                        <button type="button" onclick="pilihRatingSaranGuru('penjelasan', 1)" data-bintang="1" class="bintang-saran-guru" aria-label="1 bintang"><i class="fa-solid fa-star"></i></button>
+                        <button type="button" onclick="pilihRatingSaranGuru('penjelasan', 2)" data-bintang="2" class="bintang-saran-guru" aria-label="2 bintang"><i class="fa-solid fa-star"></i></button>
+                        <button type="button" onclick="pilihRatingSaranGuru('penjelasan', 3)" data-bintang="3" class="bintang-saran-guru" aria-label="3 bintang"><i class="fa-solid fa-star"></i></button>
+                        <button type="button" onclick="pilihRatingSaranGuru('penjelasan', 4)" data-bintang="4" class="bintang-saran-guru" aria-label="4 bintang"><i class="fa-solid fa-star"></i></button>
+                        <button type="button" onclick="pilihRatingSaranGuru('penjelasan', 5)" data-bintang="5" class="bintang-saran-guru" aria-label="5 bintang"><i class="fa-solid fa-star"></i></button>
                     </div>
                 </div>
 
                 <div>
-                    <label for="saran-guru-kategori" class="block text-xs font-bold text-slate-300 mb-2">Kategori</label>
-                    <select id="saran-guru-kategori" class="modal-saran-guru-input w-full rounded-xl px-3 py-2.5 text-sm">
-                        <option value="Metode Mengajar">Metode Mengajar</option>
-                        <option value="Keadilan & Beban Tugas">Keadilan & Beban Tugas</option>
-                        <option value="Komunikasi">Komunikasi</option>
-                    </select>
+                    <label class="block text-xs font-bold text-slate-300 mb-2">Keadilan Nilai</label>
+                    <div class="flex items-center gap-2 text-2xl" data-grup-bintang="keadilan">
+                        <button type="button" onclick="pilihRatingSaranGuru('keadilan', 1)" data-bintang="1" class="bintang-saran-guru" aria-label="1 bintang"><i class="fa-solid fa-star"></i></button>
+                        <button type="button" onclick="pilihRatingSaranGuru('keadilan', 2)" data-bintang="2" class="bintang-saran-guru" aria-label="2 bintang"><i class="fa-solid fa-star"></i></button>
+                        <button type="button" onclick="pilihRatingSaranGuru('keadilan', 3)" data-bintang="3" class="bintang-saran-guru" aria-label="3 bintang"><i class="fa-solid fa-star"></i></button>
+                        <button type="button" onclick="pilihRatingSaranGuru('keadilan', 4)" data-bintang="4" class="bintang-saran-guru" aria-label="4 bintang"><i class="fa-solid fa-star"></i></button>
+                        <button type="button" onclick="pilihRatingSaranGuru('keadilan', 5)" data-bintang="5" class="bintang-saran-guru" aria-label="5 bintang"><i class="fa-solid fa-star"></i></button>
+                    </div>
                 </div>
 
                 <div>
-                    <label for="saran-guru-pesan" class="block text-xs font-bold text-slate-300 mb-2">Pesan</label>
+                    <label class="block text-xs font-bold text-slate-300 mb-2">Komunikasi</label>
+                    <div class="flex items-center gap-2 text-2xl" data-grup-bintang="komunikasi">
+                        <button type="button" onclick="pilihRatingSaranGuru('komunikasi', 1)" data-bintang="1" class="bintang-saran-guru" aria-label="1 bintang"><i class="fa-solid fa-star"></i></button>
+                        <button type="button" onclick="pilihRatingSaranGuru('komunikasi', 2)" data-bintang="2" class="bintang-saran-guru" aria-label="2 bintang"><i class="fa-solid fa-star"></i></button>
+                        <button type="button" onclick="pilihRatingSaranGuru('komunikasi', 3)" data-bintang="3" class="bintang-saran-guru" aria-label="3 bintang"><i class="fa-solid fa-star"></i></button>
+                        <button type="button" onclick="pilihRatingSaranGuru('komunikasi', 4)" data-bintang="4" class="bintang-saran-guru" aria-label="4 bintang"><i class="fa-solid fa-star"></i></button>
+                        <button type="button" onclick="pilihRatingSaranGuru('komunikasi', 5)" data-bintang="5" class="bintang-saran-guru" aria-label="5 bintang"><i class="fa-solid fa-star"></i></button>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="saran-guru-pesan" class="block text-xs font-bold text-slate-300 mb-2">Saran</label>
                     <textarea id="saran-guru-pesan" rows="4" placeholder="Tulis saran atau kritik yang membangun..." class="modal-saran-guru-input w-full rounded-xl px-3 py-2.5 text-sm resize-none"></textarea>
                 </div>
             </div>
@@ -4650,6 +4664,37 @@
             { tinggi: 'h-60', posisi: 'object-center' }
         ];
 
+        // Menghitung rata-rata rating seorang guru dari semua evaluasi anonim yang
+        // masuk (localStorage 'evaluasi_guru'). Mendukung skema baru (3 rating per
+        // aspek: Penjelasan/Keadilan Nilai/Komunikasi) maupun skema lama (1 rating
+        // gabungan), supaya data lama yang sudah kepalang tersimpan tetap kehitung.
+        function hitungRatingGuru(namaGuru) {
+            let semua = [];
+            try { semua = JSON.parse(localStorage.getItem('evaluasi_guru') || '[]'); } catch (e) { semua = []; }
+            const milikGuru = semua.filter(x => x.guruNama === namaGuru);
+            if (milikGuru.length === 0) return { rata: null, jumlah: 0 };
+            const total = milikGuru.reduce((jumlah, x) => {
+                const rataSatu = (typeof x.ratingPenjelasan === 'number')
+                    ? (x.ratingPenjelasan + x.ratingKeadilan + x.ratingKomunikasi) / 3
+                    : (x.rating || 0);
+                return jumlah + rataSatu;
+            }, 0);
+            return { rata: total / milikGuru.length, jumlah: milikGuru.length };
+        }
+
+        // Badge status ringkas di card: hijau "Favorit" kalau rata-rata >= 4.5,
+        // amber "Evaluasi" (perlu perhatian) kalau < 3.5, netral kalau di antara.
+        function badgeStatusGuru(rata) {
+            if (rata === null) return '';
+            if (rata >= 4.5) {
+                return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[9px] font-bold"><i class="fa-solid fa-circle text-[6px]"></i> Favorit</span>`;
+            }
+            if (rata < 3.5) {
+                return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100 text-[9px] font-bold"><i class="fa-solid fa-triangle-exclamation text-[8px]"></i> Evaluasi</span>`;
+            }
+            return '';
+        }
+
         function renderDaftarGuru() {
             const grid = document.getElementById('grid-daftar-guru');
             const emptyState = document.getElementById('guru-kosong-state');
@@ -4673,15 +4718,24 @@
 
             grid.innerHTML = hasil.map((g, i) => {
                 const v = variasiFotoGuru[i % variasiFotoGuru.length];
+                const r = hitungRatingGuru(g.nama);
+                const ratingHtml = r.rata !== null
+                    ? `<span class="inline-flex items-center gap-1 text-amber-500 text-[10px] font-bold"><i class="fa-solid fa-star"></i> ${r.rata.toFixed(1)}/5</span>`
+                    : `<span class="text-[10px] text-slate-400 font-semibold">Belum ada rating</span>`;
+                const badgeHtml = badgeStatusGuru(r.rata);
                 return `
                 <div class="guru-card-reveal mb-6 break-inside-avoid" style="transition-delay: ${(i % 9) * 70}ms">
                     <div class="relative rounded-3xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100 ${v.tinggi} group">
                         <img src="${g.foto}" class="w-full h-full object-cover ${v.posisi} group-hover:scale-105 transition-transform duration-500" alt="${g.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(g.nama)}&background=e0e7ff&color=3730a3&size=500'">
                     </div>
-                    <div class="-mt-9 mx-3 relative z-10 bg-white/70 backdrop-blur-md border border-white/60 rounded-2xl shadow-lg p-3.5 text-center">
+                    <div class="-mt-9 mx-3 relative z-10 bg-white border border-slate-200 rounded-2xl shadow-sm p-3.5 text-center">
                         <h4 class="font-bold text-slate-900 text-xs leading-tight">${g.nama}</h4>
                         <p class="lulusan-guru text-[10px] text-slate-500 mt-1 leading-snug"><i class="fa-solid fa-graduation-cap mr-1 text-blue-500"></i>${g.lulusan}</p>
                         <p class="text-[10px] text-slate-700 font-semibold mt-1.5"><i class="fa-solid fa-book mr-1 text-blue-500"></i>${g.mapel}</p>
+                        <div class="flex items-center justify-center gap-1.5 mt-1.5 flex-wrap">
+                            ${ratingHtml}
+                            ${badgeHtml}
+                        </div>
                         <span class="inline-block mt-2 px-2.5 py-1 bg-blue-50/90 text-blue-700 text-[10px] font-bold rounded-lg border border-blue-100">Mengajar Kelas ${g.kelas}</span>
                         <button type="button" onclick="bukaModalSaranGuru(${g.id})" class="btn-beri-saran-guru mt-2 w-full py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1.5">
                             <i class="fa-solid fa-comment-dots"></i> Beri Saran
@@ -4699,20 +4753,19 @@
         // Sengaja TIDAK pernah menyimpan nama/kelas/ID siswa pengirim ke
         // manapun (localStorage 'evaluasi_guru'), supaya guru cuma bisa
         // lihat isi & rating-nya, bukan siapa yang mengirim.
+        // 3 aspek dinilai terpisah (Penjelasan, Keadilan Nilai, Komunikasi)
+        // supaya masukannya lebih spesifik ketimbang 1 rating gabungan.
         // ============================================================
-        const KATEGORI_SARAN_GURU = ['Metode Mengajar', 'Keadilan & Beban Tugas', 'Komunikasi'];
         let _guruSaranAktif = null;
-        let _ratingSaranGuruAktif = 0;
+        let _ratingSaranGuruAktif = { penjelasan: 0, keadilan: 0, komunikasi: 0 };
 
         function bukaModalSaranGuru(idGuru) {
             const g = daftarGuruSekolah.find(x => x.id === idGuru);
             if (!g) return;
             _guruSaranAktif = g;
-            _ratingSaranGuruAktif = 0;
+            _ratingSaranGuruAktif = { penjelasan: 0, keadilan: 0, komunikasi: 0 };
 
             document.getElementById('saran-guru-nama-target').innerText = g.nama;
-            const selectKategori = document.getElementById('saran-guru-kategori');
-            if (selectKategori) selectKategori.value = KATEGORI_SARAN_GURU[0];
             const inputPesan = document.getElementById('saran-guru-pesan');
             if (inputPesan) inputPesan.value = '';
             perbaruiTampilanBintangSaranGuru();
@@ -4729,25 +4782,29 @@
             _guruSaranAktif = null;
         }
 
-        function pilihRatingSaranGuru(n) {
-            _ratingSaranGuruAktif = n;
+        function pilihRatingSaranGuru(dimensi, n) {
+            _ratingSaranGuruAktif[dimensi] = n;
             perbaruiTampilanBintangSaranGuru();
         }
 
         function perbaruiTampilanBintangSaranGuru() {
-            document.querySelectorAll('#saran-guru-bintang .bintang-saran-guru').forEach(btn => {
-                const n = parseInt(btn.dataset.bintang, 10);
-                btn.classList.toggle('aktif', n <= _ratingSaranGuruAktif);
+            document.querySelectorAll('[data-grup-bintang]').forEach(grup => {
+                const dimensi = grup.dataset.grupBintang;
+                const aktif = _ratingSaranGuruAktif[dimensi] || 0;
+                grup.querySelectorAll('.bintang-saran-guru').forEach(btn => {
+                    const n = parseInt(btn.dataset.bintang, 10);
+                    btn.classList.toggle('aktif', n <= aktif);
+                });
             });
         }
 
         function kirimSaranGuru() {
             if (!_guruSaranAktif) return;
-            if (_ratingSaranGuruAktif === 0) {
-                alert('Silakan beri rating bintang terlebih dahulu.');
+            const { penjelasan, keadilan, komunikasi } = _ratingSaranGuruAktif;
+            if (!penjelasan || !keadilan || !komunikasi) {
+                alert('Silakan beri rating bintang untuk ketiga aspek (Penjelasan Materi, Keadilan Nilai, Komunikasi) terlebih dahulu.');
                 return;
             }
-            const kategori = document.getElementById('saran-guru-kategori').value;
             const inputPesan = document.getElementById('saran-guru-pesan');
             const pesan = inputPesan.value.trim();
             if (!pesan) {
@@ -4770,8 +4827,9 @@
             daftarEvaluasi.push({
                 guruNama: _guruSaranAktif.nama,
                 guruMapel: _guruSaranAktif.mapel,
-                rating: _ratingSaranGuruAktif,
-                kategori: kategori,
+                ratingPenjelasan: penjelasan,
+                ratingKeadilan: keadilan,
+                ratingKomunikasi: komunikasi,
                 pesan: pesan,
                 waktu: timestamp
             });
@@ -4779,6 +4837,8 @@
 
             tutupModalSaranGuru();
             triggerDynamicIsland('Saran anonim berhasil dikirim!');
+            // Rating & badge status di card guru langsung ikut ter-update.
+            renderDaftarGuru();
         }
 
         // Fade In on Scroll: kartu guru baru "muncul" (fade + geser naik) begitu
