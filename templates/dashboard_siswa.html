@@ -2211,6 +2211,68 @@
             }, 5000);
         }
 
+        // ============================================================
+        // FILTER KATA KASAR — dipakai bareng oleh kirimSaranSiswa() &
+        // kirimSaranGuru() supaya SEMUA jalur "kirim saran" disaring
+        // sebelum tersimpan. Menangkap:
+        //   1) bentuk baku & non-baku/gaul ("goblok" & "goblokk", dst)
+        //   2) singkatan umum di chat ("anj", "bgst", "kntl", dst)
+        //   3) trik "dipisah/disingkat" pakai spasi/simbol/angka mirip
+        //      huruf, mis. "a n j i n g", "a.n.j.i.n.g", "4njing"
+        // Tinggal tambah/kurangi kata di DAFTAR_KATA_KASAR kalau perlu.
+        // ============================================================
+        const DAFTAR_KATA_KASAR = [
+            // umpatan umum (baku & non-baku)
+            'anjing', 'anjir', 'anjrit', 'anjay', 'anjrot', 'asu',
+            'bangsat', 'bangke', 'bajingan', 'brengsek', 'kampret',
+            'keparat', 'sialan', 'kunyuk', 'monyet', 'babi',
+            'jancok', 'jancuk', 'diancuk', 'coeg',
+            'tai', 'taik', 'kontol', 'memek', 'ngentot', 'jembut',
+            'pepek', 'peler', 'pantek', 'titit', 'itil',
+            'lonte', 'pelacur', 'sundal', 'sundel', 'jalang',
+            'goblok', 'goblog', 'tolol', 'idiot', 'bego', 'dungu',
+            'bebal', 'bloon', 'pekok', 'gila lu', 'sinting',
+            // singkatan umum di chat/media sosial
+            'anj', 'anjg', 'bgst', 'bgsd', 'bjr', 'kntl', 'kntol',
+            'ngntd', 'mmk', 'pltk', 'sndl', 'gblk', 'gbl', 'tll',
+            'jncok', 'jncuk', 'wtf', 'fck', 'fuck', 'fucking', 'shit',
+            'bitch', 'asshole', 'bastard',
+        ];
+
+        // Ubah huruf yang sering "disamarkan" pakai angka/simbol supaya
+        // ikut kena filter, mis. "4njing" / "@njing" / "b4ngsat".
+        function _samarkanKeHurufAsli(teks) {
+            const peta = { '4': 'a', '@': 'a', '3': 'e', '1': 'i', '!': 'i', '0': 'o', '$': 's', '5': 's', '7': 't' };
+            return teks.replace(/[4@31!05\$7]/g, (ch) => peta[ch] || ch);
+        }
+
+        // Regex per-kata yang tetap kena walau hurufnya disisipi spasi/titik/
+        // strip/dsb (mis. "a n j i n g"), TAPI tidak salah tangkap kata wajar
+        // yang kebetulan mengandung potongan huruf yang sama (mis. "santai"
+        // tidak ikut kena filter kata "tai") karena tetap butuh batas kata
+        // (bukan huruf) tepat sebelum & sesudah polanya.
+        function _buatRegexKataKasar(kata) {
+            const huruf = kata.toLowerCase().split('').filter((h) => /[a-z]/.test(h));
+            if (huruf.length === 0) return null;
+            const pola = huruf.join('[^a-z]*');
+            return new RegExp('(?:^|[^a-z])' + pola + '(?:[^a-z]|$)', 'i');
+        }
+        const _REGEX_KATA_KASAR = DAFTAR_KATA_KASAR
+            .map((kata) => ({ kata, regex: _buatRegexKataKasar(kata) }))
+            .filter((x) => x.regex);
+
+        // Mengembalikan { terdeteksi, kata } — kata yang cocok TIDAK ditampilkan
+        // ke user di pesan peringatan (cukup kasih tahu bahwa teksnya kasar),
+        // biar pesannya tetap sopan.
+        function periksaKataKasar(teks) {
+            if (!teks) return { terdeteksi: false };
+            const teksDisamarkan = _samarkanKeHurufAsli(teks.toLowerCase());
+            for (const { regex } of _REGEX_KATA_KASAR) {
+                if (regex.test(teksDisamarkan)) return { terdeteksi: true };
+            }
+            return { terdeteksi: false };
+        }
+
         function kirimSaranSiswa() {
             const inputSaran = document.getElementById('input-saran-siswa');
             if (!inputSaran) return;
@@ -2218,6 +2280,11 @@
 
             if (!textSaran) {
                 alert('Silakan ketik saran atau masukan terlebih dahulu!');
+                return;
+            }
+
+            if (periksaKataKasar(textSaran).terdeteksi) {
+                alert('Saran tidak bisa dikirim karena terdeteksi mengandung kata kasar/tidak sopan. Silakan tulis ulang dengan bahasa yang baik.');
                 return;
             }
 
@@ -4638,6 +4705,12 @@
             const pesan = inputPesan.value.trim();
             if (!pesan) {
                 alert('Silakan tulis pesan saran/evaluasi terlebih dahulu.');
+                inputPesan.focus();
+                return;
+            }
+
+            if (periksaKataKasar(pesan).terdeteksi) {
+                alert('Saran tidak bisa dikirim karena terdeteksi mengandung kata kasar/tidak sopan. Silakan tulis ulang dengan bahasa yang baik.');
                 inputPesan.focus();
                 return;
             }
