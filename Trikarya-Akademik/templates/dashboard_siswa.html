@@ -4,18 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Aplikasi Sekolah - Dashboard Siswa</title>
-
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#004494">
-    <link rel="apple-touch-icon" href="/static/img/logo_aplikasi.jpg">
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js');
-        });
-      }
-    </script>
-
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js"></script>
     <!-- OCR (Ekstraksi Teks Otomatis) untuk verifikasi foto bukti prestasi -->
@@ -1356,7 +1345,7 @@
                             <div class="max-w-md">
                                 <span class="bg-white/25 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 inline-block">Quiz & Leaderboard</span>
                                 <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">🎮 Uji Wawasanmu, Kumpulkan Poin!</h2>
-                                <p class="text-purple-100 text-sm leading-relaxed">Pilih dulu jenis soalnya, lalu tentukan tingkat kesulitan yang mau kamu jajal.</p>
+                                <p class="text-purple-100 text-sm leading-relaxed">Pilih jenis soal, kategori & mapel, lalu tentukan tingkat kesulitan yang mau kamu jajal.</p>
                             </div>
                             <div class="flex sm:flex-col gap-4 sm:gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-5 py-4 flex-shrink-0">
                                 <div class="text-center sm:text-left">
@@ -1378,7 +1367,7 @@
                             <h3 class="font-bold text-lg text-slate-900">Pilihan Ganda</h3>
                             <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Jawab dengan memilih 1 dari 4 opsi. Ada leaderboard & border koleksi yang bisa dibuka lewat jalur ini.</p>
                             <span class="w-full py-2.5 bg-purple-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
-                                Lihat Tingkat Kesulitan <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                                Lihat Kategori Mapel <i class="fa-solid fa-arrow-right text-[10px]"></i>
                             </span>
                         </button>
 
@@ -1387,19 +1376,63 @@
                             <h3 class="font-bold text-lg text-slate-900">Essay</h3>
                             <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Ketik sendiri jawabanmu, langsung dicocokkan otomatis dengan kunci jawaban.</p>
                             <span class="w-full py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
-                                Lihat Tingkat Kesulitan <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                                Lihat Kategori Mapel <i class="fa-solid fa-arrow-right text-[10px]"></i>
                             </span>
                         </button>
                     </div>
                 </div>
 
-                <!-- ============ VIEW 1a: TINGKAT KESULITAN - PILIHAN GANDA ============ -->
-                <div id="quiz-view-tingkat-pg" class="hidden">
+                <!-- ============ VIEW 0b: PILIH KATEGORI MAPEL ============ -->
+                <div id="quiz-view-kategori-mapel" class="hidden">
                     <button type="button" onclick="kembaliKeJenisQuiz()" class="mb-4 inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors">
                         <i class="fa-solid fa-arrow-left text-[10px]"></i> Kembali pilih jenis quiz
                     </button>
                     <div class="flex items-center gap-2 mb-1">
+                        <span class="px-2.5 py-1 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-md uppercase tracking-wide"><i class="fa-solid fa-shapes mr-1"></i><span id="quiz-kategori-jenis-badge">Pilihan Ganda</span></span>
+                    </div>
+                    <h3 class="font-bold text-xl text-slate-900 mb-1">Pilih Kategori Mapel</h3>
+                    <p class="text-xs text-slate-400 mb-4">Mau quiz mapel produktif (kejuruan) atau mapel umum seperti biasa di SMK?</p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <button type="button" onclick="pilihKategoriMapelQuiz('produktif')" class="text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-orange-200 transition-shadow p-4 sm:p-6 flex flex-col">
+                            <div class="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                            <h3 class="font-bold text-lg text-slate-900">Mapel Produktif</h3>
+                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Mapel kejuruan kelas XII TKJ 3/TAV: Mikrotik, Access Point, dan Ubuntu Server.</p>
+                            <span class="w-full py-2.5 bg-orange-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                Lihat Mapel <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </span>
+                        </button>
+
+                        <button type="button" onclick="pilihKategoriMapelQuiz('umum')" class="text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-200 transition-shadow p-4 sm:p-6 flex flex-col">
+                            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-graduation-cap"></i></div>
+                            <h3 class="font-bold text-lg text-slate-900">Mapel Umum</h3>
+                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Mapel seperti biasa di SMK: Matematika, Bahasa Indonesia, Bahasa Inggris, dan lainnya.</p>
+                            <span class="w-full py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                Lihat Mapel <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ============ VIEW 0c: PILIH MAPEL (dinamis sesuai kategori) ============ -->
+                <div id="quiz-view-pilih-mapel" class="hidden">
+                    <button type="button" onclick="kembaliKeKategoriMapelQuiz()" class="mb-4 inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors">
+                        <i class="fa-solid fa-arrow-left text-[10px]"></i> Kembali pilih kategori mapel
+                    </button>
+                    <h3 id="pilih-mapel-judul" class="font-bold text-xl text-slate-900 mb-1">Pilih Mapel</h3>
+                    <p id="pilih-mapel-subjudul" class="text-xs text-slate-400 mb-4">Mapel seperti biasa di SMK.</p>
+
+                    <div id="pilih-mapel-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+
+                <!-- ============ VIEW 1a: TINGKAT KESULITAN - PILIHAN GANDA ============ -->
+                <div id="quiz-view-tingkat-pg" class="hidden">
+                    <button type="button" onclick="kembaliKePilihMapelQuiz()" class="mb-4 inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors">
+                        <i class="fa-solid fa-arrow-left text-[10px]"></i> Kembali pilih mapel
+                    </button>
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
                         <span class="px-2.5 py-1 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-md uppercase tracking-wide"><i class="fa-solid fa-list-check mr-1"></i>Pilihan Ganda</span>
+                        <span class="quiz-mapel-badge-pg px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md uppercase tracking-wide"><i class="fa-solid fa-book mr-1"></i>Mapel</span>
                     </div>
                     <h3 class="font-bold text-xl text-slate-900 mb-4">Pilih Tingkat Kesulitan</h3>
 
@@ -1467,9 +1500,13 @@
 
                 <!-- ============ VIEW 1b: TINGKAT KESULITAN - ESSAY ============ -->
                 <div id="quiz-view-tingkat-essay" class="hidden">
-                    <button type="button" onclick="kembaliKeJenisQuiz()" class="mb-4 inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors">
-                        <i class="fa-solid fa-arrow-left text-[10px]"></i> Kembali pilih jenis quiz
+                    <button type="button" onclick="kembaliKePilihMapelQuiz()" class="mb-4 inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors">
+                        <i class="fa-solid fa-arrow-left text-[10px]"></i> Kembali pilih mapel
                     </button>
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                        <span class="px-2.5 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded-md uppercase tracking-wide"><i class="fa-solid fa-pen-to-square mr-1"></i>Essay</span>
+                        <span class="quiz-mapel-badge-essay px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md uppercase tracking-wide"><i class="fa-solid fa-book mr-1"></i>Mapel</span>
+                    </div>
                     <div class="flex items-center gap-2 mb-1">
                         <span class="px-2.5 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded-md uppercase tracking-wide"><i class="fa-solid fa-pen-to-square mr-1"></i>Essay</span>
                     </div>
@@ -1546,7 +1583,10 @@
                 <div id="quiz-view-play" class="hidden">
                     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 sm:p-8">
                         <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-                            <span id="quiz-play-level-badge" class="px-3 py-1 rounded-lg text-xs font-bold"></span>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span id="quiz-play-level-badge" class="px-3 py-1 rounded-lg text-xs font-bold"></span>
+                                <span id="quiz-play-mapel-badge" class="px-3 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-600"></span>
+                            </div>
                             <div class="flex items-center gap-4">
                                 <span class="text-xs font-semibold text-slate-500">Soal <span id="quiz-play-nomor">1</span>/<span id="quiz-play-total">5</span></span>
                                 <span class="text-xs font-semibold text-slate-500">Skor: <span id="quiz-play-skor" class="text-slate-900 font-bold">0</span></span>
@@ -4588,38 +4628,104 @@
             hard:   { label: 'Hard',   poinDasar: 35, waktu: 10, warnaBadge: 'bg-rose-100 text-rose-700',       warnaBar: 'bg-rose-500' }
         };
 
-        const QUIZ_BANK = {
-            easy: [
-                { q: 'Apa ibu kota Indonesia?', opsi: ['Jakarta', 'Bandung', 'Surabaya', 'Medan'], jawaban: 0 },
-                { q: '1 KB (kilobyte) sama dengan berapa byte?', opsi: ['1000 byte', '1024 byte', '100 byte', '1 byte'], jawaban: 1 },
-                { q: 'Aplikasi untuk membuka halaman internet disebut?', opsi: ['Web Browser', 'Compiler', 'Sistem Operasi', 'Antivirus'], jawaban: 0 },
-                { q: 'Berapa hasil dari 12 x 8?', opsi: ['96', '86', '106', '88'], jawaban: 0 },
-                { q: 'Lambang negara Indonesia adalah?', opsi: ['Garuda Pancasila', 'Rajawali', 'Elang Jawa', 'Merpati'], jawaban: 0 },
-                { q: 'Perangkat keras untuk mengetik disebut?', opsi: ['Keyboard', 'Mouse', 'Monitor', 'Speaker'], jawaban: 0 },
-                { q: 'Bahasa yang dipakai untuk mengatur tampilan/gaya halaman web adalah?', opsi: ['CSS', 'HTML', 'Python', 'Java'], jawaban: 0 },
-                { q: 'Satuan yang biasa dipakai untuk mengukur kecepatan internet adalah?', opsi: ['Mbps', 'Kilogram', 'Meter', 'Liter'], jawaban: 0 }
-            ],
-            medium: [
-                { q: 'Protokol yang dipakai untuk mengirim halaman web adalah?', opsi: ['HTTP', 'FTP', 'SMTP', 'POP3'], jawaban: 0 },
-                { q: 'IP address versi 4 (IPv4) terdiri dari berapa bit?', opsi: ['32 bit', '64 bit', '16 bit', '128 bit'], jawaban: 0 },
-                { q: 'Perangkat jaringan yang menghubungkan beberapa jaringan berbeda adalah?', opsi: ['Router', 'Switch', 'Hub', 'Repeater'], jawaban: 0 },
-                { q: 'Bahasa pemrograman yang mengatur logika/interaksi di halaman web adalah?', opsi: ['JavaScript', 'CSS', 'HTML', 'XML'], jawaban: 0 },
-                { q: 'Kepanjangan dari CPU adalah?', opsi: ['Central Processing Unit', 'Computer Personal Unit', 'Central Program Utility', 'Control Processing Unit'], jawaban: 0 },
-                { q: 'Topologi jaringan yang berbentuk melingkar disebut topologi?', opsi: ['Ring', 'Star', 'Bus', 'Mesh'], jawaban: 0 },
-                { q: 'Perintah untuk mengecek koneksi jaringan di Command Prompt adalah?', opsi: ['ping', 'cd', 'dir', 'ls'], jawaban: 0 },
-                { q: 'RAM pada komputer berfungsi sebagai?', opsi: ['Memori sementara', 'Penyimpanan permanen', 'Pendingin prosesor', 'Sumber daya listrik'], jawaban: 0 }
-            ],
-            hard: [
-                { q: 'Subnet mask default untuk kelas C adalah?', opsi: ['255.255.255.0', '255.255.0.0', '255.0.0.0', '255.255.255.255'], jawaban: 0 },
-                { q: 'Port default yang dipakai untuk HTTPS adalah?', opsi: ['443', '80', '21', '25'], jawaban: 0 },
-                { q: 'Kepanjangan dari DNS adalah?', opsi: ['Domain Name System', 'Data Network System', 'Digital Name Server', 'Domain Network Service'], jawaban: 0 },
-                { q: 'Layer OSI yang bertugas menangani routing paket data adalah?', opsi: ['Network Layer', 'Transport Layer', 'Data Link Layer', 'Session Layer'], jawaban: 0 },
-                { q: 'Protokol yang dipakai untuk mengirim email adalah?', opsi: ['SMTP', 'HTTP', 'FTP', 'SNMP'], jawaban: 0 },
-                { q: 'Kepanjangan dari VLAN adalah?', opsi: ['Virtual Local Area Network', 'Variable LAN', 'Virtual Line Access Network', 'Verified LAN'], jawaban: 0 },
-                { q: 'Perintah untuk melihat konfigurasi IP di Windows adalah?', opsi: ['ipconfig', 'ifconfig', 'netstat', 'tracert'], jawaban: 0 },
-                { q: 'Jumlah maksimal host yang bisa ditampung subnet /29 adalah?', opsi: ['6', '8', '14', '30'], jawaban: 0 }
-            ]
+        const MAPEL_QUIZ = {
+                    "produktif": [
+                                {
+                                            "id": "kk08",
+                                            "kode": "KK08",
+                                            "nama": "Mikrotik",
+                                            "deskripsi": "Konfigurasi & administrasi jaringan router Mikrotik (RouterOS)",
+                                            "icon": "fa-network-wired",
+                                            "warna": "sky"
+                                },
+                                {
+                                            "id": "kk17",
+                                            "kode": "KK17",
+                                            "nama": "Access Point",
+                                            "deskripsi": "Instalasi & konfigurasi jaringan nirkabel / Access Point",
+                                            "icon": "fa-wifi",
+                                            "warna": "cyan"
+                                },
+                                {
+                                            "id": "kk06",
+                                            "kode": "KK06",
+                                            "nama": "Ubuntu Server",
+                                            "deskripsi": "Instalasi & administrasi server berbasis Ubuntu (OVA)",
+                                            "icon": "fa-server",
+                                            "warna": "orange"
+                                }
+                    ],
+                    "umum": [
+                                {
+                                            "id": "matematika",
+                                            "kode": null,
+                                            "nama": "Matematika",
+                                            "deskripsi": "Soal seputar aritmatika, aljabar, hingga kalkulus dasar",
+                                            "icon": "fa-calculator",
+                                            "warna": "blue"
+                                },
+                                {
+                                            "id": "bindo",
+                                            "kode": null,
+                                            "nama": "Bahasa Indonesia",
+                                            "deskripsi": "Tata bahasa, jenis teks, dan kesusastraan Indonesia",
+                                            "icon": "fa-book-open",
+                                            "warna": "rose"
+                                },
+                                {
+                                            "id": "binggris",
+                                            "kode": null,
+                                            "nama": "Bahasa Inggris",
+                                            "deskripsi": "Grammar, vocabulary, dan tenses dasar Bahasa Inggris",
+                                            "icon": "fa-language",
+                                            "warna": "indigo"
+                                },
+                                {
+                                            "id": "ppkn",
+                                            "kode": null,
+                                            "nama": "PPKn",
+                                            "deskripsi": "Pancasila, UUD 1945, dan kelembagaan negara",
+                                            "icon": "fa-landmark",
+                                            "warna": "red"
+                                },
+                                {
+                                            "id": "ipas",
+                                            "kode": null,
+                                            "nama": "IPAS",
+                                            "deskripsi": "Ilmu Pengetahuan Alam & Sosial dasar",
+                                            "icon": "fa-flask",
+                                            "warna": "emerald"
+                                },
+                                {
+                                            "id": "pjok",
+                                            "kode": null,
+                                            "nama": "PJOK",
+                                            "deskripsi": "Olahraga, kesehatan, dan cabang-cabang atletik",
+                                            "icon": "fa-futbol",
+                                            "warna": "lime"
+                                },
+                                {
+                                            "id": "sejarah",
+                                            "kode": null,
+                                            "nama": "Sejarah",
+                                            "deskripsi": "Sejarah kemerdekaan & perjuangan bangsa Indonesia",
+                                            "icon": "fa-scroll",
+                                            "warna": "amber"
+                                },
+                                {
+                                            "id": "senibudaya",
+                                            "kode": null,
+                                            "nama": "Seni Budaya",
+                                            "deskripsi": "Seni rupa, musik, dan tari tradisional Nusantara",
+                                            "icon": "fa-palette",
+                                            "warna": "fuchsia"
+                                }
+                    ]
         };
+
+        const QUIZ_BANK_PG_BY_MAPEL = {"kk08": {"easy": [{"q": "Aplikasi resmi berbasis GUI untuk mengonfigurasi router Mikrotik dari komputer disebut?", "opsi": ["Winbox", "Photoshop", "Blender", "OBS Studio"], "jawaban": 0}, {"q": "Sistem operasi yang digunakan oleh perangkat router Mikrotik disebut?", "opsi": ["RouterOS", "Windows Server", "Ubuntu", "Android"], "jawaban": 0}, {"q": "Apa kepanjangan dari \"RB\" pada seri perangkat Mikrotik seperti RB750?", "opsi": ["RouterBoard", "Radio Broadcast", "Real Box", "Router Base"], "jawaban": 0}, {"q": "Untuk masuk ke Mikrotik lewat Winbox tanpa tahu IP, biasanya digunakan koneksi berdasarkan?", "opsi": ["MAC Address", "Nomor Seri", "Kode QR", "Nama WiFi"], "jawaban": 0}], "medium": [{"q": "Fitur Mikrotik yang digunakan untuk membagi & membatasi bandwidth tiap client disebut?", "opsi": ["Simple Queue", "Firewall", "DHCP Server", "NAT"], "jawaban": 0}, {"q": "Untuk memberi router Mikrotik akses internet otomatis dari ISP, biasanya diaktifkan fitur?", "opsi": ["DHCP Client", "DHCP Server", "Hotspot", "Bridge"], "jawaban": 0}, {"q": "Menu di Mikrotik yang digunakan untuk mengatur aturan lalu lintas data (blokir/izinkan) disebut?", "opsi": ["Firewall", "Queue", "Wireless", "Routes"], "jawaban": 0}, {"q": "Perintah dasar untuk melihat daftar interface pada Mikrotik lewat terminal adalah?", "opsi": ["interface print", "show interface", "ip config", "ls interface"], "jawaban": 0}], "hard": [{"q": "Fitur Mikrotik untuk menggabungkan beberapa koneksi internet (ISP) sekaligus disebut?", "opsi": ["Load Balancing", "Port Forwarding", "Bridging", "Bonding"], "jawaban": 0}, {"q": "Protokol routing dinamis yang didukung Mikrotik untuk jaringan skala besar contohnya?", "opsi": ["OSPF", "HTTP", "FTP", "SNMP"], "jawaban": 0}, {"q": "Fitur pada Mikrotik untuk membuat jaringan tunnel antar dua lokasi berbeda disebut?", "opsi": ["VPN (EoIP/PPTP)", "Hotspot", "Firewall NAT", "DHCP Relay"], "jawaban": 0}, {"q": "Teknik antrian di Mikrotik yang membagi bandwidth secara merata otomatis ke tiap koneksi disebut?", "opsi": ["PCQ (Per Connection Queue)", "Simple Queue", "Firewall Mangle", "Static Route"], "jawaban": 0}]}, "kk17": {"easy": [{"q": "Perangkat yang berfungsi memancarkan sinyal WiFi agar perangkat lain bisa terhubung ke jaringan disebut?", "opsi": ["Access Point", "Switch", "Modem ADSL", "Kabel LAN"], "jawaban": 0}, {"q": "Nama jaringan WiFi yang muncul saat kita mencari WiFi di HP/laptop disebut?", "opsi": ["SSID", "IP Address", "MAC Address", "Gateway"], "jawaban": 0}, {"q": "Kunci/kata sandi untuk masuk ke jaringan WiFi disebut?", "opsi": ["Password WiFi", "Username", "PIN ATM", "Kode OTP"], "jawaban": 0}, {"q": "Standar jaringan nirkabel yang umum dipakai untuk WiFi saat ini adalah standar?", "opsi": ["802.11", "802.3", "RS-232", "USB 3.0"], "jawaban": 0}], "medium": [{"q": "Mode Access Point yang berfungsi memperluas jangkauan sinyal WiFi dari AP utama disebut mode?", "opsi": ["Repeater/Bridge", "Router", "Gateway", "Firewall"], "jawaban": 0}, {"q": "Selain 2.4GHz, frekuensi lain yang umum digunakan jaringan WiFi rumahan adalah?", "opsi": ["5GHz", "10GHz", "900MHz", "1GHz"], "jawaban": 0}, {"q": "Metode keamanan WiFi yang lebih aman dibanding WEP adalah?", "opsi": ["WPA2", "Telnet", "FTP", "HTTP"], "jawaban": 0}, {"q": "Untuk menghubungkan dua gedung memakai Access Point tanpa kabel, biasanya dipakai mode?", "opsi": ["Point to Point (PtP)", "Hotspot", "Access Point Router", "Bridge LAN"], "jawaban": 0}], "hard": [{"q": "Kondisi banyak Access Point saling mengganggu sinyal di channel yang sama disebut?", "opsi": ["Interferensi Channel", "Bandwidth Limit", "Packet Loss", "Latency"], "jawaban": 0}, {"q": "Fitur pada Access Point yang memungkinkan perangkat berpindah AP tanpa putus koneksi disebut?", "opsi": ["Roaming", "Bridging", "Tunneling", "Forwarding"], "jawaban": 0}, {"q": "Standar keamanan WiFi terbaru yang menggantikan WPA2 disebut?", "opsi": ["WPA3", "WPA1", "WEP2", "TKIP"], "jawaban": 0}, {"q": "Teknik mengatur beberapa Access Point memakai satu SSID yang sama agar jaringan terasa menyatu disebut?", "opsi": ["ESSID / Seamless Roaming", "VLAN Trunking", "NAT Loopback", "Port Mirroring"], "jawaban": 0}]}, "kk06": {"easy": [{"q": "Ubuntu Server termasuk sistem operasi berbasis?", "opsi": ["Linux", "Windows", "macOS", "MS-DOS"], "jawaban": 0}, {"q": "Ekstensi file .ova pada virtualisasi biasanya digunakan untuk?", "opsi": ["Import/export virtual machine", "Menyimpan foto", "Memutar video", "Mengompres dokumen"], "jawaban": 0}, {"q": "Perintah dasar Linux untuk melihat daftar file & folder di suatu direktori adalah?", "opsi": ["ls", "cd", "mkdir", "rm"], "jawaban": 0}, {"q": "Perintah dasar Linux untuk berpindah direktori adalah?", "opsi": ["cd", "ls", "pwd", "cat"], "jawaban": 0}], "medium": [{"q": "Perintah di Ubuntu Server untuk memperbarui daftar paket sebelum instalasi software adalah?", "opsi": ["apt update", "apt install", "apt remove", "apt list"], "jawaban": 0}, {"q": "Perintah untuk menginstal aplikasi/paket di Ubuntu Server (berbasis Debian) adalah?", "opsi": ["apt install", "apt update", "apt search", "apt clean"], "jawaban": 0}, {"q": "Software virtualisasi yang bisa membuka file OVA contohnya adalah?", "opsi": ["VirtualBox", "Notepad", "Photoshop", "Winbox"], "jawaban": 0}, {"q": "Untuk melihat alamat IP di Ubuntu Server, perintah yang bisa digunakan adalah?", "opsi": ["ip addr", "cd ip", "ls ip", "open ip"], "jawaban": 0}], "hard": [{"q": "Perintah untuk memberi hak akses root sementara pada perintah biasa di Ubuntu adalah?", "opsi": ["sudo", "admin", "root-run", "superuser"], "jawaban": 0}, {"q": "File konfigurasi Netplan untuk mengatur IP statis di Ubuntu Server berformat?", "opsi": ["YAML", "JSON", "XML", "INI"], "jawaban": 0}, {"q": "Perintah untuk melihat status sebuah service yang berjalan di Ubuntu Server (systemd) adalah?", "opsi": ["systemctl status", "service view", "ps status", "ls status"], "jawaban": 0}, {"q": "Layanan yang harus aktif agar Ubuntu Server bisa diakses jarak jauh lewat terminal adalah?", "opsi": ["SSH", "FTP", "DNS", "DHCP"], "jawaban": 0}]}, "matematika": {"easy": [{"q": "Hasil dari 15 + 27 adalah?", "opsi": ["42", "41", "43", "52"], "jawaban": 0}, {"q": "Bentuk sederhana dari pecahan 4/8 adalah?", "opsi": ["1/2", "1/4", "2/3", "1/3"], "jawaban": 0}, {"q": "Keliling persegi dengan panjang sisi 5 cm adalah?", "opsi": ["20 cm", "25 cm", "15 cm", "10 cm"], "jawaban": 0}, {"q": "Hasil dari 8 x 9 adalah?", "opsi": ["72", "63", "81", "64"], "jawaban": 0}], "medium": [{"q": "Akar kuadrat dari 144 adalah?", "opsi": ["12", "14", "16", "11"], "jawaban": 0}, {"q": "Jika x + 5 = 12, maka nilai x adalah?", "opsi": ["7", "6", "8", "5"], "jawaban": 0}, {"q": "Luas lingkaran dengan jari-jari 7 cm (π = 22/7) adalah?", "opsi": ["154 cm²", "144 cm²", "164 cm²", "134 cm²"], "jawaban": 0}, {"q": "Hasil dari 2³ (2 pangkat 3) adalah?", "opsi": ["8", "6", "9", "4"], "jawaban": 0}], "hard": [{"q": "Turunan pertama dari f(x) = x² adalah?", "opsi": ["2x", "x", "2", "x²"], "jawaban": 0}, {"q": "Nilai dari log 100 (basis 10) adalah?", "opsi": ["2", "10", "100", "1"], "jawaban": 0}, {"q": "Hasil dari limit x mendekati 0 dari (sin x)/x adalah?", "opsi": ["1", "0", "tak terhingga", "-1"], "jawaban": 0}, {"q": "Determinan matriks [[2,1],[3,4]] adalah?", "opsi": ["5", "7", "-2", "10"], "jawaban": 0}]}, "bindo": {"easy": [{"q": "Kalimat yang berisi ajakan disebut kalimat?", "opsi": ["Ajakan (Imperatif)", "Berita", "Tanya", "Pengandaian"], "jawaban": 0}, {"q": "Kata yang menunjukkan nama orang, tempat, atau benda disebut?", "opsi": ["Kata Benda (Nomina)", "Kata Kerja", "Kata Sifat", "Kata Sambung"], "jawaban": 0}, {"q": "Karya tulis yang menceritakan kisah rekaan/khayalan disebut?", "opsi": ["Cerita Fiksi", "Biografi", "Laporan", "Eksposisi"], "jawaban": 0}, {"q": "Tanda baca untuk mengakhiri kalimat berita adalah?", "opsi": ["Titik (.)", "Koma (,)", "Tanya (?)", "Seru (!)"], "jawaban": 0}], "medium": [{"q": "Kalimat yang subjeknya dikenai suatu pekerjaan disebut kalimat?", "opsi": ["Kalimat Pasif", "Kalimat Aktif", "Kalimat Tanya", "Kalimat Seru"], "jawaban": 0}, {"q": "Teks yang bertujuan menggambarkan sesuatu secara rinci disebut teks?", "opsi": ["Deskripsi", "Narasi", "Eksposisi", "Argumentasi"], "jawaban": 0}, {"q": "Gaya bahasa yang membandingkan dua hal secara langsung dengan kata \"seperti/bagai\" disebut?", "opsi": ["Simile (Perumpamaan)", "Personifikasi", "Hiperbola", "Metafora"], "jawaban": 0}, {"q": "Bagian teks yang berisi kesimpulan biasanya disebut?", "opsi": ["Penutup/Simpulan", "Pembuka", "Orientasi", "Komplikasi"], "jawaban": 0}], "hard": [{"q": "Karya sastra berbentuk dialog dan biasa dipentaskan disebut?", "opsi": ["Drama", "Puisi", "Pantun", "Esai"], "jawaban": 0}, {"q": "Unsur intrinsik karya sastra yang berkaitan dengan waktu, tempat, dan suasana disebut?", "opsi": ["Latar (Setting)", "Tema", "Alur", "Amanat"], "jawaban": 0}, {"q": "Majas yang memberikan sifat manusia kepada benda mati disebut?", "opsi": ["Personifikasi", "Simile", "Metonimia", "Litotes"], "jawaban": 0}, {"q": "Jenis paragraf yang kalimat utamanya terletak di awal disebut paragraf?", "opsi": ["Deduktif", "Induktif", "Campuran", "Naratif"], "jawaban": 0}]}, "binggris": {"easy": [{"q": "\"Book\" dalam Bahasa Indonesia artinya?", "opsi": ["Buku", "Meja", "Pena", "Tas"], "jawaban": 0}, {"q": "Bentuk lampau (past tense) dari \"go\" adalah?", "opsi": ["went", "goes", "gone", "going"], "jawaban": 0}, {"q": "\"I ___ a student.\" Kata yang tepat untuk melengkapi adalah?", "opsi": ["am", "is", "are", "be"], "jawaban": 0}, {"q": "\"Good morning\" digunakan untuk menyapa pada waktu?", "opsi": ["Pagi hari", "Siang hari", "Sore hari", "Malam hari"], "jawaban": 0}], "medium": [{"q": "Bentuk kata kerja ketiga (past participle) dari \"eat\" adalah?", "opsi": ["eaten", "ate", "eating", "eats"], "jawaban": 0}, {"q": "Kalimat \"She is reading a book\" menggunakan tenses?", "opsi": ["Present Continuous Tense", "Simple Past Tense", "Future Tense", "Present Perfect Tense"], "jawaban": 0}, {"q": "Lawan kata (antonim) dari \"happy\" adalah?", "opsi": ["sad", "glad", "angry", "tired"], "jawaban": 0}, {"q": "Kata sifat (adjective) pada kalimat \"The cat is cute\" adalah?", "opsi": ["cute", "cat", "is", "the"], "jawaban": 0}], "hard": [{"q": "Kalimat pasif (passive voice) dari \"They clean the room\" adalah?", "opsi": ["The room is cleaned by them", "The room cleans them", "They is cleaned the room", "The room was clean them"], "jawaban": 0}, {"q": "Kata penghubung (conjunction) yang menyatakan sebab adalah?", "opsi": ["because", "although", "but", "or"], "jawaban": 0}, {"q": "Conditional sentence type 2 digunakan untuk menyatakan?", "opsi": ["Pengandaian yang tidak nyata saat ini", "Fakta ilmiah", "Kejadian di masa depan yang pasti", "Kejadian yang sudah pasti terjadi"], "jawaban": 0}, {"q": "Kata \"although\" termasuk jenis kata?", "opsi": ["Conjunction (kata hubung)", "Noun", "Verb", "Adverb"], "jawaban": 0}]}, "ppkn": {"easy": [{"q": "Dasar negara Indonesia adalah?", "opsi": ["Pancasila", "UUD 1945", "GBHN", "Tap MPR"], "jawaban": 0}, {"q": "Lambang sila pertama Pancasila adalah?", "opsi": ["Bintang", "Rantai", "Pohon Beringin", "Kepala Banteng"], "jawaban": 0}, {"q": "Hari Lahir Pancasila diperingati setiap tanggal?", "opsi": ["1 Juni", "17 Agustus", "28 Oktober", "10 November"], "jawaban": 0}, {"q": "Bendera negara Indonesia berwarna?", "opsi": ["Merah Putih", "Merah Kuning", "Putih Biru", "Kuning Hijau"], "jawaban": 0}], "medium": [{"q": "Undang-Undang Dasar negara Republik Indonesia disahkan pada tahun?", "opsi": ["1945", "1949", "1950", "1965"], "jawaban": 0}, {"q": "Sila Pancasila yang berbunyi \"Persatuan Indonesia\" adalah sila ke-?", "opsi": ["3", "1", "4", "5"], "jawaban": 0}, {"q": "Lembaga negara yang bertugas membuat undang-undang bersama presiden adalah?", "opsi": ["DPR", "MA", "BPK", "KY"], "jawaban": 0}, {"q": "Sikap yang mencerminkan pengamalan sila keempat Pancasila adalah?", "opsi": ["Musyawarah Mufakat", "Gotong Royong", "Toleransi Beragama", "Cinta Tanah Air"], "jawaban": 0}], "hard": [{"q": "Perubahan (amandemen) UUD 1945 sudah dilakukan sebanyak berapa kali?", "opsi": ["4 kali", "2 kali", "3 kali", "5 kali"], "jawaban": 0}, {"q": "Lembaga negara yang berwenang menguji undang-undang terhadap UUD adalah?", "opsi": ["Mahkamah Konstitusi", "Mahkamah Agung", "DPD", "Komisi Yudisial"], "jawaban": 0}, {"q": "Sistem pemerintahan yang dianut Indonesia adalah sistem?", "opsi": ["Presidensial", "Parlementer", "Monarki", "Federal"], "jawaban": 0}, {"q": "Hak asasi manusia diatur secara khusus dalam UUD 1945 pada bab?", "opsi": ["Bab XA", "Bab VII", "Bab III", "Bab IX"], "jawaban": 0}]}, "ipas": {"easy": [{"q": "Proses tumbuhan membuat makanan sendiri menggunakan cahaya matahari disebut?", "opsi": ["Fotosintesis", "Respirasi", "Transpirasi", "Fermentasi"], "jawaban": 0}, {"q": "Planet terbesar dalam tata surya adalah?", "opsi": ["Jupiter", "Saturnus", "Bumi", "Mars"], "jawaban": 0}, {"q": "Alat pernapasan utama pada manusia adalah?", "opsi": ["Paru-paru", "Jantung", "Hati", "Ginjal"], "jawaban": 0}, {"q": "Wujud air yang berubah menjadi es disebut peristiwa?", "opsi": ["Membeku", "Mencair", "Menguap", "Mengembun"], "jawaban": 0}], "medium": [{"q": "Gaya yang menyebabkan benda jatuh ke bumi disebut gaya?", "opsi": ["Gravitasi", "Gesek", "Magnet", "Pegas"], "jawaban": 0}, {"q": "Zat yang dapat menghantarkan arus listrik disebut?", "opsi": ["Konduktor", "Isolator", "Semikonduktor", "Resistor"], "jawaban": 0}, {"q": "Proses perubahan air menjadi uap disebut?", "opsi": ["Penguapan (Evaporasi)", "Pengembunan", "Pembekuan", "Pengendapan"], "jawaban": 0}, {"q": "Organ tubuh yang berfungsi memompa darah adalah?", "opsi": ["Jantung", "Paru-paru", "Ginjal", "Lambung"], "jawaban": 0}], "hard": [{"q": "Satuan yang digunakan untuk mengukur energi listrik adalah?", "opsi": ["Joule/Watt", "Newton", "Pascal", "Celcius"], "jawaban": 0}, {"q": "Proses pembelahan sel untuk menghasilkan sel anak yang identik disebut?", "opsi": ["Mitosis", "Meiosis", "Fertilisasi", "Fotosintesis"], "jawaban": 0}, {"q": "Lapisan atmosfer bumi yang melindungi dari radiasi ultraviolet adalah lapisan?", "opsi": ["Ozon", "Troposfer", "Ionosfer", "Mesosfer"], "jawaban": 0}, {"q": "Perubahan wujud dari gas langsung menjadi padat disebut?", "opsi": ["Deposisi", "Sublimasi", "Kondensasi", "Kristalisasi"], "jawaban": 0}]}, "pjok": {"easy": [{"q": "Induk organisasi sepak bola dunia adalah?", "opsi": ["FIFA", "PSSI", "AFC", "UEFA"], "jawaban": 0}, {"q": "Jumlah pemain dalam satu tim sepak bola yang berada di lapangan adalah?", "opsi": ["11", "10", "9", "12"], "jawaban": 0}, {"q": "Gerakan pemanasan sebelum olahraga bertujuan untuk?", "opsi": ["Mencegah cedera", "Menambah berat badan", "Mempercepat lelah", "Menahan napas"], "jawaban": 0}, {"q": "Cabang olahraga yang menggunakan raket dan shuttlecock adalah?", "opsi": ["Bulu tangkis", "Tenis meja", "Sepak takraw", "Voli"], "jawaban": 0}], "medium": [{"q": "Induk organisasi bola basket Indonesia adalah?", "opsi": ["PERBASI", "PSSI", "PBVSI", "PERPANI"], "jawaban": 0}, {"q": "Teknik dasar dalam bola voli untuk mengawali permainan disebut?", "opsi": ["Servis", "Smash", "Blok", "Passing"], "jawaban": 0}, {"q": "Lama waktu pertandingan sepak bola resmi (2 babak) adalah?", "opsi": ["90 menit", "60 menit", "80 menit", "100 menit"], "jawaban": 0}, {"q": "Cabang atletik yang berupa lari jarak pendek disebut?", "opsi": ["Lari Sprint", "Lari Maraton", "Lari Estafet", "Lari Gawang"], "jawaban": 0}], "hard": [{"q": "Induk organisasi atletik dunia disebut?", "opsi": ["World Athletics", "FIFA", "FINA", "IOC"], "jawaban": 0}, {"q": "Teknik pernapasan yang benar saat renang gaya bebas dilakukan dengan cara?", "opsi": ["Menoleh ke samping saat mengambil napas", "Menahan napas sepanjang renang", "Mengangkat kepala penuh ke depan", "Menyelam sebelum bernapas"], "jawaban": 0}, {"q": "Jumlah pemain dalam satu tim bola basket yang berada di lapangan adalah?", "opsi": ["5", "6", "7", "4"], "jawaban": 0}, {"q": "Cedera akibat peregangan otot yang berlebihan disebut?", "opsi": ["Strain", "Sprain", "Fraktur", "Dislokasi"], "jawaban": 0}]}, "sejarah": {"easy": [{"q": "Indonesia memproklamasikan kemerdekaan pada tanggal?", "opsi": ["17 Agustus 1945", "1 Juni 1945", "28 Oktober 1928", "10 November 1945"], "jawaban": 0}, {"q": "Proklamator kemerdekaan Indonesia adalah Soekarno dan?", "opsi": ["Mohammad Hatta", "Sutan Sjahrir", "Ahmad Soebardjo", "Sayuti Melik"], "jawaban": 0}, {"q": "Kerajaan maritim terbesar di Nusantara pada masa lampau adalah?", "opsi": ["Sriwijaya", "Mataram", "Demak", "Singasari"], "jawaban": 0}, {"q": "Organisasi pergerakan nasional pertama di Indonesia adalah?", "opsi": ["Budi Utomo", "Sarekat Islam", "Indische Partij", "Muhammadiyah"], "jawaban": 0}], "medium": [{"q": "Peristiwa penculikan Soekarno-Hatta sebelum proklamasi disebut peristiwa?", "opsi": ["Rengasdengklok", "Bandung Lautan Api", "Serangan Umum 1 Maret", "Pertempuran Surabaya"], "jawaban": 0}, {"q": "Kongres Pemuda II yang menghasilkan Sumpah Pemuda terjadi pada tahun?", "opsi": ["1928", "1908", "1945", "1949"], "jawaban": 0}, {"q": "Bangsa Eropa yang pertama kali mendarat di Indonesia mencari rempah-rempah adalah?", "opsi": ["Portugis", "Inggris", "Prancis", "Jerman"], "jawaban": 0}, {"q": "Konferensi yang mengakui kedaulatan Indonesia oleh Belanda dilaksanakan pada tahun?", "opsi": ["1949 (KMB)", "1945", "1947", "1950"], "jawaban": 0}], "hard": [{"q": "Peristiwa pemberontakan G30S terjadi pada tahun?", "opsi": ["1965", "1955", "1970", "1960"], "jawaban": 0}, {"q": "Kabinet pertama yang dibentuk setelah kemerdekaan Indonesia disebut?", "opsi": ["Kabinet Presidensial", "Kabinet Parlementer", "Kabinet Kerja", "Kabinet Ampera"], "jawaban": 0}, {"q": "Perjanjian yang mengakhiri konflik Indonesia-Belanda tahun 1949 dan mengakui kedaulatan RI adalah?", "opsi": ["Konferensi Meja Bundar", "Perjanjian Linggarjati", "Perjanjian Renville", "Perjanjian Roem-Royen"], "jawaban": 0}, {"q": "Tokoh yang mengetik naskah proklamasi kemerdekaan Indonesia adalah?", "opsi": ["Sayuti Melik", "Ahmad Soebardjo", "Fatmawati", "BM Diah"], "jawaban": 0}]}, "senibudaya": {"easy": [{"q": "Alat musik tradisional dari Jawa Barat yang dimainkan dengan cara digoyang adalah?", "opsi": ["Angklung", "Gamelan", "Sasando", "Kolintang"], "jawaban": 0}, {"q": "Warna yang termasuk warna primer adalah merah, kuning, dan?", "opsi": ["Biru", "Hijau", "Ungu", "Oranye"], "jawaban": 0}, {"q": "Tari tradisional dari Bali yang menggambarkan kisah Ramayana adalah?", "opsi": ["Tari Kecak", "Tari Saman", "Tari Piring", "Tari Jaipong"], "jawaban": 0}, {"q": "Alat untuk melukis di atas kanvas biasanya menggunakan?", "opsi": ["Kuas", "Pahat", "Cetok", "Gergaji"], "jawaban": 0}], "medium": [{"q": "Teknik menggambar dengan menyusun titik-titik disebut teknik?", "opsi": ["Pointilis", "Arsir", "Dussel", "Blok"], "jawaban": 0}, {"q": "Satu set alat musik tradisional Jawa yang terdiri dari gong, kenong, dan sejenisnya disebut?", "opsi": ["Gamelan", "Angklung", "Kolintang", "Sasando"], "jawaban": 0}, {"q": "Seni membuat batik dengan menuliskan malam menggunakan canting disebut batik?", "opsi": ["Batik Tulis", "Batik Cap", "Batik Printing", "Batik Jumputan"], "jawaban": 0}, {"q": "Tarian yang menggambarkan pergaulan muda-mudi khas Betawi adalah tari?", "opsi": ["Tari Yapong", "Tari Serimpi", "Tari Pendet", "Tari Gambyong"], "jawaban": 0}], "hard": [{"q": "Aliran seni lukis yang menonjolkan bentuk-bentuk geometris disebut aliran?", "opsi": ["Kubisme", "Realisme", "Naturalisme", "Romantisme"], "jawaban": 0}, {"q": "Wayang kulit merupakan seni pertunjukan yang berasal dari daerah?", "opsi": ["Jawa", "Sumatra", "Kalimantan", "Papua"], "jawaban": 0}, {"q": "Teknik mencampur warna dengan cara menumpuk sapuan kuas tipis secara berlapis disebut?", "opsi": ["Glazing", "Blocking", "Dussel", "Arsir"], "jawaban": 0}, {"q": "Musik dengan tangga nada pentatonis banyak dijumpai pada alat musik?", "opsi": ["Gamelan", "Biola", "Gitar", "Piano"], "jawaban": 0}]}};
+
+        const QUIZ_BANK_ESSAY_BY_MAPEL = {"kk08": {"easy": [{"q": "Sebutkan aplikasi yang biasa dipakai untuk mengonfigurasi Mikrotik lewat tampilan grafis (GUI)!", "kunci": ["winbox"]}, {"q": "Apa nama sistem operasi router Mikrotik?", "kunci": ["routeros"]}, {"q": "Apa kepanjangan dari RB pada RouterBoard?", "kunci": ["routerboard"]}], "medium": [{"q": "Sebutkan fitur Mikrotik yang digunakan untuk membatasi bandwidth per client!", "kunci": ["simple queue", "queue"]}, {"q": "Apa nama fitur di Mikrotik yang mengatur izin/blokir lalu lintas data?", "kunci": ["firewall"]}, {"q": "Sebutkan fitur yang membuat Mikrotik otomatis mendapat IP dari ISP!", "kunci": ["dhcp client", "dhcp"]}], "hard": [{"q": "Sebutkan istilah untuk teknik menggabungkan beberapa jalur internet sekaligus di Mikrotik!", "kunci": ["load balancing"]}, {"q": "Apa nama protokol routing dinamis yang bisa dipakai di Mikrotik untuk jaringan besar?", "kunci": ["ospf"]}, {"q": "Sebutkan salah satu jenis tunnel/VPN yang didukung Mikrotik!", "kunci": ["pptp", "eoip", "l2tp", "ipsec", "sstp"]}]}, "kk17": {"easy": [{"q": "Apa nama alat yang memancarkan sinyal WiFi agar perangkat bisa terhubung ke jaringan?", "kunci": ["access point"]}, {"q": "Sebutkan istilah untuk nama jaringan WiFi yang muncul saat kita mencari WiFi!", "kunci": ["ssid"]}, {"q": "Apa istilah untuk kata sandi masuk ke jaringan WiFi?", "kunci": ["password", "passphrase", "password wifi"]}], "medium": [{"q": "Sebutkan salah satu frekuensi yang umum dipakai jaringan WiFi selain 2.4GHz!", "kunci": ["5ghz"]}, {"q": "Sebutkan metode keamanan WiFi yang lebih aman dibanding WEP!", "kunci": ["wpa2", "wpa3", "wpa"]}, {"q": "Sebutkan mode Access Point yang dipakai untuk memperluas jangkauan sinyal WiFi!", "kunci": ["repeater", "bridge"]}], "hard": [{"q": "Sebutkan istilah untuk kondisi banyak sinyal WiFi saling bertabrakan di channel yang sama!", "kunci": ["interferensi", "interferensi channel", "channel overlap"]}, {"q": "Apa nama standar keamanan WiFi terbaru pengganti WPA2?", "kunci": ["wpa3"]}, {"q": "Sebutkan istilah untuk kemampuan perangkat berpindah antar Access Point tanpa putus koneksi!", "kunci": ["roaming"]}]}, "kk06": {"easy": [{"q": "Ubuntu Server berbasis sistem operasi apa?", "kunci": ["linux"]}, {"q": "Sebutkan perintah dasar Linux untuk melihat isi folder!", "kunci": ["ls"]}, {"q": "Sebutkan perintah dasar Linux untuk berpindah folder/direktori!", "kunci": ["cd"]}], "medium": [{"q": "Sebutkan perintah di Ubuntu Server untuk menginstal software (berbasis apt)!", "kunci": ["apt install"]}, {"q": "Sebutkan software virtualisasi yang bisa dipakai untuk membuka file OVA!", "kunci": ["virtualbox", "vmware"]}, {"q": "Sebutkan perintah untuk melihat alamat IP di Ubuntu Server!", "kunci": ["ip addr", "ifconfig"]}], "hard": [{"q": "Sebutkan perintah untuk menjalankan perintah dengan hak akses root/administrator di Ubuntu!", "kunci": ["sudo"]}, {"q": "Sebutkan layanan yang dipakai supaya server bisa diakses dari jarak jauh lewat terminal!", "kunci": ["ssh"]}, {"q": "Sebutkan perintah untuk mengecek status suatu service di sistem systemd!", "kunci": ["systemctl status"]}]}, "matematika": {"easy": [{"q": "Berapa hasil dari 25 + 17?", "kunci": ["42"]}, {"q": "Sebutkan bentuk paling sederhana dari pecahan 6/9!", "kunci": ["2/3"]}, {"q": "Berapa hasil dari 9 x 6?", "kunci": ["54"]}], "medium": [{"q": "Berapa akar kuadrat dari 81?", "kunci": ["9"]}, {"q": "Jika 2x = 16, berapa nilai x?", "kunci": ["8"]}, {"q": "Berapa hasil dari 3 pangkat 3 (3³)?", "kunci": ["27"]}], "hard": [{"q": "Berapa turunan pertama dari f(x) = 3x²?", "kunci": ["6x"]}, {"q": "Berapa nilai log 1000 basis 10?", "kunci": ["3"]}, {"q": "Berapa determinan matriks [[1,2],[3,4]]?", "kunci": ["-2"]}]}, "bindo": {"easy": [{"q": "Sebutkan tanda baca yang digunakan untuk mengakhiri kalimat berita!", "kunci": ["titik", "."]}, {"q": "Apa istilah untuk kata yang menunjukkan nama orang, tempat, atau benda?", "kunci": ["kata benda", "nomina"]}, {"q": "Sebutkan istilah untuk cerita rekaan/khayalan!", "kunci": ["fiksi", "cerita fiksi"]}], "medium": [{"q": "Sebutkan istilah untuk kalimat yang subjeknya dikenai suatu pekerjaan!", "kunci": ["kalimat pasif"]}, {"q": "Sebutkan jenis teks yang bertujuan menggambarkan sesuatu secara rinci!", "kunci": ["deskripsi", "teks deskripsi"]}, {"q": "Sebutkan majas yang membandingkan dua hal memakai kata \"seperti\" atau \"bagai\"!", "kunci": ["simile", "perumpamaan"]}], "hard": [{"q": "Sebutkan istilah untuk majas yang memberi sifat manusia pada benda mati!", "kunci": ["personifikasi"]}, {"q": "Sebutkan istilah untuk latar waktu, tempat, dan suasana dalam sebuah cerita!", "kunci": ["latar", "setting"]}, {"q": "Sebutkan jenis paragraf yang kalimat utamanya berada di awal!", "kunci": ["deduktif"]}]}, "binggris": {"easy": [{"q": "Apa arti kata \"book\" dalam Bahasa Indonesia?", "kunci": ["buku"]}, {"q": "Sebutkan bentuk lampau (past tense) dari kata \"go\"!", "kunci": ["went"]}, {"q": "Lengkapi: \"I ___ a student.\"", "kunci": ["am"]}], "medium": [{"q": "Sebutkan bentuk past participle (kata kerja ketiga) dari \"eat\"!", "kunci": ["eaten"]}, {"q": "Sebutkan lawan kata (antonim) dari \"happy\"!", "kunci": ["sad"]}, {"q": "Tenses apa yang dipakai pada kalimat \"She is reading a book\"?", "kunci": ["present continuous", "present continuous tense"]}], "hard": [{"q": "Sebutkan kata penghubung (conjunction) dalam Bahasa Inggris yang berarti \"karena\"!", "kunci": ["because"]}, {"q": "Ubah kalimat \"They clean the room\" menjadi kalimat pasif!", "kunci": ["the room is cleaned by them", "the room is cleaned"]}, {"q": "Conditional sentence type 2 digunakan untuk menyatakan apa?", "kunci": ["pengandaian tidak nyata", "pengandaian yang tidak nyata"]}]}, "ppkn": {"easy": [{"q": "Sebutkan dasar negara Indonesia!", "kunci": ["pancasila"]}, {"q": "Sebutkan warna bendera negara Indonesia!", "kunci": ["merah putih"]}, {"q": "Tanggal berapa Hari Lahir Pancasila diperingati?", "kunci": ["1 juni"]}], "medium": [{"q": "Sebutkan lembaga negara yang bertugas membuat undang-undang bersama presiden!", "kunci": ["dpr"]}, {"q": "Sila keberapa yang berbunyi \"Persatuan Indonesia\"?", "kunci": ["3", "ketiga"]}, {"q": "Sebutkan tahun disahkannya UUD 1945!", "kunci": ["1945"]}], "hard": [{"q": "Sebutkan sistem pemerintahan yang dianut Indonesia!", "kunci": ["presidensial"]}, {"q": "Sebutkan lembaga negara yang berwenang menguji undang-undang terhadap UUD!", "kunci": ["mahkamah konstitusi"]}, {"q": "Berapa kali UUD 1945 sudah diamandemen?", "kunci": ["4", "empat"]}]}, "ipas": {"easy": [{"q": "Sebutkan proses tumbuhan membuat makanannya sendiri!", "kunci": ["fotosintesis"]}, {"q": "Sebutkan planet terbesar dalam tata surya!", "kunci": ["jupiter"]}, {"q": "Sebutkan organ pernapasan utama pada manusia!", "kunci": ["paru paru", "paruparu"]}], "medium": [{"q": "Sebutkan gaya yang menyebabkan benda jatuh ke bumi!", "kunci": ["gravitasi"]}, {"q": "Sebutkan istilah untuk zat yang bisa menghantarkan arus listrik!", "kunci": ["konduktor"]}, {"q": "Sebutkan organ yang berfungsi memompa darah!", "kunci": ["jantung"]}], "hard": [{"q": "Sebutkan proses pembelahan sel yang menghasilkan sel anak identik!", "kunci": ["mitosis"]}, {"q": "Sebutkan lapisan atmosfer yang melindungi bumi dari radiasi ultraviolet!", "kunci": ["ozon", "lapisan ozon"]}, {"q": "Sebutkan istilah perubahan wujud dari gas langsung menjadi padat!", "kunci": ["deposisi"]}]}, "pjok": {"easy": [{"q": "Sebutkan induk organisasi sepak bola dunia!", "kunci": ["fifa"]}, {"q": "Berapa jumlah pemain sepak bola dalam satu tim di lapangan?", "kunci": ["11"]}, {"q": "Sebutkan tujuan pemanasan sebelum berolahraga!", "kunci": ["mencegah cedera"]}], "medium": [{"q": "Sebutkan induk organisasi bola basket Indonesia!", "kunci": ["perbasi"]}, {"q": "Sebutkan teknik dasar bola voli untuk mengawali permainan!", "kunci": ["servis"]}, {"q": "Berapa lama waktu pertandingan sepak bola resmi (2 babak)?", "kunci": ["90 menit", "90menit"]}], "hard": [{"q": "Sebutkan induk organisasi atletik dunia!", "kunci": ["world athletics"]}, {"q": "Berapa jumlah pemain bola basket dalam satu tim di lapangan?", "kunci": ["5"]}, {"q": "Sebutkan istilah cedera akibat peregangan otot yang berlebihan!", "kunci": ["strain"]}]}, "sejarah": {"easy": [{"q": "Sebutkan tanggal proklamasi kemerdekaan Indonesia!", "kunci": ["17 agustus 1945"]}, {"q": "Sebutkan nama dua proklamator kemerdekaan Indonesia!", "kunci": ["soekarno dan hatta", "soekarno hatta"]}, {"q": "Sebutkan kerajaan maritim besar di Nusantara pada masa lampau!", "kunci": ["sriwijaya"]}], "medium": [{"q": "Sebutkan nama peristiwa penculikan Soekarno-Hatta sebelum proklamasi!", "kunci": ["rengasdengklok"]}, {"q": "Pada tahun berapa Sumpah Pemuda dikumandangkan?", "kunci": ["1928"]}, {"q": "Sebutkan bangsa Eropa yang pertama kali mendarat di Indonesia mencari rempah-rempah!", "kunci": ["portugis"]}], "hard": [{"q": "Sebutkan tahun terjadinya peristiwa G30S!", "kunci": ["1965"]}, {"q": "Sebutkan nama tokoh yang mengetik naskah proklamasi!", "kunci": ["sayuti melik"]}, {"q": "Sebutkan nama perjanjian yang mengakui kedaulatan Indonesia oleh Belanda tahun 1949!", "kunci": ["konferensi meja bundar", "kmb"]}]}, "senibudaya": {"easy": [{"q": "Sebutkan alat musik tradisional dari Jawa Barat yang dimainkan dengan cara digoyang!", "kunci": ["angklung"]}, {"q": "Sebutkan tiga warna primer!", "kunci": ["merah kuning biru"]}, {"q": "Sebutkan alat yang digunakan untuk melukis di atas kanvas!", "kunci": ["kuas"]}], "medium": [{"q": "Sebutkan nama teknik menggambar dengan menyusun titik-titik!", "kunci": ["pointilis"]}, {"q": "Sebutkan nama satu set alat musik tradisional Jawa (gong, kenong, dll)!", "kunci": ["gamelan"]}, {"q": "Sebutkan istilah batik yang dibuat dengan menuliskan malam pakai canting!", "kunci": ["batik tulis"]}], "hard": [{"q": "Sebutkan aliran seni lukis yang menonjolkan bentuk-bentuk geometris!", "kunci": ["kubisme"]}, {"q": "Wayang kulit berasal dari daerah mana?", "kunci": ["jawa"]}, {"q": "Sebutkan istilah teknik mencampur warna dengan menumpuk sapuan kuas tipis secara berlapis!", "kunci": ["glazing"]}]}};
 
         /* ============================================================
            JENIS QUIZ: ESSAY (terpisah dari Pilihan Ganda)
@@ -4639,36 +4745,6 @@
             easy:   { label: 'Easy',   poinDasar: 15, waktu: 40, warnaBadge: 'bg-emerald-100 text-emerald-700', warnaBar: 'bg-emerald-500' },
             medium: { label: 'Medium', poinDasar: 25, waktu: 30, warnaBadge: 'bg-amber-100 text-amber-700',     warnaBar: 'bg-amber-500' },
             hard:   { label: 'Hard',   poinDasar: 40, waktu: 25, warnaBadge: 'bg-rose-100 text-rose-700',       warnaBar: 'bg-rose-500' }
-        };
-
-        const QUIZ_BANK_ESSAY = {
-            easy: [
-                { q: 'Sebutkan kepanjangan dari "PC" pada komputer!', kunci: ['personal computer'] },
-                { q: 'Apa nama perangkat untuk menggerakkan kursor di layar komputer?', kunci: ['mouse'] },
-                { q: 'Sebutkan sistem operasi buatan Microsoft yang paling umum dipakai di komputer!', kunci: ['windows'] },
-                { q: 'Apa kepanjangan dari "www" yang biasa muncul di alamat website?', kunci: ['world wide web'] },
-                { q: 'Sebutkan nama aplikasi pengolah kata (dokumen) buatan Microsoft!', kunci: ['microsoft word', 'word'] },
-                { q: 'Apa nama tombol pada keyboard untuk menghapus karakter di belakang kursor?', kunci: ['backspace'] },
-                { q: 'Sebutkan satu contoh perangkat keras (hardware) output pada komputer!', kunci: ['monitor', 'printer', 'speaker'] }
-            ],
-            medium: [
-                { q: 'Apa kepanjangan dari HTTP?', kunci: ['hypertext transfer protocol'] },
-                { q: 'Sebutkan protokol yang digunakan untuk mengirim email!', kunci: ['smtp'] },
-                { q: 'Apa kepanjangan dari LAN?', kunci: ['local area network'] },
-                { q: 'Sebutkan perangkat jaringan yang menghubungkan banyak komputer dalam satu jaringan lokal!', kunci: ['switch', 'hub'] },
-                { q: 'Apa kepanjangan dari IP pada IP Address?', kunci: ['internet protocol'] },
-                { q: 'Sebutkan perintah di Command Prompt untuk mengecek koneksi ke alamat lain!', kunci: ['ping'] },
-                { q: 'Apa kepanjangan dari CPU?', kunci: ['central processing unit'] }
-            ],
-            hard: [
-                { q: 'Apa kepanjangan dari DNS?', kunci: ['domain name system'] },
-                { q: 'Sebutkan port default yang digunakan protokol HTTPS!', kunci: ['443'] },
-                { q: 'Apa kepanjangan dari VLAN?', kunci: ['virtual local area network'] },
-                { q: 'Sebutkan subnet mask default untuk kelas C!', kunci: ['255.255.255.0'] },
-                { q: 'Apa kepanjangan dari OSI pada model layer jaringan?', kunci: ['open systems interconnection'] },
-                { q: 'Sebutkan perintah di Windows untuk melihat konfigurasi IP komputer!', kunci: ['ipconfig'] },
-                { q: 'Apa kepanjangan dari VPN?', kunci: ['virtual private network'] }
-            ]
         };
 
         function getQuizEssayData() {
@@ -4700,8 +4776,9 @@
             simpanQuizKeServer('essay', data);
         }
 
-        function acakSoalQuizEssay(level, jumlah) {
-            const bank = [...QUIZ_BANK_ESSAY[level]];
+        function acakSoalQuizEssay(mapelId, level, jumlah) {
+            const bankMapel = (QUIZ_BANK_ESSAY_BY_MAPEL[mapelId] && QUIZ_BANK_ESSAY_BY_MAPEL[mapelId][level]) || [];
+            const bank = [...bankMapel];
             for (let i = bank.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [bank[i], bank[j]] = [bank[j], bank[i]];
@@ -4732,6 +4809,25 @@
         }
 
         let quizState = null; // { jenis: 'pg'|'essay', level, soal[], index, skor, benar, waktuSisa, timerId }
+
+        // ============================================================
+        // STATE PEMILIHAN MAPEL QUIZ (kategori produktif/umum + mapel spesifik)
+        // Dipilih di antara VIEW "jenis" (PG/Essay) dan VIEW "tingkat kesulitan".
+        // Tingkat kesulitan (easy/medium/hard) TETAP ada di setiap mapel yang
+        // dipilih -- mapel cuma menentukan bank soal mana yang dipakai, sistem
+        // poin/leaderboard per tingkat kesulitan tidak diubah.
+        // ============================================================
+        let quizJenisDipilih = 'pg'; // 'pg' | 'essay', diset oleh pilihJenisQuiz()
+        let quizMapelState = { kategori: null, mapelId: null, mapelNama: null };
+
+        function getSemuaMapelQuiz() {
+            return [...MAPEL_QUIZ.produktif, ...MAPEL_QUIZ.umum];
+        }
+
+        function getMapelByIdQuiz(mapelId) {
+            return getSemuaMapelQuiz().find(m => m.id === mapelId) || null;
+        }
+
         let quizFilterLeaderboardAktif = 'semua';
         let quizFilterLeaderboardEssayAktif = 'semua';
 
@@ -5070,8 +5166,9 @@
             return { label: '🔰 Pemula', warna: 'text-white' };
         }
 
-        function acakSoalQuiz(level, jumlah) {
-            const bank = [...QUIZ_BANK[level]];
+        function acakSoalQuiz(mapelId, level, jumlah) {
+            const bankMapel = (QUIZ_BANK_PG_BY_MAPEL[mapelId] && QUIZ_BANK_PG_BY_MAPEL[mapelId][level]) || [];
+            const bank = [...bankMapel];
             for (let i = bank.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [bank[i], bank[j]] = [bank[j], bank[i]];
@@ -5079,7 +5176,7 @@
             return bank.slice(0, Math.min(jumlah, bank.length));
         }
 
-        const SEMUA_VIEW_QUIZ = ['jenis', 'tingkat-pg', 'tingkat-essay', 'play', 'result'];
+        const SEMUA_VIEW_QUIZ = ['jenis', 'kategori-mapel', 'pilih-mapel', 'tingkat-pg', 'tingkat-essay', 'play', 'result'];
         function tampilkanViewQuiz(view) {
             SEMUA_VIEW_QUIZ.forEach(v => {
                 const el = document.getElementById(`quiz-view-${v}`);
@@ -5088,24 +5185,89 @@
             document.getElementById(`quiz-view-${view}`).classList.remove('hidden');
         }
 
-        // Kartu "Pilihan Ganda" / "Essay" di menu awal Quiz -> buka daftar
-        // tingkat kesulitan sesuai jenis yang dipilih.
+        // Kartu "Pilihan Ganda" / "Essay" di menu awal Quiz -> lanjut ke pemilihan
+        // KATEGORI MAPEL (Produktif / Umum) dulu, baru nanti pilih mapel spesifik,
+        // baru pilih tingkat kesulitan.
         function pilihJenisQuiz(jenis) {
-            if (jenis === 'essay') {
+            quizJenisDipilih = jenis;
+            const label = document.getElementById('quiz-kategori-jenis-badge');
+            if (label) label.innerText = jenis === 'essay' ? 'Essay' : 'Pilihan Ganda';
+            tampilkanViewQuiz('kategori-mapel');
+        }
+
+        // Tombol "Kembali pilih jenis quiz" paling awal (dari halaman kategori mapel).
+        function kembaliKeJenisQuiz() {
+            tampilkanViewQuiz('jenis');
+            renderMenuQuiz();
+        }
+
+        // Kartu "Mapel Produktif" / "Mapel Umum" -> tampilkan daftar mapel yang
+        // termasuk kategori itu.
+        function pilihKategoriMapelQuiz(kategori) {
+            quizMapelState.kategori = kategori;
+            renderDaftarPilihMapelQuiz(kategori);
+            tampilkanViewQuiz('pilih-mapel');
+        }
+
+        // Tombol "Kembali pilih kategori mapel" di halaman daftar mapel.
+        function kembaliKeKategoriMapelQuiz() {
+            tampilkanViewQuiz('kategori-mapel');
+        }
+
+        // Tombol "Kembali pilih mapel" di halaman tingkat kesulitan.
+        function kembaliKePilihMapelQuiz() {
+            renderDaftarPilihMapelQuiz(quizMapelState.kategori);
+            tampilkanViewQuiz('pilih-mapel');
+        }
+
+        function renderDaftarPilihMapelQuiz(kategori) {
+            const daftarMapel = MAPEL_QUIZ[kategori] || [];
+            const judul = document.getElementById('pilih-mapel-judul');
+            const sub = document.getElementById('pilih-mapel-subjudul');
+            if (judul) judul.innerText = kategori === 'produktif' ? 'Pilih Mapel Produktif' : 'Pilih Mapel';
+            if (sub) sub.innerText = kategori === 'produktif'
+                ? 'Mapel produktif untuk kelas XII TKJ 3/TAV.'
+                : 'Mapel umum seperti biasa di SMK.';
+
+            const container = document.getElementById('pilih-mapel-list');
+            if (!container) return;
+            container.innerHTML = '';
+            daftarMapel.forEach(m => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-purple-200 transition-shadow p-4 sm:p-5 flex flex-col';
+                btn.onclick = () => pilihMapelQuiz(m.id);
+                btn.innerHTML = `
+                    <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg mb-3"><i class="fa-solid ${m.icon || 'fa-book'}"></i></div>
+                    <h3 class="font-bold text-sm text-slate-900">${m.kode ? `${m.kode} · ` : ''}${m.nama}</h3>
+                    <p class="text-xs text-slate-400 mt-1 mb-3 flex-1">${m.deskripsi || ''}</p>
+                    <span class="w-full py-2 bg-purple-600 text-white rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                        Pilih Tingkat Kesulitan <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                    </span>`;
+                container.appendChild(btn);
+            });
+        }
+
+        // Kartu mapel dipilih -> lanjut ke halaman tingkat kesulitan sesuai jenis
+        // quiz yang sudah dipilih sebelumnya (PG atau Essay). Tingkat kesulitan
+        // (easy/medium/hard) tetap tersedia di sini seperti sebelumnya.
+        function pilihMapelQuiz(mapelId) {
+            const mapel = getMapelByIdQuiz(mapelId);
+            if (!mapel) return;
+            quizMapelState.mapelId = mapelId;
+            quizMapelState.mapelNama = mapel.kode ? `${mapel.kode} · ${mapel.nama}` : mapel.nama;
+
+            if (quizJenisDipilih === 'essay') {
+                document.querySelectorAll('.quiz-mapel-badge-essay').forEach(el => el.innerText = quizMapelState.mapelNama);
                 tampilkanViewQuiz('tingkat-essay');
                 renderTingkatEssay();
                 renderLeaderboardQuizEssay();
             } else {
+                document.querySelectorAll('.quiz-mapel-badge-pg').forEach(el => el.innerText = quizMapelState.mapelNama);
                 tampilkanViewQuiz('tingkat-pg');
                 renderMenuQuiz();
                 renderLeaderboardQuiz();
             }
-        }
-
-        // Tombol "Kembali pilih jenis quiz" di halaman tingkat kesulitan.
-        function kembaliKeJenisQuiz() {
-            tampilkanViewQuiz('jenis');
-            renderMenuQuiz();
         }
 
         function renderTingkatEssay() {
@@ -5117,15 +5279,18 @@
         }
 
         function startQuiz(jenis, level) {
-            const soal = jenis === 'essay' ? acakSoalQuizEssay(level, 5) : acakSoalQuiz(level, 5);
+            const mapelId = quizMapelState.mapelId;
+            const soal = jenis === 'essay' ? acakSoalQuizEssay(mapelId, level, 5) : acakSoalQuiz(mapelId, level, 5);
             const cfg = jenis === 'essay' ? QUIZ_CONFIG_ESSAY[level] : QUIZ_CONFIG[level];
-            quizState = { jenis, level, soal, index: 0, skor: 0, benar: 0, waktuSisa: cfg.waktu, timerId: null };
+            quizState = { jenis, level, mapelId, mapelNama: quizMapelState.mapelNama, soal, index: 0, skor: 0, benar: 0, waktuSisa: cfg.waktu, timerId: null };
             tampilkanViewQuiz('play');
             document.getElementById('quiz-play-total').innerText = String(soal.length);
 
             const badge = document.getElementById('quiz-play-level-badge');
             badge.className = `px-3 py-1 rounded-lg text-xs font-bold ${cfg.warnaBadge}`;
             badge.innerText = jenis === 'essay' ? `${cfg.label} · Essay` : cfg.label;
+            const mapelBadge = document.getElementById('quiz-play-mapel-badge');
+            if (mapelBadge) mapelBadge.innerText = quizMapelState.mapelNama || '';
 
             renderSoalQuiz();
         }
@@ -5462,7 +5627,12 @@
         }
 
         function ulangiQuizTerakhir() {
-            if (quizState) startQuiz(quizState.jenis, quizState.level);
+            if (!quizState) return;
+            // Pastikan mapel yang dipakai sama dengan sesi quiz terakhir (jaga-jaga
+            // kalau quizMapelState sempat berubah di antara sesi).
+            quizMapelState.mapelId = quizState.mapelId;
+            quizMapelState.mapelNama = quizState.mapelNama;
+            startQuiz(quizState.jenis, quizState.level);
         }
 
         // Dipanggil dari tombol "Kembali ke Menu" di layar hasil quiz -> balik
