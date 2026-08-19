@@ -647,6 +647,12 @@
             border: 1px solid rgba(6, 182, 212, 0.4);
             color: #67e8f9;
         }
+        /* Badge alternatif saat siswa memilih menampilkan namanya (bukan anonim) */
+        .badge-nama-saran-guru {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            color: #c4b5fd;
+        }
         .modal-saran-guru-input {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(148, 163, 184, 0.2);
@@ -2146,9 +2152,16 @@
                 <div>
                     <h3 class="text-base font-extrabold text-white italic">Beri Saran / Evaluasi</h3>
                     <p class="text-xs text-slate-300 mt-1.5">Untuk: <span id="saran-guru-nama-target" class="font-bold text-white not-italic">-</span></p>
-                    <span class="inline-flex items-center gap-1.5 mt-2.5 px-2.5 py-1 rounded-full badge-anonim-saran-guru text-[10px] font-bold">
+                    <span id="badge-anonim-saran-guru" class="inline-flex items-center gap-1.5 mt-2.5 px-2.5 py-1 rounded-full badge-anonim-saran-guru text-[10px] font-bold">
                         <i class="fa-solid fa-lock"></i> 100% Anonim
                     </span>
+                    <span id="badge-nama-saran-guru" class="hidden items-center gap-1.5 mt-2.5 px-2.5 py-1 rounded-full badge-nama-saran-guru text-[10px] font-bold">
+                        <i class="fa-solid fa-user"></i> Terkirim atas nama: <span id="badge-nama-saran-guru-teks">-</span>
+                    </span>
+                    <label class="flex items-center gap-2 mt-2.5 text-[11px] text-slate-300 font-semibold cursor-pointer select-none">
+                        <input type="checkbox" id="checkbox-tampilkan-nama-saran-guru" onchange="toggleTampilkanNamaSaranGuru()" class="w-3.5 h-3.5 rounded border-slate-500 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0 bg-transparent">
+                        <i class="fa-solid fa-eye text-slate-400"></i> Tampilkan nama saya
+                    </label>
                 </div>
                 <button onclick="tutupModalSaranGuru()" class="text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0 transition-colors" aria-label="Tutup">
                     <i class="fa-solid fa-xmark text-lg"></i>
@@ -4797,9 +4810,36 @@
             if (inputPesan) inputPesan.value = '';
             perbaruiTampilanBintangSaranGuru();
 
+            // Setiap modal dibuka, defaultkan lagi ke 100% Anonim (checkbox
+            // "Tampilkan nama saya" dikosongkan) supaya siswa harus memilih
+            // sadar tiap kali kalau mau menampilkan namanya.
+            const checkboxNama = document.getElementById('checkbox-tampilkan-nama-saran-guru');
+            if (checkboxNama) checkboxNama.checked = false;
+            const badgeNamaTeks = document.getElementById('badge-nama-saran-guru-teks');
+            if (badgeNamaTeks) badgeNamaTeks.innerText = NAMA_SISWA_AKTIF;
+            perbaruiBadgeAnonimSaranGuru();
+
             const modal = document.getElementById('modal-saran-guru');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+        }
+
+        // Tampilkan/sembunyikan badge "100% Anonim" vs "Terkirim atas nama: ..."
+        // sesuai posisi checkbox "Tampilkan nama saya".
+        function perbaruiBadgeAnonimSaranGuru() {
+            const checkboxNama = document.getElementById('checkbox-tampilkan-nama-saran-guru');
+            const tampilkanNama = checkboxNama ? checkboxNama.checked : false;
+            const badgeAnonim = document.getElementById('badge-anonim-saran-guru');
+            const badgeNama = document.getElementById('badge-nama-saran-guru');
+            if (badgeAnonim) badgeAnonim.classList.toggle('hidden', tampilkanNama);
+            if (badgeNama) {
+                badgeNama.classList.toggle('hidden', !tampilkanNama);
+                badgeNama.classList.toggle('inline-flex', tampilkanNama);
+            }
+        }
+
+        function toggleTampilkanNamaSaranGuru() {
+            perbaruiBadgeAnonimSaranGuru();
         }
 
         function tutupModalSaranGuru() {
@@ -4845,6 +4885,9 @@
                 return;
             }
 
+            const checkboxNama = document.getElementById('checkbox-tampilkan-nama-saran-guru');
+            const tampilkanNama = checkboxNama ? checkboxNama.checked : false;
+
             const daftarEvaluasi = JSON.parse(localStorage.getItem('evaluasi_guru') || '[]');
             const now = getAccurateNow();
             const timestamp = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' +
@@ -4858,12 +4901,14 @@
                 ratingKeadilan: keadilan,
                 ratingKomunikasi: komunikasi,
                 pesan: pesan,
+                anonim: !tampilkanNama,
+                namaPengirim: tampilkanNama ? NAMA_SISWA_AKTIF : null,
                 waktu: timestamp
             });
             localStorage.setItem('evaluasi_guru', JSON.stringify(daftarEvaluasi));
 
             tutupModalSaranGuru();
-            triggerDynamicIsland('Saran anonim berhasil dikirim!');
+            triggerDynamicIsland(tampilkanNama ? 'Saran berhasil dikirim!' : 'Saran anonim berhasil dikirim!');
             // Rating & badge status di card guru langsung ikut ter-update.
             renderDaftarGuru();
         }
