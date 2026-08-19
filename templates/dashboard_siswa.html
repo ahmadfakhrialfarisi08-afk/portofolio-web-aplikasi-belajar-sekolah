@@ -1596,21 +1596,25 @@
                         </div>
                     </button>
 
-                    <div class="sm:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div id="kartu-streak-tugas" class="streak-card streak-tier-0 bento-stat-card p-5 rounded-[16px] transition-all duration-200" title="Streak naik tiap tugas dikumpulkan sebelum deadline berturut-turut, dan putus kalau ada tugas yang kelewat.">
+                    <div class="sm:col-span-3 grid grid-cols-3 gap-4">
+                        <div id="kartu-streak-tugas" class="streak-card streak-tier-0 bento-stat-card p-5 rounded-[16px] transition-all duration-200 flex flex-col justify-between" title="Streak naik tiap tugas dikumpulkan sebelum deadline berturut-turut, dan putus kalau ada tugas yang kelewat.">
                             <div class="streak-icon-wrap w-9 h-9 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center text-sm mb-2.5" aria-hidden="true"><i id="streak-flame-icon" class="fa-solid fa-fire streak-flame-icon"></i></div>
-                            <p id="streak-label-atas" class="text-xs font-medium text-slate-500">Streak Tugas</p>
-                            <h3 class="text-xl font-bold text-slate-900 mt-0.5"><span id="streak-jumlah">0</span> <span id="streak-label-bawah" class="text-xs font-normal text-slate-400">Belum Ada</span></h3>
+                            <div>
+                                <p id="streak-label-atas" class="text-xs font-medium text-slate-500">Streak Tugas</p>
+                                <h3 class="text-xl font-bold text-slate-900 mt-0.5"><span id="streak-jumlah">0</span> <span id="streak-label-bawah" class="text-xs font-normal text-slate-400">Belum Ada</span></h3>
+                            </div>
                         </div>
 
-                        <div class="bento-stat-card p-5 rounded-[16px] transition-all duration-200">
+                        <div class="bento-stat-card p-5 rounded-[16px] transition-all duration-200 flex flex-col justify-between">
                             <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm mb-2.5" aria-hidden="true"><i class="fa-solid fa-clock"></i></div>
-                            <p class="text-xs font-medium text-slate-500">Tugas Belum Selesai</p>
-                            <h3 class="text-xl font-bold text-slate-900 mt-0.5"><span id="count-pending-tasks">0</span> <span class="text-xs font-normal text-slate-400">Tugas</span></h3>
+                            <div>
+                                <p class="text-xs font-medium text-slate-500">Tugas Belum Selesai</p>
+                                <h3 class="text-xl font-bold text-slate-900 mt-0.5"><span id="count-pending-tasks">0</span> <span class="text-xs font-normal text-slate-400">Tugas</span></h3>
+                            </div>
                         </div>
 
-                        <div class="sm:col-span-2 bento-stat-card p-5 rounded-[16px] transition-all duration-200 flex items-center gap-4">
-                            <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></div>
+                        <div class="bento-stat-card p-5 rounded-[16px] transition-all duration-200 flex flex-col justify-between">
+                            <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm mb-2.5" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></div>
                             <div>
                                 <p class="text-xs font-medium text-slate-500">Tugas Sudah Selesai</p>
                                 <h3 class="text-xl font-bold text-slate-900 mt-0.5"><span id="count-completed-tasks">0</span> <span class="text-xs font-normal text-slate-400">Tugas</span></h3>
