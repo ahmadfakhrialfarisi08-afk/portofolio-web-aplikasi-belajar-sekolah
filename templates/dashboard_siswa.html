@@ -2037,6 +2037,28 @@
         </div>
     </div>
 
+    <!-- Animasi berhasil kirim Saran/Evaluasi untuk guru (pakai pola animasi
+         ceklis yang sama dengan modal-sukses-prestasi: lingkaran + centang
+         SVG di-stroke, plus confetti kecil). -->
+    <div id="modal-sukses-saran-guru" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[108] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-5 sm:p-7 shadow-2xl flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
+            <span class="confetti-sukses" style="--x:-38px; --rot:-30deg; --c:#06b6d4; animation-delay:0s;"></span>
+            <span class="confetti-sukses" style="--x:34px; --rot:20deg; --c:#10b981; animation-delay:.08s;"></span>
+            <span class="confetti-sukses" style="--x:-18px; --rot:60deg; --c:#f43f5e; animation-delay:.16s;"></span>
+            <span class="confetti-sukses" style="--x:22px; --rot:-50deg; --c:#3b82f6; animation-delay:.24s;"></span>
+            <span class="confetti-sukses" style="--x:0px; --rot:10deg; --c:#a855f7; animation-delay:.12s;"></span>
+            <div class="w-20 h-20 rounded-full bg-emerald-50 flex items-center justify-center modal-sukses-ring">
+                <svg class="w-11 h-11" viewBox="0 0 52 52">
+                    <circle class="checkmark-circle" cx="26" cy="26" r="23"/>
+                    <path class="checkmark-check" fill="none" d="M14 27l7 7 16-16"/>
+                </svg>
+            </div>
+            <h3 class="font-extrabold text-base text-slate-900">Berhasil Dikirim!</h3>
+            <p id="pesan-sukses-saran-guru" class="text-xs text-slate-500 leading-relaxed"></p>
+            <button onclick="tutupSuksesSaranGuru()" class="mt-2 w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-all">Oke, Mengerti</button>
+        </div>
+    </div>
+
     <!-- Modal ditolak otomatis: file bukti prestasi terdeteksi duplikat (hash/checksum
          isi filenya sama dengan bukti yang sudah pernah diupload, walau nama file
          sudah diganti/di-rename). -->
@@ -2158,8 +2180,8 @@
                     <span id="badge-nama-saran-guru" class="hidden items-center gap-1.5 mt-2.5 px-2.5 py-1 rounded-full badge-nama-saran-guru text-[10px] font-bold">
                         <i class="fa-solid fa-user"></i> Terkirim atas nama: <span id="badge-nama-saran-guru-teks">-</span>
                     </span>
-                    <label class="flex items-center gap-2 mt-2.5 text-[11px] text-slate-300 font-semibold cursor-pointer select-none">
-                        <input type="checkbox" id="checkbox-tampilkan-nama-saran-guru" onchange="toggleTampilkanNamaSaranGuru()" class="w-3.5 h-3.5 rounded border-slate-500 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0 bg-transparent">
+                    <label class="flex items-center gap-2.5 mt-3 text-xs text-slate-200 font-semibold cursor-pointer select-none">
+                        <input type="checkbox" id="checkbox-tampilkan-nama-saran-guru" onchange="toggleTampilkanNamaSaranGuru()" class="w-5 h-5 rounded-md border-2 border-slate-500 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0 bg-transparent cursor-pointer">
                         <i class="fa-solid fa-eye text-slate-400"></i> Tampilkan nama saya
                     </label>
                 </div>
@@ -4907,8 +4929,10 @@
             });
             localStorage.setItem('evaluasi_guru', JSON.stringify(daftarEvaluasi));
 
+            const namaGuruTarget = _guruSaranAktif.nama;
             tutupModalSaranGuru();
             triggerDynamicIsland(tampilkanNama ? 'Saran berhasil dikirim!' : 'Saran anonim berhasil dikirim!');
+            tampilkanSuksesSaranGuru(`Saran & evaluasi kamu untuk ${namaGuruTarget} berhasil dikirim${tampilkanNama ? '' : ' secara anonim'}.`);
             // Rating & badge status di card guru langsung ikut ter-update.
             renderDaftarGuru();
         }
@@ -7236,6 +7260,40 @@
             modal.classList.remove('flex');
             document.body.style.overflow = '';
             clearTimeout(_timeoutSuksesPrestasi);
+        }
+
+        /* ================= ANIMASI BERHASIL KIRIM SARAN/EVALUASI GURU ================= */
+        let _timeoutSuksesSaranGuru = null;
+
+        function tampilkanSuksesSaranGuru(pesan) {
+            const modal = document.getElementById('modal-sukses-saran-guru');
+            const pesanEl = document.getElementById('pesan-sukses-saran-guru');
+            if (!modal) return;
+            if (pesanEl) pesanEl.innerText = pesan || 'Saran & evaluasi kamu sudah dikirim ke guru.';
+
+            // Restart animasi checkmark tiap kali modal dibuka lagi (kalau cuma
+            // classList show, animasi CSS-nya tidak akan replay dari awal).
+            modal.querySelectorAll('.checkmark-circle, .checkmark-check, .confetti-sukses').forEach(el => {
+                el.style.animation = 'none';
+                void el.offsetWidth; // paksa reflow
+                el.style.animation = '';
+            });
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+
+            clearTimeout(_timeoutSuksesSaranGuru);
+            _timeoutSuksesSaranGuru = setTimeout(tutupSuksesSaranGuru, 3500);
+        }
+
+        function tutupSuksesSaranGuru() {
+            const modal = document.getElementById('modal-sukses-saran-guru');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+            clearTimeout(_timeoutSuksesSaranGuru);
         }
 
         /* ================= ANIMASI DITOLAK OTOMATIS (file bukti duplikat) ================= */

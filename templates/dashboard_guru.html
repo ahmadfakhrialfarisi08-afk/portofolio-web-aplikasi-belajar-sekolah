@@ -697,17 +697,16 @@
                 <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between md:items-center gap-4">
                     <div>
                         <h3 class="font-extrabold text-2xl text-slate-900">💬 Saran &amp; Evaluasi dari Siswa</h3>
-                        <p class="text-xs text-slate-400 mt-1">Rating, kategori, dan pesan yang dikirim siswa lewat Daftar Guru. Terkirim <span class="font-bold text-slate-600">100% anonim</span> — identitas siswa pengirim tidak tercatat sama sekali.</p>
+                        <p class="text-xs text-slate-400 mt-1">Rating & pesan yang dikirim siswa lewat Daftar Guru. Siswa bisa memilih kirim <span class="font-bold text-slate-600">anonim</span> atau menampilkan namanya sendiri.</p>
                     </div>
                     <div class="flex gap-2 items-center flex-wrap">
                         <select id="filter-guru-evaluasi" onchange="renderEvaluasiGuru()" class="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none">
                             <option value="ALL">Semua Guru</option>
                         </select>
-                        <select id="filter-kategori-evaluasi" onchange="renderEvaluasiGuru()" class="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none">
-                            <option value="ALL">Semua Kategori</option>
-                            <option value="Metode Mengajar">Metode Mengajar</option>
-                            <option value="Keadilan & Beban Tugas">Keadilan & Beban Tugas</option>
-                            <option value="Komunikasi">Komunikasi</option>
+                        <select id="filter-identitas-evaluasi" onchange="renderEvaluasiGuru()" class="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none">
+                            <option value="ALL">Semua Identitas</option>
+                            <option value="ANONIM">Anonim</option>
+                            <option value="NAMA">Menampilkan Nama</option>
                         </select>
                         <button onclick="renderEvaluasiGuru()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-xs font-bold transition-all shadow-md">
                             <i class="fa-solid fa-rotate mr-1"></i> Perbarui
@@ -3554,11 +3553,22 @@
             return out;
         }
 
+        // Baris mini "label + bintang" untuk salah satu dari 3 aspek penilaian
+        // (Penjelasan Materi, Keadilan Nilai, Komunikasi) yang dikirim siswa.
+        function renderBarisAspekEvaluasi(label, rating) {
+            return `
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[10px] font-bold text-slate-500">${label}</span>
+                    <span class="text-xs">${renderBintangEvaluasi(rating || 0)}</span>
+                </div>
+            `;
+        }
+
         function renderEvaluasiGuru() {
             const grid = document.getElementById('grid-evaluasi-guru');
             const emptyState = document.getElementById('evaluasi-kosong-state');
             const selectGuru = document.getElementById('filter-guru-evaluasi');
-            const selectKategori = document.getElementById('filter-kategori-evaluasi');
+            const selectIdentitas = document.getElementById('filter-identitas-evaluasi');
             if (!grid) return;
 
             const semua = ambilSemuaEvaluasiGuru();
@@ -3575,11 +3585,16 @@
             }
 
             const filterGuru = selectGuru ? selectGuru.value : 'ALL';
-            const filterKategori = selectKategori ? selectKategori.value : 'ALL';
+            const filterIdentitas = selectIdentitas ? selectIdentitas.value : 'ALL';
 
             const hasil = semua
                 .filter(x => filterGuru === 'ALL' || x.guruNama === filterGuru)
-                .filter(x => filterKategori === 'ALL' || x.kategori === filterKategori)
+                .filter(x => {
+                    if (filterIdentitas === 'ALL') return true;
+                    const anonim = x.anonim !== false && !x.namaPengirim; // data lama (tanpa field ini) dianggap anonim
+                    if (filterIdentitas === 'ANONIM') return anonim;
+                    return !anonim; // 'NAMA'
+                })
                 .slice()
                 .reverse(); // terbaru di atas
 
@@ -3590,21 +3605,39 @@
             }
             if (emptyState) emptyState.classList.add('hidden');
 
-            grid.innerHTML = hasil.map(x => `
+            grid.innerHTML = hasil.map(x => {
+                const tampilkanNama = x.anonim === false && x.namaPengirim;
+                const badgeIdentitas = tampilkanNama
+                    ? `<span class="flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-violet-50 border border-violet-100 text-violet-600 text-[10px] font-bold"><i class="fa-solid fa-user"></i> ${x.namaPengirim}</span>`
+                    : `<span class="flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-50 border border-slate-100 text-slate-500 text-[10px] font-bold"><i class="fa-solid fa-lock"></i> Anonim</span>`;
+
+                // Data lama (sebelum fitur 3 aspek) masih pakai x.rating tunggal;
+                // data baru pakai ratingPenjelasan/ratingKeadilan/ratingKomunikasi.
+                const punyaAspekBaru = x.ratingPenjelasan || x.ratingKeadilan || x.ratingKomunikasi;
+                const isiRating = punyaAspekBaru
+                    ? `<div class="space-y-1">
+                        ${renderBarisAspekEvaluasi('Penjelasan Materi', x.ratingPenjelasan)}
+                        ${renderBarisAspekEvaluasi('Keadilan Nilai', x.ratingKeadilan)}
+                        ${renderBarisAspekEvaluasi('Komunikasi', x.ratingKomunikasi)}
+                       </div>`
+                    : `<div class="text-sm">${renderBintangEvaluasi(x.rating)}</div>`;
+
+                return `
                 <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2.5">
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <p class="text-xs font-bold text-slate-400 uppercase tracking-wide">Untuk</p>
                             <h4 class="font-extrabold text-slate-900 text-sm">${x.guruNama}</h4>
+                            ${x.guruMapel ? `<p class="text-[10px] text-slate-400">${x.guruMapel}</p>` : ''}
                         </div>
-                        <span class="flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-50 border border-slate-100 text-slate-500 text-[10px] font-bold"><i class="fa-solid fa-lock"></i> Anonim</span>
+                        ${badgeIdentitas}
                     </div>
-                    <div class="text-sm">${renderBintangEvaluasi(x.rating)}</div>
-                    <span class="inline-block px-2.5 py-1 rounded-lg border text-[10px] font-bold ${warnaKategoriEvaluasi(x.kategori)}">${x.kategori}</span>
+                    ${isiRating}
                     <p class="text-xs text-slate-600 leading-relaxed bg-slate-50 border border-slate-100 rounded-xl p-3">${x.pesan}</p>
                     <p class="text-[10px] text-slate-400"><i class="fa-solid fa-clock mr-1"></i>${x.waktu}</p>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
