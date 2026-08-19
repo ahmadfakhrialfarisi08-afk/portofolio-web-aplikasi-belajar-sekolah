@@ -38,8 +38,8 @@
             --surface-hover: #f1f5f9;
             --font-display: 'Fraunces', ui-serif, Georgia, serif;
             --radius-card: 1rem;
-            --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.03);
-            --shadow-card-hover: 0 8px 20px -6px rgba(16, 24, 40, 0.10), 0 2px 6px -2px rgba(16, 24, 40, 0.05);
+            --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.03);
+            --shadow-card-hover: 0 4px 12px -4px rgba(16, 24, 40, 0.08);
             --shadow-pop: 0 12px 32px -8px rgba(16, 24, 40, 0.16), 0 4px 10px -4px rgba(16, 24, 40, 0.08);
         }
 
@@ -351,6 +351,31 @@
         }
         #banner-sapaan .banner-sapaan-sub {
             color: rgba(255, 255, 255, 0.75);
+        }
+        .banner-sapaan-deco { opacity: 0.9; }
+
+        /* ---------- Bento Statistik (Beranda): border tipis + shadow sangat halus,
+           bukan shadow tebal ala template AI. Hover memberi sedikit angkat & border
+           lebih jelas, tanpa layer bayangan berat. ---------- */
+        .bento-stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border-subtle);
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
+        }
+        .bento-stat-card:hover {
+            border-color: var(--border-strong);
+            box-shadow: 0 4px 12px -4px rgba(16, 24, 40, 0.08);
+            transform: translateY(-1px);
+        }
+        .bento-stat-card--accent {
+            background: linear-gradient(160deg, #fffdf5, #fef3c7 130%);
+            border: 1px solid #fde8a3;
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
+        }
+        .bento-stat-card--accent:hover {
+            border-color: #fbd977;
+            box-shadow: 0 6px 16px -6px rgba(217, 158, 3, 0.18);
+            transform: translateY(-1px);
         }
 
         /* ============================================================
@@ -1544,39 +1569,54 @@
             </div>
             
             <section id="tab-beranda" class="tab-content space-y-6">
-                <div id="banner-sapaan" class="relative rounded-2xl p-7 sm:p-8 text-white overflow-hidden">
+                <div id="banner-sapaan" class="relative rounded-[16px] p-7 sm:p-8 text-white overflow-hidden">
                     <div class="max-w-xl relative z-10">
                         <span class="bg-white/15 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider mb-3 inline-block">Tahun Ajaran 2026/2027</span>
                         <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 leading-tight">Selamat Pagi, <span class="nama-siswa-efektif">{{ nama }}</span>! 👋</h2>
                         <p class="banner-sapaan-sub text-sm leading-relaxed">Jangan lupa masuk sebelum jam 06:30 WIB hari ini. Semoga harimu menyenangkan di sekolah!</p>
                     </div>
-                    <i class="fa-solid fa-shapes absolute -right-8 -bottom-10 text-white/10 text-8xl" aria-hidden="true"></i>
+                    <svg class="banner-sapaan-deco absolute right-0 top-0 h-full w-auto pointer-events-none" viewBox="0 0 320 260" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <circle cx="255" cy="55" r="46" stroke="rgba(255,255,255,0.14)" stroke-width="1.2"/>
+                        <circle cx="255" cy="55" r="3" fill="rgba(6,182,212,0.55)"/>
+                        <path d="M120 245C150 190 175 150 150 95C130 52 165 20 210 25" stroke="rgba(255,255,255,0.16)" stroke-width="1.2" stroke-linecap="round"/>
+                        <path d="M170 260C195 210 300 210 300 150" stroke="rgba(6,182,212,0.30)" stroke-width="1.2" stroke-linecap="round"/>
+                        <line x1="205" y1="130" x2="300" y2="90" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+                        <circle cx="205" cy="130" r="2.5" fill="rgba(255,255,255,0.4)"/>
+                        <circle cx="300" cy="90" r="2.5" fill="rgba(255,255,255,0.4)"/>
+                        <path d="M40 260C60 220 60 190 30 170" stroke="rgba(255,255,255,0.10)" stroke-width="1.2" stroke-linecap="round"/>
+                    </svg>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div id="kartu-streak-tugas" class="streak-card streak-tier-0 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm" title="Streak naik tiap tugas dikumpulkan sebelum deadline berturut-turut, dan putus kalau ada tugas yang kelewat.">
-                        <div class="streak-icon-wrap w-10 h-10 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center text-base mb-3" aria-hidden="true"><i id="streak-flame-icon" class="fa-solid fa-fire streak-flame-icon"></i></div>
-                        <p id="streak-label-atas" class="text-xs font-medium text-slate-500">Streak Tugas</p>
-                        <h3 class="text-2xl font-bold text-slate-900 mt-0.5"><span id="streak-jumlah">0</span> <span id="streak-label-bawah" class="text-xs font-normal text-slate-400">Belum Ada</span></h3>
-                    </div>
-
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                        <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-base mb-3" aria-hidden="true"><i class="fa-solid fa-clock"></i></div>
-                        <p class="text-xs font-medium text-slate-500">Tugas Belum Selesai</p>
-                        <h3 class="text-2xl font-bold text-slate-900 mt-0.5"><span id="count-pending-tasks">0</span> <span class="text-xs font-normal text-slate-400">Tugas</span></h3>
-                    </div>
-
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                        <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-base mb-3" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></div>
-                        <p class="text-xs font-medium text-slate-500">Tugas Sudah Selesai</p>
-                        <h3 class="text-2xl font-bold text-slate-900 mt-0.5"><span id="count-completed-tasks">0</span> <span class="text-xs font-normal text-slate-400">Tugas</span></h3>
-                    </div>
-
-                    <button type="button" class="text-left bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm cursor-pointer hover:shadow-md hover:border-amber-200 transition-shadow" onclick="switchTab('quiz')">
-                        <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-base mb-3" aria-hidden="true"><i class="fa-solid fa-trophy"></i></div>
-                        <p class="text-xs font-medium text-slate-500">Total Poin Quiz</p>
-                        <h3 class="text-2xl font-bold text-slate-900 mt-0.5"><span id="beranda-total-poin-quiz">0</span> <span class="text-xs font-normal text-amber-600">Poin</span></h3>
+                <div class="grid grid-cols-1 sm:grid-cols-5 gap-4 items-stretch">
+                    <button type="button" class="sm:col-span-2 text-left bento-stat-card bento-stat-card--accent flex flex-col justify-between p-6 rounded-[16px] cursor-pointer transition-all duration-200" onclick="switchTab('quiz')">
+                        <div class="w-11 h-11 rounded-xl bg-white/70 text-amber-600 flex items-center justify-center text-lg" aria-hidden="true"><i class="fa-solid fa-trophy"></i></div>
+                        <div>
+                            <p class="text-xs font-medium text-amber-800/70 mb-1">Total Poin Quiz</p>
+                            <h3 class="text-4xl font-extrabold text-slate-900"><span id="beranda-total-poin-quiz">0</span> <span class="text-sm font-semibold text-amber-700 align-middle">Poin</span></h3>
+                        </div>
                     </button>
+
+                    <div class="sm:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div id="kartu-streak-tugas" class="streak-card streak-tier-0 bento-stat-card p-5 rounded-[16px] transition-all duration-200" title="Streak naik tiap tugas dikumpulkan sebelum deadline berturut-turut, dan putus kalau ada tugas yang kelewat.">
+                            <div class="streak-icon-wrap w-9 h-9 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center text-sm mb-2.5" aria-hidden="true"><i id="streak-flame-icon" class="fa-solid fa-fire streak-flame-icon"></i></div>
+                            <p id="streak-label-atas" class="text-xs font-medium text-slate-500">Streak Tugas</p>
+                            <h3 class="text-xl font-bold text-slate-900 mt-0.5"><span id="streak-jumlah">0</span> <span id="streak-label-bawah" class="text-xs font-normal text-slate-400">Belum Ada</span></h3>
+                        </div>
+
+                        <div class="bento-stat-card p-5 rounded-[16px] transition-all duration-200">
+                            <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm mb-2.5" aria-hidden="true"><i class="fa-solid fa-clock"></i></div>
+                            <p class="text-xs font-medium text-slate-500">Tugas Belum Selesai</p>
+                            <h3 class="text-xl font-bold text-slate-900 mt-0.5"><span id="count-pending-tasks">0</span> <span class="text-xs font-normal text-slate-400">Tugas</span></h3>
+                        </div>
+
+                        <div class="sm:col-span-2 bento-stat-card p-5 rounded-[16px] transition-all duration-200 flex items-center gap-4">
+                            <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></div>
+                            <div>
+                                <p class="text-xs font-medium text-slate-500">Tugas Sudah Selesai</p>
+                                <h3 class="text-xl font-bold text-slate-900 mt-0.5"><span id="count-completed-tasks">0</span> <span class="text-xs font-normal text-slate-400">Tugas</span></h3>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
