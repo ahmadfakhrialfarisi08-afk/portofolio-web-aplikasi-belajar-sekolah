@@ -16,10 +16,33 @@ try:
     load_dotenv()
 except ImportError:
     pass
+
+import requests
  
 app = Flask(__name__)
 # Key rahasia untuk menangani session dan flash message
 app.secret_key = 'arcana_smart_school_secret_key'
+
+# ----------------------------------------------------
+# KONFIGURASI ASISTEN AI (OLLAMA LOKAL)
+# ----------------------------------------------------
+# Ollama jalan sebagai proses terpisah di komputer (default: ollama serve,
+# listen di localhost:11434). Flask di sini cuma jadi "jembatan" -- browser
+# TIDAK boleh manggil Ollama langsung (selain soal CORS, endpoint Ollama
+# juga belum ada autentikasi/rate limit), jadi semua request lewat backend
+# ini dulu baru diteruskan ke Ollama.
+OLLAMA_URL = os.environ.get('OLLAMA_URL', 'http://localhost:11434')
+OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'llama3.2')
+
+SYSTEM_PROMPT_AI_SUPPORT = (
+    "Kamu adalah 'Asisten BA', asisten virtual Portal Sekolah SMK Banjar Asri "
+    "Cimaung. Tugasmu jawab pertanyaan siswa seputar fitur portal: Tugas & "
+    "Catatan, Quiz & Leaderboard, Koleksi Border/prestasi, Jadwal Pelajaran, "
+    "Daftar Guru, dan kontak BK. Jawab singkat (maks 3 kalimat), ramah, pakai "
+    "Bahasa Indonesia santai tapi sopan. Kalau pertanyaannya di luar topik "
+    "portal sekolah, arahkan siswa untuk menghubungi IT Support lewat tombol "
+    "di sidebar."
+)
  
 # ----------------------------------------------------
 # DATA USER DUMMY (DATABASE SIMULASI)
@@ -849,6 +872,51 @@ def api_teman_profil(username):
         'quiz_essay_best_by_level': blob_essay.get('bestByLevel', {'easy': 0, 'medium': 0, 'hard': 0}),
         'status_pertemanan': _status_pertemanan(me, username)
     })
+
+
+# ----------------------------------------------------
+# ROUTE ASISTEN AI (PROXY KE OLLAMA LOKAL)
+# ----------------------------------------------------
+@app.route('/api/ai/chat', methods=['POST'])
+def api_ai_chat():
+    """Terima pertanyaan dari widget 'AI Support' di dashboard, teruskan ke
+    Ollama yang jalan lokal (lihat OLLAMA_URL/OLLAMA_MODEL di atas), lalu
+    balikkan jawabannya ke browser. Kalau Ollama belum/tidak jalan, jangan
+    bikin error di UI -- balikkan pesan yang jelas supaya frontend bisa
+    fallback ke jawaban template lama (balasAISupport di JS)."""
+    if 'user' not in session:
+        return jsonify(success=False, message='Belum login.'), 401
+
+    data = request.get_json(silent=True) or {}
+    pesan = (data.get('pesan') or '').strip()
+    if not pesan:
+        return jsonify(success=False, message='Pesan kosong.'), 400
+
+    try:
+        resp = requests.post(
+            f"{OLLAMA_URL}/api/chat",
+            json={
+                'model': OLLAMA_MODEL,
+                'messages': [
+                    {'role': 'system', 'content': SYSTEM_PROMPT_AI_SUPPORT},
+                    {'role': 'user', 'content': pesan}
+                ],
+                'stream': False
+            },
+            timeout=30
+        )
+        resp.raise_for_status()
+        hasil = resp.json()
+        balasan = (hasil.get('message') or {}).get('content', '').strip()
+        if not balasan:
+            return jsonify(success=False, message='Ollama tidak mengembalikan jawaban.'), 502
+        return jsonify(success=True, balasan=balasan)
+    except requests.exceptions.ConnectionError:
+        return jsonify(success=False, message='Ollama belum aktif di server (jalankan "ollama serve").'), 503
+    except requests.exceptions.Timeout:
+        return jsonify(success=False, message='Ollama terlalu lama merespons.'), 504
+    except Exception:
+        return jsonify(success=False, message='Terjadi kendala saat menghubungi asisten AI.'), 500
 
 
 # ----------------------------------------------------

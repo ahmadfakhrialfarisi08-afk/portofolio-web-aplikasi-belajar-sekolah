@@ -4074,6 +4074,19 @@
             return 'Hmm, pertanyaan itu belum ada di daftar aku. Coba tanya soal tugas, quiz, border/prestasi, jadwal, atau guru — atau hubungi IT Support lewat tombol di sidebar buat bantuan langsung.';
         }
 
+        function tambahBubbleBotAISupport(teks) {
+            const log = document.getElementById('ai-support-chat-log');
+            const bubbleBot = document.createElement('div');
+            bubbleBot.className = 'flex items-start gap-2.5';
+            bubbleBot.innerHTML = `
+                <div class="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-[11px] flex-shrink-0"><i class="fa-solid fa-robot"></i></div>
+                <div class="bg-slate-100 rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-xs text-slate-700 max-w-[80%]"></div>
+            `;
+            bubbleBot.querySelector('div.bg-slate-100').innerText = teks;
+            log.appendChild(bubbleBot);
+            log.scrollTop = log.scrollHeight;
+        }
+
         function kirimChatAISupport(event) {
             event.preventDefault();
             const input = document.getElementById('input-ai-support');
@@ -4093,17 +4106,38 @@
             input.value = '';
             log.scrollTop = log.scrollHeight;
 
-            setTimeout(() => {
-                const bubbleBot = document.createElement('div');
-                bubbleBot.className = 'flex items-start gap-2.5';
-                bubbleBot.innerHTML = `
-                    <div class="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-[11px] flex-shrink-0"><i class="fa-solid fa-robot"></i></div>
-                    <div class="bg-slate-100 rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-xs text-slate-700 max-w-[80%]"></div>
-                `;
-                bubbleBot.querySelector('div.bg-slate-100').innerText = balasAISupport(pertanyaan);
-                log.appendChild(bubbleBot);
-                log.scrollTop = log.scrollHeight;
-            }, 400);
+            // Bubble "sedang mengetik..." selama menunggu balasan dari Ollama
+            const bubbleTyping = document.createElement('div');
+            bubbleTyping.id = 'ai-support-typing';
+            bubbleTyping.className = 'flex items-start gap-2.5';
+            bubbleTyping.innerHTML = `
+                <div class="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-[11px] flex-shrink-0"><i class="fa-solid fa-robot"></i></div>
+                <div class="bg-slate-100 rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-xs text-slate-400 max-w-[80%] italic">mengetik...</div>
+            `;
+            log.appendChild(bubbleTyping);
+            log.scrollTop = log.scrollHeight;
+
+            // Panggil backend Flask (/api/ai/chat), yang meneruskan ke Ollama lokal.
+            // Kalau Ollama belum jalan / error, fallback otomatis ke balasAISupport()
+            // (jawaban keyword-matching client-side lama) supaya chat tetap kebalas.
+            fetch('/api/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pesan: pertanyaan })
+            })
+                .then(res => res.json().then(data => ({ ok: res.ok, data })))
+                .then(({ ok, data }) => {
+                    document.getElementById('ai-support-typing')?.remove();
+                    if (ok && data.success && data.balasan) {
+                        tambahBubbleBotAISupport(data.balasan);
+                    } else {
+                        tambahBubbleBotAISupport(balasAISupport(pertanyaan));
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('ai-support-typing')?.remove();
+                    tambahBubbleBotAISupport(balasAISupport(pertanyaan));
+                });
         }
 
         function updateTaskCounter() {
