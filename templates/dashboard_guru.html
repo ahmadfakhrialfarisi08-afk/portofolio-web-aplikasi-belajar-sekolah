@@ -334,6 +334,13 @@
                         <span id="badge-prestasi-menunggu" class="hidden px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold">0</span>
                     </div>
                 </button>
+
+                <button onclick="switchTab('evaluasi')" id="btn-evaluasi" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium transition-all">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-comment-dots w-5 text-center"></i> Saran &amp; Evaluasi
+                    </div>
+                    <span id="badge-evaluasi-jumlah" class="hidden px-2 py-0.5 rounded-full bg-cyan-500 text-white text-[10px] font-bold">0</span>
+                </button>
             </div>
         </div>
 
@@ -684,6 +691,35 @@
                 </div>
 
                 <div id="grid-konfirmasi-prestasi" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
+            </section>
+
+            <section id="tab-evaluasi" class="tab-content hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between md:items-center gap-4">
+                    <div>
+                        <h3 class="font-extrabold text-2xl text-slate-900">💬 Saran &amp; Evaluasi dari Siswa</h3>
+                        <p class="text-xs text-slate-400 mt-1">Rating, kategori, dan pesan yang dikirim siswa lewat Daftar Guru. Terkirim <span class="font-bold text-slate-600">100% anonim</span> — identitas siswa pengirim tidak tercatat sama sekali.</p>
+                    </div>
+                    <div class="flex gap-2 items-center flex-wrap">
+                        <select id="filter-guru-evaluasi" onchange="renderEvaluasiGuru()" class="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none">
+                            <option value="ALL">Semua Guru</option>
+                        </select>
+                        <select id="filter-kategori-evaluasi" onchange="renderEvaluasiGuru()" class="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none">
+                            <option value="ALL">Semua Kategori</option>
+                            <option value="Metode Mengajar">Metode Mengajar</option>
+                            <option value="Keadilan & Beban Tugas">Keadilan & Beban Tugas</option>
+                            <option value="Komunikasi">Komunikasi</option>
+                        </select>
+                        <button onclick="renderEvaluasiGuru()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-xs font-bold transition-all shadow-md">
+                            <i class="fa-solid fa-rotate mr-1"></i> Perbarui
+                        </button>
+                    </div>
+                </div>
+
+                <div id="grid-evaluasi-guru" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
+                <div id="evaluasi-kosong-state" class="hidden bg-white border border-slate-200/80 rounded-2xl p-10 text-center text-slate-400">
+                    <i class="fa-solid fa-comment-slash text-3xl mb-3 block"></i>
+                    <p class="text-xs font-semibold">Belum ada saran/evaluasi yang masuk.</p>
+                </div>
             </section>
 
         </main>
@@ -1289,6 +1325,7 @@
             if (tabId === 'absensi') renderAbsensiSiswa();
             if (tabId === 'nilai') renderPenilaianTugas();
             if (tabId === 'prestasi') renderKonfirmasiPrestasi();
+            if (tabId === 'evaluasi') renderEvaluasiGuru();
             const mainContainer = document.getElementById('main-scroll-container');
             if(mainContainer) mainContainer.scrollTop = 0;
         }
@@ -3471,7 +3508,104 @@
                 updateBadgePrestasiMenunggu();
                 if (activeTab === 'prestasi') renderKonfirmasiPrestasi();
             }
+            if (e.key === 'evaluasi_guru') {
+                updateBadgeEvaluasiGuru();
+                if (activeTab === 'evaluasi') renderEvaluasiGuru();
+            }
         });
+
+        // ============================================================
+        // TAB "Saran & Evaluasi": daftar rating + pesan anonim yang
+        // dikirim siswa lewat modal "Beri Saran" di Dashboard Siswa
+        // (localStorage key 'evaluasi_guru'). Tidak ada field identitas
+        // siswa apapun di datanya -- memang sengaja tidak pernah dikirim.
+        // ============================================================
+        function ambilSemuaEvaluasiGuru() {
+            try {
+                return JSON.parse(localStorage.getItem('evaluasi_guru') || '[]');
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function updateBadgeEvaluasiGuru() {
+            const badge = document.getElementById('badge-evaluasi-jumlah');
+            if (!badge) return;
+            const jumlah = ambilSemuaEvaluasiGuru().length;
+            if (jumlah > 0) {
+                badge.textContent = jumlah > 99 ? '99+' : String(jumlah);
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function warnaKategoriEvaluasi(kategori) {
+            if (kategori === 'Metode Mengajar') return 'bg-cyan-50 text-cyan-700 border-cyan-100';
+            if (kategori === 'Keadilan & Beban Tugas') return 'bg-amber-50 text-amber-700 border-amber-100';
+            return 'bg-violet-50 text-violet-700 border-violet-100'; // Komunikasi
+        }
+
+        function renderBintangEvaluasi(rating) {
+            let out = '';
+            for (let i = 1; i <= 5; i++) {
+                out += `<i class="fa-solid fa-star ${i <= rating ? 'text-amber-400' : 'text-slate-200'}"></i>`;
+            }
+            return out;
+        }
+
+        function renderEvaluasiGuru() {
+            const grid = document.getElementById('grid-evaluasi-guru');
+            const emptyState = document.getElementById('evaluasi-kosong-state');
+            const selectGuru = document.getElementById('filter-guru-evaluasi');
+            const selectKategori = document.getElementById('filter-kategori-evaluasi');
+            if (!grid) return;
+
+            const semua = ambilSemuaEvaluasiGuru();
+            updateBadgeEvaluasiGuru();
+
+            // Isi ulang dropdown daftar guru (dari data evaluasi yang benar-benar ada),
+            // sambil pertahankan pilihan filter yang sedang aktif kalau masih relevan.
+            if (selectGuru) {
+                const namaTerpilihSebelumnya = selectGuru.value;
+                const namaUnik = [...new Set(semua.map(x => x.guruNama))].sort();
+                selectGuru.innerHTML = '<option value="ALL">Semua Guru</option>' +
+                    namaUnik.map(n => `<option value="${n}">${n}</option>`).join('');
+                if (namaUnik.includes(namaTerpilihSebelumnya)) selectGuru.value = namaTerpilihSebelumnya;
+            }
+
+            const filterGuru = selectGuru ? selectGuru.value : 'ALL';
+            const filterKategori = selectKategori ? selectKategori.value : 'ALL';
+
+            const hasil = semua
+                .filter(x => filterGuru === 'ALL' || x.guruNama === filterGuru)
+                .filter(x => filterKategori === 'ALL' || x.kategori === filterKategori)
+                .slice()
+                .reverse(); // terbaru di atas
+
+            if (hasil.length === 0) {
+                grid.innerHTML = '';
+                if (emptyState) emptyState.classList.remove('hidden');
+                return;
+            }
+            if (emptyState) emptyState.classList.add('hidden');
+
+            grid.innerHTML = hasil.map(x => `
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2.5">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wide">Untuk</p>
+                            <h4 class="font-extrabold text-slate-900 text-sm">${x.guruNama}</h4>
+                        </div>
+                        <span class="flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-50 border border-slate-100 text-slate-500 text-[10px] font-bold"><i class="fa-solid fa-lock"></i> Anonim</span>
+                    </div>
+                    <div class="text-sm">${renderBintangEvaluasi(x.rating)}</div>
+                    <span class="inline-block px-2.5 py-1 rounded-lg border text-[10px] font-bold ${warnaKategoriEvaluasi(x.kategori)}">${x.kategori}</span>
+                    <p class="text-xs text-slate-600 leading-relaxed bg-slate-50 border border-slate-100 rounded-xl p-3">${x.pesan}</p>
+                    <p class="text-[10px] text-slate-400"><i class="fa-solid fa-clock mr-1"></i>${x.waktu}</p>
+                </div>
+            `).join('');
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             updateHeaderClock();
@@ -3483,6 +3617,7 @@
             loadSavedProfilePhotoGuru();
             loadBioGuru();
             updateBadgePrestasiMenunggu();
+            updateBadgeEvaluasiGuru();
 
             // Begitu guru masuk, langsung dicek apakah saat ini sudah masuk
             // jam mengajarnya hari ini (lalu terus dipantau tiap 5 detik).
