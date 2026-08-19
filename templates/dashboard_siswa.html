@@ -65,6 +65,13 @@
         }
 
         html, body { background-color: var(--page-bg) !important; }
+
+        /* Sidebar: pastikan menu paling bawah tidak kepotong kalau daftar
+           menu lebih tinggi dari viewport (terutama layar pendek/HP landscape). */
+        #sidebar-utama {
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
         body { font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text-primary); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 
         /* Skala tipografi lebih rapat & konsisten ala Linear/Notion */
@@ -77,6 +84,20 @@
            supaya area padat data (tabel, badge, tombol) tetap sans yg
            ringkas & legible. h1 (wordmark sidebar) sengaja tidak disentuh. */
         h2 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
+
+        /* --- Banner sapaan "Selamat Pagi": beda dari h2 lain, sengaja sans-serif
+           bold (bukan serif Fraunces) + gradient gelap senada sidebar. --- */
+        #banner-sapaan {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border: 1px solid rgba(6, 182, 212, 0.35);
+        }
+        #banner-sapaan h2 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+        }
+        #banner-sapaan .banner-sapaan-sub {
+            color: rgba(255, 255, 255, 0.75);
+        }
 
         /* ============================================================
            PALET BRAND BARU: indigo-violet hangat menggantikan biru
@@ -1073,11 +1094,11 @@
             </div>
             
             <section id="tab-beranda" class="tab-content space-y-6">
-                <div class="relative rounded-2xl bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-700 p-7 sm:p-8 text-white overflow-hidden">
+                <div id="banner-sapaan" class="relative rounded-2xl p-7 sm:p-8 text-white overflow-hidden">
                     <div class="max-w-xl relative z-10">
                         <span class="bg-white/15 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider mb-3 inline-block">Tahun Ajaran 2026/2027</span>
                         <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 leading-tight">Selamat Pagi, <span class="nama-siswa-efektif">{{ nama }}</span>! 👋</h2>
-                        <p class="text-blue-100 text-sm leading-relaxed">Jangan lupa masuk sebelum jam 06:30 WIB hari ini. Semoga harimu menyenangkan di sekolah!</p>
+                        <p class="banner-sapaan-sub text-sm leading-relaxed">Jangan lupa masuk sebelum jam 06:30 WIB hari ini. Semoga harimu menyenangkan di sekolah!</p>
                     </div>
                     <i class="fa-solid fa-shapes absolute -right-8 -bottom-10 text-white/10 text-8xl" aria-hidden="true"></i>
                 </div>
