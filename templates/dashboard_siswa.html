@@ -65,67 +65,59 @@
         }
 
         /* ============================================================
-           GANTI WARNA AKSEN (THEME SWITCHER) — Mode Gelap
-           Dipicu lewat data-accent-theme="pink|yellow|blue|green|purple"
-           di elemen <html>. Spesifisitas "html.dark[data-accent-theme]"
-           (0,0,2,1) sengaja dibuat lebih tinggi dari "html.dark" polos
-           (0,0,1,1) supaya override tidak bergantung urutan sumber.
-           Kalau atribut tidak diset, default tetap Cyan Neon di atas.
+           GANTI WARNA AKSEN (THEME SWITCHER) — KHUSUS Mode Terang
+           Dipicu lewat data-accent-theme="pink|yellow|blue|green|purple|cyan"
+           di elemen <html>. Sengaja pakai "html:not(.dark)[data-accent-theme]"
+           supaya HANYA berlaku saat Mode Gelap TIDAK aktif — begitu Mode
+           Gelap dinyalakan, palet dark bawaan (Cyan Neon, lihat blok
+           "html.dark" di atas) tetap terkunci dan tidak bisa diganti.
            ============================================================ */
-        html.dark[data-accent-theme="pink"] {
+        html:not(.dark)[data-accent-theme="pink"] {
             --brand: #ec4899;
             --brand-dark: #db2777;
-            --brand-tint-50: rgba(236, 72, 153, 0.14);
-            --brand-tint-100: rgba(236, 72, 153, 0.22);
-            --accent-violet: #f472b6;
-            --accent-violet-soft: #f9a8d4;
-            --dark-border-glow: rgba(236, 72, 153, 0.35);
+            --brand-tint-50: #fce7f3;
+            --brand-tint-100: #fbcfe8;
         }
-        html.dark[data-accent-theme="yellow"] {
-            --brand: #eab308;
-            --brand-dark: #ca8a04;
-            --brand-tint-50: rgba(234, 179, 8, 0.14);
-            --brand-tint-100: rgba(234, 179, 8, 0.22);
-            --accent-violet: #facc15;
-            --accent-violet-soft: #fde047;
-            --dark-border-glow: rgba(234, 179, 8, 0.35);
+        html:not(.dark)[data-accent-theme="yellow"] {
+            --brand: #ca8a04;
+            --brand-dark: #a16207;
+            --brand-tint-50: #fef9c3;
+            --brand-tint-100: #fef08a;
         }
-        html.dark[data-accent-theme="blue"] {
-            --brand: #3b82f6;
-            --brand-dark: #2563eb;
-            --brand-tint-50: rgba(59, 130, 246, 0.14);
-            --brand-tint-100: rgba(59, 130, 246, 0.22);
-            --accent-violet: #60a5fa;
-            --accent-violet-soft: #93c5fd;
-            --dark-border-glow: rgba(59, 130, 246, 0.35);
+        html:not(.dark)[data-accent-theme="blue"] {
+            --brand: #2563eb;
+            --brand-dark: #1d4ed8;
+            --brand-tint-50: #dbeafe;
+            --brand-tint-100: #bfdbfe;
         }
-        html.dark[data-accent-theme="green"] {
-            --brand: #22c55e;
-            --brand-dark: #16a34a;
-            --brand-tint-50: rgba(34, 197, 94, 0.14);
-            --brand-tint-100: rgba(34, 197, 94, 0.22);
-            --accent-violet: #4ade80;
-            --accent-violet-soft: #86efac;
-            --dark-border-glow: rgba(34, 197, 94, 0.35);
+        html:not(.dark)[data-accent-theme="green"] {
+            --brand: #16a34a;
+            --brand-dark: #15803d;
+            --brand-tint-50: #dcfce7;
+            --brand-tint-100: #bbf7d0;
         }
-        html.dark[data-accent-theme="purple"] {
-            --brand: #a855f7;
-            --brand-dark: #9333ea;
-            --brand-tint-50: rgba(168, 85, 247, 0.14);
-            --brand-tint-100: rgba(168, 85, 247, 0.22);
-            --accent-violet: #c084fc;
-            --accent-violet-soft: #d8b4fe;
-            --dark-border-glow: rgba(168, 85, 247, 0.35);
+        html:not(.dark)[data-accent-theme="purple"] {
+            --brand: #9333ea;
+            --brand-dark: #7e22ce;
+            --brand-tint-50: #f3e8ff;
+            --brand-tint-100: #e9d5ff;
+        }
+        html:not(.dark)[data-accent-theme="cyan"] {
+            --brand: #0891b2;
+            --brand-dark: #0e7490;
+            --brand-tint-50: #cffafe;
+            --brand-tint-100: #a5f3fc;
         }
 
         /* ---------- Transisi warna yang smooth setiap kali aksen diganti ----------
-           Diterapkan luas ("html.dark, html.dark *") supaya semua elemen yang
-           memakai var(--brand)/var(--brand-dark)/var(--brand-tint-*) — tombol,
-           badge, border, ring, background gradient — ikut animasi mulus tanpa
-           perlu daftar selector satu-satu. Canvas Chart.js tidak kena efek ini
-           (properti canvas di-render lewat JS, bukan CSS), jadi grafik tetap
-           update instan seperti biasa. */
-        html.dark, html.dark * , html.dark *::before, html.dark *::after {
+           Diterapkan luas ("html:not(.dark), html:not(.dark) *") supaya semua
+           elemen yang memakai var(--brand)/var(--brand-dark)/var(--brand-tint-*)
+           — tombol, badge, border, ring, background gradient — ikut animasi
+           mulus tanpa perlu daftar selector satu-satu. Sengaja dikecualikan
+           dari Mode Gelap karena warna aksennya memang terkunci di sana.
+           Canvas Chart.js tidak kena efek ini (properti canvas di-render
+           lewat JS, bukan CSS), jadi grafik tetap update instan seperti biasa. */
+        html:not(.dark), html:not(.dark) * , html:not(.dark) *::before, html:not(.dark) *::after {
             transition: background-color .5s cubic-bezier(.4,0,.2,1),
                         background-image .5s cubic-bezier(.4,0,.2,1),
                         border-color .5s cubic-bezier(.4,0,.2,1),
@@ -137,10 +129,10 @@
         /* Elemen yang memang butuh transisi cepat (hover, dropdown buka/tutup,
            progress bar) tetap dipertahankan durasinya sendiri lewat !important
            supaya tidak jadi lamban ketiban aturan 0.5s di atas. */
-        html.dark .transition-transform,
-        html.dark [class*="duration-150"],
-        html.dark [class*="duration-200"],
-        html.dark [class*="duration-300"] {
+        html:not(.dark) .transition-transform,
+        html:not(.dark) [class*="duration-150"],
+        html:not(.dark) [class*="duration-200"],
+        html:not(.dark) [class*="duration-300"] {
             transition-duration: inherit;
         }
 
@@ -183,8 +175,8 @@
            ============================================================ */
         @keyframes sapuanGelombangTema {
             0%   { transform: translateX(112vw); opacity: 0; }
-            10%  { opacity: .9; }
-            80%  { opacity: .9; }
+            10%  { opacity: .55; }
+            80%  { opacity: .55; }
             100% { transform: translateX(-45vw); opacity: 0; }
         }
         .gelombang-tema {
@@ -195,7 +187,7 @@
             width: 60vw;
             background: linear-gradient(90deg, transparent 0%, var(--glow-c, #ec4899) 50%, transparent 100%);
             filter: blur(38px);
-            mix-blend-mode: screen;
+            mix-blend-mode: multiply;
             opacity: 0;
             animation: sapuanGelombangTema 1.1s cubic-bezier(.22,.61,.36,1) forwards;
         }
@@ -661,9 +653,41 @@
         html.dark .border-amber-200 { border-color: rgba(245, 158, 11, 0.35) !important; }
         html.dark .border-rose-200 { border-color: rgba(244, 63, 94, 0.35) !important; }
 
-        #btn-dark-mode-toggle .icon-sun { display: none; }
-        html.dark #btn-dark-mode-toggle .icon-moon { display: none; }
-        html.dark #btn-dark-mode-toggle .icon-sun { display: inline-block; }
+        /* --- Tombol Mode Gelap: animasi "matahari & bulan naik-turun" saat
+           diklik. Kedua ikon sama-sama ada di DOM (bukan display:none/block
+           instan lagi) dan digeser vertikal + rotate lewat transition CSS,
+           dipicu murni oleh ada/tidaknya class "dark" di <html> -- jadi
+           animasinya otomatis jalan dua arah (terbit & terbenam) tanpa
+           perlu keyframe/JS tambahan. --- */
+        #btn-dark-mode-toggle {
+            width: 40px;
+            height: 40px;
+            overflow: hidden;
+        }
+        #btn-dark-mode-toggle .slot-ikon-tema {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform .55s cubic-bezier(.65,0,.35,1), opacity .4s ease;
+        }
+        /* Mode terang (default): matahari di tengah (aktif), bulan
+           "tersembunyi" di atas seolah belum terbit. */
+        #btn-dark-mode-toggle .icon-matahari-wrap { transform: translateY(0) rotate(0deg); opacity: 1; }
+        #btn-dark-mode-toggle .icon-bulan-wrap { transform: translateY(-160%) rotate(-50deg); opacity: 0; }
+        /* Mode gelap: matahari "terbenam" turun ke bawah & memudar,
+           bulan "terbit" naik mengisi posisi tengah. */
+        html.dark #btn-dark-mode-toggle .icon-matahari-wrap { transform: translateY(160%) rotate(50deg); opacity: 0; }
+        html.dark #btn-dark-mode-toggle .icon-bulan-wrap { transform: translateY(0) rotate(0deg); opacity: 1; }
+
+        @media (prefers-reduced-motion: reduce) {
+            #btn-dark-mode-toggle .slot-ikon-tema { transition: opacity .25s ease !important; }
+            #btn-dark-mode-toggle .icon-matahari-wrap,
+            #btn-dark-mode-toggle .icon-bulan-wrap,
+            html.dark #btn-dark-mode-toggle .icon-matahari-wrap,
+            html.dark #btn-dark-mode-toggle .icon-bulan-wrap { transform: none !important; }
+        }
 
         /* --- 2. COUNTDOWN TIMER TUGAS (inline di tabel tugas) ---
            Catatan: sebelumnya style ini pakai selector ID "#inline-countdown-tugas"
@@ -1325,14 +1349,20 @@
                     </div>
                 </div>
 
-                <button id="btn-dark-mode-toggle" onclick="toggleDarkMode()" title="Mode Gelap - biar mata gak capek pas begadang ngerjain tugas" aria-label="Ubah mode gelap/terang" class="p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 relative transition-colors">
-                    <i class="fa-solid fa-moon icon-moon" aria-hidden="true"></i>
-                    <i class="fa-solid fa-sun icon-sun text-amber-400" aria-hidden="true"></i>
+                <button id="btn-dark-mode-toggle" onclick="toggleDarkMode()" title="Mode Gelap - biar mata gak capek pas begadang ngerjain tugas" aria-label="Ubah mode gelap/terang" class="p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 relative transition-colors flex-shrink-0">
+                    <span class="slot-ikon-tema icon-matahari-wrap">
+                        <i class="fa-solid fa-sun text-amber-400" aria-hidden="true"></i>
+                    </span>
+                    <span class="slot-ikon-tema icon-bulan-wrap">
+                        <i class="fa-solid fa-moon" aria-hidden="true"></i>
+                    </span>
                 </button>
 
-                <!-- Pengaturan warna aksen: cuma relevan di Mode Gelap, jadi tombolnya
-                     disembunyikan otomatis saat mode terang lewat class "hidden dark:flex" -->
-                <div class="relative hidden" id="wrapper-btn-aksen-tema">
+                <!-- Pengaturan warna aksen: cuma relevan di Mode Terang (di Mode Gelap
+                     palet warnanya terkunci ke Cyan Neon), jadi tombolnya
+                     disembunyikan otomatis saat Mode Gelap aktif lewat JS
+                     (lihat tampilkanTombolAksenTema) -->
+                <div class="relative flex" id="wrapper-btn-aksen-tema">
                     <button id="btn-aksen-tema" onclick="toggleDropdownAksenTema(event)" title="Ganti warna aksen dashboard" aria-label="Ganti warna aksen dashboard" aria-haspopup="true" aria-expanded="false" class="p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 relative transition-colors">
                         <i class="fa-solid fa-palette" aria-hidden="true"></i>
                     </button>
@@ -1343,22 +1373,22 @@
                             <button onclick="toggleDropdownAksenTema(event)" class="text-slate-400 hover:text-slate-600" aria-label="Tutup"><i class="fa-solid fa-xmark text-xs"></i></button>
                         </div>
                         <div class="grid grid-cols-3 gap-3 place-items-center">
-                            <button type="button" class="swatch-aksen-tema" data-aksen="pink" style="background:#ec4899; --swatch-glow:#ec4899;" onclick="pilihAksenTema('pink')" title="Neon Pink" aria-label="Pilih warna Neon Pink">
+                            <button type="button" class="swatch-aksen-tema" data-aksen="pink" style="background:#ec4899; --swatch-glow:#ec4899;" onclick="pilihAksenTema('pink')" title="Pink" aria-label="Pilih warna aksen Pink">
                                 <i class="fa-solid fa-check cek-aktif text-white text-xs" aria-hidden="true"></i>
                             </button>
-                            <button type="button" class="swatch-aksen-tema" data-aksen="yellow" style="background:#eab308; --swatch-glow:#eab308;" onclick="pilihAksenTema('yellow')" title="Neon Yellow" aria-label="Pilih warna Neon Yellow">
+                            <button type="button" class="swatch-aksen-tema" data-aksen="yellow" style="background:#eab308; --swatch-glow:#eab308;" onclick="pilihAksenTema('yellow')" title="Yellow" aria-label="Pilih warna aksen Yellow">
                                 <i class="fa-solid fa-check cek-aktif text-white text-xs" aria-hidden="true"></i>
                             </button>
-                            <button type="button" class="swatch-aksen-tema" data-aksen="blue" style="background:#3b82f6; --swatch-glow:#3b82f6;" onclick="pilihAksenTema('blue')" title="Neon Blue" aria-label="Pilih warna Neon Blue">
+                            <button type="button" class="swatch-aksen-tema" data-aksen="blue" style="background:#3b82f6; --swatch-glow:#3b82f6;" onclick="pilihAksenTema('blue')" title="Blue" aria-label="Pilih warna aksen Blue">
                                 <i class="fa-solid fa-check cek-aktif text-white text-xs" aria-hidden="true"></i>
                             </button>
-                            <button type="button" class="swatch-aksen-tema" data-aksen="green" style="background:#22c55e; --swatch-glow:#22c55e;" onclick="pilihAksenTema('green')" title="Neon Green" aria-label="Pilih warna Neon Green">
+                            <button type="button" class="swatch-aksen-tema" data-aksen="green" style="background:#22c55e; --swatch-glow:#22c55e;" onclick="pilihAksenTema('green')" title="Green" aria-label="Pilih warna aksen Green">
                                 <i class="fa-solid fa-check cek-aktif text-white text-xs" aria-hidden="true"></i>
                             </button>
-                            <button type="button" class="swatch-aksen-tema" data-aksen="purple" style="background:#a855f7; --swatch-glow:#a855f7;" onclick="pilihAksenTema('purple')" title="Neon Purple" aria-label="Pilih warna Neon Purple">
+                            <button type="button" class="swatch-aksen-tema" data-aksen="purple" style="background:#a855f7; --swatch-glow:#a855f7;" onclick="pilihAksenTema('purple')" title="Purple" aria-label="Pilih warna aksen Purple">
                                 <i class="fa-solid fa-check cek-aktif text-white text-xs" aria-hidden="true"></i>
                             </button>
-                            <button type="button" class="swatch-aksen-tema" data-aksen="cyan" style="background:#06b6d4; --swatch-glow:#06b6d4;" onclick="pilihAksenTema('cyan')" title="Neon Cyan (Default)" aria-label="Pilih warna Neon Cyan">
+                            <button type="button" class="swatch-aksen-tema" data-aksen="cyan" style="background:#06b6d4; --swatch-glow:#06b6d4;" onclick="pilihAksenTema('cyan')" title="Cyan (Default)" aria-label="Pilih warna aksen Cyan">
                                 <i class="fa-solid fa-check cek-aktif text-white text-xs" aria-hidden="true"></i>
                             </button>
                         </div>
@@ -4679,22 +4709,22 @@
             tampilkanTombolAksenTema(isDark);
         }
 
-        // Tombol "Warna Aksen" cuma masuk akal saat Mode Gelap aktif (di Mode
-        // Terang, palet warna tetap indigo standar) -- jadi tombolnya
+        // Tombol "Warna Aksen" cuma masuk akal saat Mode Terang aktif (di Mode
+        // Gelap, palet warna terkunci ke Cyan Neon bawaan) -- jadi tombolnya
         // ditampilkan/disembunyikan mengikuti status dark mode saat ini.
         function tampilkanTombolAksenTema(isDark) {
             const wrapper = document.getElementById('wrapper-btn-aksen-tema');
             if (!wrapper) return;
-            wrapper.classList.toggle('hidden', !isDark);
-            wrapper.classList.toggle('flex', isDark);
-            if (!isDark) {
+            wrapper.classList.toggle('hidden', isDark);
+            wrapper.classList.toggle('flex', !isDark);
+            if (isDark) {
                 const dropdown = document.getElementById('panel-aksen-tema');
                 if (dropdown) dropdown.classList.add('hidden');
             }
         }
 
         /* ================= 1b. WARNA AKSEN (THEME SWITCHER) =================
-           Panel swatch di header (tombol ikon palet, cuma muncul di Mode Gelap).
+           Panel swatch di header (tombol ikon palet, cuma muncul di Mode Terang).
            Transisi warnanya sendiri sudah diatur lewat CSS "html.dark, html.dark *"
            di atas -- di sini JS cuma perlu ganti atribut data-accent-theme,
            sisanya (animasi smooth) otomatis kejadian lewat CSS transition. */
@@ -4763,12 +4793,13 @@
         }
 
         // Efek "gelombang energi neon + swarm kupu-kupu" yang menyapu layar dari
-        // kanan ke kiri tiap kali warna aksen diganti. Cuma dimainkan di Mode Gelap
-        // (di situlah efek neonnya kelihatan) dan otomatis dimatikan kalau pengguna
+        // kanan ke kiri tiap kali warna aksen diganti. Cuma dimainkan di Mode Terang
+        // (karena ganti warna aksen memang cuma tersedia di sana -- Mode Gelap
+        // terkunci ke Cyan Neon) dan otomatis dimatikan kalau pengguna
         // mengaktifkan preferensi "Reduce Motion" di sistemnya.
         function mainkanEfekSapuanTema(nama) {
             mainkanEfekSapuanTema.terakhirDimainkan = false;
-            if (!document.documentElement.classList.contains('dark')) return;
+            if (document.documentElement.classList.contains('dark')) return;
             if (pengaturanReduceMotionAktif()) return;
 
             const panggung = document.getElementById('efek-transisi-tema');
