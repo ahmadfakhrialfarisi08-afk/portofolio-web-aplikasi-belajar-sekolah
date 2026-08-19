@@ -1067,6 +1067,10 @@
                 </div>
                 <label for="input-saran-siswa" class="sr-only">Tulis saran atau masukan</label>
                 <textarea id="input-saran-siswa" rows="2" placeholder="Tuliskan saran atau masukan..." class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white resize-none"></textarea>
+                <label class="flex items-center gap-2 mt-2 text-[11px] text-slate-600 font-semibold cursor-pointer select-none">
+                    <input type="checkbox" id="checkbox-anonim-saran-siswa" class="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0">
+                    <i class="fa-solid fa-user-secret text-slate-400"></i> Sembunyikan nama saya (kirim anonim)
+                </label>
                 <button onclick="kirimSaranSiswa()" class="w-full mt-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm transition-colors flex items-center justify-center gap-1.5">
                     <i class="fa-solid fa-paper-plane text-[10px]"></i> Kirim Saran
                 </button>
@@ -2364,6 +2368,12 @@
                 return;
             }
 
+            const checkboxAnonim = document.getElementById('checkbox-anonim-saran-siswa');
+            // Kalau dicentang: nama & kelas pengirim SENGAJA tidak ikut disimpan
+            // sama sekali (bukan cuma disembunyikan di tampilan), supaya benar-benar
+            // anonim -- sama seperti prinsip modal "Beri Saran/Evaluasi" untuk guru.
+            const kirimAnonim = checkboxAnonim ? checkboxAnonim.checked : false;
+
             const daftarSaran = JSON.parse(localStorage.getItem('student_suggestions') || '[]');
             const now = getAccurateNow();
             const timestamp = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + 
@@ -2371,14 +2381,16 @@
                               String(now.getMinutes()).padStart(2, '0') + ' WIB';
 
             daftarSaran.push({
-                nama: NAMA_SISWA_AKTIF,
-                kelas: 'XII TKJ 3',
+                anonim: kirimAnonim,
+                nama: kirimAnonim ? null : NAMA_SISWA_AKTIF,
+                kelas: kirimAnonim ? null : 'XII TKJ 3',
                 saran: textSaran,
                 waktu: timestamp
             });
 
             localStorage.setItem('student_suggestions', JSON.stringify(daftarSaran));
             inputSaran.value = '';
+            if (checkboxAnonim) checkboxAnonim.checked = false;
             alert('Terima kasih! Saran Anda telah berhasil dikirim ke sistem.');
             triggerDynamicIsland("Saran berhasil dikirim!");
         }
