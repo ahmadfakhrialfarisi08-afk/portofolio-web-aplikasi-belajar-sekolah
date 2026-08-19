@@ -2030,6 +2030,25 @@
         </div>
     </div>
 
+    <!-- Modal peringatan kata kasar terdeteksi saat kirim saran (Kotak Saran Siswa
+         maupun modal "Beri Saran/Evaluasi" guru). Beda dari modal-gagal-prestasi:
+         modal ini SENGAJA TIDAK auto-close -- harus diklik "Tutup" secara manual,
+         supaya siswa benar-benar sadar & sempat baca peringatannya sebelum lanjut. -->
+    <div id="modal-kata-kasar" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[108] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-5 sm:p-7 shadow-2xl flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
+            <div class="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center modal-gagal-ring">
+                <svg class="w-11 h-11" viewBox="0 0 52 52">
+                    <circle class="crossmark-circle" cx="26" cy="26" r="23"/>
+                    <line class="crossmark-x1" x1="17" y1="17" x2="35" y2="35"/>
+                    <line class="crossmark-x2" x1="35" y1="17" x2="17" y2="35"/>
+                </svg>
+            </div>
+            <h3 class="font-extrabold text-base text-slate-900">Saran Tidak Bisa Dikirim</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">Terdeteksi mengandung kata kasar/tidak sopan. Silakan tulis ulang dengan bahasa yang baik.</p>
+            <button onclick="tutupModalKataKasar()" class="mt-2 w-full py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition-all">Tutup</button>
+        </div>
+    </div>
+
     <!-- Modal zoom foto bukti prestasi (klik foto di riwayat -> perbesar, bisa di-zoom in/out & digeser) -->
     <div id="modal-zoom-foto-prestasi" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[110] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupZoomFotoPrestasi()">
         <div class="absolute top-4 right-4 flex items-center gap-2 z-10">
@@ -2273,6 +2292,34 @@
             return { terdeteksi: false };
         }
 
+        // Modal peringatan (bukan alert() bawaan browser) yang muncul kalau
+        // kata kasar terdeteksi saat kirim saran. SENGAJA TIDAK auto-close --
+        // cuma hilang kalau tombol "Tutup" diklik manual.
+        function tampilkanModalKataKasar() {
+            const modal = document.getElementById('modal-kata-kasar');
+            if (!modal) return;
+
+            // Restart animasi X tiap kali modal dibuka lagi (kalau cuma
+            // classList show, animasi CSS-nya tidak akan replay dari awal).
+            modal.querySelectorAll('.crossmark-circle, .crossmark-x1, .crossmark-x2').forEach(el => {
+                el.style.animation = 'none';
+                void el.offsetWidth; // paksa reflow
+                el.style.animation = '';
+            });
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function tutupModalKataKasar() {
+            const modal = document.getElementById('modal-kata-kasar');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+
         function kirimSaranSiswa() {
             const inputSaran = document.getElementById('input-saran-siswa');
             if (!inputSaran) return;
@@ -2284,7 +2331,7 @@
             }
 
             if (periksaKataKasar(textSaran).terdeteksi) {
-                alert('Saran tidak bisa dikirim karena terdeteksi mengandung kata kasar/tidak sopan. Silakan tulis ulang dengan bahasa yang baik.');
+                tampilkanModalKataKasar();
                 return;
             }
 
@@ -4710,8 +4757,7 @@
             }
 
             if (periksaKataKasar(pesan).terdeteksi) {
-                alert('Saran tidak bisa dikirim karena terdeteksi mengandung kata kasar/tidak sopan. Silakan tulis ulang dengan bahasa yang baik.');
-                inputPesan.focus();
+                tampilkanModalKataKasar();
                 return;
             }
 
