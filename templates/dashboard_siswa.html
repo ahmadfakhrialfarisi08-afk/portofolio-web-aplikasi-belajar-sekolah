@@ -35,6 +35,7 @@
             --brand-dark: #4338ca;
             --brand-tint-50: #f0eeff;
             --brand-tint-100: #e3defe;
+            --surface-hover: #f1f5f9;
             --font-display: 'Fraunces', ui-serif, Georgia, serif;
             --radius-card: 1rem;
             --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.03);
@@ -73,40 +74,85 @@
            "html.dark" di atas) tetap terkunci dan tidak bisa diganti.
            ============================================================ */
         html:not(.dark)[data-accent-theme="pink"] {
+            --page-bg: #fbcfe8;
+            --surface: #fdf0f7;
+            --surface-hover: #fbcfe8;
+            --border-subtle: #fce7f3;
+            --border-strong: #f9a8d4;
             --brand: #ec4899;
             --brand-dark: #db2777;
             --brand-tint-50: #fce7f3;
             --brand-tint-100: #fbcfe8;
         }
         html:not(.dark)[data-accent-theme="yellow"] {
+            --page-bg: #fef08a;
+            --surface: #fefce8;
+            --surface-hover: #fef08a;
+            --border-subtle: #fef9c3;
+            --border-strong: #fde047;
             --brand: #ca8a04;
             --brand-dark: #a16207;
             --brand-tint-50: #fef9c3;
             --brand-tint-100: #fef08a;
         }
         html:not(.dark)[data-accent-theme="blue"] {
+            --page-bg: #bfdbfe;
+            --surface: #eff6ff;
+            --surface-hover: #bfdbfe;
+            --border-subtle: #dbeafe;
+            --border-strong: #93c5fd;
             --brand: #2563eb;
             --brand-dark: #1d4ed8;
             --brand-tint-50: #dbeafe;
             --brand-tint-100: #bfdbfe;
         }
         html:not(.dark)[data-accent-theme="green"] {
+            --page-bg: #bbf7d0;
+            --surface: #f0fdf4;
+            --surface-hover: #bbf7d0;
+            --border-subtle: #dcfce7;
+            --border-strong: #86efac;
             --brand: #16a34a;
             --brand-dark: #15803d;
             --brand-tint-50: #dcfce7;
             --brand-tint-100: #bbf7d0;
         }
         html:not(.dark)[data-accent-theme="purple"] {
+            --page-bg: #e9d5ff;
+            --surface: #faf5ff;
+            --surface-hover: #e9d5ff;
+            --border-subtle: #f3e8ff;
+            --border-strong: #d8b4fe;
             --brand: #9333ea;
             --brand-dark: #7e22ce;
             --brand-tint-50: #f3e8ff;
             --brand-tint-100: #e9d5ff;
         }
         html:not(.dark)[data-accent-theme="cyan"] {
+            --page-bg: #a5f3fc;
+            --surface: #ecfeff;
+            --surface-hover: #a5f3fc;
+            --border-subtle: #cffafe;
+            --border-strong: #67e8f9;
             --brand: #0891b2;
             --brand-dark: #0e7490;
             --brand-tint-50: #cffafe;
             --brand-tint-100: #a5f3fc;
+        }
+        /* Tema "Putih" — reset penuh ke tampilan asli/netral (brand indigo-violet
+           + permukaan putih), supaya pengguna bisa "balik lagi" kapan saja setelah
+           mencoba warna aksen lain. Nilainya sengaja sama persis dengan default
+           :root di atas. */
+        html:not(.dark)[data-accent-theme="putih"] {
+            --page-bg: #f8f7fc;
+            --surface: #ffffff;
+            --surface-hover: #f1f5f9;
+            --border-subtle: #ece9f5;
+            --border-strong: #ddd8ee;
+            --brand: #5b4fe9;
+            --brand-dark: #4338ca;
+            --brand-tint-50: #f0eeff;
+            --brand-tint-100: #e3defe;
         }
 
         /* ---------- Transisi warna yang smooth setiap kali aksen diganti ----------
@@ -238,6 +284,20 @@
         }
 
         html, body { background-color: var(--page-bg) !important; }
+
+        /* ============================================================
+           GANTI WARNA PERMUKAAN (BUKAN CUMA AKSEN) — supaya latar putih
+           yang dominan (card, sidebar, dropdown, dst.) IKUT berubah
+           mengikuti warna yang dipilih user, bukan cuma tombol/ikon.
+           var(--surface)/var(--page-bg)/var(--surface-hover) sudah
+           didefinisikan ulang per tema di blok "GANTI WARNA AKSEN" di
+           atas, jadi override di sini otomatis ikut warna aktif & ikut
+           transisi smooth yang sama (aturan "html:not(.dark), html:not(.dark) *"
+           di bawah). Pilih tema "Putih" buat balik ke tampilan asli
+           (permukaan putih polos + brand indigo-violet default). */
+        html:not(.dark) .bg-white { background-color: var(--surface) !important; }
+        html:not(.dark) .bg-slate-50 { background-color: var(--page-bg) !important; }
+        html:not(.dark) .bg-slate-100 { background-color: var(--surface-hover) !important; }
 
         /* Sidebar: pastikan menu paling bawah tidak kepotong kalau daftar
            menu lebih tinggi dari viewport (terutama layar pendek/HP landscape). */
@@ -1388,8 +1448,11 @@
                             <button type="button" class="swatch-aksen-tema" data-aksen="purple" style="background:#a855f7; --swatch-glow:#a855f7;" onclick="pilihAksenTema('purple')" title="Purple" aria-label="Pilih warna aksen Purple">
                                 <i class="fa-solid fa-check cek-aktif text-white text-xs" aria-hidden="true"></i>
                             </button>
-                            <button type="button" class="swatch-aksen-tema" data-aksen="cyan" style="background:#06b6d4; --swatch-glow:#06b6d4;" onclick="pilihAksenTema('cyan')" title="Cyan (Default)" aria-label="Pilih warna aksen Cyan">
+                            <button type="button" class="swatch-aksen-tema" data-aksen="cyan" style="background:#06b6d4; --swatch-glow:#06b6d4;" onclick="pilihAksenTema('cyan')" title="Cyan" aria-label="Pilih warna aksen Cyan">
                                 <i class="fa-solid fa-check cek-aktif text-white text-xs" aria-hidden="true"></i>
+                            </button>
+                            <button type="button" class="swatch-aksen-tema" data-aksen="putih" style="background:#f1f5f9; border-color:#e2e8f0; --swatch-glow:#5b4fe9;" onclick="pilihAksenTema('putih')" title="Putih (Default)" aria-label="Pilih warna Putih, reset ke tampilan asli">
+                                <i class="fa-solid fa-check cek-aktif text-slate-700 text-xs" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
@@ -4762,7 +4825,8 @@
         const SELEKTOR_ELEMEN_WARNA_AKSEN =
             '.bg-blue-600, .from-blue-600, .via-blue-600, .bg-blue-700, .bg-blue-50, ' +
             '.bg-blue-100, .text-blue-600, .text-blue-700, .text-blue-100, ' +
-            '.border-blue-600, .border-blue-500, .border-blue-100, .shadow-blue-500';
+            '.border-blue-600, .border-blue-500, .border-blue-100, .shadow-blue-500, ' +
+            '.bg-white, .bg-slate-50, .bg-slate-100, .border-slate-200, .border-slate-200\\/80';
 
         // Durasi gelombang menyapu layar (samakan dgn animasi CSS "sapuanGelombangTema").
         const DURASI_SAPUAN_TEMA_MS = 1100;
@@ -4817,7 +4881,7 @@
         }
 
         function loadAksenTemaPreference() {
-            const saved = localStorage.getItem('ui_accent_theme') || 'cyan';
+            const saved = localStorage.getItem('ui_accent_theme') || 'putih';
             document.documentElement.setAttribute('data-accent-theme', saved);
             tandaiSwatchAksenAktif(saved);
         }
@@ -4827,7 +4891,8 @@
         // langsung, harus dikasih tau warnanya lewat custom property inline).
         const PALET_AKSEN_HEX = {
             pink: '#ec4899', yellow: '#eab308', blue: '#3b82f6',
-            green: '#22c55e', purple: '#a855f7', cyan: '#06b6d4'
+            green: '#22c55e', purple: '#a855f7', cyan: '#06b6d4',
+            putih: '#5b4fe9'
         };
 
         function pengaturanReduceMotionAktif() {
