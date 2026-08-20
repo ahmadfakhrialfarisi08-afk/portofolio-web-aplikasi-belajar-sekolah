@@ -604,6 +604,15 @@
         .streak-tier-4 #streak-label-bawah { color: #fff7ed !important; }
         .streak-tier-4 .streak-icon-wrap { background: rgba(255,255,255,.15) !important; color: #fed7aa !important; }
 
+        /* FIX (mode gelap): tier 0-3 di atas hardcode background terang (putih/krem)
+           tanpa varian dark, jadi kartu Streak tetap putih walau html.dark aktif --
+           beda sendiri dari kartu bento lain yang sudah ikut gelap. Tier 4 dibiarkan
+           (sudah gelap + teks putih eksplisit, cocok di kedua mode). */
+        html.dark .streak-tier-0 { background: var(--dark-surface); }
+        html.dark .streak-tier-1 { background: linear-gradient(135deg, var(--dark-surface), rgba(251, 191, 36, 0.10)); border-color: rgba(253, 230, 138, 0.35) !important; }
+        html.dark .streak-tier-2 { background: linear-gradient(135deg, rgba(251, 191, 36, 0.10), rgba(253, 186, 116, 0.14)); border-color: rgba(253, 186, 116, 0.4) !important; }
+        html.dark .streak-tier-3 { background: linear-gradient(135deg, rgba(253, 186, 116, 0.14), rgba(252, 165, 165, 0.14)); border-color: rgba(252, 165, 165, 0.45) !important; box-shadow: 0 0 0 1px rgba(249,115,22,.15), var(--shadow-card); }
+
         /* ============================================================
            EFEK NAMA (mengikuti tier border yang sedang dipakai siswa)
            Dipakai bareng di: header profil, Quiz & Leaderboard, notif
