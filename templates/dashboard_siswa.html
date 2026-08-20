@@ -2533,11 +2533,13 @@
                 <button onclick="tutupIdCardTeman()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors" aria-label="Tutup">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
-                <div class="w-20 h-20 rounded-full bg-white/15 border-4 border-white/30 mx-auto flex items-center justify-center">
-                    <i class="fa-solid fa-user text-3xl"></i>
+                <div class="profile-wrapper w-20 h-20 mx-auto relative">
+                    <img id="idcard-avatar-foto" src="" class="user-avatar" alt="Avatar">
+                    <img id="idcard-avatar-border" src="" class="user-border" alt="Border">
                 </div>
                 <h3 id="idcard-nama" class="font-extrabold text-lg mt-3 leading-tight">-</h3>
-                <p id="idcard-kelas" class="text-xs text-blue-100 mt-0.5">-</p>
+                <span id="idcard-title-badge" class="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold title-badge-default">-</span>
+                <p id="idcard-kelas" class="text-xs text-blue-100 mt-1">-</p>
             </div>
             <div class="p-4 sm:p-6 space-y-4">
                 <div class="grid grid-cols-3 gap-2 text-center">
@@ -2964,6 +2966,17 @@
             }
 
             localStorage.setItem(keyStudentProfilePhoto(), base64Image);
+
+            // Simpan juga ke server (pola sama seperti border_aktif via
+            // /api/profil/border) -- supaya siswa LAIN yang pakai "Cari Teman"
+            // bisa lihat foto profil asli yang beneran lagi dipakai, bukan
+            // placeholder generik. Best-effort: kalau gagal (mis. offline),
+            // foto tetap kepakai normal di browser sendiri lewat localStorage.
+            fetch('/api/profil/foto', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ foto: base64Image })
+            }).catch(e => console.error('Gagal menyimpan foto profil ke server:', e));
 
             const headerAvatar = document.getElementById('header-user-avatar');
             const dropdownAvatar = document.getElementById('dropdown-user-avatar');
@@ -3746,17 +3759,29 @@
                 listState.innerHTML = '';
 
                 hasil.forEach(item => {
+                    // Petakan id border yang sedang dipakai siswa ini (dikirim server,
+                    // lihat /api/teman/cari) ke objek border lengkap di frontend supaya
+                    // hasil pencarian ikut nampilin border, efek nama gradasi, & title
+                    // -- persis pola yang sama dengan entri Leaderboard Quiz.
+                    const borderItem = getSemuaBorder().find(b => b.id === item.border) || DAFTAR_BORDER_STARTER[0];
+                    const efekNamaItem = getEfekNamaClass(borderItem);
+                    const titleBadgeClassItem = getTitleBadgeClass(efekNamaItem);
+                    const badgeDevItem = getBadgeDevHtml(borderItem);
+                    const fotoItem = item.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama)}&background=e0e7ff&color=3730a3&size=120`;
+
                     const row = document.createElement('div');
                     row.className = 'w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/40 transition-colors cursor-pointer';
                     row.setAttribute('role', 'button');
                     row.setAttribute('tabindex', '0');
                     row.innerHTML = `
-                        <div class="w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-                            <i class="fa-solid fa-user text-sm"></i>
+                        <div class="profile-wrapper w-11 h-11 flex-shrink-0">
+                            <img src="${fotoItem}" class="user-avatar" alt="Avatar ${item.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama)}&background=e0e7ff&color=3730a3&size=120'">
+                            <img src="${borderItem.file}" class="user-border" alt="Border ${item.nama}">
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-bold text-slate-800 truncate">${item.nama}</p>
-                            <p class="text-[11px] text-slate-400">${item.kelas}</p>
+                            <p class="text-sm font-bold truncate ${efekNamaItem || 'text-slate-800'}">${item.nama}${badgeDevItem ? ' ' + badgeDevItem : ''}</p>
+                            <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold ${titleBadgeClassItem} truncate max-w-full">${borderItem.rank || '🔰 Pemula'}</span>
+                            <p class="text-[11px] text-slate-400 truncate mt-0.5">${item.kelas}</p>
                         </div>
                         ${labelStatusPertemanan(item.status, item.username)}
                     `;
@@ -3864,7 +3889,37 @@
 
         function renderIdCardTeman(profil) {
             USERNAME_ID_CARD_TERBUKA = profil.username;
-            document.getElementById('idcard-nama').textContent = profil.nama;
+
+            // Border, foto, efek nama & title -- petakan id border dari server
+            // (profil.border) ke objek border lengkap di frontend, pola yang
+            // sama dengan hasil pencarian & entri Leaderboard Quiz.
+            const borderProfil = getSemuaBorder().find(b => b.id === profil.border) || DAFTAR_BORDER_STARTER[0];
+            const efekNamaProfil = getEfekNamaClass(borderProfil);
+            const fotoProfil = profil.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(profil.nama)}&background=e0e7ff&color=3730a3&size=120`;
+
+            const elFoto = document.getElementById('idcard-avatar-foto');
+            const elBorder = document.getElementById('idcard-avatar-border');
+            if (elFoto) {
+                elFoto.src = fotoProfil;
+                elFoto.onerror = () => { elFoto.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profil.nama)}&background=e0e7ff&color=3730a3&size=120`; };
+            }
+            if (elBorder) {
+                elBorder.src = borderProfil.file;
+                elBorder.alt = `Border_${borderProfil.nama}`;
+            }
+
+            const elTitleBadge = document.getElementById('idcard-title-badge');
+            if (elTitleBadge) {
+                elTitleBadge.textContent = borderProfil.rank || '🔰 Pemula';
+                elTitleBadge.className = `inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${getTitleBadgeClass(efekNamaProfil)}`;
+            }
+
+            const elNama = document.getElementById('idcard-nama');
+            elNama.textContent = profil.nama;
+            elNama.className = `font-extrabold text-lg mt-3 leading-tight ${efekNamaProfil}`.trim();
+            const badgeDevProfil = getBadgeDevHtml(borderProfil);
+            if (badgeDevProfil) elNama.innerHTML += ' ' + badgeDevProfil;
+
             document.getElementById('idcard-kelas').textContent = `Siswa • ${profil.kelas}`;
             document.getElementById('idcard-poin-pg').textContent = profil.quiz_pg_total_poin;
             document.getElementById('idcard-jumlah-teman').textContent = profil.jumlah_teman;

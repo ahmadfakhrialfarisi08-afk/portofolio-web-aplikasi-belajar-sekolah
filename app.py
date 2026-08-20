@@ -764,7 +764,11 @@ def api_teman_cari():
                 'nama': u['fullname'],
                 'kelas': u.get('kelas', '-'),
                 'status': _status_pertemanan(me, u['username']),
-                'border': u.get('border_aktif') or 'starter_pemula'
+                'border': u.get('border_aktif') or 'starter_pemula',
+                # Foto profil asli (base64) yang disimpan lewat /api/profil/foto --
+                # None kalau siswa itu belum pernah upload foto, frontend akan
+                # fallback ke avatar placeholder (lihat jalankanPencarianTeman()).
+                'foto': u.get('foto_profil')
             })
     return jsonify(success=True, hasil=hasil)
 
@@ -812,6 +816,29 @@ def api_profil_border():
     me = session['user']['username']
     if me in users:
         users[me]['border_aktif'] = border_id
+    return jsonify(success=True)
+
+
+@app.route('/api/profil/foto', methods=['POST'])
+def api_profil_foto():
+    """Simpan foto profil (base64) siswa ke server -- pola sama persis dengan
+    /api/profil/border di atas. Sebelumnya foto profil cuma tersimpan di
+    localStorage browser sendiri, jadi siswa LAIN yang pakai 'Cari Teman'
+    gak pernah lihat foto asli orangnya (cuma placeholder generik). Sekarang
+    begitu siswa ganti foto (lihat updateProfilePhoto() di dashboard_siswa.html),
+    foto barunya ikut dikirim & disimpan di sini supaya kelihatan di hasil
+    pencarian & ID card teman."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login.'), 401
+
+    data = request.get_json(silent=True) or {}
+    foto = (data.get('foto') or '').strip()
+    if not foto:
+        return jsonify(success=False, message='Foto kosong.'), 400
+
+    me = session['user']['username']
+    if me in users:
+        users[me]['foto_profil'] = foto
     return jsonify(success=True)
 
 
@@ -922,7 +949,11 @@ def api_teman_profil(username):
         'quiz_pg_total_poin': blob_pg.get('totalPoin', 0),
         'quiz_pg_best_by_level': blob_pg.get('bestByLevel', {'easy': 0, 'medium': 0, 'hard': 0}),
         'quiz_essay_best_by_level': blob_essay.get('bestByLevel', {'easy': 0, 'medium': 0, 'hard': 0}),
-        'status_pertemanan': _status_pertemanan(me, username)
+        'status_pertemanan': _status_pertemanan(me, username),
+        # Border & foto profil aslinya, dipetakan jadi border/efek nama/title
+        # di sisi frontend (lihat renderIdCardTeman() -> getSemuaBorder()).
+        'border': u.get('border_aktif') or 'starter_pemula',
+        'foto': u.get('foto_profil')
     })
 
 
