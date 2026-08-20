@@ -337,143 +337,86 @@
       .bg-blob { display: none; }
     }
 
-    /* ===================== TRANSISI "MASUK AKUN" ===================== */
+    /* ===================== TRANSISI "MASUK AKUN" (diperbaiki + dipercantik) ===================== */
     #transisi-masuk {
       position: fixed; inset: 0; z-index: 60;
-      background: radial-gradient(circle at 50% 40%, #1d4ed8 0%, #16a34a 120%);
+      background: radial-gradient(circle at 50% 38%, #1d4ed8 0%, #15803d 130%);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       opacity: 0; visibility: hidden; pointer-events: none;
-      transition: opacity 0.45s ease, visibility 0.45s ease;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
       overflow: hidden;
     }
     #transisi-masuk.tampil { opacity: 1; visibility: visible; pointer-events: auto; }
 
-    .transisi-partikel { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.55); pointer-events: none; }
+    /* partikel melayang naik, dibuat dinamis lewat JS */
+    .transisi-partikel {
+      position: absolute; bottom: -20px; border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      animation: partikelNaik linear infinite;
+    }
+    @keyframes partikelNaik {
+      0%   { transform: translateY(0) scale(1); opacity: 0; }
+      10%  { opacity: 0.8; }
+      90%  { opacity: 0.3; }
+      100% { transform: translateY(-120vh) scale(0.4); opacity: 0; }
+    }
 
-    .transisi-cincin-wrap { position: relative; width: 132px; height: 132px; margin-bottom: 24px; }
-    .transisi-cincin-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-    .transisi-cincin-bg { fill: none; stroke: rgba(255,255,255,0.2); stroke-width: 7; }
+    /* cincin dekorasi luar, muter pelan terus -- kesan "proses aktif" */
+    .transisi-cincin-luar {
+      position: absolute; width: 210px; height: 210px; border-radius: 50%;
+      border: 2px dashed rgba(255,255,255,0.28);
+      animation: putarPelan 7s linear infinite;
+    }
+    .transisi-cincin-luar.arah2 { width: 250px; height: 250px; border-color: rgba(255,255,255,0.16); animation-duration: 11s; animation-direction: reverse; }
+    @keyframes putarPelan { to { transform: rotate(360deg); } }
+
+    .transisi-cincin-wrap { position: relative; width: 148px; height: 148px; margin-bottom: 26px; z-index: 1; }
+    /* FIX: dulu selector ini "menembus" ke svg centang di dalam .transisi-icon-tengah
+       ikut dirotasi -90deg, makanya kelihatan "kebalik". Sekarang dibatasi cuma
+       svg LANGSUNG di dalam wrapper ini (progress ring-nya saja). */
+    .transisi-cincin-wrap > svg { width: 100%; height: 100%; transform: rotate(-90deg); display: block; }
+    .transisi-cincin-bg { fill: none; stroke: rgba(255,255,255,0.22); stroke-width: 7; }
     .transisi-cincin-isi {
       fill: none; stroke: #facc15; stroke-width: 7; stroke-linecap: round;
-      stroke-dasharray: 345; stroke-dashoffset: 345;
-      animation: isiCincin 1.4s ease-out forwards;
-      filter: drop-shadow(0 0 6px rgba(250,204,21,0.7));
+      stroke-dasharray: 386; stroke-dashoffset: 386;
+      filter: drop-shadow(0 0 7px rgba(250,204,21,0.75));
+      transition: stroke-dashoffset 0.12s linear;
     }
-    @keyframes isiCincin { to { stroke-dashoffset: 24; } }
-    .transisi-icon-tengah {
+
+    .transisi-persen {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-      animation: iconMasukDenyut 1s ease-in-out infinite;
+      flex-direction: column;
     }
-    @keyframes iconMasukDenyut { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
-    .transisi-icon-tengah svg { width: 46px; height: 46px; }
-    .transisi-check {
+    .transisi-persen-angka { color: #ffffff; font-size: 26px; font-weight: 800; letter-spacing: 0.5px; }
+    .transisi-persen-label { color: rgba(255,255,255,0.75); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; margin-top: -2px; }
+
+    /* lencana check yang pop-in setelah selesai, TERPISAH dari ring supaya gak ikut rotasi */
+    .transisi-lencana-check {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: scale(0.3); pointer-events: none;
+    }
+    .transisi-lencana-check.tampil {
+      animation: lencanaPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    @keyframes lencanaPop { 0% { opacity: 0; transform: scale(0.3) rotate(-20deg); } 60% { opacity: 1; transform: scale(1.15) rotate(4deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+    .transisi-lencana-check svg { width: 54px; height: 54px; }
+    .transisi-check-garis {
       stroke-dasharray: 40; stroke-dashoffset: 40;
-      animation: gambarCentang 0.4s ease-out 1.3s forwards;
+    }
+    .transisi-lencana-check.tampil .transisi-check-garis {
+      animation: gambarCentang 0.4s ease-out 0.25s forwards;
     }
     @keyframes gambarCentang { to { stroke-dashoffset: 0; } }
+    .transisi-check-lingkaran {
+      stroke-dasharray: 145; stroke-dashoffset: 145;
+    }
+    .transisi-lencana-check.tampil .transisi-check-lingkaran {
+      animation: gambarLingkaran 0.35s ease-out forwards;
+    }
+    @keyframes gambarLingkaran { to { stroke-dashoffset: 0; } }
 
-    .transisi-teks { color: #ffffff; font-size: 15px; font-weight: 700; letter-spacing: 0.3px; opacity: 0; animation: teksMasuk 0.5s ease-out 0.2s forwards; text-align: center; }
-    .transisi-subteks { color: rgba(255,255,255,0.82); font-size: 12.5px; margin-top: 4px; opacity: 0; animation: teksMasuk 0.5s ease-out 0.4s forwards; }
-
-    /* ===================== DASHBOARD SISWA ===================== */
-    #dashboard-siswa {
-      position: fixed; inset: 0; z-index: 40;
-      background: #f1f5f9;
-      opacity: 0; visibility: hidden; pointer-events: none;
-      transition: opacity 0.5s ease, visibility 0.5s ease;
-      overflow-y: auto;
-    }
-    #dashboard-siswa.tampil { opacity: 1; visibility: visible; pointer-events: auto; }
-
-    .dsb-topbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 28px; background: #ffffff; box-shadow: 0 2px 10px rgba(30,41,59,0.06);
-      opacity: 0; transform: translateY(-14px); animation: dsbMasuk 0.5s ease-out 0.1s forwards;
-    }
-    .dsb-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: #1e293b; font-size: 15px; }
-    .dsb-brand-lencana { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg,#16a34a,#2563eb); display: flex; align-items: center; justify-content: center; }
-    .dsb-keluar {
-      background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 13px;
-      padding: 8px 14px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s ease, color 0.2s ease;
-    }
-    .dsb-keluar:hover { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
-
-    .dsb-isi { max-width: 880px; margin: 0 auto; padding: 30px 24px 50px; }
-
-    .dsb-sapa { opacity: 0; transform: translateY(14px); animation: dsbMasuk 0.5s ease-out 0.25s forwards; }
-    .dsb-sapa h1 { margin: 0 0 4px; font-size: 22px; color: #1e293b; }
-    .dsb-sapa p { margin: 0; color: #64748b; font-size: 13.5px; }
-    @keyframes dsbMasuk { to { opacity: 1; transform: translateY(0); } }
-
-    .dsb-kartu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-top: 22px; }
-    .dsb-kartu {
-      background: #ffffff; border-radius: 14px; padding: 16px; box-shadow: 0 6px 16px -8px rgba(30,41,59,0.12);
-      opacity: 0; transform: translateY(16px) scale(0.96); animation: dsbKartuMasuk 0.5s cubic-bezier(0.22,1,0.36,1) forwards;
-    }
-    .dsb-kartu:nth-child(1) { animation-delay: 0.35s; }
-    .dsb-kartu:nth-child(2) { animation-delay: 0.42s; }
-    .dsb-kartu:nth-child(3) { animation-delay: 0.49s; }
-    .dsb-kartu:nth-child(4) { animation-delay: 0.56s; }
-    @keyframes dsbKartuMasuk { to { opacity: 1; transform: translateY(0) scale(1); } }
-    .dsb-kartu-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; font-size: 18px; }
-    .dsb-kartu-angka { font-size: 20px; font-weight: 700; color: #1e293b; }
-    .dsb-kartu-label { font-size: 12px; color: #64748b; font-weight: 500; }
-
-    .dsb-panel {
-      background: #ffffff; border-radius: 16px; padding: 20px; margin-top: 22px;
-      box-shadow: 0 6px 16px -8px rgba(30,41,59,0.12);
-      opacity: 0; transform: translateY(16px); animation: dsbMasuk 0.55s ease-out 0.65s forwards;
-    }
-    .dsb-panel h3 { margin: 0 0 14px; font-size: 15px; color: #1e293b; }
-
-    /* baris tugas: muncul-hilang bergantian buat efek "hidup" */
-    .dsb-tugas-list { list-style: none; margin: 0; padding: 0; }
-    .dsb-tugas-item {
-      display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9;
-      font-size: 13.5px; color: #334155;
-      opacity: 0; animation: itemMunculHilang 5s ease-in-out infinite;
-    }
-    .dsb-tugas-item:last-child { border-bottom: none; }
-    .dsb-tugas-item:nth-child(1) { animation-delay: 0.9s; }
-    .dsb-tugas-item:nth-child(2) { animation-delay: 1.6s; }
-    .dsb-tugas-item:nth-child(3) { animation-delay: 2.3s; }
-    @keyframes itemMunculHilang {
-      0%   { opacity: 0; transform: translateX(-8px); }
-      8%   { opacity: 1; transform: translateX(0); }
-      45%  { opacity: 1; transform: translateX(0); }
-      53%  { opacity: 0; transform: translateX(8px); }
-      92%  { opacity: 0; }
-      100% { opacity: 0; }
-    }
-    .dsb-titik-status { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-
-    /* lencana notifikasi berdenyut terus (muncul-hilang halus) */
-    .dsb-lencana-notif {
-      position: relative; width: 36px; height: 36px; border-radius: 10px; background: #eff6ff;
-      display: flex; align-items: center; justify-content: center; cursor: pointer;
-    }
-    .dsb-lencana-notif .titik-merah {
-      position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: #ef4444;
-      animation: titikNotifBerdenyut 1.8s ease-in-out infinite;
-    }
-    @keyframes titikNotifBerdenyut { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.25; transform: scale(0.7); } }
-
-    /* carousel tips yang fade in/out gantian */
-    .dsb-tips { position: relative; height: 20px; overflow: hidden; margin-top: 4px; }
-    .dsb-tips span {
-      position: absolute; left: 0; top: 0; font-size: 12.5px; color: #64748b;
-      opacity: 0; animation: tipsFade 9s ease-in-out infinite;
-    }
-    .dsb-tips span:nth-child(1) { animation-delay: 0s; }
-    .dsb-tips span:nth-child(2) { animation-delay: 3s; }
-    .dsb-tips span:nth-child(3) { animation-delay: 6s; }
-    @keyframes tipsFade {
-      0%   { opacity: 0; transform: translateY(6px); }
-      5%   { opacity: 1; transform: translateY(0); }
-      30%  { opacity: 1; transform: translateY(0); }
-      36%  { opacity: 0; transform: translateY(-6px); }
-      100% { opacity: 0; }
-    }
+    .transisi-teks { color: #ffffff; font-size: 15px; font-weight: 700; letter-spacing: 0.3px; opacity: 0; animation: teksMasuk 0.5s ease-out 0.15s forwards; text-align: center; z-index: 1; }
+    .transisi-subteks { color: rgba(255,255,255,0.82); font-size: 12.5px; margin-top: 4px; opacity: 0; animation: teksMasuk 0.5s ease-out 0.3s forwards; z-index: 1; min-height: 16px; }
   </style>
 </head>
 <body>
@@ -648,80 +591,30 @@
 
 <!-- Transisi setelah klik "Masuk Akun" -->
 <div id="transisi-masuk">
+  <div class="transisi-cincin-luar"></div>
+  <div class="transisi-cincin-luar arah2"></div>
+
   <div class="transisi-cincin-wrap">
-    <svg viewBox="0 0 120 120">
-      <circle class="transisi-cincin-bg" cx="60" cy="60" r="55"/>
-      <circle class="transisi-cincin-isi" cx="60" cy="60" r="55"/>
+    <svg viewBox="0 0 136 136">
+      <circle class="transisi-cincin-bg" cx="68" cy="68" r="61.5"/>
+      <circle class="transisi-cincin-isi" id="cincinIsi" cx="68" cy="68" r="61.5"/>
     </svg>
-    <div class="transisi-icon-tengah">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-        <path class="transisi-check" d="M4 12.5l5 5L20 6.5"/>
+
+    <div class="transisi-persen" id="transisiPersen">
+      <span class="transisi-persen-angka" id="transisiAngka">0%</span>
+      <span class="transisi-persen-label">Memuat</span>
+    </div>
+
+    <div class="transisi-lencana-check" id="transisiCheck">
+      <svg viewBox="0 0 60 60" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <circle class="transisi-check-lingkaran" cx="30" cy="30" r="23" stroke="#facc15"/>
+        <path class="transisi-check-garis" d="M19 31l7.5 7.5L42 22"/>
       </svg>
     </div>
   </div>
-  <p class="transisi-teks">Memverifikasi akun kamu</p>
-  <p class="transisi-subteks">Tunggu sebentar ya...</p>
-</div>
 
-<!-- Dashboard siswa (demo tampilan setelah berhasil masuk) -->
-<div id="dashboard-siswa">
-  <div class="dsb-topbar">
-    <div class="dsb-brand">
-      <span class="dsb-brand-lencana">🎓</span>
-      Arcana Smart School
-    </div>
-    <div style="display:flex; align-items:center; gap:14px;">
-      <div class="dsb-lencana-notif" title="Notifikasi">
-        🔔
-        <span class="titik-merah"></span>
-      </div>
-      <button class="dsb-keluar" id="tombolKeluar">Keluar</button>
-    </div>
-  </div>
-
-  <div class="dsb-isi">
-    <div class="dsb-sapa">
-      <h1>Halo, <span id="dsbNamaSiswa">Siswa</span> 👋</h1>
-      <p>Semangat belajar hari ini! Berikut ringkasan aktivitasmu.</p>
-    </div>
-
-    <div class="dsb-kartu-grid">
-      <div class="dsb-kartu">
-        <div class="dsb-kartu-icon" style="background:#eff6ff;">📘</div>
-        <div class="dsb-kartu-angka">6</div>
-        <div class="dsb-kartu-label">Mata Pelajaran</div>
-      </div>
-      <div class="dsb-kartu">
-        <div class="dsb-kartu-icon" style="background:#f0fdf4;">📝</div>
-        <div class="dsb-kartu-angka">3</div>
-        <div class="dsb-kartu-label">Tugas Berjalan</div>
-      </div>
-      <div class="dsb-kartu">
-        <div class="dsb-kartu-icon" style="background:#fefce8;">📅</div>
-        <div class="dsb-kartu-angka">92%</div>
-        <div class="dsb-kartu-label">Kehadiran</div>
-      </div>
-      <div class="dsb-kartu">
-        <div class="dsb-kartu-icon" style="background:#fdf2f8;">⭐</div>
-        <div class="dsb-kartu-angka">4.8</div>
-        <div class="dsb-kartu-label">Rata-rata Nilai</div>
-      </div>
-    </div>
-
-    <div class="dsb-panel">
-      <h3>Aktivitas Terbaru</h3>
-      <ul class="dsb-tugas-list">
-        <li class="dsb-tugas-item"><span class="dsb-titik-status" style="background:#22c55e;"></span> Tugas Matematika dinilai — 90/100</li>
-        <li class="dsb-tugas-item"><span class="dsb-titik-status" style="background:#facc15;"></span> Tugas Bahasa Inggris menunggu penilaian</li>
-        <li class="dsb-tugas-item"><span class="dsb-titik-status" style="background:#3b82f6;"></span> Jadwal ujian IPA diperbarui</li>
-      </ul>
-      <div class="dsb-tips">
-        <span>💡 Kerjakan tugas lebih awal biar nggak keburu-buru.</span>
-        <span>💡 Cek jadwal ujian secara rutin ya.</span>
-        <span>💡 Istirahat cukup juga bagian dari belajar efektif.</span>
-      </div>
-    </div>
-  </div>
+  <p class="transisi-teks" id="transisiTeks">Memverifikasi akun kamu</p>
+  <p class="transisi-subteks" id="transisiSubteks">Menghubungkan ke server...</p>
 </div>
 
 <script>
@@ -856,43 +749,78 @@
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pancingReaksi(); }
     });
 
-    /* ---------- Transisi "Masuk Akun" -> Dashboard Siswa ---------- */
-    // Catatan: alur di bawah ini demo tampilan front-end (transisi + dashboard
-    // langsung di halaman yang sama). Untuk produksi, panggil showTransisiMasuk()
-    // setelah respons login dari server sukses, lalu arahkan/redirect senyatanya
-    // ke halaman dashboard asli alih-alih menampilkan #dashboard-siswa ini.
+    /* ---------- Transisi "Masuk Akun" -> submit asli ke backend Flask ---------- */
+    // Alur: klik submit -> form ditahan sebentar (preventDefault) supaya animasi
+    // transisi (ring progress + partikel + centang) sempat main penuh -> setelah
+    // itu form.submit() dipanggil untuk BENERAN mengirim POST ke /login (app.py).
+    // form.submit() tidak memicu ulang event 'submit' ini jadi aman, tidak infinite loop.
+    // Kalau login gagal, app.py redirect balik ke /login dengan flash error seperti biasa.
     var form = document.getElementById('loginForm');
     var tombolSubmit = document.getElementById('tombolSubmit');
     var transisiMasuk = document.getElementById('transisi-masuk');
-    var dashboardSiswa = document.getElementById('dashboard-siswa');
-    var tombolKeluar = document.getElementById('tombolKeluar');
-    var dsbNamaSiswa = document.getElementById('dsbNamaSiswa');
+    var cincinIsi = document.getElementById('cincinIsi');
+    var transisiAngka = document.getElementById('transisiAngka');
+    var transisiPersen = document.getElementById('transisiPersen');
+    var transisiCheck = document.getElementById('transisiCheck');
+    var transisiTeks = document.getElementById('transisiTeks');
+    var transisiSubteks = document.getElementById('transisiSubteks');
+
+    var KELILING_CINCIN = 2 * Math.PI * 61.5; // = keliling lingkaran r=61.5 (samakan dgn CSS stroke-dasharray)
+
+    function buatPartikel() {
+      for (var i = 0; i < 16; i++) {
+        var p = document.createElement('span');
+        p.className = 'transisi-partikel';
+        var ukuran = 3 + Math.random() * 5;
+        p.style.width = ukuran + 'px';
+        p.style.height = ukuran + 'px';
+        p.style.left = (Math.random() * 100) + '%';
+        p.style.animationDuration = (3 + Math.random() * 3) + 's';
+        p.style.animationDelay = (Math.random() * 3) + 's';
+        transisiMasuk.appendChild(p);
+      }
+    }
+    buatPartikel();
+
+    var subteksTahap = ['Menghubungkan ke server...', 'Memeriksa data akun...', 'Hampir selesai...'];
 
     if (form) {
       form.addEventListener('submit', function (e) {
+        if (!form.checkValidity()) { return; }
         e.preventDefault();
-        if (!form.checkValidity()) { form.reportValidity(); return; }
 
         tombolSubmit.disabled = true;
         tombolSubmit.style.opacity = '0.7';
-
-        var namaUser = inputUsername.value.trim();
-        dsbNamaSiswa.textContent = namaUser ? namaUser : 'Siswa';
-
         transisiMasuk.classList.add('tampil');
 
-        setTimeout(function () {
-          transisiMasuk.classList.remove('tampil');
-          dashboardSiswa.classList.add('tampil');
-          tombolSubmit.disabled = false;
-          tombolSubmit.style.opacity = '1';
-        }, 1750);
-      });
-    }
+        var durasi = 1500;
+        var mulai = null;
 
-    if (tombolKeluar) {
-      tombolKeluar.addEventListener('click', function () {
-        dashboardSiswa.classList.remove('tampil');
+        function langkah(waktu) {
+          if (!mulai) mulai = waktu;
+          var progres = Math.min(1, (waktu - mulai) / durasi);
+          var persen = Math.round(progres * 100);
+
+          cincinIsi.style.strokeDashoffset = KELILING_CINCIN * (1 - progres);
+          transisiAngka.textContent = persen + '%';
+
+          var tahap = Math.min(2, Math.floor(progres * 3));
+          transisiSubteks.textContent = subteksTahap[tahap];
+
+          if (progres < 1) {
+            requestAnimationFrame(langkah);
+          } else {
+            transisiPersen.style.opacity = '0';
+            transisiCheck.classList.add('tampil');
+            transisiTeks.textContent = 'Berhasil masuk!';
+            transisiSubteks.textContent = 'Mengarahkan ke dashboard...';
+
+            setTimeout(function () {
+              form.submit();
+            }, 550);
+          }
+        }
+        requestAnimationFrame(langkah);
       });
     }
   })();
