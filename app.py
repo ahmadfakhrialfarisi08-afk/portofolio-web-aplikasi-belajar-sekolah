@@ -47,6 +47,14 @@ SYSTEM_PROMPT_AI_SUPPORT = (
 # ----------------------------------------------------
 # DATA USER DUMMY (DATABASE SIMULASI)
 # ----------------------------------------------------
+# Username akun DEV/Admin ASLI (AHMAD FAKHRI AL FARISI) & id border khusus
+# yang cuma boleh dipakai olehnya. Dipakai buat validasi di /api/profil/border
+# (server-side) supaya siswa lain TIDAK BISA "curang" pasang border admin
+# lewat request API langsung (mis. dari DevTools/Postman), walau di UI
+# Dashboard Siswa tombolnya memang sudah disembunyikan/dikunci untuk mereka.
+USERNAME_ADMIN_DEV = 'siswa'
+BORDER_ID_ADMIN = 'admin_dev'
+
 users = {
     'guru': {
         'username': 'guru', 
@@ -788,10 +796,22 @@ def api_kelas_roster():
     hasil = []
     for u in users.values():
         if u['role'] == 'siswa' and u.get('kelas') == kelas:
+            border_terpasang = u.get('border_aktif') or 'starter_pemula'
+            # Sanitasi tambahan (jaga-jaga ada data lama sebelum validasi di
+            # /api/profil/border ditambahkan): kalau bukan akun dev asli tapi
+            # somehow border_aktif-nya 'admin_dev', jangan ikut ditampilkan
+            # sebagai admin ke Dashboard Guru -- turunkan ke starter.
+            if border_terpasang == BORDER_ID_ADMIN and u['username'] != USERNAME_ADMIN_DEV:
+                border_terpasang = 'starter_pemula'
             hasil.append({
                 'username': u['username'],
                 'nama': u['fullname'],
-                'border': u.get('border_aktif') or 'starter_pemula'
+                'border': border_terpasang,
+                # Foto profil asli (base64) tiap siswa -- supaya avatar di
+                # Denah Kelas & Tabel Siswa Dashboard Guru sinkron ke foto
+                # yang BENERAN dipakai orangnya, bukan cuma akun yang sedang
+                # login di browser guru ini.
+                'foto': u.get('foto_profil')
             })
     return jsonify(success=True, siswa=hasil)
 
@@ -814,6 +834,14 @@ def api_profil_border():
         return jsonify(success=False, message='ID border kosong.'), 400
 
     me = session['user']['username']
+
+    # PENTING: border admin/dev cuma boleh dipasang oleh akun DEV asli
+    # (AHMAD FAKHRI AL FARISI / username 'siswa'). Dicek di server, bukan
+    # cuma di frontend, supaya tidak bisa ditembus dengan mengirim request
+    # langsung ke endpoint ini mengatasnamakan siswa lain.
+    if border_id == BORDER_ID_ADMIN and me != USERNAME_ADMIN_DEV:
+        return jsonify(success=False, message='Border ini khusus akun Admin/Developer.'), 403
+
     if me in users:
         users[me]['border_aktif'] = border_id
     return jsonify(success=True)

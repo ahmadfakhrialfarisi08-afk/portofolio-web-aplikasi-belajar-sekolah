@@ -1277,6 +1277,11 @@
                     m.border = tampilan.border;
                     m.efek = tampilan.efek;
                     m.title = tampilan.title;
+                    // Foto profil ASLI tiap siswa (dari server, lewat /api/profil/foto
+                    // yang mereka simpan sendiri) -- kalau siswa belum pernah upload
+                    // foto (null), biarkan avatar dummy default yang sudah ke-assign
+                    // di sampleMurid30 tetap dipakai, jangan ditimpa jadi kosong.
+                    if (u.foto) m.foto = u.foto;
                 });
                 if (typeof kelasAktifDipilih !== 'undefined' && kelasAktifDipilih === 'XII TKJ 3' && typeof bukaanganUlangDetailKelas === 'function') {
                     bukaanganUlangDetailKelas();
@@ -2225,6 +2230,12 @@
         let kelasAktifDipilih = '';
         function bukaDetailKelas(namaKelas, jurusan, mapel, badgeJurusan, imgUrl) {
             kelasAktifDipilih = namaKelas;
+            // Sinkron ulang border/foto/title dari server tiap kali Denah Kelas XII TKJ 3
+            // dibuka (bukan cuma sekali pas awal load halaman) -- supaya kalau ada murid
+            // yang baru saja ganti border/foto sebelum guru buka jendela ini, datanya
+            // ikut fresh. Cuma 1x fetch ringan (4 siswa), bukan polling terus-menerus,
+            // jadi tetap murah/tidak bikin berat.
+            if (namaKelas === 'XII TKJ 3') sinkronBorderRosterDariServer();
             document.getElementById('modal-nama-kelas').innerText = namaKelas;
             document.getElementById('modal-mapel').innerText = mapel;
             document.getElementById('modal-badge-jurusan').innerText = jurusan;
@@ -2331,15 +2342,14 @@
                 // Render Denah Grid Card
                 gridContainer.innerHTML += `
                     <div onclick="periksaSiswa(${m.id})" class="p-3 rounded-2xl border-2 ${cardBangkuStyle} transition-all flex flex-col justify-between space-y-2 relative group">
-                        <div class="flex items-center justify-between">
-                            <span class="text-[10px] font-mono font-bold text-slate-500">Meja #${m.meja} ${penandaPintu}</span>
+                        <div class="flex items-center justify-between gap-1">
+                            <span class="text-[10px] font-mono font-bold text-slate-500 truncate">${m.title} ${penandaPintu}</span>
                             ${badgeStatusBangku}
                         </div>
                         <div class="flex items-center gap-2">
                             ${avatarWrapperHTML(m, 'w-8 h-8')}
                             <div class="overflow-hidden">
                                 <h5 class="text-xs font-bold truncate">${namaEfekHTML(m)}</h5>
-                                <p class="text-[9px] text-blue-600 font-semibold truncate">${m.title}</p>
                             </div>
                         </div>
                         <div class="pt-2 border-t border-slate-200/50 flex items-center justify-between text-[10px] font-bold">
