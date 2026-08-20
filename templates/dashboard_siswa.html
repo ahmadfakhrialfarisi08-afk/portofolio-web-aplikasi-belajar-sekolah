@@ -63,6 +63,16 @@
             --dark-surface-hover: #1b2740;
             --dark-border: rgba(148, 163, 184, 0.14);
             --dark-border-glow: rgba(6, 182, 212, 0.35);
+
+            /* FIX: --surface/--border-subtle/--page-bg belum di-override di sini,
+               jadi kartu .bento-stat-card (Streak, Tugas Belum/Sudah Selesai, dll)
+               masih pakai background putih dari :root walau mode gelap aktif --
+               bikin teks angka (di-override putih via .text-slate-900) jadi nyaris
+               tak kebaca (putih di atas putih). Samakan dengan token dark-surface. */
+            --surface: var(--dark-surface);
+            --surface-hover: var(--dark-surface-hover);
+            --border-subtle: var(--dark-border);
+            --page-bg: var(--dark-bg);
         }
 
         /* ============================================================
