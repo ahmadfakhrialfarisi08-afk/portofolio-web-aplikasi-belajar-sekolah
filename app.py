@@ -16,13 +16,13 @@ try:
     load_dotenv()
 except ImportError:
     pass
-
+ 
 import requests
  
 app = Flask(__name__)
 # Key rahasia untuk menangani session dan flash message
 app.secret_key = 'arcana_smart_school_secret_key'
-
+ 
 # ----------------------------------------------------
 # KONFIGURASI ASISTEN AI (OLLAMA LOKAL)
 # ----------------------------------------------------
@@ -33,7 +33,7 @@ app.secret_key = 'arcana_smart_school_secret_key'
 # ini dulu baru diteruskan ke Ollama.
 OLLAMA_URL = os.environ.get('OLLAMA_URL', 'http://localhost:11434')
 OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'llama3.2')
-
+ 
 SYSTEM_PROMPT_AI_SUPPORT = (
     "Kamu adalah 'Asisten BA', asisten virtual Portal Sekolah SMK Banjar Asri "
     "Cimaung. Tugasmu jawab pertanyaan siswa seputar fitur portal: Tugas & "
@@ -54,7 +54,7 @@ SYSTEM_PROMPT_AI_SUPPORT = (
 # Dashboard Siswa tombolnya memang sudah disembunyikan/dikunci untuk mereka.
 USERNAME_ADMIN_DEV = 'siswa'
 BORDER_ID_ADMIN = 'admin_dev'
-
+ 
 users = {
     'guru': {
         'username': 'guru', 
@@ -201,8 +201,8 @@ def _default_quiz_blob(jenis):
 #                                { 'from': <username pengirim>, 'created_at': iso-string }
 # ----------------------------------------------------
 FRIENDS_STORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'friends_store.json')
-
-
+ 
+ 
 def _muat_friends_store():
     try:
         with open(FRIENDS_STORE_PATH, 'r', encoding='utf-8') as f:
@@ -213,8 +213,8 @@ def _muat_friends_store():
             )
     except (FileNotFoundError, json.JSONDecodeError):
         return {}, {}
-
-
+ 
+ 
 def _simpan_friends_store():
     os.makedirs(os.path.dirname(FRIENDS_STORE_PATH), exist_ok=True)
     tmp_path = FRIENDS_STORE_PATH + '.tmp'
@@ -225,27 +225,27 @@ def _simpan_friends_store():
     with open(tmp_path, 'w', encoding='utf-8') as f:
         json.dump(serializable, f, ensure_ascii=False, indent=2)
     os.replace(tmp_path, FRIENDS_STORE_PATH)
-
-
+ 
+ 
 friendships, friend_requests = _muat_friends_store()
-
-
+ 
+ 
 def _apakah_berteman(a, b):
     return b in friendships.get(a, set())
-
-
+ 
+ 
 def _cari_request_pending(dari_username, ke_username):
     for r in friend_requests.get(ke_username, []):
         if r['from'] == dari_username:
             return r
     return None
-
-
+ 
+ 
 def _tambah_pertemanan(a, b):
     friendships.setdefault(a, set()).add(b)
     friendships.setdefault(b, set()).add(a)
-
-
+ 
+ 
 def _status_pertemanan(me, target):
     """Status hubungan pertemanan dari sudut pandang `me` terhadap `target`."""
     if me == target:
@@ -257,8 +257,8 @@ def _status_pertemanan(me, target):
     if _cari_request_pending(target, me):
         return 'menunggu_diterima'  # target yang ngirim, nunggu aku terima
     return 'belum'
-
-
+ 
+ 
 # ----------------------------------------------------
 # KONFIGURASI OTP - LUPA PASSWORD
 # ----------------------------------------------------
@@ -391,7 +391,7 @@ def login():
         if not (user and user['password'] == password):
             flash('Username, password, atau role salah!', 'error')
             return redirect(url_for('login'))
-
+ 
         # Master Device / approval device dihilangkan dulu -- login sekarang
         # langsung jalan begitu username/password/role cocok, tanpa perlu
         # persetujuan dari perangkat lain.
@@ -406,8 +406,8 @@ def _finish_login(user):
         'role': user['role']
     }
     return redirect(url_for('dashboard'))
-
-
+ 
+ 
 # ----------------------------------------------------
 # ROUTE REGISTER / BUAT AKUN BARU
 # ----------------------------------------------------
@@ -756,12 +756,12 @@ def api_teman_cari():
     lain lewat data users[] yang sama di server."""
     if 'user' not in session or session['user']['role'] != 'siswa':
         return jsonify(success=False, message='Belum login.'), 401
-
+ 
     q = (request.args.get('q') or '').strip().lower()
     me = session['user']['username']
     if not q:
         return jsonify(success=True, hasil=[])
-
+ 
     hasil = []
     for u in users.values():
         if u['role'] != 'siswa' or u['username'] == me:
@@ -779,8 +779,8 @@ def api_teman_cari():
                 'foto': u.get('foto_profil')
             })
     return jsonify(success=True, hasil=hasil)
-
-
+ 
+ 
 @app.route('/api/kelas/roster', methods=['GET'])
 def api_kelas_roster():
     """Daftar siswa di satu kelas beserta border yang sedang mereka pakai --
@@ -788,11 +788,11 @@ def api_kelas_roster():
     sama border aslinya (dari /api/profil/border), bukan data acak/dummy."""
     if 'user' not in session or session['user']['role'] != 'guru':
         return jsonify(success=False, message='Belum login sebagai guru.'), 401
-
+ 
     kelas = (request.args.get('kelas') or '').strip()
     if not kelas:
         return jsonify(success=False, message='Parameter kelas kosong.'), 400
-
+ 
     hasil = []
     for u in users.values():
         if u['role'] == 'siswa' and u.get('kelas') == kelas:
@@ -814,8 +814,8 @@ def api_kelas_roster():
                 'foto': u.get('foto_profil')
             })
     return jsonify(success=True, siswa=hasil)
-
-
+ 
+ 
 @app.route('/api/profil/border', methods=['POST'])
 def api_profil_border():
     """Simpan id border yang sedang dipakai siswa ini ke server (bukan cuma
@@ -827,26 +827,26 @@ def api_profil_border():
     tahu detail itu."""
     if 'user' not in session or session['user']['role'] != 'siswa':
         return jsonify(success=False, message='Belum login.'), 401
-
+ 
     data = request.get_json(silent=True) or {}
     border_id = (data.get('id') or '').strip()
     if not border_id:
         return jsonify(success=False, message='ID border kosong.'), 400
-
+ 
     me = session['user']['username']
-
+ 
     # PENTING: border admin/dev cuma boleh dipasang oleh akun DEV asli
     # (AHMAD FAKHRI AL FARISI / username 'siswa'). Dicek di server, bukan
     # cuma di frontend, supaya tidak bisa ditembus dengan mengirim request
     # langsung ke endpoint ini mengatasnamakan siswa lain.
     if border_id == BORDER_ID_ADMIN and me != USERNAME_ADMIN_DEV:
         return jsonify(success=False, message='Border ini khusus akun Admin/Developer.'), 403
-
+ 
     if me in users:
         users[me]['border_aktif'] = border_id
     return jsonify(success=True)
-
-
+ 
+ 
 @app.route('/api/profil/foto', methods=['POST'])
 def api_profil_foto():
     """Simpan foto profil (base64) siswa ke server -- pola sama persis dengan
@@ -858,18 +858,18 @@ def api_profil_foto():
     pencarian & ID card teman."""
     if 'user' not in session or session['user']['role'] != 'siswa':
         return jsonify(success=False, message='Belum login.'), 401
-
+ 
     data = request.get_json(silent=True) or {}
     foto = (data.get('foto') or '').strip()
     if not foto:
         return jsonify(success=False, message='Foto kosong.'), 400
-
+ 
     me = session['user']['username']
     if me in users:
         users[me]['foto_profil'] = foto
     return jsonify(success=True)
-
-
+ 
+ 
 @app.route('/api/teman/relasi', methods=['GET'])
 def api_teman_relasi():
     """Ambil daftar permintaan pertemanan yang MASUK ke akun ini + daftar
@@ -877,23 +877,23 @@ def api_teman_relasi():
     'Permintaan Pertemanan' & badge angkanya."""
     if 'user' not in session or session['user']['role'] != 'siswa':
         return jsonify(success=False, message='Belum login.'), 401
-
+ 
     me = session['user']['username']
     masuk = []
     for r in friend_requests.get(me, []):
         u = users.get(r['from'])
         if u:
             masuk.append({'username': u['username'], 'nama': u['fullname'], 'kelas': u.get('kelas', '-')})
-
+ 
     teman = []
     for uname in sorted(friendships.get(me, set())):
         u = users.get(uname)
         if u:
             teman.append({'username': u['username'], 'nama': u['fullname'], 'kelas': u.get('kelas', '-')})
-
+ 
     return jsonify(success=True, permintaan_masuk=masuk, teman=teman)
-
-
+ 
+ 
 @app.route('/api/teman/kirim', methods=['POST'])
 def api_teman_kirim():
     """Kirim permintaan pertemanan ke siswa lain. Kalau ternyata siswa itu
@@ -901,56 +901,56 @@ def api_teman_kirim():
     setuju (auto jadi teman) daripada bikin 2 permintaan nyilang."""
     if 'user' not in session or session['user']['role'] != 'siswa':
         return jsonify(success=False, message='Belum login.'), 401
-
+ 
     me = session['user']['username']
     data = request.get_json(silent=True) or {}
     target = (data.get('to_username') or '').strip()
-
+ 
     if not target or target == me or target not in users or users[target]['role'] != 'siswa':
         return jsonify(success=False, message='Siswa tujuan tidak valid.'), 400
     if _apakah_berteman(me, target):
         return jsonify(success=False, message='Kalian sudah berteman.'), 400
     if _cari_request_pending(me, target):
         return jsonify(success=False, message='Permintaan pertemanan sudah pernah dikirim, tinggal tunggu direspon.'), 400
-
+ 
     if _cari_request_pending(target, me):
         # Dia sudah lebih dulu ngirim permintaan ke kita -> langsung berteman
         friend_requests[me] = [r for r in friend_requests.get(me, []) if r['from'] != target]
         _tambah_pertemanan(me, target)
         _simpan_friends_store()
         return jsonify(success=True, message='Kalian sekarang berteman!', status='berteman')
-
+ 
     friend_requests.setdefault(target, []).append({
         'from': me,
         'created_at': datetime.utcnow().isoformat()
     })
     _simpan_friends_store()
     return jsonify(success=True, message='Permintaan pertemanan terkirim.', status='menunggu_dikirim')
-
-
+ 
+ 
 @app.route('/api/teman/tanggapi', methods=['POST'])
 def api_teman_tanggapi():
     """Terima/tolak permintaan pertemanan yang masuk ke akun yang sedang login."""
     if 'user' not in session or session['user']['role'] != 'siswa':
         return jsonify(success=False, message='Belum login.'), 401
-
+ 
     me = session['user']['username']
     data = request.get_json(silent=True) or {}
     from_username = (data.get('from_username') or '').strip()
     aksi = data.get('aksi')
-
+ 
     if aksi not in ('terima', 'tolak'):
         return jsonify(success=False, message='Aksi tidak valid.'), 400
     if not _cari_request_pending(from_username, me):
         return jsonify(success=False, message='Permintaan pertemanan tidak ditemukan (mungkin sudah ditanggapi).'), 404
-
+ 
     friend_requests[me] = [r for r in friend_requests.get(me, []) if r['from'] != from_username]
     if aksi == 'terima':
         _tambah_pertemanan(me, from_username)
     _simpan_friends_store()
     return jsonify(success=True, status=_status_pertemanan(me, from_username))
-
-
+ 
+ 
 @app.route('/api/teman/profil/<username>', methods=['GET'])
 def api_teman_profil(username):
     """Data buat ID card statistik siswa yang muncul saat nama di hasil
@@ -959,16 +959,16 @@ def api_teman_profil(username):
     _kunci_slot_quiz)."""
     if 'user' not in session or session['user']['role'] != 'siswa':
         return jsonify(success=False, message='Belum login.'), 401
-
+ 
     me = session['user']['username']
     u = users.get(username)
     if not u or u['role'] != 'siswa':
         return jsonify(success=False, message='Siswa tidak ditemukan.'), 404
-
+ 
     kunci_slot = f"{username}::{username}"
     blob_pg = quiz_store.get(kunci_slot, {}).get('pg') or _default_quiz_blob('pg')
     blob_essay = quiz_store.get(kunci_slot, {}).get('essay') or _default_quiz_blob('essay')
-
+ 
     return jsonify(success=True, profil={
         'username': u['username'],
         'nama': u['fullname'],
@@ -983,8 +983,8 @@ def api_teman_profil(username):
         'border': u.get('border_aktif') or 'starter_pemula',
         'foto': u.get('foto_profil')
     })
-
-
+ 
+ 
 # ----------------------------------------------------
 # ROUTE ASISTEN AI (PROXY KE OLLAMA LOKAL)
 # ----------------------------------------------------
@@ -997,12 +997,12 @@ def api_ai_chat():
     fallback ke jawaban template lama (balasAISupport di JS)."""
     if 'user' not in session:
         return jsonify(success=False, message='Belum login.'), 401
-
+ 
     data = request.get_json(silent=True) or {}
     pesan = (data.get('pesan') or '').strip()
     if not pesan:
         return jsonify(success=False, message='Pesan kosong.'), 400
-
+ 
     try:
         resp = requests.post(
             f"{OLLAMA_URL}/api/chat",
@@ -1028,8 +1028,8 @@ def api_ai_chat():
         return jsonify(success=False, message='Ollama terlalu lama merespons.'), 504
     except Exception:
         return jsonify(success=False, message='Terjadi kendala saat menghubungi asisten AI.'), 500
-
-
+ 
+ 
 # ----------------------------------------------------
 # ROUTE DAFTAR GURU
 # ----------------------------------------------------
@@ -1093,7 +1093,7 @@ def logout():
     session.pop('user', None)
     flash('Anda telah keluar dari sistem.', 'success')
     return redirect(url_for('login'))
-
+ 
 # ----------------------------------------------------
 # ROUTE PWA & MANIFEST SUPPORT
 # ----------------------------------------------------
@@ -1101,13 +1101,13 @@ def logout():
 def manifest():
     """Mengalirkan file manifest.json dari folder public ke URL utama /manifest.json"""
     return send_from_directory(os.path.join(app.root_path, 'public'), 'manifest.json', mimetype='application/json')
-
+ 
 @app.route('/pwabuilder-sw.js')
 @app.route('/sw.js')
 def service_worker():
     """Mengalirkan file Service Worker dari folder public agar PWA berjalan offline/PWABuilder mengenali SW."""
     return send_from_directory(os.path.join(app.root_path, 'public'), 'sw.js', mimetype='application/javascript')
-
+ 
  
 # ----------------------------------------------------
 # RUN APP
