@@ -5334,6 +5334,20 @@
                     dot.classList.add(statusClass);
                 }
 
+                // Dorong warnanya lewat inline style juga (bukan cuma lewat class CSS di
+                // atas) -- inline style itu prioritas TERTINGGI, jadi nggak mungkin kalah
+                // ketiban utility class Tailwind (bg-slate-50, dll) apapun yang terjadi.
+                // Ini yang benerin bug lama "kotaknya kelihatan pucat/putih terus".
+                const WARNA_COUNTDOWN = {
+                    'countdown-aman':    { bg: '#10b981', border: '#059669' },
+                    'countdown-waspada': { bg: '#f59e0b', border: '#b45309' },
+                    'countdown-bahaya':  { bg: '#f43f5e', border: '#be123c' }
+                };
+                const warna = WARNA_COUNTDOWN[statusClass];
+                wrap.style.setProperty('background-color', warna.bg, 'important');
+                wrap.style.setProperty('border-color', warna.border, 'important');
+                wrap.querySelectorAll('span, i').forEach(el => el.style.setProperty('color', '#ffffff', 'important'));
+
                 // Makin dekat ke deadline (di dalam zona bahaya), makin cepat kedapnya —
                 // kecepatan kedip "mengikuti" berkurangnya waktu, bukan kecepatan tetap.
                 if (statusClass === 'countdown-bahaya') {
