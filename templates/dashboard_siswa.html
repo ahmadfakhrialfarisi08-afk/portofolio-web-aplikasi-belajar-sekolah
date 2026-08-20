@@ -832,27 +832,32 @@
             border: 2px solid transparent;
             transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
         }
-        /* Aman: waktu masih jauh -> hijau solid, tenang, tidak berkedip */
+        /* Aman: waktu masih jauh -> hijau solid, tenang, tidak berkedip.
+           Catatan: background/border-color dikasih !important supaya TIDAK PERNAH
+           ketiban utility Tailwind (mis. bg-slate-50 bawaan di HTML kartu) --
+           sebelumnya kartu kelihatan pucat/abu-abu terus padahal class-nya sudah
+           kena, itu penyebab bug "warnanya nggak pernah muncul". */
         .inline-countdown-tugas-item.countdown-aman {
-            border-color: #059669;
-            background: #10b981;
+            border-color: #059669 !important;
+            background: #10b981 !important;
         }
         .inline-countdown-tugas-item.countdown-aman span,
         .inline-countdown-tugas-item.countdown-aman i { color: #ffffff !important; }
 
-        /* Waspada: mendekati deadline -> kuning/amber solid, tenang */
+        /* Waspada: sisa <= 10 menit -> kuning/amber solid, tenang */
         .inline-countdown-tugas-item.countdown-waspada {
-            border-color: #b45309;
-            background: #f59e0b;
+            border-color: #b45309 !important;
+            background: #f59e0b !important;
         }
         .inline-countdown-tugas-item.countdown-waspada span,
         .inline-countdown-tugas-item.countdown-waspada i { color: #ffffff !important; }
 
-        /* Bahaya: hampir habis -> merah solid, kedap-kedip.
-           Kecepatan kedip (--blink-speed) diatur lewat JS, makin dekat deadline makin cepat. */
+        /* Bahaya: sisa <= 5 menit -> merah solid, kedap-kedip.
+           Kecepatan kedip (--blink-speed) diatur lewat JS: makin dekat ke 2 menit/0
+           detik, makin cepat kedipnya (lihat updateGlobalCountdown()). */
         .inline-countdown-tugas-item.countdown-bahaya {
-            border-color: #be123c;
-            background: #f43f5e;
+            border-color: #be123c !important;
+            background: #f43f5e !important;
             --blink-speed: 1s;
             animation: countdownDangerPulse var(--blink-speed) infinite ease-in-out;
         }
@@ -908,6 +913,9 @@
         /* Varian ungu: dipakai khusus notif "ditikung" di leaderboard Quiz. */
         .notif-toast-ditarik.notif-toast-ungu { border-left-color: #9333ea; }
         html.dark .notif-toast-ditarik.notif-toast-ungu { border-color: rgba(139, 92, 246, 0.5); }
+        /* Varian kuning: notif "segera kumpulkan" waktu tugas tersisa 10 menit. */
+        .notif-toast-ditarik.notif-toast-kuning { border-left-color: #f59e0b; }
+        html.dark .notif-toast-ditarik.notif-toast-kuning { border-color: rgba(245, 158, 11, 0.5); }
         @keyframes notifSlideIn {
             from { transform: translateX(24px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -3299,6 +3307,40 @@
             setTimeout(() => tutupToastTugasDitarik(notif.id), 8000);
         }
 
+        // Notif "Segera Kumpulkan" -- muncul sekali waktu sisa waktu tugas baru
+        // masuk 10 menit (zona kuning), dipicu dari updateGlobalCountdown().
+        function tampilkanToastSegeraKumpulkan(data, breakdown) {
+            const container = document.getElementById('notif-toast-container');
+            if (!container) return;
+
+            const sisaText = breakdown ? `${String(breakdown.minutes).padStart(2, '0')} menit ${String(breakdown.seconds).padStart(2, '0')} detik` : '10 menit';
+            const judulTugas = data.judul || data.title || 'Tugas';
+            const toastId = `segera-kumpulkan-${data.id}`;
+
+            const toast = document.createElement('div');
+            toast.className = 'notif-toast-ditarik notif-toast-kuning';
+            toast.id = `toast-${toastId}`;
+            toast.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-extrabold text-slate-900 dark:text-slate-100">Segera Kumpulkan!</p>
+                        <p class="text-[11px] font-bold text-amber-600 mt-0.5"><i class="fa-solid fa-file-pen mr-1"></i>${judulTugas}</p>
+                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Sisa waktu pengumpulan tinggal ${sisaText} lagi.</p>
+                    </div>
+                    <button onclick="tutupToastTugasDitarik('${toastId}')" class="text-slate-300 hover:text-slate-500 flex-shrink-0">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>`;
+
+            container.appendChild(toast);
+
+            // Otomatis hilang sendiri setelah 8 detik kalau tidak ditutup manual.
+            setTimeout(() => tutupToastTugasDitarik(toastId), 8000);
+        }
+
         function tutupToastTugasDitarik(notifId) {
             const toast = document.getElementById(`toast-${notifId}`);
             if (!toast) return;
@@ -4638,7 +4680,7 @@
                     <div class="flex items-center justify-between">
                         <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-lg uppercase">${tipeKonten}</span>
                         <span class="text-xs text-amber-800 font-extrabold font-mono bg-amber-50 border border-amber-200 px-3 py-1 rounded-xl">
-                            <i class="fa-regular fa-clock mr-1"></i> Batas: ${batasWaktuTugas} WIB
+                            <i class="fa-regular fa-clock mr-1"></i> Batas: ${batasWaktuTugas}${/wib\s*$/i.test(batasWaktuTugas.trim()) ? '' : ' WIB'}
                         </span>
                     </div>
                     <div>
@@ -5232,6 +5274,12 @@
             return parts.join(' ');
         }
 
+        // Nyimpen id tugas yang notif "Segera Kumpulkan"-nya udah ditampilkan, supaya
+        // toast-nya cuma muncul SEKALI waktu tugas itu baru masuk zona kuning (10 menit),
+        // bukan tiap detik selama updateGlobalCountdown() jalan. Direset lagi ke aman
+        // (dihapus dari Set) kalau tugasnya balik ke zona hijau, mis. guru nambah waktu.
+        const notifWaspadaSudahTampil = new Set();
+
         function updateGlobalCountdown() {
             // Countdown ditampilkan inline di dalam SETIAP kartu tugas yang masih aktif
             // (tab Tugas & Catatan) — jadi di-loop per tugas, bukan cuma satu widget.
@@ -5239,9 +5287,9 @@
             let perluRerender = false;
 
             // Ambang batas status berdasarkan sisa waktu.
-            const BATAS_BAHAYA_MS = 30 * 60 * 1000;   // <= 30 menit -> merah, kedap-kedip
-            const BATAS_WASPADA_MS = 2 * 60 * 60 * 1000; // <= 2 jam -> kuning, solid, tenang
-            const KEDIP_LAMBAT = 1.2;  // detik, di awal zona bahaya (30 menit tersisa)
+            const BATAS_BAHAYA_MS = 5 * 60 * 1000;    // <= 5 menit -> merah, kedap-kedip (makin dekat 2 menit/0 detik, makin cepat kedipnya)
+            const BATAS_WASPADA_MS = 10 * 60 * 1000;  // <= 10 menit -> kuning, solid + notif "Segera Kumpulkan"
+            const KEDIP_LAMBAT = 1.2;  // detik, di awal zona bahaya (5 menit tersisa)
             const KEDIP_CEPAT = 0.25;  // detik, saat mendekati 0 detik
 
             tasks.forEach(data => {
@@ -5265,8 +5313,18 @@
                 }
 
                 let statusClass = 'countdown-aman'; // masih jauh -> hijau solid
-                if (sisaMs <= BATAS_BAHAYA_MS) statusClass = 'countdown-bahaya'; // mepet -> merah kedap-kedip
-                else if (sisaMs <= BATAS_WASPADA_MS) statusClass = 'countdown-waspada'; // mendekat -> kuning solid
+                if (sisaMs <= BATAS_BAHAYA_MS) statusClass = 'countdown-bahaya'; // <= 5 menit -> merah kedap-kedip
+                else if (sisaMs <= BATAS_WASPADA_MS) statusClass = 'countdown-waspada'; // <= 10 menit -> kuning solid
+
+                // Baru masuk zona kuning (10 menit tersisa) -> tampilkan notif "Segera
+                // Kumpulkan" sekali aja. Kalau balik ke hijau (mis. guru nambah waktu),
+                // hapus dari daftar supaya bisa notif lagi kalau nanti mepet lagi.
+                if (statusClass === 'countdown-waspada' && !notifWaspadaSudahTampil.has(data.id)) {
+                    notifWaspadaSudahTampil.add(data.id);
+                    tampilkanToastSegeraKumpulkan(data, hitungBreakdownSisaWaktu(targetDate, now));
+                } else if (statusClass === 'countdown-aman') {
+                    notifWaspadaSudahTampil.delete(data.id);
+                }
 
                 wrap.classList.remove('countdown-aman', 'countdown-waspada', 'countdown-bahaya');
                 wrap.classList.add(statusClass);
