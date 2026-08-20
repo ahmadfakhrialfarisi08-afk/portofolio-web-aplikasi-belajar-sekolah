@@ -3757,8 +3757,9 @@
                     row.setAttribute('role', 'button');
                     row.setAttribute('tabindex', '0');
                     row.innerHTML = `
-                        <div class="w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-                            <i class="fa-solid fa-user text-sm"></i>
+                        <div class="profile-wrapper w-11 h-11 flex-shrink-0">
+                            <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama)}&background=e0e7ff&color=3730a3&size=120" class="user-avatar" alt="Avatar ${item.nama}">
+                            <img src="${fileBorderById(item.border)}" class="user-border" alt="Border ${item.nama}">
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-bold text-slate-800 truncate">${item.nama}</p>
@@ -8493,6 +8494,30 @@
                 img.alt = `Border_${border.nama}`;
             });
             terapkanEfekNamaHeader(border);
+            sinkronBorderKeServer(border.id);
+        }
+
+        // Kirim id border yang sedang dipakai ke server (fire-and-forget) supaya
+        // siswa lain bisa lihat border ini lewat 'Cari Teman' (lihat jalankanPencarianTeman
+        // & endpoint /api/profil/border di app.py). Kalau gagal (mis. lagi offline),
+        // dibiarkan saja -- border tetap kepakai normal secara lokal, cuma belum
+        // ke-sync ke siswa lain sampai berhasil kirim lagi.
+        let _borderTerakhirDisinkron = null;
+        function sinkronBorderKeServer(id) {
+            if (id === _borderTerakhirDisinkron) return; // hindari spam request kalau tidak berubah
+            _borderTerakhirDisinkron = id;
+            fetch('/api/profil/border', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            }).catch(() => { _borderTerakhirDisinkron = null; }); // gagal -> coba lagi di panggilan berikutnya
+        }
+
+        // Cari file gambar border dari id-nya (dipakai buat nampilin border siswa
+        // LAIN di hasil 'Cari Teman', bukan cuma border milik sendiri).
+        function fileBorderById(id) {
+            const border = getSemuaBorder().find(b => b.id === id);
+            return border ? border.file : '../static/img/border_pemula.jpg';
         }
 
         // ===== Efek Nama & Badge (ikut tier border yang sedang dipakai) =====
