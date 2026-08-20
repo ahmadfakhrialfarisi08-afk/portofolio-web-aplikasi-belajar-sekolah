@@ -217,12 +217,12 @@
     /* kedip acak saat idle */
     .maskot-wrap.kedip .m-mata-tutup { transform: scaleY(0.08); }
 
-    /* password disembunyikan & sedang difokus -> Robi merem, "Zzz" muncul, lengan turun santai */
-    .maskot-wrap.tutup-mata .m-badan-grup { animation-play-state: paused; transform: translateY(-2px) rotate(0deg); }
-    .maskot-wrap.tutup-mata .m-mata-tutup { transform: scaleY(0.08); }
-    .maskot-wrap.tutup-mata .m-pipi { opacity: 0.8; }
-    .maskot-wrap.tutup-mata .m-zzz { opacity: 1; animation: zzzMelayang 1.6s ease-in-out infinite; }
-    @keyframes zzzMelayang { 0% { transform: translate(0,0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translate(6px,-14px); opacity: 0; } }
+    /* password disembunyikan & sedang difokus -> Robi "mengintip" malu-malu, kepala miring santai */
+    .maskot-wrap.tutup-mata .m-badan-grup { animation-play-state: paused; transform: translateY(-2px) rotate(-3deg); }
+    .maskot-wrap.tutup-mata .m-mata-tutup { transform: scaleY(0.4) translateY(2px); }
+    .maskot-wrap.tutup-mata .m-pupil { transform: translateY(2.5px); }
+    .maskot-wrap.tutup-mata .m-pipi { opacity: 1; }
+    .maskot-wrap.tutup-mata .m-mulut { transform: scaleX(1.08) translateY(1px); }
     .maskot-wrap.tutup-mata .m-lengan-kiri { transform: rotate(-14deg); }
     .maskot-wrap.tutup-mata .m-lengan-kanan { transform: rotate(14deg); }
 
