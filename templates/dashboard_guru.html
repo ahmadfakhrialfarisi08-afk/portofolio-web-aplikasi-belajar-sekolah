@@ -2413,6 +2413,10 @@
 
         function tutupDetailKelas() {
             document.getElementById('modal-detail-kelas').classList.add('hidden');
+            // Reset supaya fetch sinkronBorderRosterDariServer() yang masih berjalan
+            // di background (dipicu waktu modal ini dibuka) tidak buka ulang jendela
+            // ini begitu selesai -- itu penyebab bug "tutup jendela lalu muncul lagi".
+            kelasAktifDipilih = '';
         }
 
         function setModeView(mode) {
