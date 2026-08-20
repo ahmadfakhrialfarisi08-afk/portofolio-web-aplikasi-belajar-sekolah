@@ -55,6 +55,16 @@ SYSTEM_PROMPT_AI_SUPPORT = (
 USERNAME_ADMIN_DEV = 'siswa'
 BORDER_ID_ADMIN = 'admin_dev'
  
+# Foto profil bawaan yang otomatis dipakai SEMUA siswa sejak awal (baik akun
+# dummy di bawah maupun akun baru lewat /register) sampai siswa yang
+# bersangkutan mengganti fotonya sendiri lewat updateProfilePhoto() di
+# dashboard_siswa.html (yang lalu menyimpannya ke sini via /api/profil/foto).
+# Path relatif ini sengaja disamakan gayanya dengan path file border
+# (mis. '../static/img/border_pemula.jpg') yang sudah dipakai di
+# dashboard_siswa.html, supaya konsisten saat dipakai sebagai src <img>
+# dari halaman yang sama.
+FOTO_PROFIL_DEFAULT = '../static/img/poto_profil_default.jpg'
+ 
 users = {
     'guru': {
         'username': 'guru', 
@@ -72,7 +82,8 @@ users = {
         'fullname': 'AHMAD FAKHRI AL FARISI',
         'identity_number': '0051234567',
         'kelas': 'XII TKJ 3/TAV',
-        'border_aktif': 'admin_dev'
+        'border_aktif': 'admin_dev',
+        'foto_profil': FOTO_PROFIL_DEFAULT
     },
  
     
@@ -92,7 +103,8 @@ users = {
         'fullname': 'SYAM KHOERATUL MUKMIN',
         'identity_number': '0059999999',
         'kelas': 'XII TKJ 3/TAV',
-        'border_aktif': 'starter_pemula'
+        'border_aktif': 'starter_pemula',
+        'foto_profil': FOTO_PROFIL_DEFAULT
     },
     'waldi': {
         'username': 'waldi',
@@ -102,7 +114,8 @@ users = {
         'fullname': 'WALDI WAHIDIN',
         'identity_number': '0059999998',
         'kelas': 'XII TKJ 3/TAV',
-        'border_aktif': 'starter_pemula'
+        'border_aktif': 'starter_pemula',
+        'foto_profil': FOTO_PROFIL_DEFAULT
     },
     'setiawan': {
             'username': 'setiawan',
@@ -112,7 +125,8 @@ users = {
             'fullname': 'SETIAWAN SAPUTRA',
             'identity_number': '0069999999',
             'kelas': 'XII TKJ 3/TAV',
-            'border_aktif': 'starter_pemula'
+            'border_aktif': 'starter_pemula',
+        'foto_profil': FOTO_PROFIL_DEFAULT
     },
     'afrizal': {
                 'username': 'afrizalmustaqimm',
@@ -122,7 +136,8 @@ users = {
                 'fullname': 'AFRIZAL MUSTAQIM',
                 'identity_number': '0067989099',
                 'kelas': 'XII TKJ 3/TAV',
-                'border_aktif': 'starter_pemula'
+                'border_aktif': 'starter_pemula',
+        'foto_profil': FOTO_PROFIL_DEFAULT
     },
     'fadzri': {
         'username': 'fadzri',
@@ -132,7 +147,8 @@ users = {
         'fullname': 'MUHAMMAD FADZRI',
         'identity_number': '0059999997',
         'kelas': 'XII TKJ 3/TAV',
-        'border_aktif': 'starter_pemula'
+        'border_aktif': 'starter_pemula',
+        'foto_profil': FOTO_PROFIL_DEFAULT
     }
 }
  
@@ -461,7 +477,11 @@ def register():
             'email': email,
             'fullname': fullname,
             'identity_number': identity_number,
-            'border_aktif': 'starter_pemula' if normalized_role == 'siswa' else None
+            'border_aktif': 'starter_pemula' if normalized_role == 'siswa' else None,
+            # Foto profil siswa baru otomatis pakai foto default (lihat
+            # FOTO_PROFIL_DEFAULT) sampai dia ganti sendiri lewat
+            # updateProfilePhoto() -> /api/profil/foto.
+            'foto_profil': FOTO_PROFIL_DEFAULT if normalized_role == 'siswa' else None
         }
  
         flash('Akun berhasil dibuat! Silakan masuk dengan akun baru Anda.', 'success')
@@ -1086,11 +1106,19 @@ def dashboard():
 def dashboard_siswa():
     if 'user' not in session or session['user']['role'] != 'siswa':
         return redirect(url_for('login'))
+    # Foto profil siswa yang login: ambil dari data users (kalau siswa ini
+    # sudah pernah ganti foto, ini sudah foto barunya -- lihat
+    # /api/profil/foto). Kalau field-nya belum ada sama sekali (mis. akun
+    # lama sebelum fitur ini ditambahkan), fallback ke FOTO_PROFIL_DEFAULT
+    # supaya tidak pernah kosong.
+    u = users.get(session['user']['username'], {})
+    foto_profil = u.get('foto_profil') or FOTO_PROFIL_DEFAULT
     return render_template(
         'dashboard_siswa.html',
         username=session['user']['nama'],
         nama=session['user']['nama'],
-        login_username=session['user']['username']
+        login_username=session['user']['username'],
+        foto_profil=foto_profil
     )
  
 @app.route('/dashboard/guru')
