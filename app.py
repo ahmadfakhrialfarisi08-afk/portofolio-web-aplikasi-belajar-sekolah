@@ -769,6 +769,29 @@ def api_teman_cari():
     return jsonify(success=True, hasil=hasil)
 
 
+@app.route('/api/kelas/roster', methods=['GET'])
+def api_kelas_roster():
+    """Daftar siswa di satu kelas beserta border yang sedang mereka pakai --
+    dipakai 'Denah Kelas' di Dashboard Guru supaya avatar tiap murid sinkron
+    sama border aslinya (dari /api/profil/border), bukan data acak/dummy."""
+    if 'user' not in session or session['user']['role'] != 'guru':
+        return jsonify(success=False, message='Belum login sebagai guru.'), 401
+
+    kelas = (request.args.get('kelas') or '').strip()
+    if not kelas:
+        return jsonify(success=False, message='Parameter kelas kosong.'), 400
+
+    hasil = []
+    for u in users.values():
+        if u['role'] == 'siswa' and u.get('kelas') == kelas:
+            hasil.append({
+                'username': u['username'],
+                'nama': u['fullname'],
+                'border': u.get('border_aktif') or 'starter_pemula'
+            })
+    return jsonify(success=True, siswa=hasil)
+
+
 @app.route('/api/profil/border', methods=['POST'])
 def api_profil_border():
     """Simpan id border yang sedang dipakai siswa ini ke server (bukan cuma

@@ -1195,86 +1195,97 @@
             { nama: 'XII TAV 2', jurusan: 'TAV', tingkat: 'XII', mapel: 'Audio Video Sistem', wali: 'Heri, S.Pd', img: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&q=80&w=800' }
         ];
 
-        // Untuk saat ini roster sengaja dibatasi HANYA 2 siswa (AHMAD & SYAM) buat
-        // keperluan uji coba alur kirim/kumpul tugas. Tinggal ubah angka di bawah
-        // (length: 2) kalau nanti mau nambah siswa dummy lagi.
-        const sampleMurid30 = Array.from({ length: 2 }, (_, index) => {
-            const id = index + 1;
-            const names = [
-                "Andi Pratama", "SYAM KHOERATUL MUKMIN", "Rizki Fauzi", "Dewi Lestari", "Ahmad Dani",
-                "Nurul Hidayah", "Fajar Ramadhan", "Putri Ananda", "Budi Santoso", "Lestari Puspita",
-                "Reza Pahlevi", "Annisa Fitri", "Dicky Saputra", "Rina Marlina", "Yoga Pratama",
-                "Maya Sari", "Gilang Ramadhan", "Indah Permata", "Eko Prasetyo", "Wahyuni",
-                "Bayu Setiawan", "Siska Melina", "Doni Setiawan", "Fitri Handayani", "Hendra Gunawan",
-                "Mega Wati", "Joko Susilo", "Rika Andriani", "Dedi Kurniawan", "Sri Wahyuni"
-            ];
-            const borders = ["Border Neon Biru", "Border Emas Klasik", "Border Cyberpunk", "Border Polos", "Border Neon Ungu", "Border Gradasi Api"];
-            const titles = ["Elite Hacker", "Network Master", "SysAdmin Pro", "Master TAV", "Techno King", "Siswa Teladan", "The Specialist"];
-            const effects = ["Glow Effect", "Matrix Rain", "Sparkle Spark", "Clean Flat", "Neon Pulse", "Shadow Depth"];
+        // Roster kelas XII TKJ 3/TAV SEKARANG disinkronkan dari akun siswa ASLI yang
+        // terdaftar di backend (lihat users{} di app.py: siswa/syam/waldi/fadzri),
+        // bukan di-generate acak lagi. Urutan array ini sengaja disamakan sama urutan
+        // SISWA_KELAS_INI supaya gampang di-mapping saat sinkron border dari server.
+        const SISWA_KELAS_INI = [
+            { id: 1, username: 'siswa', nama: 'AHMAD FAKHRI AL FARISI' },
+            { id: 2, username: 'syam', nama: 'SYAM KHOERATUL MUKMIN' },
+            { id: 3, username: 'waldi', nama: 'WALDI WAHIDIN' },
+            { id: 4, username: 'fadzri', nama: 'MUHAMMAD FADZRI' }
+        ];
+
+        const sampleMurid30 = SISWA_KELAS_INI.map((s, index) => {
             const avatars = [
                 "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120",
                 "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=120",
                 "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=120",
-                "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=120",
-                "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=120"
+                "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=120"
             ];
-
             return {
-                id: id,
-                meja: id,
-                nama: names[index % names.length],
+                id: s.id,
+                username: s.username,
+                meja: s.id,
+                nama: s.nama,
+                kelas: "XII TKJ 3",
                 foto: avatars[index % avatars.length],
-                border: borders[index % borders.length],
-                title: titles[index % titles.length],
-                efek: effects[index % effects.length],
-                sudahMengumpulkan: index % 3 === 0 || index === 0,
-                waktuKirim: index % 3 === 0 || index === 0 ? "08:30 WIB" : null,
-                nilai: index === 0 ? "92" : (index % 3 === 0 ? "85" : null),
-                fotoTugas: index % 3 === 0 || index === 0 ? "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&q=80&w=800" : null
+                // Default sebelum sinkron border dari server selesai (lihat
+                // sinkronBorderRosterDariServer() di bawah) -- polos dulu, ringan.
+                border: 'Border Polos',
+                title: 'Siswa',
+                efek: '',
+                sudahMengumpulkan: s.id === 1,
+                waktuKirim: s.id === 1 ? "08:30 WIB" : null,
+                nilai: s.id === 1 ? "92" : null,
+                fotoTugas: s.id === 1 ? "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&q=80&w=800" : null
             };
         });
 
-        // Siswa ID #1 = AHMAD FAKHRI AL FARISI, disinkronkan LANGSUNG dengan Dashboard Siswa
-        // lewat localStorage yang sama persis dipakai di dashboard_siswa.html:
-        //   - 'student_profile_photo' -> foto profil (base64), diubah siswa lewat menu "Ganti Foto Profil"
-        // Border ("border_emas"), efek nama ("gold-name"), dan title ("DEV") memang statis/hardcode
-        // di Dashboard Siswa, jadi di sini kita tiru persis nilainya (bukan dikarang ulang).
+        // Foto siswa ID #1 (akun DEV yang lagi dipakai login) tetap disinkron dari
+        // localStorage foto profil miliknya sendiri, sama seperti sebelumnya --
+        // satu-satunya foto yang memang bisa diakses langsung dari browser guru ini.
+        // Fungsi ini juga dipakai ulang di bukaIDCardSiswa() buat tarik foto terbaru.
         function getProfilSiswaAktif() {
             const defaultAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120";
-            return {
-                nama: "AHMAD FAKHRI AL FARISI",
-                kelas: "XII TKJ 3",
-                foto: localStorage.getItem('student_profile_photo') || defaultAvatar,
-                border: "border_emas",
-                title: "DEV",
-                efek: "gold-name"
-            };
+            return { foto: localStorage.getItem('student_profile_photo') || defaultAvatar };
+        }
+        (function sinkronkanFotoSiswaId1() {
+            const siswa1 = sampleMurid30.find(s => s.id === 1);
+            if (siswa1) siswa1.foto = getProfilSiswaAktif().foto;
+        })();
+
+        // Terjemahkan id border ASLI (dari DAFTAR_BORDER_* di Dashboard Siswa, mis.
+        // 'admin_dev', 'quiz_medium_emas', 'prestasi_pink') ke representasi ringan
+        // yang dipakai Dashboard Guru ini. SENGAJA TIDAK dikasih animasi
+        // shimmer/glow kayak di Dashboard Siswa (kecuali akun DEV yang memang sudah
+        // ada dari awal) -- Denah Kelas bisa nampilin banyak siswa sekaligus, jadi
+        // dijaga tetap ringan/statis biar gak berat di HP atau laptop kentang.
+        function mapBorderIdKeTampilanGuru(borderId) {
+            const id = borderId || 'starter_pemula';
+            if (id === 'admin_dev') return { border: 'border_emas', efek: 'gold-name', title: 'DEV' };
+            if (id.includes('pink') || id.includes('permata')) return { border: 'Border Cyberpunk', efek: '', title: 'Legenda' };
+            if (id.includes('emas') || id.includes('gold')) return { border: 'Border Emas Klasik', efek: '', title: 'Master Quiz' };
+            if (id.includes('perak') || id.includes('silver')) return { border: 'Border Neon Biru', efek: '', title: 'Pelajar Rajin' };
+            if (id.includes('perunggu') || id.includes('bronze')) return { border: 'Border Gradasi Api', efek: '', title: 'Berprestasi' };
+            return { border: 'Border Polos', efek: '', title: 'Siswa' };
         }
 
-        (function sinkronkanProfilSiswaId1() {
-            const profil = getProfilSiswaAktif();
-            const siswa1 = sampleMurid30.find(s => s.id === 1);
-            if (siswa1) {
-                siswa1.nama = profil.nama;
-                siswa1.kelas = profil.kelas;
-                siswa1.foto = profil.foto;
-                siswa1.border = profil.border;
-                siswa1.title = profil.title;
-                siswa1.efek = profil.efek;
+        // Ambil border yang BENERAN sedang dipakai tiap siswa dari server (lihat
+        // /api/kelas/roster & /api/profil/border di app.py) lalu terapkan ke
+        // sampleMurid30. Kalau Denah Kelas XII TKJ 3 kebetulan lagi kebuka pas
+        // data ini datang, render ulang biar avatarnya langsung ke-update.
+        async function sinkronBorderRosterDariServer() {
+            try {
+                const res = await fetch(`/api/kelas/roster?kelas=${encodeURIComponent('XII TKJ 3/TAV')}`);
+                const json = await res.json();
+                if (!json.success) return;
+                json.siswa.forEach(u => {
+                    const m = sampleMurid30.find(s => s.username === u.username);
+                    if (!m) return;
+                    const tampilan = mapBorderIdKeTampilanGuru(u.border);
+                    m.border = tampilan.border;
+                    m.efek = tampilan.efek;
+                    m.title = tampilan.title;
+                });
+                if (typeof kelasAktifDipilih !== 'undefined' && kelasAktifDipilih === 'XII TKJ 3' && typeof bukaanganUlangDetailKelas === 'function') {
+                    bukaanganUlangDetailKelas();
+                }
+            } catch (e) {
+                console.error('Gagal sinkron border roster kelas:', e);
             }
-        })();
-
-        // Siswa ID #2 = SYAM KHOERATUL MUKMIN, satu kelas dengan AHMAD FAKHRI AL FARISI
-        // (XII TKJ 3). TIDAK diberi border/efek/title spesial apapun — border, title,
-        // dan efek dibiarkan pakai nilai umum/dummy bawaan (sama seperti 28 siswa
-        // lainnya), khusus dipakai buat uji coba alur "kirim tugas dari guru -> diterima siswa".
-        (function sinkronkanProfilSiswaId2() {
-            const siswa2 = sampleMurid30.find(s => s.id === 2);
-            if (siswa2) {
-                siswa2.nama = "SYAM KHOERATUL MUKMIN";
-                siswa2.kelas = "XII TKJ 3";
-            }
-        })();
+        }
+        sinkronBorderRosterDariServer();
 
         const jadwalMengajar = [
             { jam: "07:00 - 08:30", start: "07:00", end: "08:30", kelas: "XII TKJ 3", mapel: "Administrasi Infrastruktur Jaringan" },

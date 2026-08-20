@@ -388,21 +388,6 @@
             transform: translateY(-1px);
         }
 
-        /* FIX (mode gelap): sama seperti .streak-tier-*, kartu accent ini hardcode
-           background krem terang tanpa varian dark. Sementara itu teks di dalamnya
-           (.text-slate-900, .text-amber-800/70) DIUBAH jadi warna terang khusus mode
-           gelap (lihat aturan html.dark .text-slate-900 dkk di atas) -- jadi hasilnya
-           teks terang di atas krem terang juga = nyaris tak kebaca. Kasih background
-           gelap dgn tint amber di mode gelap, teks terang jadi otomatis kontras. */
-        html.dark .bento-stat-card--accent {
-            background: linear-gradient(160deg, rgba(245, 158, 11, 0.16), rgba(180, 83, 9, 0.12) 130%);
-            border-color: rgba(253, 230, 138, 0.3);
-        }
-        html.dark .bento-stat-card--accent:hover {
-            border-color: rgba(253, 230, 138, 0.5);
-            box-shadow: 0 6px 16px -6px rgba(245, 158, 11, 0.25);
-        }
-
         /* ============================================================
            PALET BRAND BARU: indigo-violet hangat menggantikan biru
            korporat generik. Menimpa utility Tailwind blue-* dengan cara
@@ -619,39 +604,38 @@
         .streak-tier-4 #streak-label-bawah { color: #fff7ed !important; }
         .streak-tier-4 .streak-icon-wrap { background: rgba(255,255,255,.15) !important; color: #fed7aa !important; }
 
-        /* FIX (mode gelap): tier 0-3 di atas hardcode background terang (putih/krem)
-           tanpa varian dark, jadi kartu Streak tetap putih walau html.dark aktif --
-           beda sendiri dari kartu bento lain yang sudah ikut gelap. Tier 4 dibiarkan
-           (sudah gelap + teks putih eksplisit, cocok di kedua mode). */
-        html.dark .streak-tier-0 { background: var(--dark-surface); }
-        html.dark .streak-tier-1 { background: linear-gradient(135deg, var(--dark-surface), rgba(251, 191, 36, 0.10)); border-color: rgba(253, 230, 138, 0.35) !important; }
-        html.dark .streak-tier-2 { background: linear-gradient(135deg, rgba(251, 191, 36, 0.10), rgba(253, 186, 116, 0.14)); border-color: rgba(253, 186, 116, 0.4) !important; }
-        html.dark .streak-tier-3 { background: linear-gradient(135deg, rgba(253, 186, 116, 0.14), rgba(252, 165, 165, 0.14)); border-color: rgba(252, 165, 165, 0.45) !important; box-shadow: 0 0 0 1px rgba(249,115,22,.15), var(--shadow-card); }
-
         /* ============================================================
            EFEK NAMA (mengikuti tier border yang sedang dipakai siswa)
            Dipakai bareng di: header profil, Quiz & Leaderboard, notif
            "ditikung" — supaya efek nama selalu sinkron dg border aktif.
-           ============================================================ */
+
+           CATATAN PERFORMA: dulu animasinya `infinite` -- kalau lagi buka
+           Leaderboard yang isinya belasan/puluhan siswa ber-border
+           perak/emas/permata sekaligus, itu artinya belasan elemen teks
+           dengan `background-clip:text` (mahal di-repaint) animasi TERUS
+           MENERUS tanpa henti -- berat banget di HP/laptop spek rendah.
+           Sekarang animasinya cuma jalan beberapa putaran lalu BERHENTI di
+           frame akhir (masih kelihatan warna gradiennya, cuma gak
+           terus-terusan bikin browser kerja tiap frame). ============================================================ */
         @keyframes shimmerNama { to { background-position: 200% center; } }
 
         .efek-nama-perak {
             background: linear-gradient(90deg, #64748b, #f1f5f9, #94a3b8, #f1f5f9, #64748b);
             background-size: 200% auto;
             -webkit-background-clip: text; background-clip: text; color: transparent;
-            animation: shimmerNama 3s linear infinite; font-weight: 800;
+            animation: shimmerNama 3s linear 2 forwards; font-weight: 800;
         }
         .efek-nama-emas, .gold-name {
             background: linear-gradient(90deg, #b45309, #fde68a, #f59e0b, #fde68a, #b45309);
             background-size: 200% auto;
             -webkit-background-clip: text; background-clip: text; color: transparent;
-            animation: shimmerNama 2.5s linear infinite; font-weight: 800;
+            animation: shimmerNama 2.5s linear 2 forwards; font-weight: 800;
         }
         .efek-nama-permata {
             background: linear-gradient(90deg, #06b6d4, #a78bfa, #f472b6, #a78bfa, #06b6d4);
             background-size: 200% auto;
             -webkit-background-clip: text; background-clip: text; color: transparent;
-            animation: shimmerNama 3s linear infinite; font-weight: 800;
+            animation: shimmerNama 3s linear 2 forwards; font-weight: 800;
         }
         /* Efek nama khusus border pink (Kupu-kupu Prestasi) — selaras dgn warna
            border_pink.jpg, dipakai hanya saat border ini yang sedang dipakai siswa. */
@@ -659,13 +643,23 @@
             background: linear-gradient(90deg, #db2777, #fbcfe8, #f472b6, #fbcfe8, #db2777);
             background-size: 200% auto;
             -webkit-background-clip: text; background-clip: text; color: transparent;
-            animation: shimmerNama 3s linear infinite; font-weight: 800;
+            animation: shimmerNama 3s linear 2 forwards; font-weight: 800;
         }
         .efek-nama-admin {
             background: linear-gradient(90deg, #f59e0b, #fef08a, #facc15, #fef08a, #f59e0b);
             background-size: 200% auto;
             -webkit-background-clip: text; background-clip: text; color: transparent;
-            animation: shimmerNama 2s linear infinite; font-weight: 800;
+            animation: shimmerNama 2s linear 2 forwards; font-weight: 800;
+        }
+
+        /* Hormati pengaturan "Reduce Motion" di OS/browser (banyak dipakai jg di
+           HP/laptop hemat baterai) -- matikan semua animasi terus-menerus. */
+        @media (prefers-reduced-motion: reduce) {
+            .efek-nama-perak, .efek-nama-emas, .gold-name, .efek-nama-permata,
+            .efek-nama-pink, .efek-nama-admin,
+            .streak-flame-icon, .lightning-border-yellow, .badge-dev::after {
+                animation: none !important;
+            }
         }
 
         @keyframes borderLightningShine {
@@ -3757,9 +3751,8 @@
                     row.setAttribute('role', 'button');
                     row.setAttribute('tabindex', '0');
                     row.innerHTML = `
-                        <div class="profile-wrapper w-11 h-11 flex-shrink-0">
-                            <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama)}&background=e0e7ff&color=3730a3&size=120" class="user-avatar" alt="Avatar ${item.nama}">
-                            <img src="${fileBorderById(item.border)}" class="user-border" alt="Border ${item.nama}">
+                        <div class="w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-user text-sm"></i>
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-bold text-slate-800 truncate">${item.nama}</p>
@@ -8494,30 +8487,6 @@
                 img.alt = `Border_${border.nama}`;
             });
             terapkanEfekNamaHeader(border);
-            sinkronBorderKeServer(border.id);
-        }
-
-        // Kirim id border yang sedang dipakai ke server (fire-and-forget) supaya
-        // siswa lain bisa lihat border ini lewat 'Cari Teman' (lihat jalankanPencarianTeman
-        // & endpoint /api/profil/border di app.py). Kalau gagal (mis. lagi offline),
-        // dibiarkan saja -- border tetap kepakai normal secara lokal, cuma belum
-        // ke-sync ke siswa lain sampai berhasil kirim lagi.
-        let _borderTerakhirDisinkron = null;
-        function sinkronBorderKeServer(id) {
-            if (id === _borderTerakhirDisinkron) return; // hindari spam request kalau tidak berubah
-            _borderTerakhirDisinkron = id;
-            fetch('/api/profil/border', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
-            }).catch(() => { _borderTerakhirDisinkron = null; }); // gagal -> coba lagi di panggilan berikutnya
-        }
-
-        // Cari file gambar border dari id-nya (dipakai buat nampilin border siswa
-        // LAIN di hasil 'Cari Teman', bukan cuma border milik sendiri).
-        function fileBorderById(id) {
-            const border = getSemuaBorder().find(b => b.id === id);
-            return border ? border.file : '../static/img/border_pemula.jpg';
         }
 
         // ===== Efek Nama & Badge (ikut tier border yang sedang dipakai) =====
