@@ -120,7 +120,7 @@ users = {
                 'role': 'siswa',
                 'email': 'afrizal@sekolah.sch.id',
                 'fullname': 'AFRIZAL MUSTAQIM',
-                'identity_number': '0067999099',
+                'identity_number': '0067989099',
                 'kelas': 'XII TKJ 3/TAV',
                 'border_aktif': 'starter_pemula'
     },
