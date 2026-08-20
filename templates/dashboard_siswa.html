@@ -1438,32 +1438,32 @@
 
     <div class="flex-1 flex flex-col h-screen overflow-y-auto">
         
-        <header class="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-5 sm:px-8 flex items-center justify-between sticky top-0 z-30">
-            <div class="flex items-center gap-3 transition-all duration-500" id="header-left-group">
-                <button id="btn-toggle-sidebar" onclick="toggleSidebarMobile()" title="Buka menu" aria-label="Buka menu navigasi" class="md:hidden p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors flex-shrink-0">
+        <header class="h-14 sm:h-16 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-3 sm:px-8 flex items-center justify-between sticky top-0 z-30">
+            <div class="flex items-center gap-2 sm:gap-3 transition-all duration-500" id="header-left-group">
+                <button id="btn-toggle-sidebar" onclick="toggleSidebarMobile()" title="Buka menu" aria-label="Buka menu navigasi" class="md:hidden p-2 sm:p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors flex-shrink-0">
                     <i class="fa-solid fa-bars"></i>
                 </button>
-                <div class="flex flex-col items-start justify-center bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-xl transition-all duration-300 dynamic-island-container" id="header-clock-container">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-regular fa-clock text-blue-600 text-xs" aria-hidden="true"></i>
-                        <span id="header-realtime-clock" class="font-bold text-slate-800 text-sm tracking-wider font-mono">00:00:00 WIB</span>
+                <div class="flex flex-col items-start justify-center bg-slate-50 border border-slate-200/80 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl transition-all duration-300 dynamic-island-container" id="header-clock-container">
+                    <div class="flex items-center gap-1.5 sm:gap-2">
+                        <i class="fa-regular fa-clock text-blue-600 text-[10px] sm:text-xs" aria-hidden="true"></i>
+                        <span id="header-realtime-clock" class="font-bold text-slate-800 text-xs sm:text-sm tracking-wider font-mono">00:00:00 WIB</span>
                     </div>
-                    <span id="header-realtime-date" class="text-[10px] font-semibold text-slate-400 -mt-0.5">Memuat tanggal...</span>
+                    <span id="header-realtime-date" class="text-[9px] sm:text-[10px] font-semibold text-slate-400 -mt-0.5">Memuat tanggal...</span>
                 </div>
             </div>
 
             <!-- Dynamic Island notifikasi: nangkring di tengah header, antara jam realtime & menu profil -->
-            <div id="dynamic-notification-island" class="items-center gap-2 bg-amber-300 text-slate-900 px-3.5 py-1.5 rounded-2xl border-2 border-amber-500 lightning-border-yellow shadow-lg">
-                <div class="profile-wrapper w-6 h-6 flex-shrink-0">
+            <div id="dynamic-notification-island" class="items-center gap-1.5 sm:gap-2 bg-amber-300 text-slate-900 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-2xl border-2 border-amber-500 lightning-border-yellow shadow-lg">
+                <div class="profile-wrapper w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0">
                     <img id="island-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar" alt="Avatar">
                     <img src="../static/img/border_pemula.jpg" class="user-border" alt="Border_Pemula">
                 </div>
-                <span id="island-notification-text" class="text-[11px] font-extrabold text-slate-900 tracking-wide truncate">Notifikasi Aktif</span>
+                <span id="island-notification-text" class="text-[10px] sm:text-[11px] font-extrabold text-slate-900 tracking-wide truncate">Notifikasi Aktif</span>
             </div>
 
-            <div class="flex items-center gap-2 sm:gap-3" id="header-right-group">
+            <div class="flex items-center gap-1 sm:gap-3" id="header-right-group">
                 <div class="relative">
-                    <button id="btn-bell" onclick="toggleBellDropdown(event)" class="p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 relative transition-colors" aria-label="Notifikasi" aria-haspopup="true" aria-expanded="false">
+                    <button id="btn-bell" onclick="toggleBellDropdown(event)" class="p-2 sm:p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 relative transition-colors text-sm sm:text-base" aria-label="Notifikasi" aria-haspopup="true" aria-expanded="false">
                         <i class="fa-regular fa-bell" aria-hidden="true"></i>
                         <span id="badge-bell-dot" class="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full hidden"></span>
                     </button>
@@ -1483,7 +1483,7 @@
                     </div>
                 </div>
 
-                <button id="btn-dark-mode-toggle" onclick="toggleDarkMode()" title="Mode Gelap - biar mata gak capek pas begadang ngerjain tugas" aria-label="Ubah mode gelap/terang" class="p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 relative transition-colors flex-shrink-0">
+                <button id="btn-dark-mode-toggle" onclick="toggleDarkMode()" title="Mode Gelap - biar mata gak capek pas begadang ngerjain tugas" aria-label="Ubah mode gelap/terang" class="p-2 sm:p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 relative transition-colors flex-shrink-0 text-sm sm:text-base">
                     <span class="slot-ikon-tema icon-matahari-wrap">
                         <i class="fa-solid fa-sun text-amber-400" aria-hidden="true"></i>
                     </span>
@@ -1497,7 +1497,7 @@
                      disembunyikan otomatis saat Mode Gelap aktif lewat JS
                      (lihat tampilkanTombolAksenTema) -->
                 <div class="relative flex" id="wrapper-btn-aksen-tema">
-                    <button id="btn-aksen-tema" onclick="toggleDropdownAksenTema(event)" title="Ganti warna aksen dashboard" aria-label="Ganti warna aksen dashboard" aria-haspopup="true" aria-expanded="false" class="p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 relative transition-colors">
+                    <button id="btn-aksen-tema" onclick="toggleDropdownAksenTema(event)" title="Ganti warna aksen dashboard" aria-label="Ganti warna aksen dashboard" aria-haspopup="true" aria-expanded="false" class="p-2 sm:p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 relative transition-colors text-sm sm:text-base">
                         <i class="fa-solid fa-palette" aria-hidden="true"></i>
                     </button>
 
@@ -1533,8 +1533,8 @@
                 </div>
                 
                 <div class="relative">
-                    <div id="profile-menu-trigger" onclick="toggleProfileDropdown(event)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleProfileDropdown(event);}" aria-label="Buka menu profil" class="flex items-center gap-3 pl-3 border-l border-slate-200 cursor-pointer select-none py-1">
-                        <div class="profile-wrapper">
+                    <div id="profile-menu-trigger" onclick="toggleProfileDropdown(event)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleProfileDropdown(event);}" aria-label="Buka menu profil" class="flex items-center gap-3 pl-2 sm:pl-3 border-l border-slate-200 cursor-pointer select-none py-1">
+                        <div class="profile-wrapper w-9 h-9 sm:w-11 sm:h-11 flex-shrink-0">
                             <img id="header-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" class="user-avatar" alt="Avatar">
                             <img src="../static/img/border_pemula.jpg" class="user-border" alt="Border_Pemula">
                         </div>
@@ -1600,7 +1600,7 @@
                 <div id="banner-sapaan" class="relative rounded-[16px] p-7 sm:p-8 text-white overflow-hidden">
                     <div class="max-w-xl relative z-10">
                         <span class="bg-white/15 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider mb-3 inline-block">Tahun Ajaran 2026/2027</span>
-                        <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 leading-tight">Selamat Pagi, <span class="nama-siswa-efektif">{{ nama }}</span>! 👋</h2>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 leading-tight"><span id="teks-sapaan-waktu">Selamat Pagi</span>, <span class="nama-siswa-efektif">{{ nama }}</span>! 👋</h2>
                         <p class="banner-sapaan-sub text-sm leading-relaxed">Jangan lupa masuk sebelum jam 06:30 WIB hari ini. Semoga harimu menyenangkan di sekolah!</p>
                     </div>
                     <svg class="banner-sapaan-deco absolute right-0 top-0 h-full w-auto pointer-events-none" viewBox="0 0 320 260" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -4892,6 +4892,28 @@
         //   teks/kelas secara langsung tanpa membangun ulang DOM. Render penuh tetap
         //   terjadi otomatis saat: buka tab Tugas, ada tugas baru/ditarik guru
         //   (event 'storage' & sinkronisasi berkala), atau tugas berhasil dikirim.
+        // ===== Sapaan banner beranda ("Selamat Pagi/Siang/Malam") ngikutin jam
+        // realtime (getAccurateNow(), sumber jam yang sama dgn jam header) — jadi
+        // otomatis ganti teks pas jam device lewat batas pagi->siang->malam,
+        // tanpa perlu refresh halaman. Cuma 3 kategori sesuai permintaan (tidak
+        // ada "Selamat Sore" terpisah): 00:00-10:59 Pagi, 11:00-17:59 Siang,
+        // 18:00-23:59 Malam.
+        function dapatkanSapaanWaktu(now) {
+            const jam = now.getHours();
+            if (jam < 11) return 'Selamat Pagi';
+            if (jam < 18) return 'Selamat Siang';
+            return 'Selamat Malam';
+        }
+
+        let _sapaanTerakhirDitampilkan = null;
+        function updateSapaanBanner(now) {
+            const sapaan = dapatkanSapaanWaktu(now);
+            if (sapaan === _sapaanTerakhirDitampilkan) return;
+            _sapaanTerakhirDitampilkan = sapaan;
+            const elSapaan = document.getElementById('teks-sapaan-waktu');
+            if (elSapaan) elSapaan.textContent = sapaan;
+        }
+
         let _menitTerakhirDitampilkan = null;
         function updateHeaderClock() {
             const now = getAccurateNow();
@@ -4900,6 +4922,7 @@
             const seconds = String(now.getSeconds()).padStart(2, '0');
             const clockEl = document.getElementById('header-realtime-clock');
             if (clockEl) clockEl.innerText = `${hours}:${minutes}:${seconds} WIB`;
+            updateSapaanBanner(now);
 
             if (minutes !== _menitTerakhirDitampilkan) {
                 _menitTerakhirDitampilkan = minutes;
