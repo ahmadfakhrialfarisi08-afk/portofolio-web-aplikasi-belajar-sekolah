@@ -1274,11 +1274,28 @@
            ============================================================ */
         #layar-masuk-dashboard {
             position: fixed; inset: 0; z-index: 9999;
-            background: linear-gradient(160deg, #14112b 0%, #4338ca 55%, #5b4fe9 100%);
+            background:
+                radial-gradient(circle at 18% 20%, rgba(99,102,241,0.45), transparent 52%),
+                radial-gradient(circle at 82% 28%, rgba(16,185,129,0.4), transparent 52%),
+                radial-gradient(circle at 50% 95%, rgba(250,204,21,0.18), transparent 60%),
+                linear-gradient(160deg, #0b1120 0%, #111827 55%, #0b1120 100%);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: opacity 0.6s ease, visibility 0.6s ease;
+            overflow: hidden;
         }
         #layar-masuk-dashboard.selesai { opacity: 0; visibility: hidden; pointer-events: none; }
+        /* aksen kisi halus, sama seperti di layar "Berhasil masuk!" pada halaman login */
+        #layar-masuk-dashboard::before {
+            content: "";
+            position: absolute; inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+            background-size: 26px 26px;
+            opacity: 0.5;
+            z-index: 0;
+            animation: masukDashboardKisiGeser 22s linear infinite;
+        }
+        @keyframes masukDashboardKisiGeser { 0% { background-position: 0 0; } 100% { background-position: 260px 260px; } }
+        .masuk-dashboard-lencana, .masuk-dashboard-spinner, .masuk-dashboard-teks { position: relative; z-index: 1; }
 
         .masuk-dashboard-lencana {
             width: 80px; height: 80px; border-radius: 24px;
