@@ -115,8 +115,8 @@ users = {
             'border_aktif': 'starter_pemula'
     },
     'afrizal': {
-                'username': 'afrizal',
-                'password': 'afrizal345',
+                'username': 'afrizalmustaqimm',
+                'password': 'afrizalmustaqim',
                 'role': 'siswa',
                 'email': 'afrizal@sekolah.sch.id',
                 'fullname': 'AFRIZAL MUSTAQIM',
