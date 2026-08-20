@@ -108,7 +108,7 @@ users = {
             'username': 'setiawan',
             'password': 'setiawan',
             'role': 'siswa',
-            'email': 'waldi@sekolah.sch.id',
+            'email': 'setiawan@sekolah.sch.id',
             'fullname': 'SETIAWAN SAPUTRA',
             'identity_number': '0069999999',
             'kelas': 'XII TKJ 3/TAV',
