@@ -63,7 +63,8 @@ users = {
         'email': 'ahmad.fakhrialfarisi08@gmail.com',
         'fullname': 'AHMAD FAKHRI AL FARISI',
         'identity_number': '0051234567',
-        'kelas': 'XII TKJ 3/TAV'
+        'kelas': 'XII TKJ 3/TAV',
+        'border_aktif': 'admin_dev'
     },
  
     
@@ -82,7 +83,8 @@ users = {
         'email': 'syam@sekolah.sch.id',
         'fullname': 'SYAM KHOERATUL MUKMIN',
         'identity_number': '0059999999',
-        'kelas': 'XII TKJ 3/TAV'
+        'kelas': 'XII TKJ 3/TAV',
+        'border_aktif': 'starter_pemula'
     },
     'waldi': {
         'username': 'waldi',
@@ -91,7 +93,8 @@ users = {
         'email': 'waldi@sekolah.sch.id',
         'fullname': 'WALDI WAHIDIN',
         'identity_number': '0059999998',
-        'kelas': 'XII TKJ 3/TAV'
+        'kelas': 'XII TKJ 3/TAV',
+        'border_aktif': 'starter_pemula'
     },
     'fadzri': {
         'username': 'fadzri',
@@ -100,7 +103,8 @@ users = {
         'email': 'fadzri@sekolah.sch.id',
         'fullname': 'MUHAMMAD FADZRI',
         'identity_number': '0059999997',
-        'kelas': 'XII TKJ 3/TAV'
+        'kelas': 'XII TKJ 3/TAV',
+        'border_aktif': 'starter_pemula'
     }
 }
  
@@ -428,7 +432,8 @@ def register():
             'role': normalized_role,
             'email': email,
             'fullname': fullname,
-            'identity_number': identity_number
+            'identity_number': identity_number,
+            'border_aktif': 'starter_pemula' if normalized_role == 'siswa' else None
         }
  
         flash('Akun berhasil dibuat! Silakan masuk dengan akun baru Anda.', 'success')
@@ -758,9 +763,33 @@ def api_teman_cari():
                 'username': u['username'],
                 'nama': u['fullname'],
                 'kelas': u.get('kelas', '-'),
-                'status': _status_pertemanan(me, u['username'])
+                'status': _status_pertemanan(me, u['username']),
+                'border': u.get('border_aktif') or 'starter_pemula'
             })
     return jsonify(success=True, hasil=hasil)
+
+
+@app.route('/api/profil/border', methods=['POST'])
+def api_profil_border():
+    """Simpan id border yang sedang dipakai siswa ini ke server (bukan cuma
+    localStorage), supaya siswa LAIN yang lihat lewat 'Cari Teman' bisa
+    kelihatan foto profil (border) yang sedang beneran dipakai orangnya --
+    bukan cuma placeholder generic. Cukup simpan id string-nya saja; daftar
+    lengkap border (nama, minPoin, file gambar) tetap didefinisikan di
+    frontend (DAFTAR_BORDER_* di dashboard_siswa.html), backend gak perlu
+    tahu detail itu."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login.'), 401
+
+    data = request.get_json(silent=True) or {}
+    border_id = (data.get('id') or '').strip()
+    if not border_id:
+        return jsonify(success=False, message='ID border kosong.'), 400
+
+    me = session['user']['username']
+    if me in users:
+        users[me]['border_aktif'] = border_id
+    return jsonify(success=True)
 
 
 @app.route('/api/teman/relasi', methods=['GET'])

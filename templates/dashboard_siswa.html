@@ -388,6 +388,21 @@
             transform: translateY(-1px);
         }
 
+        /* FIX (mode gelap): sama seperti .streak-tier-*, kartu accent ini hardcode
+           background krem terang tanpa varian dark. Sementara itu teks di dalamnya
+           (.text-slate-900, .text-amber-800/70) DIUBAH jadi warna terang khusus mode
+           gelap (lihat aturan html.dark .text-slate-900 dkk di atas) -- jadi hasilnya
+           teks terang di atas krem terang juga = nyaris tak kebaca. Kasih background
+           gelap dgn tint amber di mode gelap, teks terang jadi otomatis kontras. */
+        html.dark .bento-stat-card--accent {
+            background: linear-gradient(160deg, rgba(245, 158, 11, 0.16), rgba(180, 83, 9, 0.12) 130%);
+            border-color: rgba(253, 230, 138, 0.3);
+        }
+        html.dark .bento-stat-card--accent:hover {
+            border-color: rgba(253, 230, 138, 0.5);
+            box-shadow: 0 6px 16px -6px rgba(245, 158, 11, 0.25);
+        }
+
         /* ============================================================
            PALET BRAND BARU: indigo-violet hangat menggantikan biru
            korporat generik. Menimpa utility Tailwind blue-* dengan cara
