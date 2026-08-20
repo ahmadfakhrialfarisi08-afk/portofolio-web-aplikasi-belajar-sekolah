@@ -113,7 +113,17 @@ users = {
             'identity_number': '0069999999',
             'kelas': 'XII TKJ 3/TAV',
             'border_aktif': 'starter_pemula'
-        },
+    },
+    'afrizal': {
+                'username': 'afrizal',
+                'password': 'afrizal345',
+                'role': 'siswa',
+                'email': 'afrizal@sekolah.sch.id',
+                'fullname': 'AFRIZAL MUSTAQIM',
+                'identity_number': '0067999099',
+                'kelas': 'XII TKJ 3/TAV',
+                'border_aktif': 'starter_pemula'
+    },
     'fadzri': {
         'username': 'fadzri',
         'password': 'fadzri123',
