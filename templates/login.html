@@ -12,6 +12,7 @@
   <style>
     * { box-sizing: border-box; font-family: 'Poppins', Arial, sans-serif; }
 
+    html, body { height: 100%; }
     body {
       min-height: 100vh;
       margin: 0;
@@ -23,6 +24,43 @@
       position: relative;
     }
 
+    /* ===================== LAYAR LOADING ===================== */
+    #layar-loading {
+      position: fixed; inset: 0; z-index: 50;
+      background: linear-gradient(160deg, #16a34a 0%, #2563eb 100%);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    #layar-loading.selesai { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    .loading-lencana {
+      width: 84px; height: 84px; border-radius: 26px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.3);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 22px;
+      animation: loadingNapas 1.4s ease-in-out infinite;
+    }
+    @keyframes loadingNapas { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+    .loading-lencana svg { width: 44px; height: 44px; }
+
+    .loading-spinner {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.28);
+      border-top-color: #ffffff;
+      animation: putarSpinner 0.8s linear infinite;
+      margin-bottom: 14px;
+    }
+    @keyframes putarSpinner { to { transform: rotate(360deg); } }
+
+    .loading-teks { color: #ffffff; font-size: 13.5px; font-weight: 600; letter-spacing: 0.3px; opacity: 0.92; }
+    .loading-titik::after { content: ''; animation: titikJalan 1.2s steps(4) infinite; }
+    @keyframes titikJalan { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } 100% { content: ''; } }
+
+    .loading-bar-track { width: 160px; height: 5px; border-radius: 4px; background: rgba(255,255,255,0.22); margin-top: 16px; overflow: hidden; }
+    .loading-bar-isi { height: 100%; width: 30%; border-radius: 4px; background: #facc15; animation: barJalan 1s ease-in-out infinite; }
+    @keyframes barJalan { 0% { transform: translateX(-100%); } 100% { transform: translateX(340%); } }
+
     /* Gumpalan warna blur di background -- kesan berkelas, bukan rame */
     .bg-blob { position: fixed; border-radius: 50%; filter: blur(90px); opacity: 0.4; z-index: 0; pointer-events: none; }
     .bg-blob.biru { width: 480px; height: 480px; background: #3b82f6; top: -140px; left: -120px; animation: mengambang1 14s ease-in-out infinite; }
@@ -32,8 +70,7 @@
     @keyframes mengambang2 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-50px,-40px) scale(1.1); } }
     @keyframes mengambang3 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px,-30px) scale(1.05); } }
 
-    /* Wrapper -- panel ilustrasi (kiri) + kartu login (kanan), masuk
-       dari arah BERLAWANAN barengan -- itu yang bikin ada transisinya. */
+    /* Wrapper -- panel ilustrasi (kiri) + kartu login (kanan) */
     .login-wrapper {
       position: relative;
       z-index: 1;
@@ -46,10 +83,6 @@
       box-shadow: 0 25px 55px -12px rgba(30,41,59,0.22), 0 10px 20px -8px rgba(30,41,59,0.1);
     }
 
-    /* Panel ilustrasi -- pengganti "video gif": animasi loop terus
-       menerus dibikin dari SVG/emoji + CSS murni (ringan, bebas hak
-       cipta), dengan garis cahaya yang menyapu pelan meniru gerakan
-       video di background. */
     .illustration-panel {
       flex: 1 1 46%;
       position: relative;
@@ -63,7 +96,7 @@
       overflow: hidden;
       opacity: 0;
       transform: translateX(-40px);
-      animation: panelMasukKiri 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation: panelMasukKiri 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards;
     }
     @keyframes panelMasukKiri { to { opacity: 1; transform: translateX(0); } }
 
@@ -98,8 +131,6 @@
     .stage-icon.i1 { animation-delay: 0s; }
     .stage-icon.i2 { animation-delay: 3s; }
     .stage-icon.i3 { animation-delay: 6s; }
-    /* Tiap ikon "tampil" gantian 3 detik dari siklus 9 detik, dengan
-       float ringan selama tampil -- kayak cuplikan video berulang. */
     @keyframes iconSiklus {
       0%   { opacity: 0; transform: translateY(10px) scale(0.85); }
       4%   { opacity: 1; transform: translateY(0) scale(1); }
@@ -117,42 +148,120 @@
       flex: 1 1 54%;
       position: relative;
       background-color: #ffffff;
-      padding: 40px 34px;
+      padding: 36px 34px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       opacity: 0;
       transform: translateX(40px);
-      animation: panelMasukKanan 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation: panelMasukKanan 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards;
     }
     @keyframes panelMasukKanan { to { opacity: 1; transform: translateX(0); } }
 
-    .login-container::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 24px; right: 24px;
-      height: 4px;
-      border-radius: 0 0 4px 4px;
-      background: linear-gradient(90deg, #22c55e 0%, #facc15 50%, #3b82f6 100%);
-      background-size: 200% 100%;
-      animation: geserGradasi 6s linear infinite;
+    /* ===================== MASKOT BARU: "Robi" si robot bulat ===================== */
+    .maskot-wrap {
+      width: 128px; height: 128px;
+      margin-bottom: 2px;
+      opacity: 0; transform: scale(0.5) translateY(16px);
+      animation: maskotMasuk 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s forwards;
+      filter: drop-shadow(0 10px 14px rgba(30,41,59,0.18));
+      cursor: pointer;
+      user-select: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
-    @keyframes geserGradasi { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+    @keyframes maskotMasuk { to { opacity: 1; transform: scale(1) translateY(0); } }
+    .maskot-wrap:active { transform: scale(0.94); }
 
-    .logo { width: 110px; margin-bottom: 12px; object-fit: contain; opacity: 0; animation: logoMasuk 0.6s ease-out 0.25s forwards; }
-    @keyframes logoMasuk { from { opacity: 0; transform: scale(0.8) rotate(-6deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+    .maskot-wrap svg { width: 100%; height: 100%; overflow: visible; }
 
-    h2 { color: #1e293b; margin: 0 0 4px 0; font-size: 21px; font-weight: 700; opacity: 0; animation: teksMasuk 0.5s ease-out 0.35s forwards; }
-    .subtitle { color: #64748b; font-size: 12.5px; margin: 0 0 16px 0; font-weight: 500; opacity: 0; animation: teksMasuk 0.5s ease-out 0.45s forwards; }
+    .m-bayangan { transform-origin: 80px 148px; animation: bayanganNapas 2.6s ease-in-out infinite; }
+    @keyframes bayanganNapas { 0%, 100% { transform: scaleX(1); opacity: 0.14; } 50% { transform: scaleX(0.82); opacity: 0.08; } }
+
+    /* mengambang pelan terus menerus -- state idle */
+    .m-badan-grup { transform-box: fill-box; transform-origin: center; animation: robiMelayang 2.6s ease-in-out infinite; }
+    @keyframes robiMelayang { 0%, 100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-6px) rotate(1.5deg); } }
+
+    /* antena berdenyut */
+    .m-antena-bola { animation: antenaBerkedip 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+    @keyframes antenaBerkedip { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.82); } }
+
+    .m-pupil { transition: transform 0.12s ease-out; }
+    .m-mata-tutup { transform-box: fill-box; transform-origin: center; transition: transform 0.2s ease; transform: scaleY(1); }
+    .m-pipi { opacity: 0; transition: opacity 0.3s ease; }
+    .m-mulut { transition: d 0.25s ease, transform 0.25s ease; transform-box: fill-box; transform-origin: center; }
+    .m-lengan { transform-box: fill-box; transform-origin: top center; transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .m-lengan-kiri { transform: rotate(0deg); }
+    .m-lengan-kanan { transform: rotate(0deg); }
+    .m-zzz { opacity: 0; transition: opacity 0.3s ease; font-family: 'Poppins', Arial, sans-serif; font-weight: 700; fill: #ffffff; }
+    .m-mata-kejut { opacity: 0; transition: opacity 0.15s ease; }
+
+    /* kedip acak saat idle */
+    .maskot-wrap.kedip .m-mata-tutup { transform: scaleY(0.08); }
+
+    /* password disembunyikan & sedang difokus -> Robi merem, "Zzz" muncul, lengan turun santai */
+    .maskot-wrap.tutup-mata .m-badan-grup { animation-play-state: paused; transform: translateY(-2px) rotate(0deg); }
+    .maskot-wrap.tutup-mata .m-mata-tutup { transform: scaleY(0.08); }
+    .maskot-wrap.tutup-mata .m-pipi { opacity: 0.8; }
+    .maskot-wrap.tutup-mata .m-zzz { opacity: 1; animation: zzzMelayang 1.6s ease-in-out infinite; }
+    @keyframes zzzMelayang { 0% { transform: translate(0,0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translate(6px,-14px); opacity: 0; } }
+    .maskot-wrap.tutup-mata .m-lengan-kiri { transform: rotate(-14deg); }
+    .maskot-wrap.tutup-mata .m-lengan-kanan { transform: rotate(14deg); }
+
+    /* password ditampilkan & difokus -> Robi kaget/melek lebar */
+    .maskot-wrap.melek-lebar .m-badan-grup { animation-play-state: paused; transform: translateY(-4px) rotate(0deg); }
+    .maskot-wrap.melek-lebar .m-mata-normal { opacity: 0; }
+    .maskot-wrap.melek-lebar .m-mata-kejut { opacity: 1; }
+    .maskot-wrap.melek-lebar .m-lengan-kiri { transform: rotate(-28deg); }
+    .maskot-wrap.melek-lebar .m-lengan-kanan { transform: rotate(28deg); }
+
+    /* senyum lebar saat username terisi */
+    .maskot-wrap.senang .m-mulut { transform: scaleX(1.2) translateY(1px); }
+
+    /* ===== reaksi saat diklik (acak) ===== */
+    .maskot-wrap.reaksi-loncat .m-badan-grup { animation: reaksiLoncat 0.6s ease-in-out; }
+    @keyframes reaksiLoncat { 0%, 100% { transform: translateY(0) rotate(0); } 35% { transform: translateY(-22px) rotate(-6deg); } 60% { transform: translateY(0) rotate(4deg); } 80% { transform: translateY(-6px) rotate(-2deg); } }
+
+    .maskot-wrap.reaksi-putar .m-badan-grup { animation: reaksiPutar 0.6s ease-in-out; }
+    @keyframes reaksiPutar { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
+
+    .maskot-wrap.reaksi-goyang .m-badan-grup { animation: reaksiGoyang 0.5s ease-in-out; }
+    @keyframes reaksiGoyang { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-14deg); } 40% { transform: rotate(12deg); } 60% { transform: rotate(-8deg); } 80% { transform: rotate(6deg); } }
+
+    .maskot-wrap.reaksi-cinta .m-mata-normal { opacity: 0; }
+    .maskot-wrap.reaksi-cinta .m-mata-cinta { opacity: 1; }
+    .m-mata-cinta { opacity: 0; transition: opacity 0.15s ease; }
+    .maskot-wrap.reaksi-cinta .m-lengan-kiri { transform: rotate(-24deg); }
+    .maskot-wrap.reaksi-cinta .m-lengan-kanan { transform: rotate(24deg); }
+
+    .maskot-wrap.reaksi-wink .m-mata-kiri-normal { transform: scaleY(0.08); }
+
+    /* bubble teks kecil di atas maskot saat diklik */
+    .maskot-gelembung {
+      position: absolute; left: 50%; top: -6px; transform: translate(-50%, -100%) scale(0.7);
+      background: #1e293b; color: #fff; font-size: 11.5px; font-weight: 600;
+      padding: 5px 10px; border-radius: 8px; white-space: nowrap;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 5;
+    }
+    .maskot-gelembung::after {
+      content: ""; position: absolute; left: 50%; bottom: -5px; transform: translateX(-50%);
+      border: 5px solid transparent; border-top-color: #1e293b;
+    }
+    .maskot-gelembung.tampil { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+    .maskot-area { position: relative; display: flex; justify-content: center; }
+
+    h2 { color: #1e293b; margin: 6px 0 4px 0; font-size: 21px; font-weight: 700; opacity: 0; animation: teksMasuk 0.5s ease-out 0.5s forwards; }
+    .subtitle { color: #64748b; font-size: 12.5px; margin: 0 0 16px 0; font-weight: 500; opacity: 0; animation: teksMasuk 0.5s ease-out 0.6s forwards; }
     @keyframes teksMasuk { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
     form { width: 100%; display: flex; flex-direction: column; }
 
     .field { opacity: 0; transform: translateY(10px); animation: fieldMasuk 0.5s ease-out forwards; }
-    .field:nth-of-type(1) { animation-delay: 0.55s; }
-    .field:nth-of-type(2) { animation-delay: 0.65s; }
-    .field:nth-of-type(3) { animation-delay: 0.75s; }
+    .field:nth-of-type(1) { animation-delay: 0.65s; }
+    .field:nth-of-type(2) { animation-delay: 0.75s; }
+    .field:nth-of-type(3) { animation-delay: 0.85s; }
     @keyframes fieldMasuk { to { opacity: 1; transform: translateY(0); } }
 
     label { text-align: left; display: block; margin-top: 12px; margin-bottom: 6px; color: #475569; font-size: 13px; font-weight: 600; }
@@ -165,25 +274,45 @@
     select:hover, input:hover { border-color: #94a3b8; }
     select:focus, input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.15); transform: translateY(-1px); }
 
-    button {
+    /* Wrapper input password + tombol toggle lihat/sembunyikan */
+    .password-box { position: relative; width: 100%; }
+    .password-box input { padding-right: 44px; }
+    /* sembunyikan ikon reveal bawaan browser (Edge/IE) biar gak dobel sama tombol kita */
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear { display: none; width: 0; height: 0; }
+    .toggle-password {
+      position: absolute; top: 50%; right: 5px; transform: translateY(-50%);
+      width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+      background: transparent; border: none; border-radius: 8px; cursor: pointer; padding: 0;
+      color: #64748b; transition: color 0.2s ease, background-color 0.2s ease;
+      z-index: 2;
+    }
+    .toggle-password:hover { color: #2563eb; background-color: #eff6ff; }
+    .toggle-password:focus-visible { outline: 2px solid #3b82f6; outline-offset: 1px; }
+    .toggle-password svg { width: 19px; height: 19px; pointer-events: none; }
+    .toggle-password .mata-tertutup { display: none; }
+    .toggle-password.aktif .mata-terbuka { display: none; }
+    .toggle-password.aktif .mata-tertutup { display: block; }
+
+    button.tombol-submit {
       margin-top: 22px; width: 100%; padding: 13px;
       background: linear-gradient(135deg, #16a34a 0%, #2563eb 100%);
       color: #ffffff; border: none; border-radius: 10px; font-weight: 700;
       letter-spacing: 0.2px; cursor: pointer; font-size: 15px;
       position: relative; overflow: hidden; isolation: isolate;
       opacity: 0; transform: translateY(10px);
-      animation: fieldMasuk 0.5s ease-out 0.85s forwards;
+      animation: fieldMasuk 0.5s ease-out 0.95s forwards;
       transition: box-shadow 0.25s ease, transform 0.1s ease;
       box-shadow: 0 8px 18px -6px rgba(37,99,235,0.45);
     }
-    button::before {
+    button.tombol-submit::before {
       content: ""; position: absolute; inset: 0;
       background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.35) 50%, transparent 80%);
       transform: translateX(-120%); transition: transform 0.6s ease; z-index: -1;
     }
-    button:hover::before { transform: translateX(120%); }
-    button:hover { box-shadow: 0 10px 24px -6px rgba(37,99,235,0.55); }
-    button:active { transform: scale(0.98); }
+    button.tombol-submit:hover::before { transform: translateX(120%); }
+    button.tombol-submit:hover { box-shadow: 0 10px 24px -6px rgba(37,99,235,0.55); }
+    button.tombol-submit:active { transform: scale(0.98); }
 
     .flash-container { width: 100%; margin-top: 14px; }
     .flash-msg { padding: 10px 12px; border-radius: 8px; font-size: 13px; text-align: center; font-weight: 500; }
@@ -192,7 +321,7 @@
     @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
     @keyframes popMasuk { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 
-    .bottom-links { margin-top: 18px; width: 100%; display: flex; justify-content: space-between; font-size: 13px; opacity: 0; animation: teksMasuk 0.5s ease-out 0.95s forwards; }
+    .bottom-links { margin-top: 18px; width: 100%; display: flex; justify-content: space-between; font-size: 13px; opacity: 0; animation: teksMasuk 0.5s ease-out 1.05s forwards; }
     .link { position: relative; color: #2563eb; text-decoration: none; font-weight: 500; cursor: pointer; }
     .link::after { content: ""; position: absolute; left: 0; bottom: -2px; width: 0%; height: 1.5px; background: #2563eb; transition: width 0.25s ease; }
     .link:hover::after { width: 100%; }
@@ -210,6 +339,20 @@
   </style>
 </head>
 <body>
+
+<!-- Layar loading -->
+<div id="layar-loading">
+  <div class="loading-lencana">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3v3M9 3v3M15 3v3M4 9h16v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9Z"/>
+      <circle cx="9" cy="14" r="1.4" fill="#ffffff" stroke="none"/>
+      <circle cx="15" cy="14" r="1.4" fill="#ffffff" stroke="none"/>
+    </svg>
+  </div>
+  <div class="loading-spinner"></div>
+  <p class="loading-teks">Menyiapkan portal<span class="loading-titik"></span></p>
+  <div class="loading-bar-track"><div class="loading-bar-isi"></div></div>
+</div>
 
 <div class="bg-blob biru"></div>
 <div class="bg-blob hijau"></div>
@@ -235,7 +378,76 @@
 
   <!-- Kartu login -->
   <div class="login-container">
-    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSeyF2mMXxr-Rex9wZLBTU8eRGAelTMK_FPJ0aRJOxzUg&s " alt="Logo Sekolah" class="logo" />
+
+    <div class="maskot-area">
+      <div class="maskot-gelembung" id="maskotGelembung">Hai!</div>
+      <div class="maskot-wrap" id="maskotWrap" role="button" tabindex="0" aria-label="Maskot Robi, klik untuk say hi">
+        <svg viewBox="0 0 160 160">
+          <ellipse class="m-bayangan" cx="80" cy="150" rx="42" ry="7" fill="#1e293b"/>
+
+          <g class="m-badan-grup">
+            <!-- antena -->
+            <line x1="80" y1="20" x2="80" y2="6" stroke="#2563eb" stroke-width="4" stroke-linecap="round"/>
+            <circle class="m-antena-bola" cx="80" cy="6" r="6" fill="#facc15"/>
+
+            <!-- lengan kiri & kanan -->
+            <rect class="m-lengan m-lengan-kiri" x="16" y="70" width="12" height="34" rx="6" fill="#2563eb"/>
+            <rect class="m-lengan m-lengan-kanan" x="132" y="70" width="12" height="34" rx="6" fill="#2563eb"/>
+
+            <!-- badan bulat -->
+            <circle cx="80" cy="86" r="62" fill="#ffffff" stroke="#2563eb" stroke-width="4"/>
+            <circle cx="80" cy="86" r="62" fill="url(#gradBadan)" opacity="0.1"/>
+
+            <!-- layar wajah -->
+            <rect x="34" y="58" width="92" height="60" rx="26" fill="#1e293b"/>
+
+            <!-- pipi blush -->
+            <ellipse class="m-pipi" cx="46" cy="100" rx="9" ry="5.5" fill="#fb7185"/>
+            <ellipse class="m-pipi" cx="114" cy="100" rx="9" ry="5.5" fill="#fb7185"/>
+
+            <!-- mata normal -->
+            <g class="m-mata-normal">
+              <g class="m-mata-kiri-normal">
+                <ellipse class="m-mata-tutup" cx="58" cy="88" rx="10" ry="12" fill="#7dd3fc"/>
+                <circle class="m-pupil" id="pupilKiri" cx="58" cy="88" r="4.5" fill="#0f172a"/>
+              </g>
+              <g class="m-mata-kanan-normal">
+                <ellipse class="m-mata-tutup" cx="102" cy="88" rx="10" ry="12" fill="#7dd3fc"/>
+                <circle class="m-pupil" id="pupilKanan" cx="102" cy="88" r="4.5" fill="#0f172a"/>
+              </g>
+            </g>
+
+            <!-- mata kejut (saat password ditampilkan) -->
+            <g class="m-mata-kejut">
+              <circle cx="58" cy="88" r="12" fill="#7dd3fc"/>
+              <circle cx="58" cy="88" r="5" fill="#0f172a"/>
+              <circle cx="102" cy="88" r="12" fill="#7dd3fc"/>
+              <circle cx="102" cy="88" r="5" fill="#0f172a"/>
+            </g>
+
+            <!-- mata cinta (reaksi klik) -->
+            <g class="m-mata-cinta">
+              <path d="M52 84 a5 5 0 0 1 10 0 c0 4 -5 8 -5 8 s-5 -4 -5 -8Z" fill="#fb7185"/>
+              <path d="M96 84 a5 5 0 0 1 10 0 c0 4 -5 8 -5 8 s-5 -4 -5 -8Z" fill="#fb7185"/>
+            </g>
+
+            <!-- Zzz saat merem -->
+            <text class="m-zzz" x="112" y="70" font-size="13">Z</text>
+            <text class="m-zzz" x="120" y="60" font-size="10" style="animation-delay:0.3s">z</text>
+
+            <!-- mulut -->
+            <path class="m-mulut" d="M66 104 Q80 112 94 104" stroke="#7dd3fc" stroke-width="4" fill="none" stroke-linecap="round"/>
+          </g>
+
+          <defs>
+            <linearGradient id="gradBadan" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#16a34a"/>
+              <stop offset="100%" stop-color="#2563eb"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </div>
 
     <h2>LOGIN SEKOLAH</h2>
     <p class="subtitle">Masuk untuk melanjutkan ke Arcana Smart School</p>
@@ -259,10 +471,22 @@
 
       <div class="field">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="Masukkan password" required />
+        <div class="password-box">
+          <input type="password" id="password" name="password" placeholder="Masukkan password" required autocomplete="off" />
+          <button type="button" class="toggle-password" id="togglePassword" aria-label="Lihat password" title="Lihat password">
+            <svg class="mata-terbuka" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg class="mata-tertutup" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.7 19.7 0 0 1 5.06-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a19.8 19.8 0 0 1-3.22 4.36M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <button type="submit">Masuk ke Sistem</button>
+      <button type="submit" class="tombol-submit">Masuk ke Sistem</button>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -283,6 +507,140 @@
   </div>
 
 </div>
+
+<script>
+  (function () {
+    /* ---------- Layar loading ---------- */
+    var layarLoading = document.getElementById('layar-loading');
+    function sembunyikanLoading() {
+      layarLoading.classList.add('selesai');
+      setTimeout(function () { layarLoading.style.display = 'none'; }, 550);
+    }
+    if (document.readyState === 'complete') {
+      setTimeout(sembunyikanLoading, 500);
+    } else {
+      window.addEventListener('load', function () { setTimeout(sembunyikanLoading, 500); });
+      // jaga-jaga kalau event load lambat/gagal, tetap sembunyikan
+      setTimeout(sembunyikanLoading, 3000);
+    }
+
+    /* ---------- Elemen maskot & form ---------- */
+    var maskot = document.getElementById('maskotWrap');
+    var gelembung = document.getElementById('maskotGelembung');
+    var pupilKiri = document.getElementById('pupilKiri');
+    var pupilKanan = document.getElementById('pupilKanan');
+    var inputUsername = document.getElementById('username');
+    var inputPassword = document.getElementById('password');
+    var selectRole = document.getElementById('role');
+    var togglePassword = document.getElementById('togglePassword');
+
+    function bersihkanStatusPassword() {
+      maskot.classList.remove('tutup-mata', 'melek-lebar');
+    }
+
+    function statusMaskotPassword() {
+      var fokus = document.activeElement === inputPassword;
+      var tampil = inputPassword.type === 'text';
+      bersihkanStatusPassword();
+      if (!fokus) return;
+      if (tampil) {
+        maskot.classList.add('melek-lebar');
+      } else {
+        maskot.classList.add('tutup-mata');
+      }
+    }
+
+    /* ---------- Tombol lihat/sembunyikan password (diperbaiki) ---------- */
+    // mousedown dicegah defaultnya supaya fokus input TIDAK hilang saat tombol diklik
+    togglePassword.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    togglePassword.addEventListener('click', function () {
+      var tampil = inputPassword.type === 'text';
+      inputPassword.type = tampil ? 'password' : 'text';
+      togglePassword.classList.toggle('aktif', !tampil);
+      var labelBaru = tampil ? 'Lihat password' : 'Sembunyikan password';
+      togglePassword.setAttribute('aria-label', labelBaru);
+      togglePassword.title = labelBaru;
+      inputPassword.focus();
+      statusMaskotPassword();
+    });
+
+    /* ---------- Mata mengikuti kursor ---------- */
+    var batasGerak = 3.2;
+    document.addEventListener('mousemove', function (e) {
+      if (maskot.classList.contains('tutup-mata') || maskot.classList.contains('melek-lebar')) return;
+      var rect = maskot.getBoundingClientRect();
+      var cx = rect.left + rect.width / 2;
+      var cy = rect.top + rect.height / 2;
+      var dx = Math.max(-1, Math.min(1, (e.clientX - cx) / 260));
+      var dy = Math.max(-1, Math.min(1, (e.clientY - cy) / 260));
+      var tx = dx * batasGerak;
+      var ty = dy * batasGerak;
+      pupilKiri.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
+      pupilKanan.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
+    });
+
+    /* ---------- Reaksi ke field password ---------- */
+    inputPassword.addEventListener('focus', statusMaskotPassword);
+    inputPassword.addEventListener('blur', bersihkanStatusPassword);
+
+    /* ---------- Senyum saat username diisi ---------- */
+    inputUsername.addEventListener('input', function () {
+      maskot.classList.toggle('senang', inputUsername.value.length > 0);
+    });
+
+    /* ---------- Sedikit tegak saat pilih role ---------- */
+    selectRole.addEventListener('change', function () {
+      maskot.style.transform = 'scale(1.05)';
+      setTimeout(function () { maskot.style.transform = 'scale(1)'; }, 220);
+    });
+
+    /* ---------- Kedipan mata acak saat idle ---------- */
+    function jadwalkanKedip() {
+      var jeda = 2200 + Math.random() * 2600;
+      setTimeout(function () {
+        if (!maskot.classList.contains('tutup-mata') && !maskot.classList.contains('melek-lebar')) {
+          maskot.classList.add('kedip');
+          setTimeout(function () { maskot.classList.remove('kedip'); }, 140);
+        }
+        jadwalkanKedip();
+      }, jeda);
+    }
+    jadwalkanKedip();
+
+    /* ---------- Maskot interaktif: klik = reaksi acak ---------- */
+    var daftarReaksi = [
+      { kelas: 'reaksi-loncat', durasi: 620, teks: 'Hai! 👋' },
+      { kelas: 'reaksi-putar', durasi: 620, teks: 'Wiii~ 🌀' },
+      { kelas: 'reaksi-goyang', durasi: 520, teks: 'Hehe~' },
+      { kelas: 'reaksi-cinta', durasi: 900, teks: 'Semangat! 💙' },
+      { kelas: 'reaksi-wink', durasi: 700, teks: 'Kedip satu 😉' }
+    ];
+    var sedangBereaksi = false;
+    var timerGelembung = null;
+
+    function pancingReaksi() {
+      if (sedangBereaksi) return;
+      sedangBereaksi = true;
+      var r = daftarReaksi[Math.floor(Math.random() * daftarReaksi.length)];
+      maskot.classList.add(r.kelas);
+
+      gelembung.textContent = r.teks;
+      gelembung.classList.add('tampil');
+      clearTimeout(timerGelembung);
+      timerGelembung = setTimeout(function () { gelembung.classList.remove('tampil'); }, 1100);
+
+      setTimeout(function () {
+        maskot.classList.remove(r.kelas);
+        sedangBereaksi = false;
+      }, r.durasi);
+    }
+
+    maskot.addEventListener('click', pancingReaksi);
+    maskot.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pancingReaksi(); }
+    });
+  })();
+</script>
 
 </body>
 </html>
