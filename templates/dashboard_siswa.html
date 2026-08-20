@@ -2315,7 +2315,7 @@
     </div>
 
     <div id="modalJadwal" class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl space-y-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
             <div class="flex items-center justify-between">
                 <h3 class="font-bold text-lg text-slate-900">Jadwal Pelajaran Lengkap</h3>
                 <button onclick="closeModalJadwal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
@@ -2334,12 +2334,12 @@
     </div>
 
     <div id="modalExpandedPhoto" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
-        <div class="relative bg-white rounded-3xl max-w-sm w-full p-4 sm:p-6 shadow-2xl flex flex-col items-center space-y-4">
+        <div class="relative bg-white rounded-3xl max-w-sm w-full p-4 sm:p-6 shadow-2xl border border-slate-200 flex flex-col items-center space-y-4">
             <button onclick="closeExpandedPhoto()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
                 <i class="fa-solid fa-xmark"></i>
             </button>
             <h3 class="font-bold text-base text-slate-900">Foto Profil</h3>
-            <div class="w-64 h-64 rounded-2xl overflow-hidden border-4 border-blue-500 shadow-lg">
+            <div class="w-64 h-64 rounded-2xl overflow-hidden border-4 border-slate-100 shadow-lg">
                 <img id="expanded-photo-img" src="" class="w-full h-full object-cover" alt="Expanded Avatar">
             </div>
             <p class="text-xs text-slate-400 text-center nama-siswa-efektif">{{ nama }}</p>
@@ -2351,21 +2351,21 @@
          sengaja tetap sama (form-ajukan-prestasi, input-judul-prestasi, dst) supaya
          fungsi ajukanPrestasi() yang sudah ada tidak perlu diubah sama sekali. -->
     <div id="modal-buka-border-prestasi" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[103] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupModalBukaBorder()">
-        <div class="modal-kirim-prestasi-pop bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden">
-            <div class="relative bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 p-4 sm:p-6 text-white">
-                <button onclick="tutupModalBukaBorder()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all">
+        <div class="modal-kirim-prestasi-pop bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+            <div class="relative bg-amber-50 border-b border-amber-100 p-4 sm:p-6 text-slate-900">
+                <button onclick="tutupModalBukaBorder()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/70 hover:bg-white text-slate-500 flex items-center justify-center transition-all">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center flex-shrink-0">
+                    <div class="w-12 h-12 rounded-2xl bg-white border border-amber-100 flex items-center justify-center flex-shrink-0">
                         <img id="modal-buka-border-preview-img" src="" class="w-8 h-8 object-contain" alt="Preview Border">
                     </div>
                     <div class="min-w-0">
-                        <p class="text-[10px] uppercase tracking-wide text-amber-50 font-semibold">Buka Border</p>
-                        <h3 id="modal-buka-border-nama" class="font-extrabold text-lg leading-tight truncate">-</h3>
+                        <p class="text-[10px] uppercase tracking-wide text-amber-600 font-semibold">Buka Border</p>
+                        <h3 id="modal-buka-border-nama" class="font-extrabold text-lg leading-tight truncate text-slate-900">-</h3>
                     </div>
                 </div>
-                <p id="modal-buka-border-syarat" class="text-xs text-amber-50 mt-3 leading-relaxed"><i class="fa-solid fa-circle-info mr-1"></i>-</p>
+                <p id="modal-buka-border-syarat" class="text-xs text-amber-700 mt-3 leading-relaxed"><i class="fa-solid fa-circle-info mr-1"></i>-</p>
             </div>
 
             <form id="form-ajukan-prestasi" onsubmit="ajukanPrestasi(event)" class="p-4 sm:p-6 space-y-4">
@@ -2418,7 +2418,7 @@
                     <textarea id="input-keterangan-prestasi" rows="2" placeholder="Contoh: Diselenggarakan Dinas Pendidikan, Maret 2026" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></textarea>
                 </div>
 
-                <button type="submit" class="btn-kirim-prestasi field-kirim-prestasi w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 bg-[length:200%_auto] hover:bg-right text-white text-sm font-bold transition-all duration-500 shadow-lg shadow-amber-500/40 hover:shadow-xl hover:shadow-amber-500/50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]" style="--delay:4">
+                <button type="submit" class="btn-kirim-prestasi field-kirim-prestasi w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]" style="--delay:4">
                     <i class="fa-solid fa-paper-plane mr-1.5"></i>Kirim untuk Dikonfirmasi
                 </button>
             </form>
@@ -2427,7 +2427,7 @@
 
     <!-- Animasi berhasil kirim bukti prestasi -->
     <div id="modal-sukses-prestasi" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[105] hidden items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-xs w-full p-5 sm:p-7 shadow-2xl flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-5 sm:p-7 shadow-2xl border border-slate-200 flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
             <span class="confetti-sukses" style="--x:-38px; --rot:-30deg; --c:#f59e0b; animation-delay:0s;"></span>
             <span class="confetti-sukses" style="--x:34px; --rot:20deg; --c:#10b981; animation-delay:.08s;"></span>
             <span class="confetti-sukses" style="--x:-18px; --rot:60deg; --c:#f43f5e; animation-delay:.16s;"></span>
@@ -2449,7 +2449,7 @@
          ceklis yang sama dengan modal-sukses-prestasi: lingkaran + centang
          SVG di-stroke, plus confetti kecil). -->
     <div id="modal-sukses-saran-guru" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[108] hidden items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-xs w-full p-5 sm:p-7 shadow-2xl flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-5 sm:p-7 shadow-2xl border border-slate-200 flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
             <span class="confetti-sukses" style="--x:-38px; --rot:-30deg; --c:#06b6d4; animation-delay:0s;"></span>
             <span class="confetti-sukses" style="--x:34px; --rot:20deg; --c:#10b981; animation-delay:.08s;"></span>
             <span class="confetti-sukses" style="--x:-18px; --rot:60deg; --c:#f43f5e; animation-delay:.16s;"></span>
@@ -2471,7 +2471,7 @@
          isi filenya sama dengan bukti yang sudah pernah diupload, walau nama file
          sudah diganti/di-rename). -->
     <div id="modal-gagal-prestasi" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[105] hidden items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-xs w-full p-5 sm:p-7 shadow-2xl flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-5 sm:p-7 shadow-2xl border border-slate-200 flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
             <div class="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center modal-gagal-ring">
                 <svg class="w-11 h-11" viewBox="0 0 52 52">
                     <circle class="crossmark-circle" cx="26" cy="26" r="23"/>
@@ -2490,7 +2490,7 @@
          modal ini SENGAJA TIDAK auto-close -- harus diklik "Tutup" secara manual,
          supaya siswa benar-benar sadar & sempat baca peringatannya sebelum lanjut. -->
     <div id="modal-kata-kasar" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[108] hidden items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-xs w-full p-5 sm:p-7 shadow-2xl flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-5 sm:p-7 shadow-2xl border border-slate-200 flex flex-col items-center text-center space-y-3 modal-sukses-pop relative overflow-hidden">
             <div class="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center modal-kata-kasar-ring">
                 <svg class="w-11 h-11" viewBox="0 0 52 52">
                     <circle class="crossmark-circle" cx="26" cy="26" r="23"/>
@@ -2528,18 +2528,18 @@
     <!-- ID CARD: muncul saat nama siswa di hasil pencarian "Cari Teman" diklik,
          menampilkan identitas + statistik quiz siswa tersebut -->
     <div id="modal-id-card-teman" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[106] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupIdCardTeman()">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
-            <div class="relative bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-700 p-4 sm:p-6 text-white text-center">
-                <button onclick="tutupIdCardTeman()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors" aria-label="Tutup">
+        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-sm overflow-hidden">
+            <div class="relative bg-blue-50 border-b border-blue-100 p-4 sm:p-6 text-center">
+                <button onclick="tutupIdCardTeman()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/70 hover:bg-white text-slate-500 flex items-center justify-center transition-colors" aria-label="Tutup">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
                 <div class="profile-wrapper w-20 h-20 mx-auto relative">
                     <img id="idcard-avatar-foto" src="" class="user-avatar" alt="Avatar">
                     <img id="idcard-avatar-border" src="" class="user-border" alt="Border">
                 </div>
-                <h3 id="idcard-nama" class="font-extrabold text-lg mt-3 leading-tight">-</h3>
+                <h3 id="idcard-nama" class="font-extrabold text-lg mt-3 leading-tight text-slate-900">-</h3>
                 <span id="idcard-title-badge" class="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold title-badge-default">-</span>
-                <p id="idcard-kelas" class="text-xs text-blue-100 mt-1">-</p>
+                <p id="idcard-kelas" class="text-xs text-slate-500 mt-1">-</p>
             </div>
             <div class="p-4 sm:p-6 space-y-4">
                 <div class="grid grid-cols-3 gap-2 text-center">
@@ -3916,7 +3916,7 @@
 
             const elNama = document.getElementById('idcard-nama');
             elNama.textContent = profil.nama;
-            elNama.className = `font-extrabold text-lg mt-3 leading-tight ${efekNamaProfil}`.trim();
+            elNama.className = `font-extrabold text-lg mt-3 leading-tight ${efekNamaProfil || 'text-slate-900'}`.trim();
             const badgeDevProfil = getBadgeDevHtml(borderProfil);
             if (badgeDevProfil) elNama.innerHTML += ' ' + badgeDevProfil;
 
