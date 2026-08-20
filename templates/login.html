@@ -361,15 +361,6 @@
       100% { transform: translateY(-120vh) scale(0.4); opacity: 0; }
     }
 
-    /* cincin dekorasi luar, muter pelan terus -- kesan "proses aktif" */
-    .transisi-cincin-luar {
-      position: absolute; width: 210px; height: 210px; border-radius: 50%;
-      border: 2px dashed rgba(255,255,255,0.28);
-      animation: putarPelan 7s linear infinite;
-    }
-    .transisi-cincin-luar.arah2 { width: 250px; height: 250px; border-color: rgba(255,255,255,0.16); animation-duration: 11s; animation-direction: reverse; }
-    @keyframes putarPelan { to { transform: rotate(360deg); } }
-
     .transisi-cincin-wrap { position: relative; width: 148px; height: 148px; margin-bottom: 26px; z-index: 1; }
     /* FIX: dulu selector ini "menembus" ke svg centang di dalam .transisi-icon-tengah
        ikut dirotasi -90deg, makanya kelihatan "kebalik". Sekarang dibatasi cuma
@@ -591,9 +582,6 @@
 
 <!-- Transisi setelah klik "Masuk Akun" -->
 <div id="transisi-masuk">
-  <div class="transisi-cincin-luar"></div>
-  <div class="transisi-cincin-luar arah2"></div>
-
   <div class="transisi-cincin-wrap">
     <svg viewBox="0 0 136 136">
       <circle class="transisi-cincin-bg" cx="68" cy="68" r="61.5"/>
@@ -607,7 +595,7 @@
 
     <div class="transisi-lencana-check" id="transisiCheck">
       <svg viewBox="0 0 60 60" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-        <circle class="transisi-check-lingkaran" cx="30" cy="30" r="23" stroke="#facc15"/>
+        <circle class="transisi-check-lingkaran" cx="30" cy="30" r="23" stroke="#22c55e"/>
         <path class="transisi-check-garis" d="M19 31l7.5 7.5L42 22"/>
       </svg>
     </div>
@@ -784,6 +772,31 @@
 
     var subteksTahap = ['Menghubungkan ke server...', 'Memeriksa data akun...', 'Hampir selesai...'];
 
+    /* ---------- Peta nama halaman tujuan sesuai role ---------- */
+    var petaHalamanRole = {
+      guru: 'halaman guru',
+      siswa: 'halaman siswa',
+      staf_kebersihan: 'halaman staf kebersihan'
+    };
+
+    /* ---------- Interpolasi warna cincin progres: merah -> kuning -> hijau ---------- */
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function warnaProgres(persen) {
+      var merah = [239, 68, 68];   // #ef4444
+      var kuning = [250, 204, 21]; // #facc15
+      var hijau = [34, 197, 94];   // #22c55e
+      var awal, akhir, t;
+      if (persen <= 50) {
+        awal = merah; akhir = kuning; t = persen / 50;
+      } else {
+        awal = kuning; akhir = hijau; t = (persen - 50) / 50;
+      }
+      var r = Math.round(lerp(awal[0], akhir[0], t));
+      var g = Math.round(lerp(awal[1], akhir[1], t));
+      var b = Math.round(lerp(awal[2], akhir[2], t));
+      return 'rgb(' + r + ',' + g + ',' + b + ')';
+    }
+
     if (form) {
       form.addEventListener('submit', function (e) {
         if (!form.checkValidity()) { return; }
@@ -804,6 +817,10 @@
           cincinIsi.style.strokeDashoffset = KELILING_CINCIN * (1 - progres);
           transisiAngka.textContent = persen + '%';
 
+          var warna = warnaProgres(persen);
+          cincinIsi.style.stroke = warna;
+          cincinIsi.style.filter = 'drop-shadow(0 0 7px ' + warna + ')';
+
           var tahap = Math.min(2, Math.floor(progres * 3));
           transisiSubteks.textContent = subteksTahap[tahap];
 
@@ -813,7 +830,8 @@
             transisiPersen.style.opacity = '0';
             transisiCheck.classList.add('tampil');
             transisiTeks.textContent = 'Berhasil masuk!';
-            transisiSubteks.textContent = 'Mengarahkan ke dashboard...';
+            var halamanTujuan = petaHalamanRole[selectRole.value] || 'dashboard';
+            transisiSubteks.textContent = 'Mengarahkan ke ' + halamanTujuan + '...';
 
             setTimeout(function () {
               form.submit();
