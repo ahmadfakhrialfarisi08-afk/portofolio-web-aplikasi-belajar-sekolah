@@ -10,18 +10,79 @@
     
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        /* Sama seperti halaman Login: gumpalan warna blur yang melayang
+           pelan di background -- identitas visual hijau/kuning/biru,
+           tetap elegan di atas dasar gelap. */
+        .bg-blob { position: fixed; border-radius: 50%; filter: blur(100px); z-index: 0; pointer-events: none; }
+        .bg-blob.biru { width: 460px; height: 460px; background: #2563eb; opacity: 0.35; top: -120px; left: -100px; animation: mengambang1 14s ease-in-out infinite; }
+        .bg-blob.hijau { width: 420px; height: 420px; background: #16a34a; opacity: 0.3; bottom: -140px; right: -100px; animation: mengambang2 16s ease-in-out infinite; }
+        .bg-blob.kuning { width: 300px; height: 300px; background: #eab308; opacity: 0.2; bottom: 12%; left: -70px; animation: mengambang3 12s ease-in-out infinite; }
+        @keyframes mengambang1 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(35px,55px) scale(1.08); } }
+        @keyframes mengambang2 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-45px,-35px) scale(1.1); } }
+        @keyframes mengambang3 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(25px,-25px) scale(1.05); } }
+
+        /* Kartu masuk dengan fade + naik pelan, sama seperti Login */
+        .register-card {
+            position: relative; z-index: 1;
+            opacity: 0; transform: translateY(28px);
+            animation: kartuMasuk 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes kartuMasuk { to { opacity: 1; transform: translateY(0); } }
+
+        /* Garis aksen gradasi hijau-kuning-biru yang geser pelan di atas kartu */
+        .register-card::before {
+            content: ""; position: absolute; top: 0; left: 28px; right: 28px; height: 4px;
+            border-radius: 0 0 4px 4px;
+            background: linear-gradient(90deg, #16a34a 0%, #eab308 50%, #2563eb 100%);
+            background-size: 200% 100%;
+            animation: geserGradasi 6s linear infinite;
+        }
+        @keyframes geserGradasi { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+        .logo-wrap { opacity: 0; animation: logoMasuk 0.6s ease-out 0.15s forwards; }
+        @keyframes logoMasuk { from { opacity: 0; transform: scale(0.8) rotate(-6deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+
+        .header-text { opacity: 0; animation: teksMasuk 0.5s ease-out 0.3s forwards; }
+        @keyframes teksMasuk { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Field-field form masuk berurutan (stagger), bukan sekaligus */
+        .field-anim { opacity: 0; transform: translateY(10px); animation: fieldMasuk 0.5s ease-out forwards; }
+        .field-anim:nth-of-type(1) { animation-delay: 0.4s; }
+        .field-anim:nth-of-type(2) { animation-delay: 0.48s; }
+        .field-anim:nth-of-type(3) { animation-delay: 0.56s; }
+        .field-anim:nth-of-type(4) { animation-delay: 0.64s; }
+        .field-anim:nth-of-type(5) { animation-delay: 0.72s; }
+        .field-anim:nth-of-type(6) { animation-delay: 0.8s; }
+        @keyframes fieldMasuk { to { opacity: 1; transform: translateY(0); } }
+
+        /* Efek shine yang menyapu tombol saat hover, senada dengan Login */
+        .btn-shine { position: relative; overflow: hidden; isolation: isolate;
+            opacity: 0; transform: translateY(10px); animation: fieldMasuk 0.5s ease-out 0.88s forwards; }
+        .btn-shine::before {
+            content: ""; position: absolute; inset: 0;
+            background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.35) 50%, transparent 80%);
+            transform: translateX(-120%); transition: transform 0.6s ease; z-index: -1;
+        }
+        .btn-shine:hover::before { transform: translateX(120%); }
+
+        .footer-anim { opacity: 0; animation: teksMasuk 0.5s ease-out 0.95s forwards; }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-800 min-h-screen flex items-center justify-center p-4">
+<body class="bg-slate-900 text-slate-800 min-h-screen flex items-center justify-center p-4 overflow-hidden">
 
-    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden p-8 space-y-6">
+    <div class="bg-blob biru"></div>
+    <div class="bg-blob hijau"></div>
+    <div class="bg-blob kuning"></div>
+
+    <div class="register-card w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden p-8 space-y-6">
         
         <div class="text-center space-y-2">
-            <div class="w-12 h-12 rounded-2xl bg-blue-600 mx-auto flex items-center justify-center shadow-lg shadow-blue-500/30 overflow-hidden mb-3">
+            <div class="logo-wrap w-12 h-12 rounded-2xl bg-blue-600 mx-auto flex items-center justify-center shadow-lg shadow-blue-500/30 overflow-hidden mb-3">
                 <img src="https://smkba.sch.id/storage/settings/01KSS8AQ39D852VCW0SD8XDZPA.png" alt="Logo Sekolah" class="w-full h-full object-contain p-1" />
             </div>
-            <h2 class="text-2xl font-extrabold text-slate-900">Pendaftaran Akun</h2>
-            <p class="text-xs text-slate-400">Isi formulir di bawah untuk membuat akun baru</p>
+            <h2 class="header-text text-2xl font-extrabold text-slate-900">Pendaftaran Akun</h2>
+            <p class="header-text text-xs text-slate-400">Isi formulir di bawah untuk membuat akun baru</p>
         </div>
 
         <form action="{{ url_for('register') }}" method="POST" class="space-y-4">
@@ -36,7 +97,7 @@
               {% endif %}
             {% endwith %}
 
-            <div>
+            <div class="field-anim">
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Daftar Sebagai</label>
                 <div class="relative">
                     <i class="fa-solid fa-user-gear absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -47,7 +108,7 @@
                 </div>
             </div>
 
-            <div>
+            <div class="field-anim">
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Nama Lengkap</label>
                 <div class="relative">
                     <i class="fa-solid fa-id-card absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -55,7 +116,7 @@
                 </div>
             </div>
 
-            <div>
+            <div class="field-anim">
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">NISN / NIP</label>
                 <div class="relative">
                     <i class="fa-solid fa-hashtag absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -63,7 +124,7 @@
                 </div>
             </div>
 
-            <div>
+            <div class="field-anim">
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Username</label>
                 <div class="relative">
                     <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -71,7 +132,7 @@
                 </div>
             </div>
 
-            <div>
+            <div class="field-anim">
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Password</label>
                 <div class="relative">
                     <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -82,7 +143,7 @@
                 </div>
             </div>
 
-            <div>
+            <div class="field-anim">
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Email</label>
                 <div class="relative">
                     <i class="fa-solid fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -90,12 +151,12 @@
                 </div>
             </div>
 
-            <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-500/30 transition-all mt-2">
+            <button type="submit" class="btn-shine w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-500/30 transition-all mt-2">
                 Daftar Akun Baru <i class="fa-solid fa-arrow-right ml-1"></i>
             </button>
         </form>
 
-        <div class="text-center border-t border-slate-100 pt-4">
+        <div class="footer-anim text-center border-t border-slate-100 pt-4">
             <p class="text-xs text-slate-500">
                 Sudah punya akun? 
                 <a href="{{ url_for('login') }}" class="text-blue-600 font-bold hover:underline">
