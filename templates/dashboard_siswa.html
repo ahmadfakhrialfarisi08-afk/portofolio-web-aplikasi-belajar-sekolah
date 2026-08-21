@@ -182,16 +182,16 @@
         }
 
         /* ---------- Dekorasi ambient "Mode Jurusan" (tema rahasia) ----------
-           Lapisan wash warna + blob biru-abu melayang pelan + kerlipan
-           partikel, dipasang fixed menutup seluruh layar TERMASUK sidebar
-           (z-index sengaja di atas #sidebar-utama yang z-40, biar warnanya
-           betul-betul nutupin sidebar juga, bukan ketutupan olehnya).
-           Warnanya pakai rgba solid (bukan mix-blend-mode) supaya PASTI
-           kelihatan di background apa pun, terang atau gelap. pointer-events
-           dimatikan total supaya tidak mengganggu klik ke UI asli di
-           baliknya. Opacity-nya murni dikontrol lewat atribut
-           data-accent-theme di <html>, jadi otomatis fade in saat mode
-           dinyalakan dan fade out mulus saat dimatikan. */
+           Didesain ringan sengaja: dua glow sudut statis (radial-gradient,
+           TANPA filter:blur & TANPA animasi transform terus-menerus) plus
+           wash gradient tipis di background. Bukan lagi blob melayang +
+           kerlip berkedip yang lama (itu berat karena filter:blur dianimasikan
+           terus-menerus). Kesan "hidup"-nya sekarang datang dari transisi
+           masuk sekali (opacity, sudah murah) + aksen di kartu/border
+           (lihat bagian "Aksen kartu & tabel" di bawah), bukan dari animasi
+           yang jalan tanpa henti. z-index di atas #sidebar-utama (z-40)
+           biar warnanya kena ke sidebar juga. pointer-events dimatikan
+           total supaya tidak mengganggu klik ke UI asli di baliknya. */
         #dekorasi-tema-rahasia {
             position: fixed;
             inset: 0;
@@ -199,7 +199,8 @@
             pointer-events: none;
             opacity: 0;
             overflow: hidden;
-            transition: opacity 1s cubic-bezier(.4,0,.2,1);
+            transition: opacity .6s ease;
+            will-change: opacity;
         }
         html:not(.dark)[data-accent-theme="rahasia"] #dekorasi-tema-rahasia {
             opacity: 1;
@@ -211,58 +212,79 @@
         .wash-rahasia {
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.10) 0%, rgba(100, 116, 139, 0.07) 45%, rgba(255, 255, 255, 0.05) 100%);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.07) 0%, rgba(100, 116, 139, 0.05) 45%, rgba(255, 255, 255, 0.04) 100%);
         }
-        .blob-rahasia {
+        .glow-sudut-rahasia {
             position: absolute;
+            width: 480px;
+            height: 480px;
             border-radius: 9999px;
-            filter: blur(65px);
-            animation: blobMengambang 16s ease-in-out infinite;
+            background: radial-gradient(circle, var(--warna-glow, rgba(59,130,246,0.4)) 0%, transparent 70%);
         }
-        .blob-rahasia.b1 { width: 440px; height: 440px; top: -110px; left: -110px; background: radial-gradient(circle, rgba(59,130,246,0.55) 0%, rgba(59,130,246,0) 70%); animation-duration: 18s; }
-        .blob-rahasia.b2 { width: 400px; height: 400px; top: 16%; right: -150px; background: radial-gradient(circle, rgba(100,116,139,0.5) 0%, rgba(100,116,139,0) 70%); animation-duration: 22s; animation-delay: -4s; }
-        .blob-rahasia.b3 { width: 360px; height: 360px; bottom: -110px; left: 16%; background: radial-gradient(circle, rgba(29,78,216,0.55) 0%, rgba(29,78,216,0) 70%); animation-duration: 20s; animation-delay: -9s; }
-        .blob-rahasia.b4 { width: 320px; height: 320px; bottom: 6%; right: 10%; background: radial-gradient(circle, rgba(148,163,184,0.55) 0%, rgba(148,163,184,0) 70%); animation-duration: 24s; animation-delay: -13s; }
-        .blob-rahasia.b5 { width: 260px; height: 260px; top: 42%; left: 40%; background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%); animation-duration: 19s; animation-delay: -6s; }
-        @keyframes blobMengambang {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(3%, 4%) scale(1.08); }
-            66% { transform: translate(-3%, -2%) scale(0.94); }
+        .glow-sudut-rahasia.atas { top: -180px; left: -160px; --warna-glow: rgba(59, 130, 246, 0.35); }
+        .glow-sudut-rahasia.bawah { bottom: -200px; right: -160px; --warna-glow: rgba(100, 116, 139, 0.32); }
+
+        /* ---------- Aksen kartu & tabel saat "Mode Jurusan" aktif ----------
+           Nyentuh container kartu putih yang dipakai berulang di seluruh
+           halaman (pola class "rounded-2xl" + "border-slate-200") supaya
+           semuanya kompak dapat sentuhan biru-abu-putih yang sama tanpa
+           perlu diedit satu-satu. Cuma nambah ring gradient tipis 1px +
+           shadow halus -- statis, tanpa animasi -- jadi ringan tapi tetap
+           kelihatan "niat" & estetik. Transisi mulusnya numpang ke aturan
+           transisi warna global yang sudah ada (background-image &
+           border-color sudah termasuk di situ). */
+        html:not(.dark)[data-accent-theme="rahasia"] [class*="rounded-2xl"][class*="border-slate-200"],
+        html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card {
+            position: relative;
+            box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 6px 18px -10px rgba(29,78,216,0.16);
         }
-        .kerlip-rahasia {
+        html:not(.dark)[data-accent-theme="rahasia"] [class*="rounded-2xl"][class*="border-slate-200"]::before,
+        html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card::before {
+            content: '';
             position: absolute;
-            width: 7px;
-            height: 7px;
-            border-radius: 9999px;
-            background: #fff;
-            box-shadow: 0 0 12px 4px rgba(37, 99, 235, 0.85);
-            opacity: 0;
-            animation: kerlipRahasia 3.4s ease-in-out infinite;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(37,99,235,.3), rgba(148,163,184,.22) 55%, rgba(255,255,255,.5));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
         }
-        @keyframes kerlipRahasia {
-            0%, 100% { opacity: 0; transform: scale(0.6); }
-            50% { opacity: 1; transform: scale(1.3); }
+        /* Kartu "Total Poin Quiz" (bento-stat-card--accent) warnanya
+           hardcoded kuning/amber -- disesuaikan biar senada, gak nyempal
+           sendirian pas mode biru-abu-putih aktif. */
+        html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card--accent {
+            background: linear-gradient(160deg, #eff6ff, #dbeafe 130%);
+            border-color: #bfdbfe;
         }
-        @media (prefers-reduced-motion: reduce) {
-            .blob-rahasia, .kerlip-rahasia { animation: none; }
+        html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card--accent:hover {
+            border-color: #93c5fd;
+            box-shadow: 0 6px 16px -6px rgba(29, 78, 216, 0.22);
+        }
+        html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card--accent .text-amber-600 {
+            color: #1d4ed8;
+        }
+        html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card--accent p {
+            color: rgba(30, 58, 138, 0.75);
+        }
+        /* Banner sapaan (hero gelap) tetap gradasi navy-nya, cuma border &
+           shadow-nya diselaraskan ke aksen biru. */
+        html:not(.dark)[data-accent-theme="rahasia"] #banner-sapaan {
+            border-color: rgba(59, 130, 246, 0.45);
+            box-shadow: 0 14px 34px -16px rgba(29, 78, 216, 0.5);
         }
 
         /* ---------- Aksen sidebar & tombol Rahasia saat mode aktif ---------- */
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-utama {
-            box-shadow: inset -1px 0 0 var(--border-strong), 4px 0 24px -8px rgba(29, 78, 216, 0.18);
+            box-shadow: inset -1px 0 0 var(--border-strong), 4px 0 24px -8px rgba(29, 78, 216, 0.16);
         }
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-utama::before {
             content: '';
             display: block;
             height: 3px;
             width: 100%;
-            background: linear-gradient(90deg, #1d4ed8, #64748b, #ffffff, #64748b, #1d4ed8);
-            background-size: 200% 100%;
-            animation: garisGlowRahasia 5s linear infinite;
-        }
-        @keyframes garisGlowRahasia {
-            0% { background-position: 0% 0%; }
-            100% { background-position: 200% 0%; }
+            background: linear-gradient(90deg, #1d4ed8, #94a3b8, #ffffff, #94a3b8, #1d4ed8);
         }
         #btn-rahasia-jurusan {
             transition: background .5s ease, color .3s ease, box-shadow .5s ease, border-color .3s ease;
@@ -275,13 +297,6 @@
         #btn-rahasia-jurusan.rahasia-btn-aktif i,
         #btn-rahasia-jurusan.rahasia-btn-aktif span {
             color: #ffffff;
-        }
-        #btn-rahasia-jurusan.rahasia-btn-aktif i {
-            animation: kilauTongkatRahasia 2.2s ease-in-out infinite;
-        }
-        @keyframes kilauTongkatRahasia {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            50% { transform: rotate(-12deg) scale(1.15); }
         }
 
         /* ---------- Overlay "Rahasia": reveal logo jurusan ---------- */
@@ -301,7 +316,6 @@
         .overlay-rahasia-latar {
             background:
                 radial-gradient(circle at 50% 38%, rgba(59, 130, 246, 0.55) 0%, rgba(29, 78, 216, 0.85) 45%, rgba(15, 23, 42, 0.94) 100%);
-            backdrop-filter: blur(3px);
         }
         .rahasia-konten-anim {
             opacity: 0;
@@ -2901,17 +2915,8 @@
          utama karena posisinya fixed inset-0. -->
     <div id="dekorasi-tema-rahasia" aria-hidden="true">
         <div class="wash-rahasia"></div>
-        <div class="blob-rahasia b1"></div>
-        <div class="blob-rahasia b2"></div>
-        <div class="blob-rahasia b3"></div>
-        <div class="blob-rahasia b4"></div>
-        <div class="blob-rahasia b5"></div>
-        <div class="kerlip-rahasia" style="top:12%; left:22%; animation-delay:0s;"></div>
-        <div class="kerlip-rahasia" style="top:28%; left:78%; animation-delay:.6s;"></div>
-        <div class="kerlip-rahasia" style="top:55%; left:8%; animation-delay:1.2s;"></div>
-        <div class="kerlip-rahasia" style="top:68%; left:60%; animation-delay:1.8s;"></div>
-        <div class="kerlip-rahasia" style="top:80%; left:35%; animation-delay:2.4s;"></div>
-        <div class="kerlip-rahasia" style="top:38%; left:48%; animation-delay:3s;"></div>
+        <div class="glow-sudut-rahasia atas"></div>
+        <div class="glow-sudut-rahasia bawah"></div>
     </div>
 
     <!-- OVERLAY RAHASIA: dipicu tombol "Rahasia" di header. Menampilkan logo
