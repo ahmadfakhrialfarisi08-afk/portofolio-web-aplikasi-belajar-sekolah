@@ -1075,6 +1075,75 @@
             transform: translateY(0);
         }
 
+        /* --- 5c. DAFTAR GURU DI HP: dari grid masonry (kartu numpuk 1 kolom,
+           gede-gede) diubah jadi grid 4 kolom yang rapi berurutan per baris
+           (baris 1 = guru ke-1 s/d 4, baris 2 = guru ke-5 s/d 8, dst), tetap
+           scroll ke BAWAH seperti biasa (bukan ke samping), dan animasi
+           fade-in scroll reveal (guru-card-reveal) tetap jalan seperti
+           sebelumnya. Hanya berlaku di layar <640px (di layar lebih besar
+           tetap pakai layout columns/masonry seperti semula). */
+        @media (max-width: 639px) {
+            #grid-daftar-guru {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                column-count: unset;
+                columns: unset;
+                column-gap: 0.4rem;
+                row-gap: 0.6rem;
+            }
+            #grid-daftar-guru .guru-card-reveal {
+                margin-bottom: 0;
+                break-inside: unset;
+                min-width: 0;
+            }
+            /* Foto guru (div pertama di dalam kartu) dikecilkan tingginya,
+               menimpa variasi h-56/h-64/h-72/h-80/h-60 dari JS */
+            #grid-daftar-guru .guru-card-reveal > div:first-child {
+                height: 72px !important;
+                border-radius: 0.75rem;
+            }
+            /* Kartu info (nama/lulusan/mapel) di bawah foto, margin & padding
+               dikecilkan supaya muat di kolom yang sempit */
+            #grid-daftar-guru .guru-card-reveal > div:nth-child(2) {
+                margin-top: -0.9rem;
+                margin-left: 0.25rem;
+                margin-right: 0.25rem;
+                border-radius: 0.65rem;
+                padding: 0.3rem 0.25rem;
+            }
+            #grid-daftar-guru .guru-card-reveal h4 {
+                font-size: 8.5px;
+                line-height: 1.2;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+            #grid-daftar-guru .guru-card-reveal p.lulusan-guru,
+            #grid-daftar-guru .guru-card-reveal p.text-\[10px\],
+            #grid-daftar-guru .guru-card-reveal span.text-\[10px\] {
+                font-size: 7px !important;
+                margin-top: 0.15rem;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+            #grid-daftar-guru .guru-card-reveal span.inline-block {
+                font-size: 6.5px !important;
+                padding: 0.15rem 0.3rem;
+                margin-top: 0.25rem;
+                line-height: 1.3;
+            }
+            #grid-daftar-guru .guru-card-reveal .btn-beri-saran-guru {
+                font-size: 6.5px;
+                padding-top: 0.25rem;
+                padding-bottom: 0.25rem;
+                margin-top: 0.25rem;
+                gap: 0.25rem;
+            }
+        }
+
         /* --- 6. PERINGATAN "FOTO BELUM DIPILIH" saat kirim tugas --- */
         .peringatan-foto-kosong {
             display: flex;
