@@ -170,15 +170,111 @@
            permanen di localStorage sama seperti tema aksen lainnya, jadi
            tetap terpakai walau halaman di-refresh. */
         html:not(.dark)[data-accent-theme="rahasia"] {
-            --page-bg: #eef2f7;
+            --page-bg: #e6ecf5;
             --surface: #ffffff;
-            --surface-hover: #e2e8f0;
-            --border-subtle: #e2e8f0;
-            --border-strong: #cbd5e1;
+            --surface-hover: #dbe4f0;
+            --border-subtle: #d7e0ed;
+            --border-strong: #aebfd6;
             --brand: #1d4ed8;
             --brand-dark: #1e3a8a;
             --brand-tint-50: #eff6ff;
             --brand-tint-100: #dbeafe;
+        }
+
+        /* ---------- Dekorasi ambient "Mode Jurusan" (tema rahasia) ----------
+           Lapisan blob biru-abu melayang pelan + kerlipan partikel, dipasang
+           fixed menutup seluruh layar (sidebar & halaman utama sekaligus)
+           dengan mix-blend-mode supaya warnanya "menyatu" mewarnai apa pun
+           yang ada di baliknya, bukan cuma numpuk di atas. pointer-events
+           dimatikan total supaya tidak mengganggu klik ke UI asli. Opacity-nya
+           murni dikontrol lewat atribut data-accent-theme di <html>, jadi
+           otomatis fade in saat mode dinyalakan dan fade out mulus saat
+           dimatikan (durasinya senada sama transisi warna global). */
+        #dekorasi-tema-rahasia {
+            position: fixed;
+            inset: 0;
+            z-index: 3;
+            pointer-events: none;
+            opacity: 0;
+            overflow: hidden;
+            transition: opacity 1s cubic-bezier(.4,0,.2,1);
+            mix-blend-mode: soft-light;
+        }
+        html:not(.dark)[data-accent-theme="rahasia"] #dekorasi-tema-rahasia {
+            opacity: 1;
+        }
+        html.dark #dekorasi-tema-rahasia,
+        #dekorasi-tema-rahasia.dekorasi-nonaktif {
+            opacity: 0 !important;
+        }
+        .blob-rahasia {
+            position: absolute;
+            border-radius: 9999px;
+            filter: blur(70px);
+            animation: blobMengambang 16s ease-in-out infinite;
+        }
+        .blob-rahasia.b1 { width: 420px; height: 420px; top: -120px; left: -100px; background: radial-gradient(circle, #3b82f6 0%, transparent 72%); animation-duration: 18s; }
+        .blob-rahasia.b2 { width: 380px; height: 380px; top: 20%; right: -140px; background: radial-gradient(circle, #64748b 0%, transparent 72%); animation-duration: 22s; animation-delay: -4s; }
+        .blob-rahasia.b3 { width: 340px; height: 340px; bottom: -100px; left: 18%; background: radial-gradient(circle, #1d4ed8 0%, transparent 72%); animation-duration: 20s; animation-delay: -9s; }
+        .blob-rahasia.b4 { width: 300px; height: 300px; bottom: 10%; right: 12%; background: radial-gradient(circle, #94a3b8 0%, transparent 72%); animation-duration: 24s; animation-delay: -13s; }
+        @keyframes blobMengambang {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(3%, 4%) scale(1.08); }
+            66% { transform: translate(-3%, -2%) scale(0.94); }
+        }
+        .kerlip-rahasia {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 9999px;
+            background: #fff;
+            box-shadow: 0 0 8px 2px rgba(59, 130, 246, 0.9);
+            opacity: 0;
+            animation: kerlipRahasia 3.4s ease-in-out infinite;
+        }
+        @keyframes kerlipRahasia {
+            0%, 100% { opacity: 0; transform: scale(0.6); }
+            50% { opacity: .9; transform: scale(1.2); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .blob-rahasia, .kerlip-rahasia { animation: none; }
+        }
+
+        /* ---------- Aksen sidebar & tombol Rahasia saat mode aktif ---------- */
+        html:not(.dark)[data-accent-theme="rahasia"] #sidebar-utama {
+            box-shadow: inset -1px 0 0 var(--border-strong), 4px 0 24px -8px rgba(29, 78, 216, 0.18);
+        }
+        html:not(.dark)[data-accent-theme="rahasia"] #sidebar-utama::before {
+            content: '';
+            display: block;
+            height: 3px;
+            width: 100%;
+            background: linear-gradient(90deg, #1d4ed8, #64748b, #ffffff, #64748b, #1d4ed8);
+            background-size: 200% 100%;
+            animation: garisGlowRahasia 5s linear infinite;
+        }
+        @keyframes garisGlowRahasia {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+        #btn-rahasia-jurusan {
+            transition: background .5s ease, color .3s ease, box-shadow .5s ease, border-color .3s ease;
+        }
+        #btn-rahasia-jurusan.rahasia-btn-aktif {
+            background: linear-gradient(135deg, #2563eb, #1e3a8a);
+            border-color: transparent;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22), 0 6px 16px -6px rgba(29, 78, 216, 0.6);
+        }
+        #btn-rahasia-jurusan.rahasia-btn-aktif i,
+        #btn-rahasia-jurusan.rahasia-btn-aktif span {
+            color: #ffffff;
+        }
+        #btn-rahasia-jurusan.rahasia-btn-aktif i {
+            animation: kilauTongkatRahasia 2.2s ease-in-out infinite;
+        }
+        @keyframes kilauTongkatRahasia {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(-12deg) scale(1.15); }
         }
 
         /* ---------- Overlay "Rahasia": reveal logo jurusan ---------- */
@@ -2789,6 +2885,24 @@
         </div>
         <p id="judul-zoom-foto-prestasi" class="absolute bottom-5 left-0 right-0 text-center text-white/80 text-xs font-semibold px-4 pointer-events-none"></p>
         <p class="absolute bottom-1 left-0 right-0 text-center text-white/40 text-[10px] pointer-events-none">Scroll / cubit untuk zoom &middot; geser untuk memindahkan &middot; dobel klik untuk reset</p>
+    </div>
+
+    <!-- DEKORASI AMBIENT "Mode Jurusan": blob biru-abu melayang pelan +
+         kerlipan kecil, nyala/mati otomatis lewat CSS berdasarkan
+         data-accent-theme="rahasia" di <html> (lihat #dekorasi-tema-rahasia
+         di <style>). Menutup seluruh layar termasuk sidebar & halaman
+         utama karena posisinya fixed inset-0. -->
+    <div id="dekorasi-tema-rahasia" aria-hidden="true">
+        <div class="blob-rahasia b1"></div>
+        <div class="blob-rahasia b2"></div>
+        <div class="blob-rahasia b3"></div>
+        <div class="blob-rahasia b4"></div>
+        <div class="kerlip-rahasia" style="top:12%; left:22%; animation-delay:0s;"></div>
+        <div class="kerlip-rahasia" style="top:28%; left:78%; animation-delay:.6s;"></div>
+        <div class="kerlip-rahasia" style="top:55%; left:8%; animation-delay:1.2s;"></div>
+        <div class="kerlip-rahasia" style="top:68%; left:60%; animation-delay:1.8s;"></div>
+        <div class="kerlip-rahasia" style="top:80%; left:35%; animation-delay:2.4s;"></div>
+        <div class="kerlip-rahasia" style="top:38%; left:48%; animation-delay:3s;"></div>
     </div>
 
     <!-- OVERLAY RAHASIA: dipicu tombol "Rahasia" di header. Menampilkan logo
@@ -5606,6 +5720,7 @@
         function pilihAksenTema(nama) {
             mainkanEfekSapuanTema(nama);
             tandaiSwatchAksenAktif(nama);
+            tandaiTombolRahasiaAktif(nama === 'rahasia');
 
             if (mainkanEfekSapuanTema.terakhirDimainkan) {
                 // Efek gelombang lagi main -> warna UI beneran "diikutkan" jalannya
@@ -5630,14 +5745,32 @@
             });
         }
 
-        // Dipicu oleh tombol "Rahasia" di header: munculin logo jurusan di
-        // tengah layar dengan animasi elegan, sekaligus mengganti tema
-        // dashboard (sidebar + halaman utama) ke nuansa biru-abu-putih
-        // secara PERMANEN (tersimpan lewat pilihAksenTema, sama seperti
-        // tema aksen lain). Logo lalu menghilang perlahan (fade out),
-        // sementara tema barunya tetap terpakai.
+        // Dipicu oleh tombol "Rahasia" di header: kalau mode belum aktif,
+        // munculin logo jurusan di tengah layar dengan animasi elegan lalu
+        // ganti tema dashboard (sidebar + halaman utama) ke nuansa
+        // biru-abu-putih yang "hidup" (blob melayang + kerlip, lihat
+        // #dekorasi-tema-rahasia). Tema sebelumnya disimpan dulu supaya
+        // kalau tombolnya diklik LAGI, mode ini mati dan tema balik lagi
+        // ke yang dipakai sebelumnya dengan transisi warna yang mulus
+        // (durasi transisinya sudah diatur global, lihat blok "Transisi
+        // warna yang smooth" di CSS) -- tanpa nongolin logo lagi.
         function bukaRahasiaJurusan() {
+            const html = document.documentElement;
+            const sedangAktif = html.getAttribute('data-accent-theme') === 'rahasia';
+
+            if (sedangAktif) {
+                const temaSebelum = localStorage.getItem('ui_accent_theme_sebelum_rahasia') || 'putih';
+                pilihAksenTema(temaSebelum);
+                tandaiTombolRahasiaAktif(false);
+                return;
+            }
+
+            const temaSekarang = localStorage.getItem('ui_accent_theme') || 'putih';
+            if (temaSekarang !== 'rahasia') {
+                localStorage.setItem('ui_accent_theme_sebelum_rahasia', temaSekarang);
+            }
             pilihAksenTema('rahasia');
+            tandaiTombolRahasiaAktif(true);
 
             const overlay = document.getElementById('overlay-logo-rahasia');
             if (!overlay) return;
@@ -5659,10 +5792,16 @@
             }, 4000);
         }
 
+        function tandaiTombolRahasiaAktif(aktif) {
+            const btn = document.getElementById('btn-rahasia-jurusan');
+            if (btn) btn.classList.toggle('rahasia-btn-aktif', aktif);
+        }
+
         function loadAksenTemaPreference() {
             const saved = localStorage.getItem('ui_accent_theme') || 'putih';
             document.documentElement.setAttribute('data-accent-theme', saved);
             tandaiSwatchAksenAktif(saved);
+            tandaiTombolRahasiaAktif(saved === 'rahasia');
         }
 
         // Kode warna hex per tema -- dipakai buat mewarnai efek gelombang & kupu-kupu
