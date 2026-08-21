@@ -164,6 +164,60 @@
             --brand-tint-50: #f0eeff;
             --brand-tint-100: #e3defe;
         }
+        /* Tema "Rahasia" — dipicu KHUSUS lewat tombol Rahasia di header
+           (bukan lewat panel Warna Aksen biasa), nuansa biru-abu-putih yang
+           elegan & profesional untuk momen reveal logo jurusan. Tersimpan
+           permanen di localStorage sama seperti tema aksen lainnya, jadi
+           tetap terpakai walau halaman di-refresh. */
+        html:not(.dark)[data-accent-theme="rahasia"] {
+            --page-bg: #eef2f7;
+            --surface: #ffffff;
+            --surface-hover: #e2e8f0;
+            --border-subtle: #e2e8f0;
+            --border-strong: #cbd5e1;
+            --brand: #1d4ed8;
+            --brand-dark: #1e3a8a;
+            --brand-tint-50: #eff6ff;
+            --brand-tint-100: #dbeafe;
+        }
+
+        /* ---------- Overlay "Rahasia": reveal logo jurusan ---------- */
+        #overlay-logo-rahasia {
+            opacity: 0;
+            transition: opacity 1.4s ease;
+        }
+        #overlay-logo-rahasia.overlay-rahasia-tampil {
+            display: flex;
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #overlay-logo-rahasia.overlay-rahasia-fadeout {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .overlay-rahasia-latar {
+            background:
+                radial-gradient(circle at 50% 38%, rgba(59, 130, 246, 0.55) 0%, rgba(29, 78, 216, 0.85) 45%, rgba(15, 23, 42, 0.94) 100%);
+            backdrop-filter: blur(3px);
+        }
+        .rahasia-konten-anim {
+            opacity: 0;
+            transform: scale(0.65) translateY(16px);
+            animation: rahasiaKontenMasuk 0.9s cubic-bezier(.16, 1, .3, 1) 0.15s forwards;
+        }
+        @keyframes rahasiaKontenMasuk {
+            0% { opacity: 0; transform: scale(0.65) translateY(16px); }
+            60% { opacity: 1; transform: scale(1.06) translateY(-2px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        #logo-jurusan-rahasia-img,
+        #logo-jurusan-rahasia-fallback {
+            filter: drop-shadow(0 10px 30px rgba(15, 23, 42, 0.45));
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .rahasia-konten-anim { animation: none; opacity: 1; transform: none; }
+            #overlay-logo-rahasia { transition: none; }
+        }
 
         /* ---------- Transisi warna yang smooth setiap kali aksen diganti ----------
            Diterapkan luas ("html:not(.dark), html:not(.dark) *") supaya semua
@@ -1687,6 +1741,14 @@
                     </div>
                 </div>
 
+                <!-- Tombol Rahasia: klik buat munculin logo jurusan +
+                     tema biru-abu-putih elegan yang menghiasi seluruh
+                     sidebar & halaman utama (lihat bukaRahasiaJurusan) -->
+                <button id="btn-rahasia-jurusan" onclick="bukaRahasiaJurusan()" title="Rahasia" aria-label="Rahasia" class="p-2 sm:p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-blue-700 relative transition-colors flex-shrink-0 text-sm sm:text-base flex items-center gap-1.5">
+                    <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                    <span class="hidden sm:inline text-[10px] sm:text-xs font-bold">Rahasia</span>
+                </button>
+
                 <button id="btn-dark-mode-toggle" onclick="toggleDarkMode()" title="Mode Gelap - biar mata gak capek pas begadang ngerjain tugas" aria-label="Ubah mode gelap/terang" class="p-2 sm:p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 relative transition-colors flex-shrink-0 text-sm sm:text-base">
                     <span class="slot-ikon-tema icon-matahari-wrap">
                         <i class="fa-solid fa-sun text-amber-400" aria-hidden="true"></i>
@@ -2727,6 +2789,29 @@
         </div>
         <p id="judul-zoom-foto-prestasi" class="absolute bottom-5 left-0 right-0 text-center text-white/80 text-xs font-semibold px-4 pointer-events-none"></p>
         <p class="absolute bottom-1 left-0 right-0 text-center text-white/40 text-[10px] pointer-events-none">Scroll / cubit untuk zoom &middot; geser untuk memindahkan &middot; dobel klik untuk reset</p>
+    </div>
+
+    <!-- OVERLAY RAHASIA: dipicu tombol "Rahasia" di header. Menampilkan logo
+         jurusan di tengah layar dengan animasi elegan (fade+scale in, lalu
+         fade out perlahan), sementara tema dashboard sudah berganti ke
+         biru-abu-putih lewat bukaRahasiaJurusan(). z-[210] biar di atas
+         semua modal lain. pointer-events-none supaya tidak menghalangi
+         klik ke halaman di baliknya. -->
+    <div id="overlay-logo-rahasia" class="fixed inset-0 z-[210] hidden items-center justify-center pointer-events-none overlay-rahasia">
+        <div class="overlay-rahasia-latar absolute inset-0"></div>
+        <div class="relative flex flex-col items-center gap-3 px-6 rahasia-konten-anim">
+            <!-- Ganti "src" di bawah ini dengan path logo jurusan yang akan
+                 diupload (mis. ../static/img/logo_jurusan.png). Selama
+                 belum ada gambarnya, ikon topi wisuda dipakai sebagai
+                 gantinya secara otomatis. -->
+            <img id="logo-jurusan-rahasia-img" src="../static/img/logo_jurusan.png" alt="Logo Jurusan"
+                 onerror="this.style.display='none'; document.getElementById('logo-jurusan-rahasia-fallback').style.display='flex';"
+                 class="w-28 h-28 sm:w-40 sm:h-40 object-contain">
+            <div id="logo-jurusan-rahasia-fallback" class="w-28 h-28 sm:w-40 sm:h-40 rounded-full bg-white items-center justify-center shadow-2xl border-4 border-blue-200" style="display:none;">
+                <i class="fa-solid fa-graduation-cap text-5xl sm:text-6xl text-blue-700" aria-hidden="true"></i>
+            </div>
+            <p class="text-white font-bold text-xs sm:text-sm tracking-wide text-center drop-shadow-lg">Tema Jurusan Diaktifkan</p>
+        </div>
     </div>
 
     <!-- ID CARD: muncul saat nama siswa di hasil pencarian "Cari Teman" diklik,
@@ -5543,6 +5628,35 @@
             });
         }
 
+        // Dipicu oleh tombol "Rahasia" di header: munculin logo jurusan di
+        // tengah layar dengan animasi elegan, sekaligus mengganti tema
+        // dashboard (sidebar + halaman utama) ke nuansa biru-abu-putih
+        // secara PERMANEN (tersimpan lewat pilihAksenTema, sama seperti
+        // tema aksen lain). Logo lalu menghilang perlahan (fade out),
+        // sementara tema barunya tetap terpakai.
+        function bukaRahasiaJurusan() {
+            pilihAksenTema('rahasia');
+
+            const overlay = document.getElementById('overlay-logo-rahasia');
+            if (!overlay) return;
+
+            clearTimeout(bukaRahasiaJurusan._timerFadeOut);
+            clearTimeout(bukaRahasiaJurusan._timerSembunyi);
+
+            overlay.classList.remove('hidden', 'overlay-rahasia-fadeout');
+            void overlay.offsetWidth; // reflow, supaya animasi masuk dari awal tiap diklik ulang
+            overlay.classList.add('overlay-rahasia-tampil');
+
+            bukaRahasiaJurusan._timerFadeOut = setTimeout(() => {
+                overlay.classList.add('overlay-rahasia-fadeout');
+            }, 2400);
+
+            bukaRahasiaJurusan._timerSembunyi = setTimeout(() => {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('overlay-rahasia-tampil', 'overlay-rahasia-fadeout');
+            }, 4000);
+        }
+
         function loadAksenTemaPreference() {
             const saved = localStorage.getItem('ui_accent_theme') || 'putih';
             document.documentElement.setAttribute('data-accent-theme', saved);
@@ -5555,7 +5669,7 @@
         const PALET_AKSEN_HEX = {
             pink: '#ec4899', yellow: '#eab308', blue: '#3b82f6',
             green: '#22c55e', purple: '#a855f7', cyan: '#06b6d4',
-            putih: '#5b4fe9'
+            putih: '#5b4fe9', rahasia: '#1d4ed8'
         };
 
         function pengaturanReduceMotionAktif() {
