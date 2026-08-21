@@ -8750,6 +8750,22 @@
             terapkanBorderKeAvatar();
             renderKoleksiBorder();
             triggerDynamicIsland(`Border ${border.nama} dipakai!`);
+
+            // BUG YANG DIPERBAIKI: sebelumnya border yang dipakai cuma tersimpan
+            // di localStorage (browser sendiri) -- makanya siswa LAIN yang lihat
+            // lewat "Cari Teman" / Denah Kelas Guru selalu melihat border/efek
+            // nama/title default ("🔰 Pemula"), padahal siswa ini sudah beneran
+            // ganti border di perangkatnya sendiri. Sekarang begitu border
+            // dipakai, id-nya juga dikirim & disimpan ke server (pola sama
+            // persis seperti updateProfilePhoto() -> /api/profil/foto di atas)
+            // supaya siswa lain melihat border yang BENERAN sedang dipakai.
+            // Best-effort: kalau gagal (mis. offline), border tetap kepakai
+            // normal di browser sendiri lewat localStorage.
+            fetch('/api/profil/border', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            }).catch(e => console.error('Gagal menyimpan border aktif ke server:', e));
         }
 
         function terapkanBorderKeAvatar() {

@@ -169,6 +169,61 @@ users = {
         'foto_profil': FOTO_PROFIL_DEFAULT
     }
 }
+
+# ----------------------------------------------------
+# PERSISTENSI DATA USERS (akun baru, foto profil, border aktif)
+# ----------------------------------------------------
+# BUG YANG DIPERBAIKI: dict `users` di atas MURNI in-memory -- persis
+# masalah yang sama seperti quiz_store & friends_store sebelum dibenahi
+# (lihat catatan di bawah). Efeknya, tiap kali Flask reloader restart
+# proses (debug=True restart otomatis setiap ada file source yang
+# berubah -- termasuk saat developer push/edit kode di server), SEMUA
+# perubahan yang tadinya cuma nempel di memori RAM hilang lagi:
+#   - Siswa yang SUDAH ganti foto profil sendiri -> balik lagi jadi
+#     foto_profil_default.jpg seolah belum pernah diganti.
+#   - Siswa yang sudah ganti border/efek nama -> balik lagi ke
+#     'starter_pemula' seolah belum pernah dibuka/dipasang.
+#   - Akun baru yang daftar lewat /register -> hilang total, tidak bisa
+#     login lagi walau baru saja berhasil daftar.
+# Sekarang users disimpan ke file JSON di disk (data/users_store.json)
+# tiap kali ada perubahan, lalu dibaca ulang & digabungkan ke atas data
+# dummy hardcoded di atas setiap proses Flask start -- jadi perubahan
+# nyata yang sudah dilakukan siswa TIDAK PERNAH ketiban/ketimpa balik
+# ke nilai default bawaan.
+USERS_STORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'users_store.json')
+
+
+def _muat_users_store():
+    """Baca users_store.json (kalau ada) lalu GABUNGKAN ke atas dict
+    `users` dummy hardcoded di atas: akun yang sudah ada datanya
+    ditimpa/diperbarui per-field (foto_profil, border_aktif, dst -- bukan
+    diganti seluruh objeknya), akun yang belum ada (hasil /register)
+    ditambahkan baru. Dipanggil sekali saat modul ini di-load."""
+    try:
+        with open(USERS_STORE_PATH, 'r', encoding='utf-8') as f:
+            simpanan = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return
+    for username, data in simpanan.items():
+        if username in users:
+            users[username].update(data)
+        else:
+            users[username] = data
+
+
+def _simpan_users_store():
+    """Tulis SELURUH isi dict `users` saat ini ke file JSON di disk.
+    Dipanggil tiap kali ada perubahan (daftar akun baru, ganti foto
+    profil, ganti border aktif) supaya datanya langsung awet, tidak
+    hilang walau proses Flask direstart sebelum sempat dimatikan rapi."""
+    os.makedirs(os.path.dirname(USERS_STORE_PATH), exist_ok=True)
+    tmp_path = USERS_STORE_PATH + '.tmp'
+    with open(tmp_path, 'w', encoding='utf-8') as f:
+        json.dump(users, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, USERS_STORE_PATH)  # atomic, hindari file JSON korup
+
+
+_muat_users_store()
  
 # ----------------------------------------------------
 # DATA QUIZ SISWA (SIMULASI TABEL quiz_scores)
@@ -518,6 +573,7 @@ def register():
             # updateProfilePhoto() -> /api/profil/foto.
             'foto_profil': FOTO_PROFIL_DEFAULT if normalized_role == 'siswa' else None
         }
+        _simpan_users_store()
  
         flash('Akun berhasil dibuat! Silakan masuk dengan akun baru Anda.', 'success')
         return redirect(url_for('login'))
@@ -922,6 +978,7 @@ def api_profil_border():
  
     if me in users:
         users[me]['border_aktif'] = border_id
+        _simpan_users_store()
     return jsonify(success=True)
  
  
@@ -945,6 +1002,7 @@ def api_profil_foto():
     me = session['user']['username']
     if me in users:
         users[me]['foto_profil'] = foto
+        _simpan_users_store()
     return jsonify(success=True)
  
  
