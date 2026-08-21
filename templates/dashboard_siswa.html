@@ -186,20 +186,26 @@
             --brand-tint-100: #cfe8f8;
         }
         /* Tema "Rahasia" — dipicu KHUSUS lewat tombol Rahasia di header
-           (bukan lewat panel Warna Aksen biasa), nuansa biru-abu-putih yang
-           elegan & profesional untuk momen reveal logo jurusan. Tersimpan
-           permanen di localStorage sama seperti tema aksen lainnya, jadi
-           tetap terpakai walau halaman di-refresh. */
+           (bukan lewat panel Warna Aksen biasa), untuk momen setelah reveal
+           logo jurusan selesai. Palet-nya sengaja disamakan dengan warna
+           logo TKJ (biru gear #0670B6 + kuning lingkaran #FFF100/amber),
+           tapi diracik ulang biar nyaman di mata & komposisinya seimbang:
+           biru dipakai sebagai warna utama (brand, teks penting, aksi),
+           sedangkan kuning HANYA dipakai tipis-tipis sebagai aksen pop
+           (border-strong, garis, glow) -- bukan jadi warna latar/isi --
+           supaya tetap elegan & tidak norak/menyilaukan. Tersimpan permanen
+           di localStorage sama seperti tema aksen lainnya, jadi tetap
+           terpakai walau halaman di-refresh. */
         html:not(.dark)[data-accent-theme="rahasia"] {
-            --page-bg: #e6ecf5;
+            --page-bg: #f2f6fb;
             --surface: #ffffff;
-            --surface-hover: #dbe4f0;
-            --border-subtle: #d7e0ed;
-            --border-strong: #aebfd6;
-            --brand: #1d4ed8;
-            --brand-dark: #1e3a8a;
-            --brand-tint-50: #eff6ff;
-            --brand-tint-100: #dbeafe;
+            --surface-hover: #eaf2fb;
+            --border-subtle: #dde7f5;
+            --border-strong: #eab308;
+            --brand: #0670b6;
+            --brand-dark: #05548a;
+            --brand-tint-50: #e8f4fc;
+            --brand-tint-100: #cfe8f8;
         }
 
         /* ============================================================
@@ -234,7 +240,7 @@
         .wash-rahasia {
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.07) 0%, rgba(100, 116, 139, 0.05) 45%, rgba(255, 255, 255, 0.04) 100%);
+            background: linear-gradient(135deg, rgba(6, 112, 182, 0.08) 0%, rgba(234, 179, 8, 0.05) 48%, rgba(255, 255, 255, 0.04) 100%);
         }
         /* Pola simpul jaringan tipis (titik + garis) sebagai wash tambahan --
            dibuat murni lewat gradient berulang (bukan gambar), jadi ringan
@@ -244,9 +250,9 @@
             inset: -10%;
             opacity: .5;
             background-image:
-                radial-gradient(circle, rgba(29, 78, 216, 0.35) 1.4px, transparent 1.6px),
-                linear-gradient(90deg, rgba(29, 78, 216, 0.08) 1px, transparent 1px),
-                linear-gradient(0deg, rgba(29, 78, 216, 0.08) 1px, transparent 1px);
+                radial-gradient(circle, rgba(6, 112, 182, 0.35) 1.4px, transparent 1.6px),
+                linear-gradient(90deg, rgba(6, 112, 182, 0.08) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(6, 112, 182, 0.08) 1px, transparent 1px);
             background-size: 72px 72px, 72px 72px, 72px 72px;
             background-position: 0 0, 0 0, 0 0;
             mask-image: radial-gradient(ellipse 85% 70% at 50% 30%, #000 0%, transparent 75%);
@@ -259,14 +265,14 @@
             border-radius: 9999px;
             background: radial-gradient(circle, var(--warna-glow, rgba(59,130,246,0.4)) 0%, transparent 70%);
         }
-        .glow-sudut-rahasia.atas { top: -180px; left: -160px; --warna-glow: rgba(59, 130, 246, 0.35); }
-        .glow-sudut-rahasia.bawah { bottom: -200px; right: -160px; --warna-glow: rgba(100, 116, 139, 0.32); }
+        .glow-sudut-rahasia.atas { top: -180px; left: -160px; --warna-glow: rgba(6, 112, 182, 0.35); }
+        .glow-sudut-rahasia.bawah { bottom: -200px; right: -160px; --warna-glow: rgba(234, 179, 8, 0.28); }
 
         /* ---------- Aksen kartu & tabel saat "Mode Jurusan" aktif ---------- */
         html:not(.dark)[data-accent-theme="rahasia"] [class*="rounded-2xl"][class*="border-slate-200"],
         html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card {
             position: relative;
-            box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 6px 18px -10px rgba(29,78,216,0.16);
+            box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 6px 18px -10px rgba(6,112,182,0.16);
         }
         html:not(.dark)[data-accent-theme="rahasia"] [class*="rounded-2xl"][class*="border-slate-200"]::before,
         html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card::before {
@@ -275,67 +281,67 @@
             inset: 0;
             border-radius: inherit;
             padding: 1.5px;
-            background: linear-gradient(135deg, rgba(37,99,235,.5), rgba(148,163,184,.35) 55%, rgba(255,255,255,.7));
+            background: linear-gradient(135deg, rgba(6,112,182,.5), rgba(234,179,8,.4) 55%, rgba(255,255,255,.7));
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
             pointer-events: none;
         }
         html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card--accent {
-            background: linear-gradient(160deg, #eff6ff, #dbeafe 130%);
-            border-color: #bfdbfe;
+            background: linear-gradient(160deg, #eff6ff, #fff8e1 130%);
+            border-color: #f5d76e;
         }
         html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card--accent:hover {
-            border-color: #93c5fd;
-            box-shadow: 0 6px 16px -6px rgba(29, 78, 216, 0.22);
+            border-color: #eab308;
+            box-shadow: 0 6px 16px -6px rgba(6, 112, 182, 0.22);
         }
         html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card--accent .text-amber-600 {
-            color: #1d4ed8;
+            color: #b45309;
         }
         html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card--accent p {
-            color: rgba(30, 58, 138, 0.75);
+            color: rgba(5, 84, 138, 0.72);
         }
         html:not(.dark)[data-accent-theme="rahasia"] #banner-sapaan {
-            border-color: rgba(59, 130, 246, 0.45);
-            box-shadow: 0 14px 34px -16px rgba(29, 78, 216, 0.5);
+            border-color: rgba(6, 112, 182, 0.45);
+            box-shadow: 0 14px 34px -16px rgba(6, 112, 182, 0.45), 0 10px 22px -18px rgba(234, 179, 8, 0.3);
         }
 
         /* ---------- Aksen sidebar & tombol Rahasia saat mode aktif ---------- */
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-utama {
-            background: linear-gradient(180deg, #ffffff 0%, #f4f8fd 55%, #eaf1fb 100%);
-            border-right-color: #cbd9ec;
-            box-shadow: inset -1px 0 0 var(--border-strong), 4px 0 24px -8px rgba(29, 78, 216, 0.16);
+            background: linear-gradient(180deg, #ffffff 0%, #f4f8fd 55%, #fdf6df 100%);
+            border-right-color: #d9e2ee;
+            box-shadow: inset -1px 0 0 var(--border-strong), 4px 0 24px -8px rgba(6, 112, 182, 0.16);
         }
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-utama::before {
             content: '';
             display: block;
             height: 3px;
             width: 100%;
-            background: linear-gradient(90deg, #1d4ed8, #94a3b8, #ffffff, #94a3b8, #1d4ed8);
+            background: linear-gradient(90deg, #0670b6, #eab308, #ffffff, #eab308, #0670b6);
         }
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-utama .border-b.border-slate-100 {
-            border-bottom-color: rgba(59, 130, 246, 0.16);
+            border-bottom-color: rgba(6, 112, 182, 0.16);
         }
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-utama a[aria-label="Beranda Portal Sekolah"] > div {
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18), 0 6px 16px -6px rgba(29, 78, 216, 0.4);
+            box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.22), 0 6px 16px -6px rgba(6, 112, 182, 0.4);
         }
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-menu .nav-btn[class*="bg-blue-600"] {
-            background: linear-gradient(135deg, #2563eb, #1e3a8a) !important;
-            box-shadow: inset 3px 0 0 0 #93c5fd, 0 8px 18px -8px rgba(29, 78, 216, 0.55);
+            background: linear-gradient(135deg, #0670b6, #05548a) !important;
+            box-shadow: inset 3px 0 0 0 #fbbf24, 0 8px 18px -8px rgba(6, 112, 182, 0.55);
         }
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-menu .nav-btn[class*="hover:bg-slate-100"]:hover {
-            background: linear-gradient(135deg, #eaf1fb, #dbe7f7);
-            color: #1e3a8a;
+            background: linear-gradient(135deg, #eaf1fb, #fdf3d6);
+            color: #05548a;
         }
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-menu p.uppercase {
-            color: #6b8cb8;
+            color: #7a8ba6;
         }
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-menu .border-t.border-slate-100 {
-            border-top-color: rgba(59, 130, 246, 0.16);
+            border-top-color: rgba(6, 112, 182, 0.16);
         }
         html:not(.dark)[data-accent-theme="rahasia"] header {
-            border-bottom-color: rgba(59, 130, 246, 0.22) !important;
-            background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(240,246,253,.9)) !important;
+            border-bottom-color: rgba(6, 112, 182, 0.2) !important;
+            background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,251,235,.55) 55%, rgba(240,246,253,.9)) !important;
         }
         /* Tombol "Rahasia": idle-nya sekarang ada denyut cincin biru tipis
            yang sangat pelan (bukan diam total) supaya kelihatan "hidup" &
@@ -350,7 +356,7 @@
             position: absolute;
             inset: -3px;
             border-radius: inherit;
-            border: 1.5px solid rgba(37, 99, 235, 0.45);
+            border: 1.5px solid rgba(6, 112, 182, 0.45);
             opacity: 0;
             animation: denyutBtnRahasia 2.8s ease-out infinite;
         }
@@ -360,9 +366,9 @@
             100% { transform: scale(1.18); opacity: 0; }
         }
         #btn-rahasia-jurusan.rahasia-btn-aktif {
-            background: linear-gradient(135deg, #2563eb, #1e3a8a);
+            background: linear-gradient(135deg, #0670b6, #05548a);
             border-color: transparent;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22), 0 6px 16px -6px rgba(29, 78, 216, 0.6);
+            box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.35), 0 6px 16px -6px rgba(6, 112, 182, 0.6);
         }
         #btn-rahasia-jurusan.rahasia-btn-aktif::after { animation: none; opacity: 0; }
         #btn-rahasia-jurusan.rahasia-btn-aktif i,
