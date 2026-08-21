@@ -2800,12 +2800,14 @@
     <div id="overlay-logo-rahasia" class="fixed inset-0 z-[210] hidden items-center justify-center pointer-events-none overlay-rahasia">
         <div class="overlay-rahasia-latar absolute inset-0"></div>
         <div class="relative flex flex-col items-center gap-3 px-6 rahasia-konten-anim">
-            <!-- Ganti "src" di bawah ini dengan path logo jurusan yang akan
-                 diupload (mis. ../static/img/logo_jurusan.png). Selama
-                 belum ada gambarnya, ikon topi wisuda dipakai sebagai
-                 gantinya secara otomatis. -->
-            <img id="logo-jurusan-rahasia-img" src="../static/img/logo_jurusan.png" alt="Logo Jurusan"
-                 onerror="this.style.display='none'; document.getElementById('logo-jurusan-rahasia-fallback').style.display='flex';"
+            <!-- Logo jurusan: pakai url_for('static', ...) biar path-nya selalu
+                 benar dari halaman manapun (gak tergantung kedalaman URL
+                 kayak "../"). File aslinya taruh di static/img/logo_jurusan.jpg
+                 -- kalau mau ganti nama/format file, ganti juga di "filename"
+                 di bawah ini. Selama file itu belum ada / gagal dimuat, ikon
+                 topi wisuda otomatis dipakai sebagai gantinya. -->
+            <img id="logo-jurusan-rahasia-img" src="{{ url_for('static', filename='img/logo_jurusan.jpg') }}" alt="Logo Jurusan"
+                 onerror="this.style.display='none'; document.getElementById('logo-jurusan-rahasia-fallback').style.display='flex'; console.warn('Logo jurusan gagal dimuat dari:', this.src);"
                  class="w-28 h-28 sm:w-40 sm:h-40 object-contain">
             <div id="logo-jurusan-rahasia-fallback" class="w-28 h-28 sm:w-40 sm:h-40 rounded-full bg-white items-center justify-center shadow-2xl border-4 border-blue-200" style="display:none;">
                 <i class="fa-solid fa-graduation-cap text-5xl sm:text-6xl text-blue-700" aria-hidden="true"></i>
