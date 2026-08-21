@@ -1080,16 +1080,17 @@
            (baris 1 = guru ke-1 s/d 4, baris 2 = guru ke-5 s/d 8, dst), tetap
            scroll ke BAWAH seperti biasa (bukan ke samping), dan animasi
            fade-in scroll reveal (guru-card-reveal) tetap jalan seperti
-           sebelumnya. Hanya berlaku di layar <640px (di layar lebih besar
-           tetap pakai layout columns/masonry seperti semula). */
+           sebelumnya. Ukuran teks/foto dijaga jangan kekecilan biar tetap
+           nyaman dibaca (user-friendly). Hanya berlaku di layar <640px (di
+           layar lebih besar tetap pakai layout columns/masonry semula). */
         @media (max-width: 639px) {
             #grid-daftar-guru {
                 display: grid;
                 grid-template-columns: repeat(4, minmax(0, 1fr));
                 column-count: unset;
                 columns: unset;
-                column-gap: 0.4rem;
-                row-gap: 0.6rem;
+                column-gap: 0.5rem;
+                row-gap: 0.9rem;
             }
             #grid-daftar-guru .guru-card-reveal {
                 margin-bottom: 0;
@@ -1097,23 +1098,24 @@
                 min-width: 0;
             }
             /* Foto guru (div pertama di dalam kartu) dikecilkan tingginya,
-               menimpa variasi h-56/h-64/h-72/h-80/h-60 dari JS */
+               menimpa variasi h-56/h-64/h-72/h-80/h-60 dari JS, tapi tetap
+               cukup besar biar wajah kelihatan jelas */
             #grid-daftar-guru .guru-card-reveal > div:first-child {
-                height: 72px !important;
-                border-radius: 0.75rem;
+                height: 96px !important;
+                border-radius: 0.9rem;
             }
             /* Kartu info (nama/lulusan/mapel) di bawah foto, margin & padding
-               dikecilkan supaya muat di kolom yang sempit */
+               dijaga tetap lega supaya nyaman dibaca meski kolom sempit */
             #grid-daftar-guru .guru-card-reveal > div:nth-child(2) {
-                margin-top: -0.9rem;
-                margin-left: 0.25rem;
-                margin-right: 0.25rem;
-                border-radius: 0.65rem;
-                padding: 0.3rem 0.25rem;
+                margin-top: -1.15rem;
+                margin-left: 0.2rem;
+                margin-right: 0.2rem;
+                border-radius: 0.75rem;
+                padding: 0.4rem 0.3rem;
             }
             #grid-daftar-guru .guru-card-reveal h4 {
-                font-size: 8.5px;
-                line-height: 1.2;
+                font-size: 9.5px;
+                line-height: 1.25;
                 display: -webkit-box;
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
@@ -1122,24 +1124,25 @@
             #grid-daftar-guru .guru-card-reveal p.lulusan-guru,
             #grid-daftar-guru .guru-card-reveal p.text-\[10px\],
             #grid-daftar-guru .guru-card-reveal span.text-\[10px\] {
-                font-size: 7px !important;
-                margin-top: 0.15rem;
+                font-size: 7.8px !important;
+                line-height: 1.3;
+                margin-top: 0.2rem;
                 display: -webkit-box;
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
                 overflow: hidden;
             }
             #grid-daftar-guru .guru-card-reveal span.inline-block {
-                font-size: 6.5px !important;
-                padding: 0.15rem 0.3rem;
-                margin-top: 0.25rem;
-                line-height: 1.3;
+                font-size: 7.5px !important;
+                padding: 0.2rem 0.35rem;
+                margin-top: 0.3rem;
+                line-height: 1.35;
             }
             #grid-daftar-guru .guru-card-reveal .btn-beri-saran-guru {
-                font-size: 6.5px;
-                padding-top: 0.25rem;
-                padding-bottom: 0.25rem;
-                margin-top: 0.25rem;
+                font-size: 7.5px;
+                padding-top: 0.3rem;
+                padding-bottom: 0.3rem;
+                margin-top: 0.3rem;
                 gap: 0.25rem;
             }
         }
