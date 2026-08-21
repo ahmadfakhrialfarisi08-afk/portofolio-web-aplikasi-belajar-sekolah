@@ -3332,15 +3332,28 @@
             } catch (e) { console.error('Gagal sebar foto ke leaderboard Essay:', e); }
         }
 
+        // BUG YANG DIPERBAIKI: dulu fungsi ini malah nimpa foto yang sudah
+        // dirender SERVER (lewat src="{{ foto_profil }}" di header/dropdown/
+        // island -- sudah otomatis kepasang sejak HTML awal dimuat, jadi
+        // sudah paling akurat & terbaru) pakai foto LAMA yang kebetulan
+        // ke-cache di localStorage PERANGKAT INI. Akibatnya foto profil bisa
+        // beda-beda antar perangkat (HP vs laptop) walau login pakai akun
+        // yang sama persis -- masing-masing perangkat nampilin cache lokalnya
+        // sendiri-sendiri, bukan data server yang sesungguhnya.
+        //
+        // Sekarang dibalik: server dianggap sumber kebenaran (sesuai foto
+        // yang barusan dirender ke elemen avatar), dan localStorage
+        // perangkat ini yang disamakan supaya IKUT foto server itu -- bukan
+        // sebaliknya. localStorage tetap kepakai (mis. oleh
+        // getFotoProfilAktifQuiz() saat submit skor quiz), tapi sekarang
+        // isinya selalu disegarkan dulu mengikuti server tiap kali halaman
+        // dibuka, sehingga otomatis konsisten di semua perangkat begitu
+        // login ulang / reload.
         function loadSavedProfilePhoto() {
-            const savedPhoto = localStorage.getItem(keyStudentProfilePhoto());
-            if (savedPhoto) {
-                const headerAvatar = document.getElementById('header-user-avatar');
-                const dropdownAvatar = document.getElementById('dropdown-user-avatar');
-                const islandAvatar = document.getElementById('island-user-avatar');
-                if (headerAvatar) headerAvatar.src = savedPhoto;
-                if (dropdownAvatar) dropdownAvatar.src = savedPhoto;
-                if (islandAvatar) islandAvatar.src = savedPhoto;
+            const headerAvatar = document.getElementById('header-user-avatar');
+            const fotoDariServer = headerAvatar ? headerAvatar.getAttribute('src') : null;
+            if (fotoDariServer) {
+                localStorage.setItem(keyStudentProfilePhoto(), fotoDariServer);
             }
         }
 
