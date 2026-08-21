@@ -597,14 +597,26 @@
         }
 
         /* ---------- Transisi warna yang smooth setiap kali aksen diganti ----------
-           Diterapkan luas ("html:not(.dark), html:not(.dark) *") supaya semua
-           elemen yang memakai var(--brand)/var(--brand-dark)/var(--brand-tint-*)
-           — tombol, badge, border, ring, background gradient — ikut animasi
-           mulus tanpa perlu daftar selector satu-satu. Sengaja dikecualikan
-           dari Mode Gelap karena warna aksennya memang terkunci di sana.
-           Canvas Chart.js tidak kena efek ini (properti canvas di-render
-           lewat JS, bukan CSS), jadi grafik tetap update instan seperti biasa. */
-        html:not(.dark), html:not(.dark) * , html:not(.dark) *::before, html:not(.dark) *::after {
+           Animasinya SAMA PERSIS seperti sebelumnya (tidak diubah sama sekali) --
+           yang diubah cuma KAPAN aturan ini aktif. Dulu selector "html:not(.dark) *"
+           dipasang PERMANEN ke SEMUA elemen & pseudo-elemen di seluruh halaman,
+           jadi 7 properti (background-color, background-image, border-color,
+           box-shadow, color, fill, stroke) selalu "diawasi" oleh browser di setiap
+           elemen, sepanjang waktu -- bukan cuma pas ganti warna aksen. Di dashboard
+           ini yang isinya banyak render-ulang list (leaderboard, teman, prestasi,
+           quiz, dst pakai innerHTML/className), itu artinya SETIAP elemen baru yang
+           muncul ikut kena watcher transisi ini terus-menerus, dan itu yang bikin
+           HP/laptop low-end kerasa berat & patah-patah walau lagi gak ganti tema.
+           Sekarang aturan ini di-scope lewat class ".sedang-ganti-aksen" yang cuma
+           ditempel ke <html> oleh JS (lihat pilihAksenTema) selama efek sapuan tema
+           benar-benar mainkan -- jadi begitu efeknya selesai, class-nya dilepas lagi
+           dan elemen-elemen kembali ringan seperti tidak punya transisi ini sama
+           sekali. Efek sapuan warnanya sendiri, saat aksen benar-benar diganti,
+           terlihat identik seperti sebelumnya. */
+        html.sedang-ganti-aksen:not(.dark),
+        html.sedang-ganti-aksen:not(.dark) * ,
+        html.sedang-ganti-aksen:not(.dark) *::before,
+        html.sedang-ganti-aksen:not(.dark) *::after {
             transition: background-color .5s cubic-bezier(.4,0,.2,1),
                         background-image .5s cubic-bezier(.4,0,.2,1),
                         border-color .5s cubic-bezier(.4,0,.2,1),
@@ -615,11 +627,12 @@
         }
         /* Elemen yang memang butuh transisi cepat (hover, dropdown buka/tutup,
            progress bar) tetap dipertahankan durasinya sendiri lewat !important
-           supaya tidak jadi lamban ketiban aturan 0.5s di atas. */
-        html:not(.dark) .transition-transform,
-        html:not(.dark) [class*="duration-150"],
-        html:not(.dark) [class*="duration-200"],
-        html:not(.dark) [class*="duration-300"] {
+           supaya tidak jadi lamban ketiban aturan 0.5s di atas, SELAMA jendela
+           ".sedang-ganti-aksen" itu aktif. */
+        html.sedang-ganti-aksen:not(.dark) .transition-transform,
+        html.sedang-ganti-aksen:not(.dark) [class*="duration-150"],
+        html.sedang-ganti-aksen:not(.dark) [class*="duration-200"],
+        html.sedang-ganti-aksen:not(.dark) [class*="duration-300"] {
             transition-duration: inherit;
         }
 
@@ -6032,11 +6045,19 @@
                 // gelombang lewat delay per-elemen di atas, ganti atribut temanya
                 // LANGSUNG (tanpa jeda tambahan) supaya delay per-elemen itulah yang
                 // menentukan kapan tiap bagian layar berubah warna.
+                // Nyalakan jendela transisi universal HANYA selama efek sapuan ini
+                // benar-benar mainkan (lihat CSS ".sedang-ganti-aksen" di atas) --
+                // supaya di luar momen ganti tema, elemen di seluruh dashboard tidak
+                // ikut memikul watcher transisi 7-properti itu terus-menerus.
+                document.documentElement.classList.add('sedang-ganti-aksen');
                 terapkanDelaySapuanWarna();
                 document.documentElement.setAttribute('data-accent-theme', nama);
                 localStorage.setItem('ui_accent_theme', nama);
                 clearTimeout(pilihAksenTema._timerBersihDelay);
-                pilihAksenTema._timerBersihDelay = setTimeout(bersihkanDelaySapuanWarna, DURASI_SAPUAN_TEMA_MS + 500);
+                pilihAksenTema._timerBersihDelay = setTimeout(() => {
+                    bersihkanDelaySapuanWarna();
+                    document.documentElement.classList.remove('sedang-ganti-aksen');
+                }, DURASI_SAPUAN_TEMA_MS + 500);
             } else {
                 // Reduce Motion aktif / bukan Mode Terang -> ganti warna langsung tanpa efek.
                 document.documentElement.setAttribute('data-accent-theme', nama);
