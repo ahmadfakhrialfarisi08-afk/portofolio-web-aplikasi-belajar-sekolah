@@ -1348,6 +1348,46 @@
 
     <div id="notif-toast-container"></div>
 
+    <!-- Modal "Atur Foto Profil": muncul begitu siswa pilih file foto lewat
+         input#input-ganti-foto (lihat updateProfilePhoto()), SEBELUM foto
+         beneran disimpan -- supaya siswa bisa geser & zoom dulu buat milih
+         bagian mana dari foto yang mau dipakai jadi foto profil (dipotong
+         persegi), bukan langsung crop otomatis dari tengah seperti sebelumnya. -->
+    <div id="modal-crop-foto" class="hidden fixed inset-0 bg-slate-900/60 z-[999] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-4 space-y-4">
+            <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-slate-800">Atur Foto Profil</span>
+                <button onclick="tutupModalCropFoto()" class="text-slate-400 hover:text-slate-600" title="Batal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p class="text-[11px] text-slate-500 -mt-2">Geser buat pindah posisi, pakai slider buat zoom. Area lingkaran di tengah itu yang bakal dipakai jadi foto profil.</p>
+
+            <!-- Viewport persegi: gambar aslinya digeser/di-zoom via JS (lihat
+                 updateCropTransform()/clampCropTranslate()), dibatasi supaya
+                 area viewport selalu tertutup penuh oleh gambar (tidak ada
+                 celah kosong). Lingkaran gelap di atasnya cuma penanda visual
+                 area yang bakal ke-crop -- hasil akhir tetap file persegi. -->
+            <div id="crop-viewport" class="relative w-full aspect-square rounded-xl overflow-hidden bg-slate-100 select-none touch-none cursor-move">
+                <img id="crop-img" src="" alt="Pratinjau foto" draggable="false" class="absolute top-0 left-0 pointer-events-none" style="max-width:none;">
+                <div class="absolute inset-0 pointer-events-none" style="box-shadow: 0 0 0 999px rgba(15,23,42,0.45); border-radius: 9999px;"></div>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-magnifying-glass-minus text-slate-400 text-xs"></i>
+                <input type="range" id="crop-zoom" min="100" max="300" value="100" step="1" class="flex-1 accent-blue-600" oninput="updateCropTransform()">
+                <i class="fa-solid fa-magnifying-glass-plus text-slate-400 text-xs"></i>
+            </div>
+
+            <div class="flex gap-2 pt-1">
+                <button onclick="tutupModalCropFoto()" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition-colors">Batal</button>
+                <button onclick="simpanCropFoto()" class="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors shadow-sm">
+                    <i class="fa-solid fa-check mr-1"></i> Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="sidebar-overlay" onclick="toggleSidebarMobile()" class="fixed inset-0 bg-slate-900/50 z-[35] hidden"></div>
 
     <aside id="sidebar-utama" class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between fixed md:static inset-y-0 left-0 z-40 flex-shrink-0 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto overscroll-contain" aria-label="Navigasi utama">
@@ -2997,98 +3037,166 @@
         // bisa beberapa MB. Foto ini disisipkan PENUH ke setiap entri leaderboard
         // (lihat sinkronkanLeaderboardDenganPoinTerbaik: foto: getFotoProfilAktifQuiz()),
         // dikali 3 level (easy/medium/hard) -- jadi payload yang dikirim ke
-        // /api/quiz/save lewat simpanQuizKeServer() bisa membengkak sampai beberapa MB.
-        // Request itu dikirim dengan fetch(..., { keepalive: true }), dan browser
-        // (Chrome) MEMBATASI ukuran total request yang pakai keepalive:true sekitar
-        // 64 KB saja -- lewat dari situ, request gagal terkirim (bahkan bisa
-        // nyangkut "pending" tanpa error yang jelas ke pemakai), sehingga skor/​
-        // leaderboard siswa yang fotonya besar TIDAK PERNAH tersimpan ke server,
-        // walau siswa lain (yang fotonya kecil/pakai avatar default) baik-baik saja.
-        // Dengan kompres ke ~400px & JPEG 0.8, ukuran foto jadi cuma beberapa KB,
-        // jauh di bawah batas 64 KB itu.
-        function kompresFotoProfil(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const SISI_MAKS = 400;
-                        let { width, height } = img;
-                        if (width > SISI_MAKS || height > SISI_MAKS) {
-                            if (width >= height) {
-                                height = Math.round(height * (SISI_MAKS / width));
-                                width = SISI_MAKS;
-                            } else {
-                                width = Math.round(width * (SISI_MAKS / height));
-                                height = SISI_MAKS;
-                            }
-                        }
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.imageSmoothingEnabled = true;
-                        ctx.imageSmoothingQuality = 'high';
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.8));
-                    };
-                    img.onerror = () => reject(new Error('Gagal memuat gambar'));
-                    img.src = e.target.result;
-                };
-                reader.onerror = () => reject(new Error('Gagal membaca file'));
-                reader.readAsDataURL(file);
-            });
-        }
+        // Foto profil sekarang TIDAK langsung dipakai apa adanya begitu siswa
+        // pilih file -- dibuka dulu di modal "Atur Foto Profil" (#modal-crop-foto)
+        // supaya siswa bisa geser posisi & zoom, milih sendiri bagian mana dari
+        // fotonya yang mau jadi foto profil, baru di-crop persegi ~400px lewat
+        // simpanCropFoto() (nilai 400px & JPEG 0.85 dipilih senada dengan
+        // kompresi lama, supaya hasil akhirnya tetap kecil -- lihat catatan lama
+        // di prosesFotoProfilBaru() soal batas ukuran request keepalive:true).
+        let cropState = null;
+        let cropDragState = null;
 
         async function updateProfilePhoto(event) {
             const file = event.target.files[0];
+            const inputEl = event.target;
             if (!file) return;
 
-            let base64Image;
+            let dataUrl;
             try {
-                base64Image = await kompresFotoProfil(file);
-            } catch (err) {
-                console.error('updateProfilePhoto: gagal kompres foto, pakai file asli sebagai fallback:', err);
-                base64Image = await new Promise((resolve, reject) => {
+                dataUrl = await new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = (e) => resolve(e.target.result);
                     reader.onerror = () => reject(new Error('Gagal membaca file'));
                     reader.readAsDataURL(file);
                 });
+            } catch (err) {
+                alert('Gagal membuka foto. Coba pilih file lain.');
+                inputEl.value = '';
+                return;
             }
 
-            localStorage.setItem(keyStudentProfilePhoto(), base64Image);
+            const img = new Image();
+            img.onload = () => {
+                inputEl.value = ''; // reset supaya bisa pilih file yang sama lagi nanti
+                bukaModalCropFoto(img);
+            };
+            img.onerror = () => {
+                alert('Gagal memuat gambar. Coba pilih file lain.');
+                inputEl.value = '';
+            };
+            img.src = dataUrl;
+        }
 
-            // Simpan juga ke server (pola sama seperti border_aktif via
-            // /api/profil/border) -- supaya siswa LAIN yang pakai "Cari Teman"
-            // bisa lihat foto profil asli yang beneran lagi dipakai, bukan
-            // placeholder generik. SEBELUMNYA ini cuma pakai .catch (nangkep
-            // error jaringan doang) -- kalau server balesnya sukses HTTP tapi
-            // { success: false } (mis. sesi kadaluarsa) atau balesnya gagal
-            // dengan status non-2xx, itu lolos tanpa ketauan sama sekali:
-            // foto keliatan tersimpan normal di browser sendiri (localStorage),
-            // padahal siswa LAIN yang cari lewat "Cari Teman" tetap lihat
-            // placeholder generik karena server-nya beneran tidak pernah
-            // kesimpan. Sekarang responsnya dicek eksplisit & munculin
-            // peringatan kalau gagal, biar ketauan dari awal alih-alih baru
-            // sadar belakangan pas orang lain bilang fotonya nggak muncul.
-            (async () => {
-                try {
-                    const res = await fetch('/api/profil/foto', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ foto: base64Image })
-                    });
-                    const json = await res.json().catch(() => null);
-                    if (!res.ok || !json || !json.success) {
-                        console.error('Gagal menyimpan foto profil ke server:', res.status, json);
-                        alert('Foto berhasil diganti di perangkat ini, tapi GAGAL disimpan ke server -- siswa lain yang mencarimu lewat "Cari Teman" belum akan melihat foto barumu. Coba ganti ulang atau hubungi admin kalau terus gagal.');
-                    }
-                } catch (e) {
-                    console.error('Gagal menyimpan foto profil ke server:', e);
-                    alert('Foto berhasil diganti di perangkat ini, tapi GAGAL disimpan ke server (kemungkinan jaringan bermasalah) -- siswa lain yang mencarimu lewat "Cari Teman" belum akan melihat foto barumu.');
-                }
-            })();
+        function bukaModalCropFoto(img) {
+            const viewport = document.getElementById('crop-viewport');
+            const imgEl = document.getElementById('crop-img');
+            const zoomSlider = document.getElementById('crop-zoom');
+            const vpSize = viewport.clientWidth || 320;
+
+            // minScale: skala minimum supaya gambar SELALU menutupi penuh
+            // viewport persegi (object-fit: cover, versi manual) -- jadi
+            // waktu di-drag, tidak akan pernah ada celah kosong kelihatan.
+            const minScale = Math.max(vpSize / img.naturalWidth, vpSize / img.naturalHeight);
+
+            cropState = {
+                img,
+                naturalW: img.naturalWidth,
+                naturalH: img.naturalHeight,
+                vpSize,
+                minScale,
+                scale: minScale,
+                translateX: (vpSize - img.naturalWidth * minScale) / 2,
+                translateY: (vpSize - img.naturalHeight * minScale) / 2
+            };
+
+            imgEl.src = img.src;
+            zoomSlider.value = 100;
+            document.getElementById('modal-crop-foto').classList.remove('hidden');
+            renderCropTransform();
+            initCropDragHandlersSekali();
+        }
+
+        function tutupModalCropFoto() {
+            document.getElementById('modal-crop-foto').classList.add('hidden');
+            cropState = null;
+            cropDragState = null;
+        }
+
+        function updateCropTransform() {
+            if (!cropState) return;
+            const zoomSlider = document.getElementById('crop-zoom');
+            const mult = (parseFloat(zoomSlider.value) || 100) / 100;
+            cropState.scale = cropState.minScale * mult;
+            clampCropTranslate();
+            renderCropTransform();
+        }
+
+        function clampCropTranslate() {
+            const s = cropState;
+            if (!s) return;
+            const dispW = s.naturalW * s.scale;
+            const dispH = s.naturalH * s.scale;
+            const minX = s.vpSize - dispW;
+            const minY = s.vpSize - dispH;
+            s.translateX = Math.min(0, Math.max(minX, s.translateX));
+            s.translateY = Math.min(0, Math.max(minY, s.translateY));
+        }
+
+        function renderCropTransform() {
+            if (!cropState) return;
+            const imgEl = document.getElementById('crop-img');
+            imgEl.style.width = `${cropState.naturalW * cropState.scale}px`;
+            imgEl.style.height = `${cropState.naturalH * cropState.scale}px`;
+            imgEl.style.transform = `translate(${cropState.translateX}px, ${cropState.translateY}px)`;
+        }
+
+        // Drag (geser posisi) pakai Pointer Events -- kepasang SEKALI saja ke
+        // viewport (bukan tiap kali modal dibuka), supaya listener tidak
+        // dobel-dobel numpuk tiap ganti foto berkali-kali dalam satu sesi.
+        let _cropDragHandlersTerpasang = false;
+        function initCropDragHandlersSekali() {
+            if (_cropDragHandlersTerpasang) return;
+            _cropDragHandlersTerpasang = true;
+            const viewport = document.getElementById('crop-viewport');
+
+            viewport.addEventListener('pointerdown', (e) => {
+                if (!cropState) return;
+                cropDragState = { startX: e.clientX, startY: e.clientY, origX: cropState.translateX, origY: cropState.translateY };
+                viewport.setPointerCapture(e.pointerId);
+            });
+            viewport.addEventListener('pointermove', (e) => {
+                if (!cropDragState || !cropState) return;
+                cropState.translateX = cropDragState.origX + (e.clientX - cropDragState.startX);
+                cropState.translateY = cropDragState.origY + (e.clientY - cropDragState.startY);
+                clampCropTranslate();
+                renderCropTransform();
+            });
+            const stopDrag = () => { cropDragState = null; };
+            viewport.addEventListener('pointerup', stopDrag);
+            viewport.addEventListener('pointercancel', stopDrag);
+            viewport.addEventListener('pointerleave', stopDrag);
+        }
+
+        function simpanCropFoto() {
+            if (!cropState) return;
+            const OUT = 400; // ukuran akhir foto profil, senada dengan kompresi lama
+            const canvas = document.createElement('canvas');
+            canvas.width = OUT;
+            canvas.height = OUT;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            // Gambar penuh digambar ulang ke canvas OUT x OUT, diskalakan &
+            // digeser mengikuti transform yang lagi kelihatan di viewport --
+            // jadi persis area yang siswa lihat di dalam lingkaran itulah yang
+            // ke-crop jadi foto profil akhirnya.
+            const factor = OUT / cropState.vpSize;
+            ctx.drawImage(
+                cropState.img,
+                0, 0, cropState.naturalW, cropState.naturalH,
+                cropState.translateX * factor, cropState.translateY * factor,
+                cropState.naturalW * cropState.scale * factor, cropState.naturalH * cropState.scale * factor
+            );
+
+            const base64Image = canvas.toDataURL('image/jpeg', 0.85);
+            tutupModalCropFoto();
+            prosesFotoProfilBaru(base64Image);
+        }
+
+        async function prosesFotoProfilBaru(base64Image) {
+            localStorage.setItem(keyStudentProfilePhoto(), base64Image);
 
             const headerAvatar = document.getElementById('header-user-avatar');
             const dropdownAvatar = document.getElementById('dropdown-user-avatar');
@@ -3120,8 +3228,76 @@
             // foto baru langsung kelihatan oleh siswa lain juga.
             sebarkanFotoTerbaruKeSnapshotLeaderboard();
 
-            alert('Foto profil berhasil diperbarui!');
             triggerDynamicIsland("Foto profil diperbarui!");
+
+            // Simpan juga ke server (pola sama seperti border_aktif via
+            // /api/profil/border) -- supaya siswa LAIN yang pakai "Cari Teman"
+            // bisa lihat foto profil asli yang beneran lagi dipakai, bukan
+            // placeholder generik. Responsnya dicek eksplisit (bukan cuma
+            // .catch error jaringan) supaya kalau gagal tersimpan di server
+            // (mis. sesi kadaluarsa), siswa langsung tahu -- bukan diam-diam
+            // gagal & baru ketauan belakangan pas orang lain bilang fotonya
+            // nggak muncul. Notifnya TIDAK auto-hilang (beda dari toast lain
+            // yang 8 detik ilang sendiri) -- sengaja, karena info kesimpan-nya-
+            // di-server-atau-tidak ini penting untuk tidak terlewat, jadi
+            // siswa harus klik X sendiri buat nutup.
+            try {
+                const res = await fetch('/api/profil/foto', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ foto: base64Image })
+                });
+                const json = await res.json().catch(() => null);
+                if (!res.ok || !json || !json.success) {
+                    console.error('Gagal menyimpan foto profil ke server:', res.status, json);
+                    tampilkanToastFotoProfil(false);
+                } else {
+                    tampilkanToastFotoProfil(true);
+                }
+            } catch (e) {
+                console.error('Gagal menyimpan foto profil ke server:', e);
+                tampilkanToastFotoProfil(false);
+            }
+        }
+
+        // Toast konfirmasi ganti foto profil -- SENGAJA tidak auto-hilang
+        // sendiri (beda dari toast lain di aplikasi ini yang pakai
+        // setTimeout ~8 detik), harus ditutup manual lewat tombol X supaya
+        // info berhasil/gagal tersimpan ke server tidak gampang kelewat.
+        function tampilkanToastFotoProfil(berhasil) {
+            const container = document.getElementById('notif-toast-container');
+            if (!container) return;
+
+            const toastId = `toast-foto-profil-${Date.now()}`;
+            const toast = document.createElement('div');
+            toast.className = 'notif-toast-ditarik' + (berhasil ? ' notif-toast-hijau' : '');
+            toast.id = toastId;
+
+            const iconWrapClass = berhasil ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600';
+            const iconClass = berhasil ? 'fa-solid fa-circle-check' : 'fa-solid fa-triangle-exclamation';
+            const judul = berhasil ? 'Foto Profil Diperbarui!' : 'Foto Gagal Tersimpan ke Server';
+            const warnaKelas = berhasil ? 'text-emerald-600' : 'text-rose-600';
+            const pesan = berhasil
+                ? 'Foto barumu sudah tersimpan & langsung kelihatan oleh siswa lain lewat "Cari Teman".'
+                : 'Foto berhasil diganti di perangkat ini, tapi GAGAL disimpan ke server -- siswa lain yang mencarimu lewat "Cari Teman" belum akan melihat foto barumu. Coba ganti ulang atau hubungi admin kalau terus gagal.';
+
+            toast.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <div class="w-9 h-9 rounded-lg ${iconWrapClass} flex items-center justify-center flex-shrink-0">
+                        <i class="${iconClass}"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-extrabold text-slate-900 dark:text-slate-100">${judul}</p>
+                        <p class="text-[11px] ${warnaKelas} mt-1 leading-relaxed font-semibold">${pesan}</p>
+                    </div>
+                    <button onclick="document.getElementById('${toastId}')?.remove()" class="text-slate-300 hover:text-slate-500 flex-shrink-0" title="Tutup">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>`;
+
+            container.appendChild(toast);
+            // TIDAK ADA setTimeout di sini -- toast ini sengaja tetap nongol
+            // sampai siswa klik tombol X sendiri.
         }
 
         function sebarkanFotoTerbaruKeSnapshotLeaderboard() {
