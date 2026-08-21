@@ -3661,15 +3661,26 @@
             if (kosong) kosong.classList.add('hidden');
 
             pending.forEach(item => {
+                // Petakan border yang dipakai pengirim permintaan -- persis pola
+                // yang sama dengan hasil pencarian "Cari Teman" & Leaderboard Quiz --
+                // supaya avatar+border+efek nama gradasi+title ikut tampil di sini juga.
+                const borderItem = getSemuaBorder().find(b => b.id === item.border) || DAFTAR_BORDER_STARTER[0];
+                const efekNamaItem = getEfekNamaClass(borderItem);
+                const titleBadgeClassItem = getTitleBadgeClass(efekNamaItem);
+                const badgeDevItem = getBadgeDevHtml(borderItem);
+                const fotoItem = item.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama)}&background=e0e7ff&color=3730a3&size=120`;
+
                 const row = document.createElement('div');
                 row.className = 'flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 transition-colors';
                 row.innerHTML = `
-                    <button class="btn-lihat-idcard w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0" title="Lihat statistik">
-                        <i class="fa-solid fa-user text-xs"></i>
+                    <button class="btn-lihat-idcard profile-wrapper w-10 h-10 flex-shrink-0" title="Lihat statistik">
+                        <img src="${fotoItem}" class="user-avatar" alt="Avatar ${item.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama)}&background=e0e7ff&color=3730a3&size=120'">
+                        <img src="${borderItem.file}" class="user-border" alt="Border ${item.nama}">
                     </button>
                     <button class="btn-lihat-idcard flex-1 min-w-0 text-left">
-                        <p class="text-xs font-bold text-slate-800 truncate">${item.nama}</p>
-                        <p class="text-[10px] text-slate-400">${item.kelas}</p>
+                        <p class="text-xs font-bold truncate ${efekNamaItem || 'text-slate-800'}">${item.nama}${badgeDevItem ? ' ' + badgeDevItem : ''}</p>
+                        <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold ${titleBadgeClassItem} truncate max-w-full">${borderItem.rank || '🔰 Pemula'}</span>
+                        <p class="text-[10px] text-slate-400 truncate mt-0.5">${item.kelas}</p>
                     </button>
                     <div class="flex items-center gap-1.5 flex-shrink-0">
                         <button class="btn-terima-teman w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 hover:bg-emerald-200 flex items-center justify-center transition-colors" title="Terima">

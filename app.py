@@ -1019,13 +1019,28 @@ def api_teman_relasi():
     for r in friend_requests.get(me, []):
         u = users.get(r['from'])
         if u:
-            masuk.append({'username': u['username'], 'nama': u['fullname'], 'kelas': u.get('kelas', '-')})
+            masuk.append({
+                'username': u['username'],
+                'nama': u['fullname'],
+                'kelas': u.get('kelas', '-'),
+                # border & foto disertakan biar dropdown 'Permintaan Pertemanan'
+                # bisa nampilin avatar+border+efek nama+title -- sama persis
+                # polanya kayak /api/teman/cari di atas.
+                'border': u.get('border_aktif') or 'starter_pemula',
+                'foto': u.get('foto_profil') or FOTO_PROFIL_DEFAULT
+            })
  
     teman = []
     for uname in sorted(friendships.get(me, set())):
         u = users.get(uname)
         if u:
-            teman.append({'username': u['username'], 'nama': u['fullname'], 'kelas': u.get('kelas', '-')})
+            teman.append({
+                'username': u['username'],
+                'nama': u['fullname'],
+                'kelas': u.get('kelas', '-'),
+                'border': u.get('border_aktif') or 'starter_pemula',
+                'foto': u.get('foto_profil') or FOTO_PROFIL_DEFAULT
+            })
  
     return jsonify(success=True, permintaan_masuk=masuk, teman=teman)
  
