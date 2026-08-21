@@ -486,7 +486,7 @@
     </svg>
   </div>
   <div class="loading-spinner"></div>
-  <p class="loading-teks">Menyiapkan portal<span class="loading-titik"></span></p>
+  <p class="loading-teks">Menyiapkan Website<span class="loading-titik"></span></p>
   <div class="loading-bar-track"><div class="loading-bar-isi"></div></div>
 </div>
 
@@ -513,7 +513,7 @@
     </div>
 
     <p class="illustration-title">SMK BANJAR ASRI CIMAUNG</p>
-    <p class="illustration-text">Website untuk guru, siswa, dan staf.Untuk mengajar, dan mengelola sekolah jadi lebih mudah.</p>
+    <p class="illustration-text">Website untuk guru, siswa, dan staf.Untuk belajar, mengajar, dan mengelola sekolah jadi lebih mudah.</p>
   </div>
 
   <!-- Kartu login -->
@@ -683,6 +683,28 @@
 
 <script>
   (function () {
+    /* ---------- FIX: halaman "mental" ke sini lewat tombol Back browser ----------
+       Setelah login sukses kita pindah ke dashboard pakai window.location.href
+       (bukan reload), jadi halaman login.html ini masih tersimpan APA ADANYA di
+       bfcache (back-forward cache) milik browser -- termasuk state overlay
+       "Berhasil masuk!" yang lagi tampil saat itu, timer-timer JS yang sudah
+       kepakai, dsb. Begitu user klik tombol Back di browser, Chrome/Firefox
+       cuma "membekukan lalu mencairkan kembali" DOM lama itu (bukan memuat
+       ulang dari server) -- makanya kelihatan seperti macet/diam di layar
+       loading checklist hijau, padahal sebenarnya bukan loading, cuma tampilan
+       lama yang beku.
+       Solusinya: dengar event 'pageshow'. Kalau event.persisted === true,
+       artinya halaman ini memang dipulihkan dari bfcache (bukan load baru) --
+       maka langsung reload() supaya browser benar-benar minta halaman /login
+       yang segar ke server (session lama otomatis dibersihkan oleh app.py di
+       route GET /login), dan user melihat FORM LOGIN BERSIH, bukan animasi
+       yang beku. */
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    });
+
     /* ---------- Layar loading ---------- */
     var layarLoading = document.getElementById('layar-loading');
     function sembunyikanLoading() {

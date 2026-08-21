@@ -22,7 +22,25 @@ import requests
 app = Flask(__name__)
 # Key rahasia untuk menangani session dan flash message
 app.secret_key = 'arcana_smart_school_secret_key'
- 
+
+# ----------------------------------------------------
+# CACHE-CONTROL UNTUK HALAMAN LOGIN & DASHBOARD (anti bfcache "nyangkut")
+# ----------------------------------------------------
+# Lapisan tambahan (di luar fix pageshow/bfcache di login.html): kasih tahu
+# browser supaya TIDAK menyimpan halaman login & dashboard ini di cache HTTP
+# biasa maupun di back-forward cache. Ini jaga-jaga kalau ada browser lain
+# (selain yang sudah ditest di login.html) yang bfcache-nya tetap mengabaikan
+# event pageshow, dan juga supaya klik tombol Back setelah LOGOUT tidak
+# menampilkan dashboard versi lama yang sempat ke-cache browser.
+HALAMAN_TANPA_CACHE = ('login', 'dashboard', 'dashboard_siswa', 'dashboard_guru', 'dashboard_staf')
+
+@app.after_request
+def _cegah_cache_halaman_sensitif(response):
+    if request.endpoint in HALAMAN_TANPA_CACHE:
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+    return response
+
 # ----------------------------------------------------
 # KONFIGURASI ASISTEN AI (OLLAMA LOKAL)
 # ----------------------------------------------------
@@ -416,21 +434,21 @@ def login():
         role = request.form.get('role')
         username = request.form.get('username')
         password = request.form.get('password')
- 
+
         # Deteksi apakah ini request AJAX dari login.html (fetch dengan header
         # X-Requested-With) -- kalau iya, balas JSON supaya frontend bisa tahu
         # hasil valid/tidaknya SEBELUM animasi transisi selesai (lihat login.html),
         # jadi animasi "berhasil" (centang) hanya main kalau memang berhasil, dan
         # animasi "gagal" (silang) main kalau username/password/role salah.
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
- 
+
         # Cari user sesuai username dan role
         user = None
         for u in users.values():
             if u['username'] == username and u['role'] == role:
                 user = u
                 break
- 
+
         if not (user and user['password'] == password):
             pesan_gagal = 'Username, password, atau role salah!'
             # Tetap simpan flash error seperti semula -- kalau frontend nanti
@@ -441,13 +459,13 @@ def login():
             if is_ajax:
                 return jsonify(success=False, message=pesan_gagal)
             return redirect(url_for('login'))
- 
+
         # Master Device / approval device dihilangkan dulu -- login sekarang
         # langsung jalan begitu username/password/role cocok, tanpa perlu
         # persetujuan dari perangkat lain.
         return _finish_login(user, is_ajax)
- 
- 
+
+
 def _finish_login(user, is_ajax=False):
     """Set session login."""
     session['user'] = {
