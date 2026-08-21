@@ -3062,13 +3062,33 @@
             // Simpan juga ke server (pola sama seperti border_aktif via
             // /api/profil/border) -- supaya siswa LAIN yang pakai "Cari Teman"
             // bisa lihat foto profil asli yang beneran lagi dipakai, bukan
-            // placeholder generik. Best-effort: kalau gagal (mis. offline),
-            // foto tetap kepakai normal di browser sendiri lewat localStorage.
-            fetch('/api/profil/foto', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ foto: base64Image })
-            }).catch(e => console.error('Gagal menyimpan foto profil ke server:', e));
+            // placeholder generik. SEBELUMNYA ini cuma pakai .catch (nangkep
+            // error jaringan doang) -- kalau server balesnya sukses HTTP tapi
+            // { success: false } (mis. sesi kadaluarsa) atau balesnya gagal
+            // dengan status non-2xx, itu lolos tanpa ketauan sama sekali:
+            // foto keliatan tersimpan normal di browser sendiri (localStorage),
+            // padahal siswa LAIN yang cari lewat "Cari Teman" tetap lihat
+            // placeholder generik karena server-nya beneran tidak pernah
+            // kesimpan. Sekarang responsnya dicek eksplisit & munculin
+            // peringatan kalau gagal, biar ketauan dari awal alih-alih baru
+            // sadar belakangan pas orang lain bilang fotonya nggak muncul.
+            (async () => {
+                try {
+                    const res = await fetch('/api/profil/foto', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ foto: base64Image })
+                    });
+                    const json = await res.json().catch(() => null);
+                    if (!res.ok || !json || !json.success) {
+                        console.error('Gagal menyimpan foto profil ke server:', res.status, json);
+                        alert('Foto berhasil diganti di perangkat ini, tapi GAGAL disimpan ke server -- siswa lain yang mencarimu lewat "Cari Teman" belum akan melihat foto barumu. Coba ganti ulang atau hubungi admin kalau terus gagal.');
+                    }
+                } catch (e) {
+                    console.error('Gagal menyimpan foto profil ke server:', e);
+                    alert('Foto berhasil diganti di perangkat ini, tapi GAGAL disimpan ke server (kemungkinan jaringan bermasalah) -- siswa lain yang mencarimu lewat "Cari Teman" belum akan melihat foto barumu.');
+                }
+            })();
 
             const headerAvatar = document.getElementById('header-user-avatar');
             const dropdownAvatar = document.getElementById('dropdown-user-avatar');
