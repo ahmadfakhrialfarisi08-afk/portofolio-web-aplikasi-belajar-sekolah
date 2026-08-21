@@ -368,6 +368,15 @@
       overflow: hidden;
     }
     #transisi-masuk.tampil { opacity: 1; visibility: visible; pointer-events: auto; }
+    /* Saat login GAGAL, ganti nuansa gradasi jadi kemerahan (dari hijau/biru default) */
+    #transisi-masuk { transition: opacity 0.4s ease, visibility 0.4s ease, background 0.5s ease; }
+    #transisi-masuk.gagal {
+      background:
+        radial-gradient(circle at 18% 20%, rgba(239,68,68,0.4), transparent 52%),
+        radial-gradient(circle at 82% 28%, rgba(220,38,38,0.32), transparent 52%),
+        radial-gradient(circle at 50% 95%, rgba(250,204,21,0.12), transparent 60%),
+        linear-gradient(160deg, #1f0b0b 0%, #241010 55%, #1f0b0b 100%);
+    }
     /* aksen kisi halus supaya background berasa lebih hidup, bukan gradasi polos */
     #transisi-masuk::before {
       content: "";
@@ -438,6 +447,28 @@
       animation: gambarLingkaran 0.35s ease-out forwards;
     }
     @keyframes gambarLingkaran { to { stroke-dashoffset: 0; } }
+
+    /* lencana SILANG (X) -- muncul kalau login GAGAL (password/username/role salah) */
+    .transisi-lencana-gagal {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: scale(0.3); pointer-events: none;
+    }
+    .transisi-lencana-gagal.tampil {
+      animation: lencanaPopGagal 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, goyangGagal 0.5s ease-in-out 0.55s;
+    }
+    @keyframes lencanaPopGagal { 0% { opacity: 0; transform: scale(0.3) rotate(16deg); } 60% { opacity: 1; transform: scale(1.15) rotate(-4deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+    @keyframes goyangGagal { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+    .transisi-lencana-gagal svg { width: 54px; height: 54px; }
+    .transisi-silang-garis { stroke-dasharray: 34; stroke-dashoffset: 34; }
+    .transisi-lencana-gagal.tampil .transisi-silang-garis {
+      animation: gambarSilang 0.3s ease-out 0.2s forwards;
+    }
+    .transisi-lencana-gagal.tampil .transisi-silang-garis:nth-child(3) { animation-delay: 0.32s; }
+    @keyframes gambarSilang { to { stroke-dashoffset: 0; } }
+    .transisi-lingkaran-gagal { stroke-dasharray: 145; stroke-dashoffset: 145; }
+    .transisi-lencana-gagal.tampil .transisi-lingkaran-gagal {
+      animation: gambarLingkaran 0.35s ease-out forwards;
+    }
 
     .transisi-teks { color: #ffffff; font-size: 15px; font-weight: 700; letter-spacing: 0.3px; opacity: 0; animation: teksMasuk 0.5s ease-out 0.15s forwards; text-align: center; z-index: 1; }
     .transisi-subteks { color: rgba(255,255,255,0.82); font-size: 12.5px; margin-top: 4px; opacity: 0; animation: teksMasuk 0.5s ease-out 0.3s forwards; z-index: 1; min-height: 16px; }
@@ -636,6 +667,14 @@
         <path class="transisi-check-garis" d="M19 31l7.5 7.5L42 22"/>
       </svg>
     </div>
+
+    <div class="transisi-lencana-gagal" id="transisiGagal">
+      <svg viewBox="0 0 60 60" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <circle class="transisi-lingkaran-gagal" cx="30" cy="30" r="23" stroke="#ef4444"/>
+        <path class="transisi-silang-garis" d="M21 21l18 18"/>
+        <path class="transisi-silang-garis" d="M39 21l-18 18"/>
+      </svg>
+    </div>
   </div>
 
   <p class="transisi-teks" id="transisiTeks">Memverifikasi akun kamu</p>
@@ -774,12 +813,21 @@
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pancingReaksi(); }
     });
 
-    /* ---------- Transisi "Masuk Akun" -> submit asli ke backend Flask ---------- */
-    // Alur: klik submit -> form ditahan sebentar (preventDefault) supaya animasi
-    // transisi (ring progress + partikel + centang) sempat main penuh -> setelah
-    // itu form.submit() dipanggil untuk BENERAN mengirim POST ke /login (app.py).
-    // form.submit() tidak memicu ulang event 'submit' ini jadi aman, tidak infinite loop.
-    // Kalau login gagal, app.py redirect balik ke /login dengan flash error seperti biasa.
+    /* ---------- Transisi "Masuk Akun" -> cek dulu ke backend via AJAX, baru animasi ---------- */
+    // Alur BARU (fix): dulu animasi SELALU main sampai tampilan "centang hijau /
+    // berhasil masuk" apa pun hasilnya, padahal valid/tidaknya username-password
+    // baru diketahui backend SETELAH form.submit() beneran jalan -- makanya kalau
+    // password salah, animasi tetap kelihatan "berhasil" sebelum akhirnya nyasar
+    // balik ke /login dengan pesan error (kelihatan aneh/kedip).
+    //
+    // Sekarang: begitu klik submit, kita kirim data form ke /login lewat fetch()
+    // (header X-Requested-With supaya app.py tahu ini request AJAX dan balas JSON,
+    // bukan redirect biasa) SAMBIL ring progress jalan seperti biasa. Baru setelah
+    // progress 100% DAN hasil dari server sudah didapat:
+    //   - kalau BENAR  -> tampilkan centang hijau, lalu redirect ke halaman tujuan.
+    //   - kalau SALAH  -> tampilkan silang (X) merah, lalu "mental" balik/reload
+    //                     ke halaman /login (pesan error muncul lewat flash message
+    //                     Flask yang sudah ada di bawah tombol, seperti semula).
     var form = document.getElementById('loginForm');
     var tombolSubmit = document.getElementById('tombolSubmit');
     var transisiMasuk = document.getElementById('transisi-masuk');
@@ -787,6 +835,7 @@
     var transisiAngka = document.getElementById('transisiAngka');
     var transisiPersen = document.getElementById('transisiPersen');
     var transisiCheck = document.getElementById('transisiCheck');
+    var transisiGagal = document.getElementById('transisiGagal');
     var transisiTeks = document.getElementById('transisiTeks');
     var transisiSubteks = document.getElementById('transisiSubteks');
 
@@ -834,6 +883,39 @@
       return 'rgb(' + r + ',' + g + ',' + b + ')';
     }
 
+    function tampilkanHasilLogin(hasil) {
+      transisiPersen.style.opacity = '0';
+
+      if (hasil && hasil.success) {
+        // ---------- SUKSES: kunci warna ring hijau + mainkan centang ----------
+        cincinIsi.style.stroke = '#22c55e';
+        cincinIsi.style.filter = 'drop-shadow(0 0 7px #22c55e)';
+        transisiCheck.classList.add('tampil');
+        transisiTeks.textContent = 'Berhasil masuk!';
+        var halamanTujuan = petaHalamanRole[selectRole.value] || 'dashboard';
+        transisiSubteks.textContent = 'Mengarahkan ke ' + halamanTujuan + '...';
+
+        setTimeout(function () {
+          window.location.href = (hasil && hasil.redirect) || '/dashboard';
+        }, 650);
+      } else {
+        // ---------- GAGAL: kunci warna ring merah + mainkan silang (X) ----------
+        transisiMasuk.classList.add('gagal');
+        cincinIsi.style.stroke = '#ef4444';
+        cincinIsi.style.filter = 'drop-shadow(0 0 7px #ef4444)';
+        transisiGagal.classList.add('tampil');
+        transisiTeks.textContent = 'Login gagal!';
+        transisiSubteks.textContent = (hasil && hasil.message) || 'Username, password, atau role salah!';
+
+        // Tahan sebentar biar animasi silang kelihatan, baru "mental" balik ke
+        // halaman login (reload beneran, bukan cuma sembunyikan overlay) --
+        // pesan error tampil lewat flash message Flask yang sudah tersedia.
+        setTimeout(function () {
+          window.location.href = (hasil && hasil.loginUrl) || '/login';
+        }, 1400);
+      }
+    }
+
     if (form) {
       form.addEventListener('submit', function (e) {
         if (!form.checkValidity()) { return; }
@@ -841,7 +923,26 @@
 
         tombolSubmit.disabled = true;
         tombolSubmit.style.opacity = '0.7';
+        transisiMasuk.classList.remove('gagal');
+        transisiCheck.classList.remove('tampil');
+        transisiGagal.classList.remove('tampil');
+        transisiPersen.style.opacity = '1';
         transisiMasuk.classList.add('tampil');
+
+        // Kirim data form ke backend lebih dulu (AJAX), supaya hasil valid/tidaknya
+        // sudah diketahui SEBELUM animasi selesai -- bukan sesudahnya.
+        var permintaanLogin = fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          credentials: 'same-origin'
+        }).then(function (res) {
+          return res.json().catch(function () {
+            return { success: false, message: 'Terjadi kendala saat memproses respons server.' };
+          });
+        }).catch(function () {
+          return { success: false, message: 'Tidak bisa terhubung ke server. Periksa koneksi kamu.' };
+        });
 
         var durasi = 1500;
         var mulai = null;
@@ -864,15 +965,10 @@
           if (progres < 1) {
             requestAnimationFrame(langkah);
           } else {
-            transisiPersen.style.opacity = '0';
-            transisiCheck.classList.add('tampil');
-            transisiTeks.textContent = 'Berhasil masuk!';
-            var halamanTujuan = petaHalamanRole[selectRole.value] || 'dashboard';
-            transisiSubteks.textContent = 'Mengarahkan ke ' + halamanTujuan + '...';
-
-            setTimeout(function () {
-              form.submit();
-            }, 550);
+            // Progress visual sudah 100% -- tunggu hasil asli dari server (kalau
+            // responsnya lebih lambat dari animasi, teks ini akan sempat terlihat).
+            transisiSubteks.textContent = 'Menyelesaikan...';
+            permintaanLogin.then(tampilkanHasilLogin);
           }
         }
         requestAnimationFrame(langkah);

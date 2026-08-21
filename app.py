@@ -417,6 +417,13 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
  
+        # Deteksi apakah ini request AJAX dari login.html (fetch dengan header
+        # X-Requested-With) -- kalau iya, balas JSON supaya frontend bisa tahu
+        # hasil valid/tidaknya SEBELUM animasi transisi selesai (lihat login.html),
+        # jadi animasi "berhasil" (centang) hanya main kalau memang berhasil, dan
+        # animasi "gagal" (silang) main kalau username/password/role salah.
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+ 
         # Cari user sesuai username dan role
         user = None
         for u in users.values():
@@ -425,23 +432,33 @@ def login():
                 break
  
         if not (user and user['password'] == password):
-            flash('Username, password, atau role salah!', 'error')
+            pesan_gagal = 'Username, password, atau role salah!'
+            # Tetap simpan flash error seperti semula -- kalau frontend nanti
+            # navigasi ulang/reload ke /login (baik lewat AJAX maupun submit
+            # form biasa untuk browser yang JS-nya nonaktif), pesan ini tetap
+            # muncul di halaman login.
+            flash(pesan_gagal, 'error')
+            if is_ajax:
+                return jsonify(success=False, message=pesan_gagal)
             return redirect(url_for('login'))
  
         # Master Device / approval device dihilangkan dulu -- login sekarang
         # langsung jalan begitu username/password/role cocok, tanpa perlu
         # persetujuan dari perangkat lain.
-        return _finish_login(user)
+        return _finish_login(user, is_ajax)
  
  
-def _finish_login(user):
+def _finish_login(user, is_ajax=False):
     """Set session login."""
     session['user'] = {
         'nama': user.get('fullname', user['username']),
         'username': user['username'],
         'role': user['role']
     }
-    return redirect(url_for('dashboard'))
+    tujuan = url_for('dashboard')
+    if is_ajax:
+        return jsonify(success=True, redirect=tujuan)
+    return redirect(tujuan)
  
  
 # ----------------------------------------------------
