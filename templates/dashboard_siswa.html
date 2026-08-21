@@ -164,48 +164,21 @@
             --brand-tint-50: #f0eeff;
             --brand-tint-100: #e3defe;
         }
-        /* Tema "Jurusan (TKJ)" — kombinasi biru + kuning diambil langsung dari
-           logo resmi Teknik Komputer dan Jaringan SMK Banjar Asri Cimaung
-           (biru gear #0670B6, kuning lingkaran #FFF100). --brand pakai biru
-           logo untuk tombol/aksen aktif & teks penting, sedangkan page-bg dan
-           border pakai wash kuning keemasan yang dilembutkan supaya nuansa
-           dua warna logo terasa di SELURUH bagian dashboard tanpa bikin teks
-           jadi susah dibaca (kuning solid FFF100 cuma dipakai tipis-tipis
-           lewat border-strong sebagai aksen pop, bukan jadi warna teks/isi).
-           Ini juga tema yang otomatis aktif begitu layar loading masuk
-           dashboard selesai (lihat sembunyikanLayarMasuk()). */
-        html:not(.dark)[data-accent-theme="jurusan"] {
-            --page-bg: #fff6c8;
-            --surface: #fffdf2;
-            --surface-hover: #ffefa0;
-            --border-subtle: #ffe98a;
-            --border-strong: #ffd400;
-            --brand: #0670b6;
-            --brand-dark: #05548a;
-            --brand-tint-50: #e8f4fc;
-            --brand-tint-100: #cfe8f8;
-        }
         /* Tema "Rahasia" — dipicu KHUSUS lewat tombol Rahasia di header
-           (bukan lewat panel Warna Aksen biasa), untuk momen setelah reveal
-           logo jurusan selesai. Palet-nya sengaja disamakan dengan warna
-           logo TKJ (biru gear #0670B6 + kuning lingkaran #FFF100/amber),
-           tapi diracik ulang biar nyaman di mata & komposisinya seimbang:
-           biru dipakai sebagai warna utama (brand, teks penting, aksi),
-           sedangkan kuning HANYA dipakai tipis-tipis sebagai aksen pop
-           (border-strong, garis, glow) -- bukan jadi warna latar/isi --
-           supaya tetap elegan & tidak norak/menyilaukan. Tersimpan permanen
-           di localStorage sama seperti tema aksen lainnya, jadi tetap
-           terpakai walau halaman di-refresh. */
+           (bukan lewat panel Warna Aksen biasa), nuansa biru-abu-putih yang
+           elegan & profesional untuk momen reveal logo jurusan. Tersimpan
+           permanen di localStorage sama seperti tema aksen lainnya, jadi
+           tetap terpakai walau halaman di-refresh. */
         html:not(.dark)[data-accent-theme="rahasia"] {
-            --page-bg: #f2f6fb;
+            --page-bg: #e6ecf5;
             --surface: #ffffff;
-            --surface-hover: #eaf2fb;
-            --border-subtle: #dde7f5;
-            --border-strong: #eab308;
-            --brand: #0670b6;
-            --brand-dark: #05548a;
-            --brand-tint-50: #e8f4fc;
-            --brand-tint-100: #cfe8f8;
+            --surface-hover: #dbe4f0;
+            --border-subtle: #d7e0ed;
+            --border-strong: #aebfd6;
+            --brand: #1d4ed8;
+            --brand-dark: #1e3a8a;
+            --brand-tint-50: #eff6ff;
+            --brand-tint-100: #dbeafe;
         }
 
         /* ============================================================
@@ -240,7 +213,7 @@
         .wash-rahasia {
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, rgba(6, 112, 182, 0.08) 0%, rgba(234, 179, 8, 0.05) 48%, rgba(255, 255, 255, 0.04) 100%);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.07) 0%, rgba(100, 116, 139, 0.05) 45%, rgba(255, 255, 255, 0.04) 100%);
         }
         /* Pola simpul jaringan tipis (titik + garis) sebagai wash tambahan --
            dibuat murni lewat gradient berulang (bukan gambar), jadi ringan
@@ -250,9 +223,9 @@
             inset: -10%;
             opacity: .5;
             background-image:
-                radial-gradient(circle, rgba(6, 112, 182, 0.35) 1.4px, transparent 1.6px),
-                linear-gradient(90deg, rgba(6, 112, 182, 0.08) 1px, transparent 1px),
-                linear-gradient(0deg, rgba(6, 112, 182, 0.08) 1px, transparent 1px);
+                radial-gradient(circle, rgba(29, 78, 216, 0.35) 1.4px, transparent 1.6px),
+                linear-gradient(90deg, rgba(29, 78, 216, 0.08) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(29, 78, 216, 0.08) 1px, transparent 1px);
             background-size: 72px 72px, 72px 72px, 72px 72px;
             background-position: 0 0, 0 0, 0 0;
             mask-image: radial-gradient(ellipse 85% 70% at 50% 30%, #000 0%, transparent 75%);
@@ -265,14 +238,14 @@
             border-radius: 9999px;
             background: radial-gradient(circle, var(--warna-glow, rgba(59,130,246,0.4)) 0%, transparent 70%);
         }
-        .glow-sudut-rahasia.atas { top: -180px; left: -160px; --warna-glow: rgba(6, 112, 182, 0.35); }
-        .glow-sudut-rahasia.bawah { bottom: -200px; right: -160px; --warna-glow: rgba(234, 179, 8, 0.28); }
+        .glow-sudut-rahasia.atas { top: -180px; left: -160px; --warna-glow: rgba(59, 130, 246, 0.35); }
+        .glow-sudut-rahasia.bawah { bottom: -200px; right: -160px; --warna-glow: rgba(100, 116, 139, 0.32); }
 
         /* ---------- Aksen kartu & tabel saat "Mode Jurusan" aktif ---------- */
         html:not(.dark)[data-accent-theme="rahasia"] [class*="rounded-2xl"][class*="border-slate-200"],
         html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card {
             position: relative;
-            box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 6px 18px -10px rgba(6,112,182,0.16);
+            box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 6px 18px -10px rgba(29,78,216,0.16);
         }
         html:not(.dark)[data-accent-theme="rahasia"] [class*="rounded-2xl"][class*="border-slate-200"]::before,
         html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card::before {
@@ -281,67 +254,67 @@
             inset: 0;
             border-radius: inherit;
             padding: 1.5px;
-            background: linear-gradient(135deg, rgba(6,112,182,.5), rgba(234,179,8,.4) 55%, rgba(255,255,255,.7));
+            background: linear-gradient(135deg, rgba(37,99,235,.5), rgba(148,163,184,.35) 55%, rgba(255,255,255,.7));
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
             pointer-events: none;
         }
         html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card--accent {
-            background: linear-gradient(160deg, #eff6ff, #fff8e1 130%);
-            border-color: #f5d76e;
+            background: linear-gradient(160deg, #eff6ff, #dbeafe 130%);
+            border-color: #bfdbfe;
         }
         html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card--accent:hover {
-            border-color: #eab308;
-            box-shadow: 0 6px 16px -6px rgba(6, 112, 182, 0.22);
+            border-color: #93c5fd;
+            box-shadow: 0 6px 16px -6px rgba(29, 78, 216, 0.22);
         }
         html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card--accent .text-amber-600 {
-            color: #b45309;
+            color: #1d4ed8;
         }
         html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card--accent p {
-            color: rgba(5, 84, 138, 0.72);
+            color: rgba(30, 58, 138, 0.75);
         }
         html:not(.dark)[data-accent-theme="rahasia"] #banner-sapaan {
-            border-color: rgba(6, 112, 182, 0.45);
-            box-shadow: 0 14px 34px -16px rgba(6, 112, 182, 0.45), 0 10px 22px -18px rgba(234, 179, 8, 0.3);
+            border-color: rgba(59, 130, 246, 0.45);
+            box-shadow: 0 14px 34px -16px rgba(29, 78, 216, 0.5);
         }
 
         /* ---------- Aksen sidebar & tombol Rahasia saat mode aktif ---------- */
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-utama {
-            background: linear-gradient(180deg, #ffffff 0%, #f4f8fd 55%, #fdf6df 100%);
-            border-right-color: #d9e2ee;
-            box-shadow: inset -1px 0 0 var(--border-strong), 4px 0 24px -8px rgba(6, 112, 182, 0.16);
+            background: linear-gradient(180deg, #ffffff 0%, #f4f8fd 55%, #eaf1fb 100%);
+            border-right-color: #cbd9ec;
+            box-shadow: inset -1px 0 0 var(--border-strong), 4px 0 24px -8px rgba(29, 78, 216, 0.16);
         }
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-utama::before {
             content: '';
             display: block;
             height: 3px;
             width: 100%;
-            background: linear-gradient(90deg, #0670b6, #eab308, #ffffff, #eab308, #0670b6);
+            background: linear-gradient(90deg, #1d4ed8, #94a3b8, #ffffff, #94a3b8, #1d4ed8);
         }
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-utama .border-b.border-slate-100 {
-            border-bottom-color: rgba(6, 112, 182, 0.16);
+            border-bottom-color: rgba(59, 130, 246, 0.16);
         }
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-utama a[aria-label="Beranda Portal Sekolah"] > div {
-            box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.22), 0 6px 16px -6px rgba(6, 112, 182, 0.4);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18), 0 6px 16px -6px rgba(29, 78, 216, 0.4);
         }
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-menu .nav-btn[class*="bg-blue-600"] {
-            background: linear-gradient(135deg, #0670b6, #05548a) !important;
-            box-shadow: inset 3px 0 0 0 #fbbf24, 0 8px 18px -8px rgba(6, 112, 182, 0.55);
+            background: linear-gradient(135deg, #2563eb, #1e3a8a) !important;
+            box-shadow: inset 3px 0 0 0 #93c5fd, 0 8px 18px -8px rgba(29, 78, 216, 0.55);
         }
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-menu .nav-btn[class*="hover:bg-slate-100"]:hover {
-            background: linear-gradient(135deg, #eaf1fb, #fdf3d6);
-            color: #05548a;
+            background: linear-gradient(135deg, #eaf1fb, #dbe7f7);
+            color: #1e3a8a;
         }
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-menu p.uppercase {
-            color: #7a8ba6;
+            color: #6b8cb8;
         }
         html:not(.dark)[data-accent-theme="rahasia"] #sidebar-menu .border-t.border-slate-100 {
-            border-top-color: rgba(6, 112, 182, 0.16);
+            border-top-color: rgba(59, 130, 246, 0.16);
         }
         html:not(.dark)[data-accent-theme="rahasia"] header {
-            border-bottom-color: rgba(6, 112, 182, 0.2) !important;
-            background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,251,235,.55) 55%, rgba(240,246,253,.9)) !important;
+            border-bottom-color: rgba(59, 130, 246, 0.22) !important;
+            background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(240,246,253,.9)) !important;
         }
         /* Tombol "Rahasia": idle-nya sekarang ada denyut cincin biru tipis
            yang sangat pelan (bukan diam total) supaya kelihatan "hidup" &
@@ -356,7 +329,7 @@
             position: absolute;
             inset: -3px;
             border-radius: inherit;
-            border: 1.5px solid rgba(6, 112, 182, 0.45);
+            border: 1.5px solid rgba(37, 99, 235, 0.45);
             opacity: 0;
             animation: denyutBtnRahasia 2.8s ease-out infinite;
         }
@@ -366,9 +339,9 @@
             100% { transform: scale(1.18); opacity: 0; }
         }
         #btn-rahasia-jurusan.rahasia-btn-aktif {
-            background: linear-gradient(135deg, #0670b6, #05548a);
+            background: linear-gradient(135deg, #2563eb, #1e3a8a);
             border-color: transparent;
-            box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.35), 0 6px 16px -6px rgba(6, 112, 182, 0.6);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22), 0 6px 16px -6px rgba(29, 78, 216, 0.6);
         }
         #btn-rahasia-jurusan.rahasia-btn-aktif::after { animation: none; opacity: 0; }
         #btn-rahasia-jurusan.rahasia-btn-aktif i,
@@ -624,26 +597,14 @@
         }
 
         /* ---------- Transisi warna yang smooth setiap kali aksen diganti ----------
-           Animasinya SAMA PERSIS seperti sebelumnya (tidak diubah sama sekali) --
-           yang diubah cuma KAPAN aturan ini aktif. Dulu selector "html:not(.dark) *"
-           dipasang PERMANEN ke SEMUA elemen & pseudo-elemen di seluruh halaman,
-           jadi 7 properti (background-color, background-image, border-color,
-           box-shadow, color, fill, stroke) selalu "diawasi" oleh browser di setiap
-           elemen, sepanjang waktu -- bukan cuma pas ganti warna aksen. Di dashboard
-           ini yang isinya banyak render-ulang list (leaderboard, teman, prestasi,
-           quiz, dst pakai innerHTML/className), itu artinya SETIAP elemen baru yang
-           muncul ikut kena watcher transisi ini terus-menerus, dan itu yang bikin
-           HP/laptop low-end kerasa berat & patah-patah walau lagi gak ganti tema.
-           Sekarang aturan ini di-scope lewat class ".sedang-ganti-aksen" yang cuma
-           ditempel ke <html> oleh JS (lihat pilihAksenTema) selama efek sapuan tema
-           benar-benar mainkan -- jadi begitu efeknya selesai, class-nya dilepas lagi
-           dan elemen-elemen kembali ringan seperti tidak punya transisi ini sama
-           sekali. Efek sapuan warnanya sendiri, saat aksen benar-benar diganti,
-           terlihat identik seperti sebelumnya. */
-        html.sedang-ganti-aksen:not(.dark),
-        html.sedang-ganti-aksen:not(.dark) * ,
-        html.sedang-ganti-aksen:not(.dark) *::before,
-        html.sedang-ganti-aksen:not(.dark) *::after {
+           Diterapkan luas ("html:not(.dark), html:not(.dark) *") supaya semua
+           elemen yang memakai var(--brand)/var(--brand-dark)/var(--brand-tint-*)
+           — tombol, badge, border, ring, background gradient — ikut animasi
+           mulus tanpa perlu daftar selector satu-satu. Sengaja dikecualikan
+           dari Mode Gelap karena warna aksennya memang terkunci di sana.
+           Canvas Chart.js tidak kena efek ini (properti canvas di-render
+           lewat JS, bukan CSS), jadi grafik tetap update instan seperti biasa. */
+        html:not(.dark), html:not(.dark) * , html:not(.dark) *::before, html:not(.dark) *::after {
             transition: background-color .5s cubic-bezier(.4,0,.2,1),
                         background-image .5s cubic-bezier(.4,0,.2,1),
                         border-color .5s cubic-bezier(.4,0,.2,1),
@@ -654,12 +615,11 @@
         }
         /* Elemen yang memang butuh transisi cepat (hover, dropdown buka/tutup,
            progress bar) tetap dipertahankan durasinya sendiri lewat !important
-           supaya tidak jadi lamban ketiban aturan 0.5s di atas, SELAMA jendela
-           ".sedang-ganti-aksen" itu aktif. */
-        html.sedang-ganti-aksen:not(.dark) .transition-transform,
-        html.sedang-ganti-aksen:not(.dark) [class*="duration-150"],
-        html.sedang-ganti-aksen:not(.dark) [class*="duration-200"],
-        html.sedang-ganti-aksen:not(.dark) [class*="duration-300"] {
+           supaya tidak jadi lamban ketiban aturan 0.5s di atas. */
+        html:not(.dark) .transition-transform,
+        html:not(.dark) [class*="duration-150"],
+        html:not(.dark) [class*="duration-200"],
+        html:not(.dark) [class*="duration-300"] {
             transition-duration: inherit;
         }
 
@@ -1870,255 +1830,7 @@
         @keyframes masukDashboardTitikJalan {
             0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } 100% { content: ''; }
         }
-    
-
-        /* ============================================================
-           PALET TKJ — FINAL OVERRIDE
-           Biru Elektrik #1E73BE = sidebar + header + aksi utama
-           Kuning Cerah #FFDE03 = aksen/border tipis saja
-           Putih #FFFFFF = background utama + kartu
-           ============================================================ */
-        html:not(.dark)[data-accent-theme] {
-            --page-bg: #FFFFFF;
-            --surface: #FFFFFF;
-            --surface-hover: #F7FAFD;
-            --border-subtle: #E4EAF1;
-            --border-strong: #FFDE03;
-            --text-primary: #17212B;
-            --text-secondary: #5B6773;
-            --text-tertiary: #8A96A3;
-            --brand: #1E73BE;
-            --brand-dark: #155A96;
-            --brand-tint-50: #EAF4FC;
-            --brand-tint-100: #D7EBFA;
-        }
-
-        html:not(.dark), html:not(.dark) body {
-            background: #FFFFFF !important;
-        }
-
-        /* Sidebar: solid biru elektrik, tanpa gradient pastel. */
-        html:not(.dark) #sidebar-utama {
-            background: #1E73BE !important;
-            border-right: 1px solid rgba(255,255,255,.22) !important;
-            box-shadow: 4px 0 18px -12px rgba(30,115,190,.45);
-        }
-
-        html:not(.dark) #sidebar-utama > div:first-child > div:first-child {
-            border-bottom-color: rgba(255,255,255,.20) !important;
-        }
-
-        html:not(.dark) #sidebar-utama h1,
-        html:not(.dark) #sidebar-utama p,
-        html:not(.dark) #sidebar-utama .text-slate-900,
-        html:not(.dark) #sidebar-utama .text-slate-800,
-        html:not(.dark) #sidebar-utama .text-slate-700,
-        html:not(.dark) #sidebar-utama .text-slate-600,
-        html:not(.dark) #sidebar-utama .text-slate-500,
-        html:not(.dark) #sidebar-utama .text-slate-400 {
-            color: rgba(255,255,255,.90) !important;
-        }
-
-        html:not(.dark) #sidebar-utama .nav-btn {
-            color: rgba(255,255,255,.86) !important;
-            background: transparent !important;
-            border-color: transparent !important;
-            box-shadow: none !important;
-        }
-
-        html:not(.dark) #sidebar-utama .nav-btn:hover,
-        html:not(.dark) #sidebar-utama .nav-btn:active {
-            background: rgba(255,255,255,.10) !important;
-            color: #FFFFFF !important;
-        }
-
-        /* Item aktif: biru tetap dominan, kuning hanya garis aksen tipis. */
-        html:not(.dark) #sidebar-utama .nav-btn[aria-current="page"] {
-            background: rgba(255,255,255,.14) !important;
-            color: #FFFFFF !important;
-            border-left: 3px solid #FFDE03 !important;
-            box-shadow: none !important;
-        }
-
-        html:not(.dark) #sidebar-utama .border-t.border-slate-100,
-        html:not(.dark) #sidebar-utama .border-b.border-slate-100 {
-            border-color: rgba(255,255,255,.18) !important;
-        }
-
-        html:not(.dark) #sidebar-utama a[aria-label="Beranda Portal Sekolah"] > div {
-            background: #FFFFFF !important;
-            border: 1px solid rgba(255,255,255,.65);
-            box-shadow: 0 0 0 2px rgba(255,222,3,.65) !important;
-        }
-
-        /* Header: solid biru elektrik. */
-        html:not(.dark) header {
-            background: #1E73BE !important;
-            border-bottom: 1px solid rgba(255,255,255,.20) !important;
-            color: #FFFFFF !important;
-            box-shadow: 0 2px 10px -8px rgba(30,115,190,.45);
-        }
-
-        html:not(.dark) header .text-slate-900,
-        html:not(.dark) header .text-slate-800,
-        html:not(.dark) header .text-slate-700,
-        html:not(.dark) header .text-slate-600,
-        html:not(.dark) header .text-slate-500,
-        html:not(.dark) header .text-slate-400,
-        html:not(.dark) header .text-blue-600,
-        html:not(.dark) header .text-blue-700 {
-            color: #FFFFFF !important;
-        }
-
-        html:not(.dark) header button,
-        html:not(.dark) header #profile-menu-trigger {
-            border-color: rgba(255,255,255,.24) !important;
-            color: #FFFFFF !important;
-        }
-
-        html:not(.dark) header button:hover {
-            background: rgba(255,255,255,.10) !important;
-        }
-
-        html:not(.dark) header .bg-slate-50,
-        html:not(.dark) header .bg-slate-100 {
-            background: rgba(255,255,255,.12) !important;
-            border-color: rgba(255,255,255,.22) !important;
-        }
-
-        html:not(.dark) header .border-l,
-        html:not(.dark) header .border-slate-200,
-        html:not(.dark) header .border-slate-200\/80 {
-            border-color: rgba(255,255,255,.24) !important;
-        }
-
-        /* Area konten: putih bersih. */
-        html:not(.dark) #main-content {
-            background: #FFFFFF !important;
-        }
-
-        html:not(.dark) main,
-        html:not(.dark) main .bg-white,
-        html:not(.dark) main .bg-slate-50,
-        html:not(.dark) main .bg-slate-100 {
-            background-color: #FFFFFF !important;
-        }
-
-        /* Kartu: putih + border abu tipis, kuning hanya sebagai aksen. */
-        html:not(.dark) main [class*="border-slate-200"],
-        html:not(.dark) main [class*="border-slate-100"] {
-            border-color: #E4EAF1 !important;
-        }
-
-        html:not(.dark) .bento-stat-card,
-        html:not(.dark) .bento-stat-card--accent {
-            background: #FFFFFF !important;
-            border: 1px solid #E4EAF1 !important;
-            box-shadow: 0 1px 3px rgba(23,33,43,.05) !important;
-        }
-
-        html:not(.dark) .bento-stat-card--accent:hover,
-        html:not(.dark) .bento-stat-card:hover {
-            border-color: #FFDE03 !important;
-        }
-
-        /* Banner utama tetap biru, tanpa campuran kuning besar. */
-        html:not(.dark) #banner-sapaan {
-            background: #1E73BE !important;
-            border: 1px solid rgba(255,255,255,.18) !important;
-            box-shadow: 0 8px 24px -14px rgba(30,115,190,.55);
-        }
-
-        /* Semua gradient besar kuning/amber/oranye pada kartu streak dirapikan. */
-        html:not(.dark) .streak-tier-0,
-        html:not(.dark) .streak-tier-1,
-        html:not(.dark) .streak-tier-2,
-        html:not(.dark) .streak-tier-3 {
-            background: #FFFFFF !important;
-            border-color: #E4EAF1 !important;
-        }
-
-        html:not(.dark) .streak-tier-1:hover,
-        html:not(.dark) .streak-tier-2:hover,
-        html:not(.dark) .streak-tier-3:hover {
-            border-color: #FFDE03 !important;
-        }
-
-        html:not(.dark) .streak-tier-4 {
-            background: #1E73BE !important;
-            border-color: #FFDE03 !important;
-            box-shadow: 0 0 0 1px rgba(255,222,3,.35), 0 8px 20px -10px rgba(30,115,190,.45) !important;
-        }
-
-        /* Kuning cerah hanya untuk garis/aksen kecil. */
-        html:not(.dark) .border-yellow-300,
-        html:not(.dark) .border-yellow-400,
-        html:not(.dark) .border-amber-300,
-        html:not(.dark) .border-amber-400,
-        html:not(.dark) .border-yellow-500,
-        html:not(.dark) .border-amber-500 {
-            border-color: #FFDE03 !important;
-        }
-
-        /* Tombol aksi utama menggunakan biru elektrik. */
-        html:not(.dark) .bg-blue-600,
-        html:not(.dark) .bg-blue-700,
-        html:not(.dark) .from-blue-600,
-        html:not(.dark) .via-blue-600 {
-            background-color: #1E73BE !important;
-            background-image: none !important;
-        }
-
-        html:not(.dark) .hover\:bg-blue-700:hover {
-            background-color: #155A96 !important;
-        }
-
-        html:not(.dark) .text-blue-500,
-        html:not(.dark) .text-blue-600,
-        html:not(.dark) .text-blue-700 {
-            color: #1E73BE !important;
-        }
-
-        html:not(.dark) .border-blue-500,
-        html:not(.dark) .border-blue-600 {
-            border-color: #1E73BE !important;
-        }
-
-        html:not(.dark) .bg-blue-50,
-        html:not(.dark) .bg-blue-100 {
-            background-color: #EAF4FC !important;
-        }
-
-        /* Fokus aksesibilitas tetap biru; kuning tidak dipakai sebagai fill. */
-        html:not(.dark) a:focus-visible,
-        html:not(.dark) button:focus-visible,
-        html:not(.dark) input:focus-visible,
-        html:not(.dark) textarea:focus-visible,
-        html:not(.dark) select:focus-visible,
-        html:not(.dark) [tabindex]:focus-visible {
-            outline-color: #1E73BE !important;
-        }
-
-        /* Mode "rahasia" juga mengikuti palet TKJ pada dashboard normal. */
-        html:not(.dark)[data-accent-theme="rahasia"] {
-            --page-bg: #FFFFFF;
-            --surface: #FFFFFF;
-            --surface-hover: #F7FAFD;
-            --border-subtle: #E4EAF1;
-            --border-strong: #FFDE03;
-            --brand: #1E73BE;
-            --brand-dark: #155A96;
-            --brand-tint-50: #EAF4FC;
-            --brand-tint-100: #D7EBFA;
-        }
-
-        /* Hilangkan gradient besar pada sidebar/header rahasia agar tetap konsisten. */
-        html:not(.dark)[data-accent-theme="rahasia"] #sidebar-utama,
-        html:not(.dark)[data-accent-theme="rahasia"] header {
-            background: #1E73BE !important;
-            background-image: none !important;
-        }
-</style>
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden">
     <!-- Layar transisi masuk dashboard: gelap -> terang, mirip halaman login -->
@@ -2434,12 +2146,30 @@
 
                     <div id="panel-aksen-tema" class="hidden absolute right-0 mt-2 w-60 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-4" role="menu" aria-label="Pilihan warna aksen">
                         <div class="flex items-center justify-between mb-3">
-                            <span class="text-xs font-bold text-slate-800">Palet TKJ</span>
+                            <span class="text-xs font-bold text-slate-800">Warna Aksen</span>
                             <button onclick="toggleDropdownAksenTema(event)" class="text-slate-400 hover:text-slate-600" aria-label="Tutup"><i class="fa-solid fa-xmark text-xs"></i></button>
                         </div>
-                        <div class="grid grid-cols-1 gap-3 place-items-center">
-                            <button type="button" class="swatch-aksen-tema aktif" data-aksen="jurusan" style="background:#1E73BE; --swatch-glow:#FFDE03;" onclick="pilihAksenTema('jurusan')" title="Palet TKJ" aria-label="Gunakan palet TKJ: Biru Elektrik dan Kuning Cerah">
+                        <div class="grid grid-cols-3 gap-3 place-items-center">
+                            <button type="button" class="swatch-aksen-tema" data-aksen="pink" style="background:#ec4899; --swatch-glow:#ec4899;" onclick="pilihAksenTema('pink')" title="Pink" aria-label="Pilih warna aksen Pink">
                                 <i class="fa-solid fa-check cek-aktif text-white text-xs" aria-hidden="true"></i>
+                            </button>
+                            <button type="button" class="swatch-aksen-tema" data-aksen="yellow" style="background:#eab308; --swatch-glow:#eab308;" onclick="pilihAksenTema('yellow')" title="Yellow" aria-label="Pilih warna aksen Yellow">
+                                <i class="fa-solid fa-check cek-aktif text-white text-xs" aria-hidden="true"></i>
+                            </button>
+                            <button type="button" class="swatch-aksen-tema" data-aksen="blue" style="background:#3b82f6; --swatch-glow:#3b82f6;" onclick="pilihAksenTema('blue')" title="Blue" aria-label="Pilih warna aksen Blue">
+                                <i class="fa-solid fa-check cek-aktif text-white text-xs" aria-hidden="true"></i>
+                            </button>
+                            <button type="button" class="swatch-aksen-tema" data-aksen="green" style="background:#22c55e; --swatch-glow:#22c55e;" onclick="pilihAksenTema('green')" title="Green" aria-label="Pilih warna aksen Green">
+                                <i class="fa-solid fa-check cek-aktif text-white text-xs" aria-hidden="true"></i>
+                            </button>
+                            <button type="button" class="swatch-aksen-tema" data-aksen="purple" style="background:#a855f7; --swatch-glow:#a855f7;" onclick="pilihAksenTema('purple')" title="Purple" aria-label="Pilih warna aksen Purple">
+                                <i class="fa-solid fa-check cek-aktif text-white text-xs" aria-hidden="true"></i>
+                            </button>
+                            <button type="button" class="swatch-aksen-tema" data-aksen="cyan" style="background:#06b6d4; --swatch-glow:#06b6d4;" onclick="pilihAksenTema('cyan')" title="Cyan" aria-label="Pilih warna aksen Cyan">
+                                <i class="fa-solid fa-check cek-aktif text-white text-xs" aria-hidden="true"></i>
+                            </button>
+                            <button type="button" class="swatch-aksen-tema" data-aksen="putih" style="background:#f1f5f9; border-color:#e2e8f0; --swatch-glow:#5b4fe9;" onclick="pilihAksenTema('putih')" title="Putih (Default)" aria-label="Pilih warna Putih, reset ke tampilan asli">
+                                <i class="fa-solid fa-check cek-aktif text-slate-700 text-xs" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
@@ -6293,9 +6023,6 @@
         }
 
         function pilihAksenTema(nama) {
-            // Palet terang tunggal: Biru Elektrik + aksen Kuning Cerah.
-            // "rahasia" tetap dipertahankan karena merupakan mode reveal khusus.
-            if (nama !== 'rahasia') nama = TEMA_AKSEN_DEFAULT;
             mainkanEfekSapuanTema(nama);
             tandaiSwatchAksenAktif(nama);
             tandaiTombolRahasiaAktif(nama === 'rahasia');
@@ -6305,19 +6032,11 @@
                 // gelombang lewat delay per-elemen di atas, ganti atribut temanya
                 // LANGSUNG (tanpa jeda tambahan) supaya delay per-elemen itulah yang
                 // menentukan kapan tiap bagian layar berubah warna.
-                // Nyalakan jendela transisi universal HANYA selama efek sapuan ini
-                // benar-benar mainkan (lihat CSS ".sedang-ganti-aksen" di atas) --
-                // supaya di luar momen ganti tema, elemen di seluruh dashboard tidak
-                // ikut memikul watcher transisi 7-properti itu terus-menerus.
-                document.documentElement.classList.add('sedang-ganti-aksen');
                 terapkanDelaySapuanWarna();
                 document.documentElement.setAttribute('data-accent-theme', nama);
                 localStorage.setItem('ui_accent_theme', nama);
                 clearTimeout(pilihAksenTema._timerBersihDelay);
-                pilihAksenTema._timerBersihDelay = setTimeout(() => {
-                    bersihkanDelaySapuanWarna();
-                    document.documentElement.classList.remove('sedang-ganti-aksen');
-                }, DURASI_SAPUAN_TEMA_MS + 500);
+                pilihAksenTema._timerBersihDelay = setTimeout(bersihkanDelaySapuanWarna, DURASI_SAPUAN_TEMA_MS + 500);
             } else {
                 // Reduce Motion aktif / bukan Mode Terang -> ganti warna langsung tanpa efek.
                 document.documentElement.setAttribute('data-accent-theme', nama);
@@ -6340,18 +6059,37 @@
         // ke yang dipakai sebelumnya dengan transisi warna yang mulus
         // (durasi transisinya sudah diatur global, lihat blok "Transisi
         // warna yang smooth" di CSS) -- tanpa nongolin logo lagi.
+        // Mengucapkan nama jurusan "TEKNIK KOMPUTER JARINGAN" pakai suara
+        // sintetis bawaan browser (Web Speech API) tiap kali overlay logo
+        // jurusan muncul lewat tombol Rahasia. Tidak butuh file audio
+        // eksternal -- kalau browser tidak mendukung speechSynthesis,
+        // fungsi ini diam saja tanpa error.
+        function ucapkanNamaJurusanRahasia() {
+            if (!('speechSynthesis' in window)) return;
+            try {
+                window.speechSynthesis.cancel(); // hentikan ucapan sebelumnya kalau tombol diklik cepat berulang
+                const ucapan = new SpeechSynthesisUtterance('TEKNIK KOMPUTER JARINGAN');
+                ucapan.lang = 'id-ID';
+                ucapan.rate = 0.85;
+                ucapan.pitch = 0.6; // nada lebih rendah/berat
+                window.speechSynthesis.speak(ucapan);
+            } catch (e) {
+                console.warn('Gagal memutar suara jurusan:', e);
+            }
+        }
+
         function bukaRahasiaJurusan() {
             const html = document.documentElement;
             const sedangAktif = html.getAttribute('data-accent-theme') === 'rahasia';
 
             if (sedangAktif) {
-                const temaSebelum = localStorage.getItem('ui_accent_theme_sebelum_rahasia') || TEMA_AKSEN_DEFAULT;
+                const temaSebelum = localStorage.getItem('ui_accent_theme_sebelum_rahasia') || 'putih';
                 pilihAksenTema(temaSebelum);
                 tandaiTombolRahasiaAktif(false);
                 return;
             }
 
-            const temaSekarang = localStorage.getItem('ui_accent_theme') || TEMA_AKSEN_DEFAULT;
+            const temaSekarang = localStorage.getItem('ui_accent_theme') || 'putih';
             if (temaSekarang !== 'rahasia') {
                 localStorage.setItem('ui_accent_theme_sebelum_rahasia', temaSekarang);
             }
@@ -6367,6 +6105,8 @@
             overlay.classList.remove('hidden', 'overlay-rahasia-fadeout');
             void overlay.offsetWidth; // reflow, supaya animasi masuk dari awal tiap diklik ulang
             overlay.classList.add('overlay-rahasia-tampil');
+
+            ucapkanNamaJurusanRahasia();
 
             bukaRahasiaJurusan._timerFadeOut = setTimeout(() => {
                 overlay.classList.add('overlay-rahasia-fadeout');
@@ -6402,17 +6142,9 @@
             if (btn) btn.classList.toggle('rahasia-btn-aktif', aktif);
         }
 
-        // Catatan: loadAksenTemaPreference() baru benar-benar DIPANGGIL belakangan
-        // (DOMContentLoaded, lihat jauh di bawah -- setelah const TEMA_AKSEN_DEFAULT
-        // didefinisikan), jadi walau fungsinya DIDEFINISIKAN di sini, referensi ke
-        // TEMA_AKSEN_DEFAULT di bawah aman dari temporal-dead-zone.
         function loadAksenTemaPreference() {
-            // Dashboard terang dikunci ke palet identitas TKJ.
-            // Mode "rahasia" tetap boleh dipakai untuk overlay/reveal.
-            const stored = localStorage.getItem('ui_accent_theme');
-            const saved = stored === 'rahasia' ? 'rahasia' : TEMA_AKSEN_DEFAULT;
+            const saved = localStorage.getItem('ui_accent_theme') || 'putih';
             document.documentElement.setAttribute('data-accent-theme', saved);
-            localStorage.setItem('ui_accent_theme', saved);
             tandaiSwatchAksenAktif(saved);
             tandaiTombolRahasiaAktif(saved === 'rahasia');
         }
@@ -6423,14 +6155,8 @@
         const PALET_AKSEN_HEX = {
             pink: '#ec4899', yellow: '#eab308', blue: '#3b82f6',
             green: '#22c55e', purple: '#a855f7', cyan: '#06b6d4',
-            putih: '#5b4fe9', rahasia: '#1E73BE', jurusan: '#1E73BE'
+            putih: '#5b4fe9', rahasia: '#1d4ed8'
         };
-
-        // Tema default dashboard: kombinasi biru + kuning sesuai logo Jurusan TKJ.
-        // Dipakai sebagai fallback tiap kali kode perlu tahu "tema bawaan" --
-        // baik saat belum ada preferensi tersimpan di localStorage, maupun saat
-        // Mode Jurusan ("Rahasia") dimatikan dan perlu balik ke tema sebelumnya.
-        const TEMA_AKSEN_DEFAULT = 'jurusan';
 
         function pengaturanReduceMotionAktif() {
             return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -10319,22 +10045,6 @@
             var layarMasuk = document.getElementById('layar-masuk-dashboard');
             if (!layarMasuk) return;
             function sembunyikanLayarMasuk() {
-                // Begitu layar loading mulai memudar, langsung mainkan efek
-                // "gelombang sapuan warna" (sama seperti saat pengguna manual
-                // ganti warna aksen lewat panel palet) supaya dashboard yang
-                // terungkap di baliknya kelihatan benar-benar "bertransisi"
-                // masuk ke skema warna final (biru + kuning khas logo Jurusan
-                // TKJ), bukan cuma tiba-tiba muncul begitu saja. Pakai tema
-                // yang memang sudah aktif (localStorage / default) supaya
-                // warnanya konsisten dengan apa yang sudah di-set
-                // loadAksenTemaPreference() sebelumnya -- fungsi ini cuma
-                // menambahkan "reveal" visualnya, bukan mengubah pilihan tema.
-                if (typeof pilihAksenTema === 'function' && !document.documentElement.classList.contains('dark')) {
-                    var temaAktif = (typeof TEMA_AKSEN_DEFAULT !== 'undefined')
-                        ? (localStorage.getItem('ui_accent_theme') || TEMA_AKSEN_DEFAULT)
-                        : (localStorage.getItem('ui_accent_theme') || 'jurusan');
-                    pilihAksenTema(temaAktif);
-                }
                 layarMasuk.classList.add('selesai');
                 setTimeout(function () { layarMasuk.style.display = 'none'; }, 650);
             }
