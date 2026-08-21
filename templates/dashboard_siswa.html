@@ -389,21 +389,22 @@
             -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 0%, transparent 78%);
         }
         /* ---------- Efek "bendera biru berkibar" pada latar overlay ----------
-           Kombinasi 2 trik ringan: (1) filter SVG feTurbulence+feDisplacementMap
-           (didefinisikan di <svg> tersembunyi dekat markup overlay) yang
-           mendistorsi latar+pola jaringan jadi bergelombang kayak kain, dan
-           (2) goyangan 3D super halus (rotateY/rotateZ/skewX) + sapuan pita
-           cahaya diagonal yang bergeser, meniru lipatan kain kena cahaya.
-           Semua dibungkus 1 container (.kain-bendera-rahasia) supaya latar
-           & pola jaringan berkibar SATU KESATUAN, bukan misalign sendiri-
-           sendiri. Kartu logo di tengah TIDAK ikut ke-filter ini (tetap
-           tajam) karena ada di luar container ini. */
+           VERSI RINGAN: sebelumnya pakai filter SVG feTurbulence+
+           feDisplacementMap yang dianimasikan -- keliatannya sepele tapi
+           browser harus HITUNG ULANG noise per-piksel untuk SELURUH layar
+           di SETIAP frame (gak bisa dipercepat GPU), jadi berat terutama
+           di HP. Diganti total jadi murni "transform" (rotateY/rotateZ/
+           skewX pada container + translateX pada pita cahaya) yang GPU-
+           compositable -- browser tinggal geser/miringkan layer yang sudah
+           digambar sekali, bukan menggambar ulang tiap frame. Kesan
+           "berkibar"-nya tetap dapet dari goyangan 3D + pita cahaya yang
+           melintas, cuma tanpa distorsi tekstur piksel yang mahal itu.
+           Kartu logo di tengah tetap di luar container ini (tajam terus). */
         .kain-bendera-rahasia {
             position: absolute;
             inset: -8% -3%;
             transform-origin: 50% 50%;
             animation: kibarBenderaRahasia 5.2s ease-in-out infinite;
-            filter: url(#gelombangBenderaRahasia);
             will-change: transform;
         }
         @keyframes kibarBenderaRahasia {
@@ -413,24 +414,35 @@
             75%  { transform: perspective(900px) rotateY(-2.4deg) rotateZ(-0.35deg) skewX(0.6deg); }
             100% { transform: perspective(900px) rotateY(0deg) rotateZ(0deg) skewX(0deg); }
         }
-        /* Pita cahaya diagonal yang bergeser pelan -- meniru lipatan kain
-           bendera yang berpindah-pindah kena cahaya saat berkibar. */
+        /* Pita cahaya diagonal yang melintas -- dulu animasinya geser
+           "background-position" (mahal, mesti dicat ulang tiap frame).
+           Sekarang gradientnya statis & yang digeser cuma "transform:
+           translateX" lewat ::before yang lebih lebar dari layar -- jauh
+           lebih murah karena cuma memindah layer, bukan menggambar ulang. */
         .lipatan-cahaya-bendera {
             position: absolute;
             inset: 0;
-            opacity: .55;
-            mix-blend-mode: overlay;
+            overflow: hidden;
+            opacity: .4;
+        }
+        .lipatan-cahaya-bendera::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            left: -60%;
+            width: 220%;
+            height: 120%;
             background-image: repeating-linear-gradient(72deg,
                 rgba(255,255,255,0.18) 0px, rgba(255,255,255,0.18) 3px,
                 transparent 3px, transparent 50px,
-                rgba(8,13,28,0.16) 50px, rgba(8,13,28,0.16) 53px,
+                rgba(8,13,28,0.14) 50px, rgba(8,13,28,0.14) 53px,
                 transparent 53px, transparent 100px);
-            background-size: 340% 100%;
             animation: geserLipatanBendera 6.4s linear infinite;
+            will-change: transform;
         }
         @keyframes geserLipatanBendera {
-            from { background-position: 0% 0; }
-            to { background-position: -100% 0; }
+            from { transform: translateX(0); }
+            to { transform: translateX(-25%); }
         }
         .rahasia-konten-anim {
             opacity: 0;
@@ -580,8 +592,8 @@
             .kartu-kaca-logo-rahasia::after,
             .partikel-rahasia,
             #btn-rahasia-jurusan::after { animation: none; }
-            .kain-bendera-rahasia { animation: none; filter: none; transform: none; }
-            .lipatan-cahaya-bendera { animation: none; }
+            .kain-bendera-rahasia { animation: none; transform: none; }
+            .lipatan-cahaya-bendera::before { animation: none; }
         }
 
         /* ---------- Transisi warna yang smooth setiap kali aksen diganti ----------
@@ -3177,21 +3189,6 @@
          sendiri pointer-events: auto (supaya tombol tutup & klik-latar bisa
          dipakai), tapi kartu logonya tidak menghalangi apa pun di baliknya
          karena overlay otomatis hilang lewat timer/klik. -->
-    <!-- Filter SVG tersembunyi: sumber efek "kain berkibar" (feTurbulence +
-         feDisplacementMap) yang dipakai lewat filter: url(#gelombangBenderaRahasia)
-         di .kain-bendera-rahasia (lihat <style>). baseFrequency dianimasikan
-         pelan supaya gelombangnya terasa "hidup", bukan distorsi statis. -->
-    <svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false">
-        <defs>
-            <filter id="gelombangBenderaRahasia" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
-                <feTurbulence type="fractalNoise" numOctaves="2" seed="7" result="gelombangNoiseRahasia">
-                    <animate attributeName="baseFrequency" dur="7s" values="0.006 0.018;0.009 0.013;0.006 0.018" repeatCount="indefinite" />
-                </feTurbulence>
-                <feDisplacementMap in="SourceGraphic" in2="gelombangNoiseRahasia" scale="26" xChannelSelector="R" yChannelSelector="G" />
-            </filter>
-        </defs>
-    </svg>
-
     <div id="overlay-logo-rahasia" class="fixed inset-0 z-[210] hidden items-center justify-center overlay-rahasia" onclick="if(event.target === this) tutupOverlayRahasiaDini()">
         <!-- Latar biru + pola jaringan dibungkus 1 container yang berkibar
              seperti kain bendera (lihat .kain-bendera-rahasia di <style>).
