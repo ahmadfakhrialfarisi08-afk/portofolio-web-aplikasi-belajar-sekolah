@@ -81,7 +81,7 @@ BORDER_ID_ADMIN = 'admin_dev'
 # (mis. '../static/img/border_pemula.jpg') yang sudah dipakai di
 # dashboard_siswa.html, supaya konsisten saat dipakai sebagai src <img>
 # dari halaman yang sama.
-FOTO_PROFIL_DEFAULT = '../static/img/poto_profil_default.jpg'
+FOTO_PROFIL_DEFAULT = '../static/img/foto_profil_default.jpg'
  
 users = {
     'guru': {
@@ -848,10 +848,11 @@ def api_teman_cari():
                 'kelas': u.get('kelas', '-'),
                 'status': _status_pertemanan(me, u['username']),
                 'border': u.get('border_aktif') or 'starter_pemula',
-                # Foto profil asli (base64) yang disimpan lewat /api/profil/foto --
-                # None kalau siswa itu belum pernah upload foto, frontend akan
-                # fallback ke avatar placeholder (lihat jalankanPencarianTeman()).
-                'foto': u.get('foto_profil')
+                # Foto profil siswa itu: kalau dia sudah pernah ganti foto sendiri
+                # lewat /api/profil/foto, itu yang dipakai (TIDAK PERNAH ditimpa
+                # di sini). Kalau belum pernah ganti sama sekali, otomatis fallback
+                # ke foto_profil_default.jpg (lihat FOTO_PROFIL_DEFAULT di atas).
+                'foto': u.get('foto_profil') or FOTO_PROFIL_DEFAULT
             })
     return jsonify(success=True, hasil=hasil)
  
@@ -882,11 +883,13 @@ def api_kelas_roster():
                 'username': u['username'],
                 'nama': u['fullname'],
                 'border': border_terpasang,
-                # Foto profil asli (base64) tiap siswa -- supaya avatar di
-                # Denah Kelas & Tabel Siswa Dashboard Guru sinkron ke foto
-                # yang BENERAN dipakai orangnya, bukan cuma akun yang sedang
-                # login di browser guru ini.
-                'foto': u.get('foto_profil')
+                # Foto profil asli tiap siswa -- supaya avatar di Denah Kelas &
+                # Tabel Siswa Dashboard Guru sinkron ke foto yang BENERAN dipakai
+                # orangnya (bukan cuma akun yang sedang login di browser guru ini).
+                # Siswa yang belum pernah ganti foto sendiri otomatis fallback ke
+                # foto_profil_default.jpg -- foto siswa yang SUDAH diganti tidak
+                # pernah ditimpa di sini.
+                'foto': u.get('foto_profil') or FOTO_PROFIL_DEFAULT
             })
     return jsonify(success=True, siswa=hasil)
  
@@ -1055,8 +1058,11 @@ def api_teman_profil(username):
         'status_pertemanan': _status_pertemanan(me, username),
         # Border & foto profil aslinya, dipetakan jadi border/efek nama/title
         # di sisi frontend (lihat renderIdCardTeman() -> getSemuaBorder()).
+        # Foto: pakai punya siswa itu sendiri kalau sudah pernah diganti, kalau
+        # belum otomatis fallback ke foto_profil_default.jpg -- tidak pernah
+        # menimpa foto yang sudah diganti siswa yang bersangkutan.
         'border': u.get('border_aktif') or 'starter_pemula',
-        'foto': u.get('foto_profil')
+        'foto': u.get('foto_profil') or FOTO_PROFIL_DEFAULT
     })
  
  
