@@ -6047,13 +6047,14 @@
         }
 
         // Tombol "Warna Aksen" cuma masuk akal saat Mode Terang aktif (di Mode
-        // Gelap, palet warna terkunci ke Cyan Neon bawaan) -- jadi tombolnya
-        // ditampilkan/disembunyikan mengikuti status dark mode saat ini.
+        // Gelap, palet warna terkunci ke Cyan Neon bawaan). SEBELUMNYA tombol ini
+        // disembunyikan total saat Mode Gelap aktif -- sekarang tombolnya tetap
+        // ditampilkan (biar siswa tahu opsinya ada), tapi begitu diklik saat Mode
+        // Gelap aktif langsung dikasih toast pengingat pindah ke Mode Terang dulu
+        // (lihat toggleDropdownAksenTema), bukan diam-diam disembunyikan.
         function tampilkanTombolAksenTema(isDark) {
             const wrapper = document.getElementById('wrapper-btn-aksen-tema');
             if (!wrapper) return;
-            wrapper.classList.toggle('hidden', isDark);
-            wrapper.classList.toggle('flex', !isDark);
             if (isDark) {
                 const dropdown = document.getElementById('panel-aksen-tema');
                 if (dropdown) dropdown.classList.add('hidden');
@@ -6061,12 +6062,20 @@
         }
 
         /* ================= 1b. WARNA AKSEN (THEME SWITCHER) =================
-           Panel swatch di header (tombol ikon palet, cuma muncul di Mode Terang).
-           Transisi warnanya sendiri sudah diatur lewat CSS "html.dark, html.dark *"
-           di atas -- di sini JS cuma perlu ganti atribut data-accent-theme,
-           sisanya (animasi smooth) otomatis kejadian lewat CSS transition. */
+           Panel swatch di header (tombol ikon palet). Transisi warnanya sendiri
+           sudah diatur lewat CSS "html.dark, html.dark *" di atas -- di sini JS
+           cuma perlu ganti atribut data-accent-theme, sisanya (animasi smooth)
+           otomatis kejadian lewat CSS transition. */
         function toggleDropdownAksenTema(event) {
             if (event) event.stopPropagation();
+
+            // Warna aksen terkunci ke Cyan Neon selama Mode Gelap aktif -- jangan
+            // buka panelnya sama sekali, cukup kasih tahu lewat toast.
+            if (document.documentElement.classList.contains('dark')) {
+                tampilkanToastAksenTemaButuhModeTerang();
+                return;
+            }
+
             const dropdown = document.getElementById('panel-aksen-tema');
             const trigger = document.getElementById('btn-aksen-tema');
             const profileDropdown = document.getElementById('profile-dropdown');
@@ -6173,17 +6182,18 @@
         // ke yang dipakai sebelumnya dengan transisi warna yang mulus
         // (durasi transisinya sudah diatur global, lihat blok "Transisi
         // warna yang smooth" di CSS) -- tanpa nongolin logo lagi.
-        // Tema "rahasia" cuma didesain buat Mode Terang (lihat selector CSS
-        // "html:not(.dark)[data-accent-theme='rahasia']" di atas) -- kalau Mode
-        // Gelap lagi aktif, tema ini gak akan kelihatan bedanya sama sekali walau
-        // atributnya tetap diset. Daripada siswa klik tapi tampilannya diam saja
-        // (kelihatan kayak tombolnya rusak), kasih toast pengingat suruh pindah
-        // ke Mode Terang dulu.
-        function tampilkanToastRahasiaButuhModeTerang() {
+        // Helper BERSAMA -- dipakai oleh tombol "Rahasia" & tombol "Warna Aksen",
+        // dua-duanya cuma masuk akal di Mode Terang (lihat selector CSS
+        // "html:not(.dark)[data-accent-theme=...]" di atas: baik tema rahasia
+        // maupun swatch warna aksen terkunci/gak berlaku sama sekali saat Mode
+        // Gelap aktif). Daripada siswa klik tapi tampilannya diam saja (kelihatan
+        // kayak tombolnya rusak), kasih toast pengingat suruh pindah ke Mode
+        // Terang dulu, dengan judul/pesan yang bisa disesuaikan per fitur.
+        function _tampilkanToastPerluModeTerang(idToastPrefix, judul, pesan) {
             const container = document.getElementById('notif-toast-container');
             if (!container) return;
 
-            const toastId = `toast-rahasia-mode-terang-${Date.now()}`;
+            const toastId = `${idToastPrefix}-${Date.now()}`;
             const toast = document.createElement('div');
             toast.className = 'notif-toast-ditarik notif-toast-kuning';
             toast.id = toastId;
@@ -6194,8 +6204,8 @@
                         <i class="fa-solid fa-circle-exclamation"></i>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-xs font-extrabold text-slate-900 dark:text-slate-100">Ganti ke Mode Terang Dulu</p>
-                        <p class="text-[11px] text-amber-600 mt-1 leading-relaxed font-semibold">Mode Rahasia cuma bisa dilihat di Mode Terang. Matikan Mode Gelap dulu, baru coba klik tombol Rahasia lagi ya.</p>
+                        <p class="text-xs font-extrabold text-slate-900 dark:text-slate-100">${judul}</p>
+                        <p class="text-[11px] text-amber-600 mt-1 leading-relaxed font-semibold">${pesan}</p>
                     </div>
                     <button onclick="document.getElementById('${toastId}')?.remove()" class="text-slate-300 hover:text-slate-500 flex-shrink-0" title="Tutup">
                         <i class="fa-solid fa-xmark"></i>
@@ -6203,11 +6213,27 @@
                 </div>`;
 
             container.appendChild(toast);
-            clearTimeout(tampilkanToastRahasiaButuhModeTerang._timer);
-            tampilkanToastRahasiaButuhModeTerang._timer = setTimeout(() => {
+            clearTimeout(_tampilkanToastPerluModeTerang._timer);
+            _tampilkanToastPerluModeTerang._timer = setTimeout(() => {
                 toast.classList.add('notif-keluar');
                 setTimeout(() => toast.remove(), 300);
             }, 6000);
+        }
+
+        function tampilkanToastRahasiaButuhModeTerang() {
+            _tampilkanToastPerluModeTerang(
+                'toast-rahasia-mode-terang',
+                'Ganti ke Mode Terang Dulu',
+                'Mode Rahasia cuma bisa dilihat di Mode Terang. Matikan Mode Gelap dulu, baru coba klik tombol Rahasia lagi ya.'
+            );
+        }
+
+        function tampilkanToastAksenTemaButuhModeTerang() {
+            _tampilkanToastPerluModeTerang(
+                'toast-aksen-tema-mode-terang',
+                'Ganti ke Mode Terang Dulu',
+                'Pilihan Warna Aksen cuma berlaku di Mode Terang -- di Mode Gelap, palet warnanya terkunci ke Cyan Neon. Matikan Mode Gelap dulu buat ganti warna aksen ya.'
+            );
         }
 
         function bukaRahasiaJurusan() {
