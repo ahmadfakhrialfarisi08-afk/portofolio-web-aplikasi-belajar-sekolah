@@ -6172,15 +6172,36 @@
         // (durasi transisinya sudah diatur global, lihat blok "Transisi
         // warna yang smooth" di CSS) -- tanpa nongolin logo lagi.
         function bukaRahasiaJurusan() {
-            const html = document.documentElement;
-            const sedangAktif = html.getAttribute('data-accent-theme') === 'rahasia';
+            // Status "aktif/tidak" dipegang lewat flag sendiri (bukan cuma baca atribut
+            // data-accent-theme) karena sekarang tema barunya baru benar-benar dipasang
+            // belakangan (nunggu animasi reveal, lihat komentar di bawah). Kalau tombol
+            // ini diklik lagi buat MATIIN sebelum tema sempat kepasang, cek yang cuma
+            // ngandelin atribut bakal salah kira modenya "belum aktif" -> warnanya jadi
+            // nyangkut di tengah, gak balik ke default. Flag ini gak nunggu animasi,
+            // jadi klik ON/OFF selalu direspons dengan benar sesuai urutan klik terakhir.
+            const sedangAktif = !!bukaRahasiaJurusan._modeAktif;
 
             if (sedangAktif) {
+                bukaRahasiaJurusan._modeAktif = false;
+
+                // Kalau lagi nunggu animasi reveal (tema belum sempat kepasang), batalkan
+                // dulu semua timer & sembunyikan overlay-nya SEKARANG, supaya gak ada
+                // animasi reveal yang lanjut jalan sendiri padahal mode-nya udah dimatikan.
+                clearTimeout(bukaRahasiaJurusan._timerFadeOut);
+                clearTimeout(bukaRahasiaJurusan._timerSembunyi);
+                const overlayAktif = document.getElementById('overlay-logo-rahasia');
+                if (overlayAktif && !overlayAktif.classList.contains('hidden')) {
+                    overlayAktif.classList.add('hidden');
+                    overlayAktif.classList.remove('overlay-rahasia-tampil', 'overlay-rahasia-fadeout');
+                }
+
                 const temaSebelum = localStorage.getItem('ui_accent_theme_sebelum_rahasia') || TEMA_AKSEN_DEFAULT;
                 pilihAksenTema(temaSebelum);
                 tandaiTombolRahasiaAktif(false);
                 return;
             }
+
+            bukaRahasiaJurusan._modeAktif = true;
 
             const temaSekarang = localStorage.getItem('ui_accent_theme') || TEMA_AKSEN_DEFAULT;
             if (temaSekarang !== 'rahasia') {
@@ -6203,6 +6224,9 @@
             bukaRahasiaJurusan._temaDiterapkan = false;
             const terapkanTemaSekaliSaja = () => {
                 if (bukaRahasiaJurusan._temaDiterapkan) return;
+                // Kalau di antara delay ini pengguna sempat matiin lagi modenya, jangan
+                // paksa terapin tema rahasia -- biarkan cabang OFF di atas yang menang.
+                if (!bukaRahasiaJurusan._modeAktif) return;
                 bukaRahasiaJurusan._temaDiterapkan = true;
                 pilihAksenTema('rahasia');
             };
@@ -6270,6 +6294,7 @@
             document.documentElement.setAttribute('data-accent-theme', saved);
             tandaiSwatchAksenAktif(saved);
             tandaiTombolRahasiaAktif(saved === 'rahasia');
+            bukaRahasiaJurusan._modeAktif = (saved === 'rahasia');
         }
 
         // Kode warna hex per tema -- dipakai buat mewarnai efek gelombang & kupu-kupu
