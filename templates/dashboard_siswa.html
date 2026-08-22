@@ -196,11 +196,11 @@
            permanen di localStorage sama seperti tema aksen lainnya, jadi
            tetap terpakai walau halaman di-refresh. */
         html:not(.dark)[data-accent-theme="rahasia"] {
-            --page-bg: #eef4f1;
-            --surface: #fffdf6;
-            --surface-hover: #fdf1d6;
-            --border-subtle: #f1e6c2;
-            --border-strong: #eab308;
+            --page-bg: #eef2f6;
+            --surface: #eef3f8;
+            --surface-hover: #e1e9f2;
+            --border-subtle: #dbe4ef;
+            --border-strong: #9db6cf;
             --brand: #123a5c;
             --brand-dark: #0a2136;
             --brand-tint-50: #eaf1f6;
@@ -271,7 +271,7 @@
             inset: 0;
             border-radius: inherit;
             padding: 1.5px;
-            background: linear-gradient(135deg, rgba(18,58,92,.45), rgba(234,179,8,.45) 55%, rgba(255,253,246,.8));
+            background: linear-gradient(135deg, rgba(18,58,92,.45), rgba(157,182,207,.45) 55%, rgba(238,243,248,.8));
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
@@ -280,11 +280,11 @@
         /* Kartu statistik: gradasi krem hangat -> kuning keemasan pucat,
            persis nuansa kartu "Total Poin Quiz" pada referensi foto. */
         html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card--accent {
-            background: linear-gradient(160deg, #fffdf6, #fbe8ae 130%);
-            border-color: #eab308;
+            background: linear-gradient(160deg, #eef3f8, #d9e4f0 130%);
+            border-color: #9db6cf;
         }
         html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card--accent:hover {
-            border-color: #d69e06;
+            border-color: #7f9fbd;
             box-shadow: 0 6px 16px -6px rgba(18, 58, 92, 0.2);
         }
         html:not(.dark)[data-accent-theme="rahasia"] .bento-stat-card--accent .text-amber-600 {
@@ -392,7 +392,6 @@
         }
         html:not(.dark)[data-accent-theme="rahasia"] #profile-menu-trigger .profile-wrapper {
             border-radius: 9999px;
-            box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.65);
         }
         html:not(.dark)[data-accent-theme="rahasia"] #header-user-nama-efek {
             color: #ffffff;
@@ -2291,7 +2290,7 @@
                         </div>
                     </div>
 
-                    <div id="profile-dropdown" class="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 hidden z-50 space-y-3">
+                    <div id="profile-dropdown" class="absolute right-0 mt-3 w-64 max-h-[75vh] overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-xl p-4 hidden z-50 space-y-3">
                         <div class="flex items-center justify-between border-b border-slate-100 pb-2">
                             <span class="text-xs font-bold text-slate-800">Pengaturan Profil</span>
                             <button onclick="toggleProfileDropdown(event)" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xs"></i></button>
@@ -3652,7 +3651,14 @@
             event.stopPropagation();
             const dropdown = document.getElementById('profile-dropdown');
             if (dropdown) {
+                const akanTampil = dropdown.classList.contains('hidden');
                 dropdown.classList.toggle('hidden');
+                if (akanTampil) {
+                    // Pastikan panel selalu mulai kebaca dari atas (foto profil dulu),
+                    // bukan langsung ke bagian tengah/bawah.
+                    dropdown.scrollTop = 0;
+                    dropdown.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                }
             }
         }
 
