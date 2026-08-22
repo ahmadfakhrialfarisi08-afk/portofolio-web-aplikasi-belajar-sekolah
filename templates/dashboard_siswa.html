@@ -6214,12 +6214,20 @@
 
             bukaRahasiaJurusan._timerFadeOut = setTimeout(() => {
                 overlay.classList.add('overlay-rahasia-fadeout');
+                // Tema diterapkan di SINI (pas overlay baru mulai memudar), bukan
+                // nunggu overlay-nya bener-bener hilang -- soalnya proses sapuan
+                // warnanya sendiri makan waktu ~1.1 detik. Kalau baru dipicu setelah
+                // overlay hilang total, sapuannya jadi keliatan sebagai "transisi
+                // kedua" yang nongol belakangan (lag). Dengan dimulai barengan
+                // fade-out overlay (yang masih menutupi layar), sapuannya kelar
+                // SEMBUNYI di balik overlay -- begitu overlay hilang, warnanya udah
+                // final, gak ada susulan lagi.
+                terapkanTemaSekaliSaja();
             }, 2400);
 
             bukaRahasiaJurusan._timerSembunyi = setTimeout(() => {
                 overlay.classList.add('hidden');
                 overlay.classList.remove('overlay-rahasia-tampil', 'overlay-rahasia-fadeout');
-                terapkanTemaSekaliSaja();
             }, 4000);
         }
 
