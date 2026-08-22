@@ -2059,7 +2059,7 @@
                 <div class="pt-3 mt-2 border-t border-slate-100 space-y-0.5">
                     <p class="px-3.5 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wide">Bantuan</p>
 
-                    <button onclick="switchTab('ai-support')" id="btn-ai-support" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-700 font-medium text-sm transition-colors duration-150">
+                    <button onclick="switchTab('ai-support')" id="btn-ai-support" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-blue-500/20 hover:text-blue-700 font-medium text-sm transition-colors duration-150">
                         <div class="flex items-center gap-3 nav-btn-label">
                             <i class="fa-solid fa-robot w-4 text-center text-[13px]"></i> AI Support
                         </div>
@@ -5186,7 +5186,7 @@
             closeSidebarMobile(); // otomatis tutup sidebar mobile setelah pilih menu
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-btn').forEach(btn => {
-                const hoverClass = btn.id === 'btn-ai-support' ? 'hover:bg-blue-50 hover:text-blue-700' : 'hover:bg-amber-500/20 hover:text-amber-700';
+                const hoverClass = btn.id === 'btn-ai-support' ? 'hover:bg-blue-500/20 hover:text-blue-700' : 'hover:bg-amber-500/20 hover:text-amber-700';
                 btn.className = `nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 ${hoverClass} font-medium text-sm transition-colors duration-150`;
                 btn.removeAttribute('aria-current');
             });
