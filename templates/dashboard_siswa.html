@@ -1443,6 +1443,22 @@
         /* Varian kuning: notif "segera kumpulkan" waktu tugas tersisa 10 menit. */
         .notif-toast-ditarik.notif-toast-kuning { border-left-color: #f59e0b; }
         html.dark .notif-toast-ditarik.notif-toast-kuning { border-color: rgba(245, 158, 11, 0.5); }
+        /* Efek "getar" -- dipakai saat toast yang SAMA di-trigger ulang (mis. tombol
+           Rahasia/Warna Aksen di-spam klik berkali-kali saat Mode Gelap aktif).
+           Daripada numpuk banyak toast identik, toast yang sudah tampil cukup
+           digoyang + timer auto-hide-nya direset, jadi siswa tetap "notified"
+           tiap klik tanpa layar dipenuhi kartu duplikat. */
+        .notif-toast-ditarik.notif-toast-goyang { animation: notifToastGoyang 0.4s ease; }
+        @keyframes notifToastGoyang {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(5px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(3px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .notif-toast-ditarik.notif-toast-goyang { animation: none !important; }
+        }
         /* Varian oranye: notif "Wussh! Salip Peringkat!" -- kabar baik, siswa
            berhasil menyalip orang lain di leaderboard Quiz. Animasinya slide-UP
            sendiri (naik dari bawah), beda dari toast lain yang slide dari samping. */
@@ -6189,14 +6205,59 @@
         // Gelap aktif). Daripada siswa klik tapi tampilannya diam saja (kelihatan
         // kayak tombolnya rusak), kasih toast pengingat suruh pindah ke Mode
         // Terang dulu, dengan judul/pesan yang bisa disesuaikan per fitur.
-        function _tampilkanToastPerluModeTerang(idToastPrefix, judul, pesan) {
+        //
+        // idToast di sini SENGAJA tetap (bukan diberi akhiran timestamp seperti
+        // toast lain di dashboard ini) -- soalnya kalau tombolnya di-spam klik
+        // berkali-kali saat Mode Gelap masih aktif, kita CUMA mau satu toast yang
+        // tampil (gak numpuk jadi banyak kartu identik). Klik berikutnya selama
+        // toast yang sama masih ada cuma menggoyangnya + reset timer auto-hide,
+        // supaya siswa tetap "kerasa" responsnya tiap klik walau toast-nya cuma satu.
+        // Getar perangkat (kalau didukung, umumnya browser mobile) barengan efek
+        // goyang toast -- pembatalan try/catch soalnya beberapa browser bisa
+        // melempar error kalau dipanggil di luar interaksi pengguna langsung,
+        // dan fitur ini murni pemanis, jadi gagal diam-diam saja tidak masalah.
+        function _getarkanPerangkat() {
+            try {
+                if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+                    navigator.vibrate(60);
+                }
+            } catch (e) { /* abaikan -- getar cuma pemanis, bukan fitur inti */ }
+        }
+
+        function _tampilkanToastPerluModeTerang(idToast, judul, pesan) {
             const container = document.getElementById('notif-toast-container');
             if (!container) return;
 
-            const toastId = `${idToastPrefix}-${Date.now()}`;
+            // Timer auto-hide disimpan PER toast (bukan satu variabel dibagi
+            // semua toast) -- soalnya toast Rahasia & toast Warna Aksen bisa
+            // saja tampil bersamaan (dua tombol beda), jadi timer salah satu
+            // gak boleh ikut mereset/membatalkan timer punya toast yang lain.
+            if (!_tampilkanToastPerluModeTerang._timers) {
+                _tampilkanToastPerluModeTerang._timers = {};
+            }
+            const timers = _tampilkanToastPerluModeTerang._timers;
+
+            const toastLama = document.getElementById(idToast);
+            if (toastLama) {
+                // Toast yang sama masih tampil -> jangan bikin baru, cukup goyangkan
+                // lagi (restart animasi CSS-nya dari awal tiap dipanggil) & reset
+                // timer auto-hide-nya seolah baru saja muncul.
+                toastLama.classList.remove('notif-toast-goyang');
+                void toastLama.offsetWidth; // reflow, paksa animasi replay dari awal
+                toastLama.classList.add('notif-toast-goyang');
+                _getarkanPerangkat();
+
+                clearTimeout(timers[idToast]);
+                timers[idToast] = setTimeout(() => {
+                    toastLama.classList.add('notif-keluar');
+                    setTimeout(() => toastLama.remove(), 300);
+                }, 6000);
+                return;
+            }
+
             const toast = document.createElement('div');
             toast.className = 'notif-toast-ditarik notif-toast-kuning';
-            toast.id = toastId;
+            toast.id = idToast;
 
             toast.innerHTML = `
                 <div class="flex items-start gap-3">
@@ -6207,14 +6268,15 @@
                         <p class="text-xs font-extrabold text-slate-900 dark:text-slate-100">${judul}</p>
                         <p class="text-[11px] text-amber-600 mt-1 leading-relaxed font-semibold">${pesan}</p>
                     </div>
-                    <button onclick="document.getElementById('${toastId}')?.remove()" class="text-slate-300 hover:text-slate-500 flex-shrink-0" title="Tutup">
+                    <button onclick="document.getElementById('${idToast}')?.remove()" class="text-slate-300 hover:text-slate-500 flex-shrink-0" title="Tutup">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>`;
 
             container.appendChild(toast);
-            clearTimeout(_tampilkanToastPerluModeTerang._timer);
-            _tampilkanToastPerluModeTerang._timer = setTimeout(() => {
+            _getarkanPerangkat();
+            clearTimeout(timers[idToast]);
+            timers[idToast] = setTimeout(() => {
                 toast.classList.add('notif-keluar');
                 setTimeout(() => toast.remove(), 300);
             }, 6000);
