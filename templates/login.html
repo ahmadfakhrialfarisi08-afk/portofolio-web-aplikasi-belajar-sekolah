@@ -39,41 +39,75 @@
     /* ===================== LAYAR LOADING ===================== */
     #layar-loading {
       position: fixed; inset: 0; z-index: 50;
+      /* Dasar gelap solid (hitam/biru navy) supaya kontras tinggi & terasa premium --
+         biru & hijau cuma jadi aksen cahaya tipis, kuning cuma jadi sorotan kecil,
+         bukan dominasi warna hijau polos seperti sebelumnya. */
       background:
-        radial-gradient(circle at 85% 15%, rgba(250,204,21,0.16), transparent 55%),
-        linear-gradient(155deg, #0f172a 0%, #16a34a 52%, #2563eb 100%);
+        radial-gradient(circle at 12% 12%, rgba(37,99,235,0.38), transparent 42%),
+        radial-gradient(circle at 88% 18%, rgba(22,163,74,0.30), transparent 45%),
+        radial-gradient(circle at 50% 105%, rgba(250,204,21,0.14), transparent 55%),
+        linear-gradient(160deg, #060b16 0%, #0f172a 45%, #0a1120 100%);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       transition: opacity 0.5s ease, visibility 0.5s ease;
+      overflow: hidden;
     }
     #layar-loading.selesai { opacity: 0; visibility: hidden; pointer-events: none; }
 
+    /* Kisi titik halus -- konsisten dengan panel ilustrasi, memberi kesan teknologi/AI
+       tanpa mengganggu keterbacaan teks putih di atasnya. */
+    #layar-loading::before {
+      content: "";
+      position: absolute; inset: 0; z-index: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 26px 26px;
+      animation: kisiGeserLoading 24s linear infinite;
+    }
+    @keyframes kisiGeserLoading { 0% { background-position: 0 0; } 100% { background-position: 260px 260px; } }
+    #layar-loading > * { position: relative; z-index: 1; }
+
     .loading-lencana {
-      width: 84px; height: 84px; border-radius: 26px;
-      background: rgba(255,255,255,0.14);
-      border: 1px solid rgba(250,204,21,0.4);
+      width: 108px; height: 108px; border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(59,130,246,0.45);
+      box-shadow: 0 0 0 1px rgba(34,197,94,0.12), 0 0 26px -4px rgba(37,99,235,0.5);
       display: flex; align-items: center; justify-content: center;
-      margin-bottom: 22px;
+      margin-bottom: 20px;
       animation: loadingNapas 1.4s ease-in-out infinite;
     }
-    @keyframes loadingNapas { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
-    .loading-lencana svg { width: 44px; height: 44px; }
+    @keyframes loadingNapas { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+    .loading-lencana svg { width: 82px; height: 82px; overflow: visible; }
+
+    /* antena maskot berdenyut pelan, konsisten dengan maskot utama di kartu login */
+    .l-antena { animation: antenaBerkedip 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+    @keyframes antenaBerkedip { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.82); } }
+
+    /* empat ekspresi Robi bergantian selama proses loading: normal -> senang -> kejut -> mengantuk */
+    .l-ekspresi { opacity: 0; transform-box: fill-box; transform-origin: center; animation: ekspresiSiklus 8s ease-in-out infinite; }
+    .l-normal  { animation-delay: 0s; }
+    .l-senang  { animation-delay: 2s; }
+    .l-kejut   { animation-delay: 4s; }
+    .l-ngantuk { animation-delay: 6s; }
+    @keyframes ekspresiSiklus {
+      0%   { opacity: 0; transform: scale(0.82); }
+      4%   { opacity: 1; transform: scale(1); }
+      20%  { opacity: 1; transform: scale(1); }
+      25%  { opacity: 0; transform: scale(0.88); }
+      100% { opacity: 0; }
+    }
 
     .loading-spinner {
       width: 40px; height: 40px; border-radius: 50%;
-      border: 4px solid rgba(255,255,255,0.28);
-      border-top-color: #ffffff;
+      border: 4px solid rgba(255,255,255,0.18);
+      border-top-color: #3b82f6;
+      border-right-color: #22c55e;
       animation: putarSpinner 0.8s linear infinite;
       margin-bottom: 14px;
     }
     @keyframes putarSpinner { to { transform: rotate(360deg); } }
 
-    .loading-teks { color: #ffffff; font-size: 13.5px; font-weight: 600; letter-spacing: 0.3px; opacity: 0.92; }
+    .loading-teks { color: #ffffff; font-size: 13.5px; font-weight: 600; letter-spacing: 0.3px; opacity: 0.96; }
     .loading-titik::after { content: ''; animation: titikJalan 1.2s steps(4) infinite; }
     @keyframes titikJalan { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } 100% { content: ''; } }
-
-    .loading-bar-track { width: 160px; height: 5px; border-radius: 4px; background: rgba(255,255,255,0.22); margin-top: 16px; overflow: hidden; }
-    .loading-bar-isi { height: 100%; width: 30%; border-radius: 4px; background: #facc15; animation: barJalan 1s ease-in-out infinite; }
-    @keyframes barJalan { 0% { transform: translateX(-100%); } 100% { transform: translateX(340%); } }
 
     /* Gumpalan warna blur di background -- kesan berkelas, bukan rame */
     .bg-blob { position: fixed; border-radius: 50%; filter: blur(90px); opacity: 0.4; z-index: 0; pointer-events: none; }
@@ -532,15 +566,56 @@
 <!-- Layar loading -->
 <div id="layar-loading">
   <div class="loading-lencana">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 3v3M9 3v3M15 3v3M4 9h16v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9Z"/>
-      <circle cx="9" cy="14" r="1.4" fill="#ffffff" stroke="none"/>
-      <circle cx="15" cy="14" r="1.4" fill="#ffffff" stroke="none"/>
+    <svg viewBox="0 0 120 120">
+      <!-- antena -->
+      <line x1="60" y1="15" x2="60" y2="3" stroke="#3b82f6" stroke-width="3.5" stroke-linecap="round"/>
+      <circle class="l-antena" cx="60" cy="3" r="4.5" fill="#facc15"/>
+
+      <!-- kepala bulat -->
+      <circle cx="60" cy="65" r="46" fill="#ffffff" stroke="#2563eb" stroke-width="3.5"/>
+
+      <!-- layar wajah -->
+      <rect x="26" y="43" width="68" height="44" rx="20" fill="#0f172a"/>
+
+      <!-- Ekspresi 1: normal (mata bulat, senyum tipis) -->
+      <g class="l-ekspresi l-normal">
+        <circle cx="46" cy="65" r="7" fill="#7dd3fc"/>
+        <circle cx="46" cy="65" r="3" fill="#0f172a"/>
+        <circle cx="74" cy="65" r="7" fill="#7dd3fc"/>
+        <circle cx="74" cy="65" r="3" fill="#0f172a"/>
+        <path d="M50 77 Q60 83 70 77" stroke="#7dd3fc" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+
+      <!-- Ekspresi 2: senang (mata melengkung, senyum lebar, pipi merona) -->
+      <g class="l-ekspresi l-senang">
+        <path d="M40 63 Q46 57 52 63" stroke="#7dd3fc" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M68 63 Q74 57 80 63" stroke="#7dd3fc" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M46 75 Q60 87 74 75" stroke="#7dd3fc" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <ellipse cx="37" cy="77" rx="6" ry="4" fill="#fb7185" opacity="0.85"/>
+        <ellipse cx="83" cy="77" rx="6" ry="4" fill="#fb7185" opacity="0.85"/>
+      </g>
+
+      <!-- Ekspresi 3: kejut (mata besar bulat, mulut O) -->
+      <g class="l-ekspresi l-kejut">
+        <circle cx="46" cy="65" r="9.5" fill="#7dd3fc"/>
+        <circle cx="46" cy="65" r="4" fill="#0f172a"/>
+        <circle cx="74" cy="65" r="9.5" fill="#7dd3fc"/>
+        <circle cx="74" cy="65" r="4" fill="#0f172a"/>
+        <ellipse cx="60" cy="79" rx="5" ry="6" fill="#7dd3fc"/>
+      </g>
+
+      <!-- Ekspresi 4: mengantuk (mata sipit, zzz) -->
+      <g class="l-ekspresi l-ngantuk">
+        <path d="M40 65 h12" stroke="#7dd3fc" stroke-width="3" stroke-linecap="round"/>
+        <path d="M68 65 h12" stroke="#7dd3fc" stroke-width="3" stroke-linecap="round"/>
+        <ellipse cx="60" cy="77" rx="6" ry="3" fill="#7dd3fc"/>
+        <text x="80" y="46" font-size="12" font-weight="700" fill="#facc15" font-family="Poppins, Arial, sans-serif">z</text>
+        <text x="89" y="37" font-size="9" font-weight="700" fill="#facc15" font-family="Poppins, Arial, sans-serif">z</text>
+      </g>
     </svg>
   </div>
   <div class="loading-spinner"></div>
   <p class="loading-teks">Menyiapkan Website<span class="loading-titik"></span></p>
-  <div class="loading-bar-track"><div class="loading-bar-isi"></div></div>
 </div>
 
 <div class="bg-blob biru"></div>
