@@ -10,13 +10,25 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
+    :root {
+      --biru: #2563eb;
+      --biru-tua: #1d4ed8;
+      --biru-terang: #3b82f6;
+      --hijau: #16a34a;
+      --hijau-terang: #22c55e;
+      --kuning: #facc15;
+      --kuning-tua: #eab308;
+      --hitam: #0f172a;
+      --hitam-lembut: #1e293b;
+      --putih: #ffffff;
+    }
     * { box-sizing: border-box; font-family: 'Poppins', Arial, sans-serif; }
 
     html, body { height: 100%; }
     body {
       min-height: 100vh;
       margin: 0;
-      background: #f8fafc;
+      background: #f4f7fb;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -27,7 +39,9 @@
     /* ===================== LAYAR LOADING ===================== */
     #layar-loading {
       position: fixed; inset: 0; z-index: 50;
-      background: linear-gradient(160deg, #16a34a 0%, #2563eb 100%);
+      background:
+        radial-gradient(circle at 85% 15%, rgba(250,204,21,0.16), transparent 55%),
+        linear-gradient(155deg, #0f172a 0%, #16a34a 52%, #2563eb 100%);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       transition: opacity 0.5s ease, visibility 0.5s ease;
     }
@@ -36,7 +50,7 @@
     .loading-lencana {
       width: 84px; height: 84px; border-radius: 26px;
       background: rgba(255,255,255,0.14);
-      border: 1px solid rgba(255,255,255,0.3);
+      border: 1px solid rgba(250,204,21,0.4);
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 22px;
       animation: loadingNapas 1.4s ease-in-out infinite;
@@ -66,6 +80,7 @@
     .bg-blob.biru { width: 480px; height: 480px; background: #3b82f6; top: -140px; left: -120px; animation: mengambang1 14s ease-in-out infinite; }
     .bg-blob.hijau { width: 420px; height: 420px; background: #22c55e; bottom: -160px; right: -100px; animation: mengambang2 16s ease-in-out infinite; }
     .bg-blob.kuning { width: 320px; height: 320px; background: #facc15; bottom: 10%; left: -80px; opacity: 0.3; animation: mengambang3 12s ease-in-out infinite; }
+    .bg-blob.hitam { width: 260px; height: 260px; background: #0f172a; top: 12%; right: 6%; opacity: 0.12; animation: mengambang3 18s ease-in-out infinite reverse; }
     @keyframes mengambang1 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,60px) scale(1.08); } }
     @keyframes mengambang2 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-50px,-40px) scale(1.1); } }
     @keyframes mengambang3 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px,-30px) scale(1.05); } }
@@ -80,13 +95,22 @@
       background: #ffffff;
       border-radius: 22px;
       overflow: hidden;
-      box-shadow: 0 25px 55px -12px rgba(30,41,59,0.22), 0 10px 20px -8px rgba(30,41,59,0.1);
+      box-shadow: 0 25px 55px -12px rgba(15,23,42,0.32), 0 10px 20px -8px rgba(15,23,42,0.14);
+    }
+    .login-wrapper::before {
+      content: "";
+      position: absolute; top: 0; left: 0; right: 0; height: 5px;
+      background: linear-gradient(90deg, #2563eb 0%, #16a34a 42%, #facc15 75%, #0f172a 100%);
+      z-index: 4;
     }
 
     .illustration-panel {
       flex: 1 1 46%;
       position: relative;
-      background: linear-gradient(160deg, #16a34a 0%, #2563eb 100%);
+      background:
+        radial-gradient(circle at 12% 92%, rgba(15,23,42,0.55), transparent 55%),
+        radial-gradient(circle at 88% 6%, rgba(250,204,21,0.22), transparent 45%),
+        linear-gradient(155deg, #16a34a 0%, #1d9a5c 32%, #1e6fbf 68%, #2563eb 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -269,7 +293,12 @@
     .maskot-gelembung.tampil { opacity: 1; transform: translate(-50%, -100%) scale(1); }
     .maskot-area { position: relative; display: flex; justify-content: center; }
 
-    h2 { color: #1e293b; margin: 6px 0 4px 0; font-size: 21px; font-weight: 700; opacity: 0; animation: teksMasuk 0.5s ease-out 0.5s forwards; }
+    h2 { position: relative; color: #0f172a; margin: 6px 0 12px 0; font-size: 21px; font-weight: 800; letter-spacing: 0.3px; opacity: 0; animation: teksMasuk 0.5s ease-out 0.5s forwards; padding-bottom: 10px; }
+    h2::after {
+      content: ""; position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+      width: 46px; height: 4px; border-radius: 4px;
+      background: linear-gradient(90deg, #2563eb, #16a34a 55%, #facc15);
+    }
     .subtitle { color: #64748b; font-size: 12.5px; margin: 0 0 16px 0; font-weight: 500; opacity: 0; animation: teksMasuk 0.5s ease-out 0.6s forwards; }
     @keyframes teksMasuk { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -285,11 +314,12 @@
 
     select, input {
       width: 100%; padding: 12px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1;
-      background-color: #ffffff; font-size: 14px; outline: none; color: #1e293b;
+      background-color: #ffffff; font-size: 14px; outline: none; color: #0f172a;
       transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
     }
-    select:hover, input:hover { border-color: #94a3b8; }
-    select:focus, input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.15); transform: translateY(-1px); }
+    select:hover, input:hover { border-color: #16a34a; }
+    select:focus, input:focus { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37,99,235,0.15), 0 0 0 1px rgba(250,204,21,0.4); transform: translateY(-1px); }
+    label { color: #0f172a; }
 
     /* Wrapper input password + tombol toggle lihat/sembunyikan */
     .password-box { position: relative; width: 100%; }
@@ -313,22 +343,22 @@
 
     button.tombol-submit {
       margin-top: 22px; width: 100%; padding: 13px;
-      background: linear-gradient(135deg, #16a34a 0%, #2563eb 100%);
+      background: linear-gradient(135deg, #16a34a 0%, #1d7fd6 55%, #2563eb 100%);
       color: #ffffff; border: none; border-radius: 10px; font-weight: 700;
       letter-spacing: 0.2px; cursor: pointer; font-size: 15px;
       position: relative; overflow: hidden; isolation: isolate;
       opacity: 0; transform: translateY(10px);
       animation: fieldMasuk 0.5s ease-out 0.95s forwards;
       transition: box-shadow 0.25s ease, transform 0.1s ease;
-      box-shadow: 0 8px 18px -6px rgba(37,99,235,0.45);
+      box-shadow: 0 10px 22px -8px rgba(15,23,42,0.55), 0 6px 14px -6px rgba(37,99,235,0.45);
     }
     button.tombol-submit::before {
       content: ""; position: absolute; inset: 0;
-      background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.35) 50%, transparent 80%);
+      background: linear-gradient(115deg, transparent 20%, rgba(250,204,21,0.4) 50%, transparent 80%);
       transform: translateX(-120%); transition: transform 0.6s ease; z-index: -1;
     }
     button.tombol-submit:hover::before { transform: translateX(120%); }
-    button.tombol-submit:hover { box-shadow: 0 10px 24px -6px rgba(37,99,235,0.55); }
+    button.tombol-submit:hover { box-shadow: 0 12px 26px -8px rgba(15,23,42,0.6), 0 8px 18px -6px rgba(37,99,235,0.55); transform: translateY(-1px); }
     button.tombol-submit:active { transform: scale(0.98); }
 
     .flash-container { width: 100%; margin-top: 14px; }
@@ -358,9 +388,9 @@
     #transisi-masuk {
       position: fixed; inset: 0; z-index: 60;
       background:
-        radial-gradient(circle at 18% 20%, rgba(99,102,241,0.45), transparent 52%),
-        radial-gradient(circle at 82% 28%, rgba(16,185,129,0.4), transparent 52%),
-        radial-gradient(circle at 50% 95%, rgba(250,204,21,0.18), transparent 60%),
+        radial-gradient(circle at 18% 20%, rgba(37,99,235,0.5), transparent 52%),
+        radial-gradient(circle at 82% 28%, rgba(34,197,94,0.42), transparent 52%),
+        radial-gradient(circle at 50% 95%, rgba(250,204,21,0.2), transparent 60%),
         linear-gradient(160deg, #0b1120 0%, #111827 55%, #0b1120 100%);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       opacity: 0; visibility: hidden; pointer-events: none;
@@ -493,6 +523,7 @@
 <div class="bg-blob biru"></div>
 <div class="bg-blob hijau"></div>
 <div class="bg-blob kuning"></div>
+<div class="bg-blob hitam"></div>
 
 <div class="login-wrapper">
 
