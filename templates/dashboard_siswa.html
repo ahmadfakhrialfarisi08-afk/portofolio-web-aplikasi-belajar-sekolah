@@ -3656,9 +3656,10 @@
                 dropdown.classList.toggle('hidden');
                 if (akanTampil) {
                     // Pastikan panel selalu mulai kebaca dari atas (foto profil dulu),
-                    // bukan langsung ke bagian tengah/bawah.
+                    // bukan langsung ke bagian tengah/bawah. Header sudah "sticky top-0",
+                    // jadi dropdown TIDAK perlu di-scrollIntoView ke halaman -- itu justru
+                    // yang bikin panel ke-scroll turun & foto profil ke-geser ke luar layar.
                     dropdown.scrollTop = 0;
-                    dropdown.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
                 }
             }
         }
