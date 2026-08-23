@@ -2730,11 +2730,11 @@
                     <p class="text-xs text-slate-400 mb-4">Mau quiz mapel produktif (kejuruan) atau mapel umum seperti biasa di SMK?</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <button type="button" onclick="pilihKategoriMapelQuiz('produktif')" class="text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-orange-200 transition-shadow p-4 sm:p-6 flex flex-col">
-                            <div class="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                        <button type="button" onclick="pilihKategoriMapelQuiz('produktif')" class="text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-sky-200 transition-shadow p-4 sm:p-6 flex flex-col">
+                            <div class="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-screwdriver-wrench"></i></div>
                             <h3 class="font-bold text-lg text-slate-900">Mapel Produktif</h3>
                             <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Mapel kejuruan kelas XII TKJ 3/TAV: Mikrotik, Access Point, dan Ubuntu Server.</p>
-                            <span class="w-full py-2.5 bg-orange-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                            <span class="w-full py-2.5 bg-sky-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                                 Lihat Mapel <i class="fa-solid fa-arrow-right text-[10px]"></i>
                             </span>
                         </button>
@@ -7878,19 +7878,26 @@
                 ? 'Mapel produktif untuk kelas XII TKJ 3/TAV.'
                 : 'Mapel umum seperti biasa di SMK.';
 
+            // Tombol "Pilih Tingkat Kesulitan" & warna hover border sengaja SATU
+            // warna senada per kategori (bukan ikut-ikutan warna tiap mapel),
+            // supaya tetap adem & serasi dengan warna navy tema "Rahasia" --
+            // warna khas tiap mapel (m.warna) cukup tampil lembut di ikonnya saja.
+            const aksenKategori = kategori === 'produktif' ? 'sky' : 'blue';
+
             const container = document.getElementById('pilih-mapel-list');
             if (!container) return;
             container.innerHTML = '';
             daftarMapel.forEach(m => {
+                const warnaIkon = m.warna || aksenKategori;
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-purple-200 transition-shadow p-4 sm:p-5 flex flex-col';
+                btn.className = `text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-${aksenKategori}-200 transition-shadow p-4 sm:p-5 flex flex-col`;
                 btn.onclick = () => pilihMapelQuiz(m.id);
                 btn.innerHTML = `
-                    <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg mb-3"><i class="fa-solid ${m.icon || 'fa-book'}"></i></div>
+                    <div class="w-11 h-11 rounded-xl bg-${warnaIkon}-50 text-${warnaIkon}-600 flex items-center justify-center text-lg mb-3"><i class="fa-solid ${m.icon || 'fa-book'}"></i></div>
                     <h3 class="font-bold text-sm text-slate-900">${m.kode ? `${m.kode} · ` : ''}${m.nama}</h3>
                     <p class="text-xs text-slate-400 mt-1 mb-3 flex-1">${m.deskripsi || ''}</p>
-                    <span class="w-full py-2 bg-purple-600 text-white rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                    <span class="w-full py-2 bg-${aksenKategori}-600 text-white rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                         Pilih Tingkat Kesulitan <i class="fa-solid fa-arrow-right text-[9px]"></i>
                     </span>`;
                 container.appendChild(btn);
