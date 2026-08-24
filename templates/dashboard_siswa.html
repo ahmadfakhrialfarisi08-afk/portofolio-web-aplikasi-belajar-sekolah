@@ -1022,6 +1022,15 @@
             outline-offset: 2px;
             border-radius: 6px;
         }
+        /* Tab pill "Kelas 10/11/12" di kartu Journey Prestasi pakai skema warna amber
+           (hover & status aktifnya sama-sama amber) -- ring fokus bawaan di atas warnanya
+           ikut var(--brand) (indigo/violet), jadi kalau dipakai apa adanya di pil sekecil
+           ini keliatan "nonjol" & warnanya nggak menyatu sama pil-nya sendiri. Override
+           supaya ring fokusnya senada (amber juga) & lebih nempel ke bentuk pil-nya. */
+        .tab-journey-kelas:focus-visible {
+            outline-color: #d97706;
+            outline-offset: 1px;
+        }
         .skip-link {
             position: absolute; left: 1rem; top: -3rem; z-index: 100;
             background: var(--brand); color: #fff; padding: .6rem 1rem;
@@ -2546,9 +2555,9 @@
                             <p id="journey-label-tahun-ajaran" class="text-xs text-slate-400 mt-0.5">Tahun Ajaran -</p>
                         </div>
                         <div class="flex gap-2">
-                            <button type="button" data-kelas="X" onclick="setTabJourneyPrestasi('X')" class="tab-journey-kelas px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-50">Kelas 10</button>
-                            <button type="button" data-kelas="XI" onclick="setTabJourneyPrestasi('XI')" class="tab-journey-kelas px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-white text-slate-600 border-slate-200 hover:bg-slate-50">Kelas 11</button>
-                            <button type="button" data-kelas="XII" onclick="setTabJourneyPrestasi('XII')" class="tab-journey-kelas px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all bg-amber-500 text-white border-amber-500">Kelas 12 (Current)</button>
+                            <button type="button" data-kelas="X" onclick="setTabJourneyPrestasi('X')" class="tab-journey-kelas px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-colors duration-150 bg-white text-slate-600 border-slate-200 hover:bg-amber-500/10 hover:text-amber-700 hover:border-amber-300">Kelas 10</button>
+                            <button type="button" data-kelas="XI" onclick="setTabJourneyPrestasi('XI')" class="tab-journey-kelas px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-colors duration-150 bg-white text-slate-600 border-slate-200 hover:bg-amber-500/10 hover:text-amber-700 hover:border-amber-300">Kelas 11</button>
+                            <button type="button" data-kelas="XII" onclick="setTabJourneyPrestasi('XII')" class="tab-journey-kelas px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-colors duration-150 bg-amber-500 text-white border-amber-500">Kelas 12 (Current)</button>
                         </div>
                     </div>
 
@@ -9306,6 +9315,10 @@
                 btn.classList.toggle('border-slate-200', !aktif);
             });
             renderJourneyPrestasi();
+            // Leaderboard ikut disaring ke tahun ajaran kelas yang dipilih -- dirender
+            // ulang di sini juga (bukan cuma pas toggleJourneyLeaderboard dibuka) supaya
+            // datanya sudah sinkron kalau user pindah tab sambil leaderboard lagi tampil.
+            if (typeof renderLeaderboardPrestasi === 'function') renderLeaderboardPrestasi();
         }
 
         function renderJourneyPrestasi() {
@@ -9541,8 +9554,20 @@
 
         // Kelompokkan semua prestasi berstatus "disetujui" per nama siswa, lalu urut
         // dari poin akumulasi tertinggi (poin sama -> jumlah prestasi terbanyak menang).
-        function bangunLeaderboardPrestasi() {
-            const semua = getPrestasiData().filter(item => item.status === 'disetujui');
+        // kodeKelas opsional ('X'/'XI'/'XII') -- kalau diisi, prestasi disaring dulu
+        // ke rentang tahun ajaran kelas itu (pakai logika yg sama dengan Journey Prestasi
+        // pribadi di ambilPrestasiUntukKelasJourney), supaya tab Kelas 10/11/12 di atas
+        // ikut berlaku ke leaderboard-nya juga, bukan cuma ke grafik progress sendiri.
+        function bangunLeaderboardPrestasi(kodeKelas) {
+            let semua = getPrestasiData().filter(item => item.status === 'disetujui');
+            const offset = OFFSET_TAHUN_KELAS_JOURNEY[kodeKelas];
+            if (offset !== undefined) {
+                const rentang = getRentangTahunAjaran(offset);
+                semua = semua.filter(item => {
+                    const ts = ambilTimestampPrestasi(item);
+                    return ts !== null && ts >= rentang.mulai.getTime() && ts <= rentang.akhir.getTime();
+                });
+            }
             const map = {};
             semua.forEach(item => {
                 const nama = item.namaSiswa || 'Tanpa Nama';
@@ -9559,7 +9584,7 @@
             if (!container || !kosongState) return;
             container.innerHTML = '';
 
-            const daftar = bangunLeaderboardPrestasi();
+            const daftar = bangunLeaderboardPrestasi(kelasAktifJourneyPrestasi);
             if (!daftar.length) {
                 kosongState.classList.remove('hidden');
                 return;
@@ -9623,7 +9648,7 @@
                 bioWrapper.classList.add('hidden');
             }
 
-            const items = (bangunLeaderboardPrestasi().find(e => e.nama === nama) || { items: [] }).items
+            const items = (bangunLeaderboardPrestasi(kelasAktifJourneyPrestasi).find(e => e.nama === nama) || { items: [] }).items
                 .slice().sort((a, b) => (b.id || '').localeCompare(a.id || ''));
             const listContainer = document.getElementById('detail-siswa-list-prestasi');
             listContainer.innerHTML = '';
