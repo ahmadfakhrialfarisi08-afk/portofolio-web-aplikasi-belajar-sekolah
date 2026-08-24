@@ -2041,7 +2041,7 @@
 
                 <button onclick="switchTab('akademik')" id="btn-akademik" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-amber-500/20 hover:text-amber-700 font-medium text-sm transition-colors duration-150">
                     <div class="flex items-center gap-3 nav-btn-label">
-                        <i class="fa-solid fa-crown w-4 text-center text-[13px]"></i> Koleksi Prestasi
+                        <i class="fa-solid fa-crown w-4 text-center text-[13px]"></i> Koleksi Border
                     </div>
                 </button>
 
@@ -2525,7 +2525,7 @@
                      sesuai kelas yang dipilih. Tidak ada perbandingan ke siswa lain — semua angka di
                      sini murni progress diri sendiri. -->
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                         <div>
                             <h3 class="font-bold text-lg text-slate-900"><i class="fa-solid fa-route text-amber-500 mr-1.5"></i>Journey Prestasi</h3>
                             <p id="journey-label-tahun-ajaran" class="text-xs text-slate-400 mt-0.5">Tahun Ajaran -</p>
@@ -2537,27 +2537,42 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
-                        <div class="rounded-xl border border-slate-200/80 p-4">
-                            <p class="text-[11px] font-semibold text-slate-400 uppercase">Total Prestasi Tahun Ini</p>
-                            <p class="text-2xl font-extrabold text-slate-900 mt-1"><span id="journey-total-prestasi">0</span></p>
+                    <button type="button" onclick="toggleJourneyLeaderboard()" id="btn-toggle-journey-leaderboard" class="w-full sm:w-auto mb-5 inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white transition-all">
+                        <i class="fa-solid fa-trophy text-[11px]"></i> <span id="teks-toggle-journey-leaderboard">Cek Leaderboard</span>
+                    </button>
+
+                    <div id="journey-view-diri">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+                            <div class="rounded-xl border border-slate-200/80 p-4">
+                                <p class="text-[11px] font-semibold text-slate-400 uppercase">Total Prestasi Tahun Ini</p>
+                                <p class="text-2xl font-extrabold text-slate-900 mt-1"><span id="journey-total-prestasi">0</span></p>
+                            </div>
+                            <div class="rounded-xl border border-slate-200/80 p-4">
+                                <p class="text-[11px] font-semibold text-slate-400 uppercase">Poin Akumulasi</p>
+                                <p class="text-2xl font-extrabold text-amber-600 mt-1"><span id="journey-poin-akumulasi">0</span></p>
+                            </div>
+                            <div class="rounded-xl border border-slate-200/80 p-4">
+                                <p class="text-[11px] font-semibold text-slate-400 uppercase">Status Pencapaian</p>
+                                <p class="text-sm font-bold text-slate-900 mt-1.5" id="journey-status-pencapaian">🌱 Belum Ada Pencapaian</p>
+                            </div>
                         </div>
-                        <div class="rounded-xl border border-slate-200/80 p-4">
-                            <p class="text-[11px] font-semibold text-slate-400 uppercase">Poin Akumulasi</p>
-                            <p class="text-2xl font-extrabold text-amber-600 mt-1"><span id="journey-poin-akumulasi">0</span></p>
-                        </div>
-                        <div class="rounded-xl border border-slate-200/80 p-4">
-                            <p class="text-[11px] font-semibold text-slate-400 uppercase">Status Pencapaian</p>
-                            <p class="text-sm font-bold text-slate-900 mt-1.5" id="journey-status-pencapaian">🌱 Belum Ada Pencapaian</p>
+
+                        <span id="journey-streak-konsisten" class="hidden inline-flex items-center gap-1.5 mb-5 px-3 py-1.5 rounded-full bg-orange-50 text-orange-600 text-xs font-bold"></span>
+
+                        <div>
+                            <p class="text-xs font-bold text-slate-600 mb-2">Grafik Progress Bulanan</p>
+                            <div class="relative h-56">
+                                <canvas id="chart-journey-prestasi"></canvas>
+                            </div>
                         </div>
                     </div>
 
-                    <span id="journey-streak-konsisten" class="hidden inline-flex items-center gap-1.5 mb-5 px-3 py-1.5 rounded-full bg-orange-50 text-orange-600 text-xs font-bold"></span>
-
-                    <div>
-                        <p class="text-xs font-bold text-slate-600 mb-2">Grafik Progress Bulanan</p>
-                        <div class="relative h-56">
-                            <canvas id="chart-journey-prestasi"></canvas>
+                    <div id="journey-view-leaderboard" class="hidden">
+                        <p class="text-xs text-slate-400 mb-3">Peringkat siswa dengan prestasi (disetujui) terbanyak. Klik salah satu siswa untuk lihat detail prestasinya.</p>
+                        <div id="journey-leaderboard-list" class="space-y-2"></div>
+                        <div id="journey-leaderboard-kosong" class="hidden p-5 sm:p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                            <i class="fa-solid fa-trophy text-2xl mb-2"></i>
+                            <p class="text-xs font-semibold">Belum ada prestasi yang disetujui dari siswa manapun.</p>
                         </div>
                     </div>
                 </div>
@@ -3299,6 +3314,34 @@
         </div>
         <p id="judul-zoom-foto-prestasi" class="absolute bottom-5 left-0 right-0 text-center text-white/80 text-xs font-semibold px-4 pointer-events-none"></p>
         <p class="absolute bottom-1 left-0 right-0 text-center text-white/40 text-[10px] pointer-events-none">Scroll / cubit untuk zoom &middot; geser untuk memindahkan &middot; dobel klik untuk reset</p>
+    </div>
+
+    <!-- Modal detail siswa di Leaderboard Journey Prestasi: kartu profil (foto+border+
+         efek nama+title) di atas, daftar prestasi yang dia upload & disetujui di bawah.
+         Dibuka lewat klik salah satu baris di #journey-leaderboard-list. -->
+    <div id="modal-detail-siswa-leaderboard" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupModalDetailSiswaLeaderboard()">
+        <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-slate-200 max-h-[85vh] flex flex-col overflow-hidden">
+            <div class="relative bg-gradient-to-br from-amber-50 to-white px-6 pt-6 pb-5 border-b border-slate-100 flex-shrink-0">
+                <button onclick="tutupModalDetailSiswaLeaderboard()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+                <div class="flex flex-col items-center text-center gap-2">
+                    <div class="profile-wrapper w-20 h-20 flex-shrink-0">
+                        <img id="detail-siswa-foto" src="" class="user-avatar" alt="Avatar siswa">
+                        <img id="detail-siswa-border" src="" class="user-border" alt="Border siswa">
+                    </div>
+                    <div class="min-w-0">
+                        <p id="detail-siswa-nama" class="text-sm font-bold flex items-center justify-center gap-1 flex-wrap"></p>
+                        <span id="detail-siswa-title" class="inline-block mt-1 px-2.5 py-1 rounded-md text-[10px] font-bold"></span>
+                        <p id="detail-siswa-kelas" class="text-[11px] text-slate-400 mt-1"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-2.5">
+                <p class="text-xs font-bold text-slate-600 mb-1">Prestasi yang Diupload</p>
+                <div id="detail-siswa-list-prestasi" class="space-y-2.5"></div>
+            </div>
+        </div>
     </div>
 
     <!-- DEKORASI AMBIENT "Mode Jurusan": wash gradient + glow sudut + pola
@@ -9321,6 +9364,181 @@
 
         function savePrestasiData(list) {
             localStorage.setItem(KEY_PRESTASI_SISWA, JSON.stringify(list));
+        }
+
+        /* ================= LEADERBOARD PRESTASI (di dalam kartu Journey Prestasi) =================
+           Toggle antara "progress diri sendiri" (stat 3 kartu + grafik, sudah ada dari
+           awal) dengan peringkat semua siswa berdasarkan jumlah/poin prestasi yang
+           statusnya "disetujui". Karena prestasi TIDAK punya server global endpoint
+           seperti quiz (lihat ambilLeaderboardGabungan), sumber datanya murni dari
+           getPrestasiData() (localStorage per kelas, dibagi lewat akun dummy yang
+           sama-sama dipakai di browser ini) -- konsisten dengan cara "Panel Dummy
+           Leaderboard" mensimulasikan banyak siswa di file ini. */
+        let modeJourneyLeaderboard = false;
+
+        function toggleJourneyLeaderboard() {
+            modeJourneyLeaderboard = !modeJourneyLeaderboard;
+            const viewDiri = document.getElementById('journey-view-diri');
+            const viewLeaderboard = document.getElementById('journey-view-leaderboard');
+            const teksTombol = document.getElementById('teks-toggle-journey-leaderboard');
+            if (viewDiri) viewDiri.classList.toggle('hidden', modeJourneyLeaderboard);
+            if (viewLeaderboard) viewLeaderboard.classList.toggle('hidden', !modeJourneyLeaderboard);
+            if (teksTombol) teksTombol.innerText = modeJourneyLeaderboard ? 'Kembali ke Progress Saya' : 'Cek Leaderboard';
+            if (modeJourneyLeaderboard) renderLeaderboardPrestasi();
+        }
+
+        // Border/foto siswa LAIN (bukan akun yang lagi aktif) dicari lewat daftar akun
+        // dummy yang tersimpan di browser ini (getDaftarAkunDummy) -- sama seperti
+        // "Panel Dummy Leaderboard" mensimulasikan banyak siswa berbagi 1 browser.
+        // Kalau namanya tidak ketemu di akun dummy manapun, fallback ke border Pemula
+        // + avatar inisial (pola sama seperti entri Leaderboard Quiz punya orang lain).
+        function getBorderUntukIdSiswa(idSiswa) {
+            const idTersimpan = localStorage.getItem(`border_terpakai_${idSiswa}`);
+            const border = getSemuaBorder().find(b => b.id === idTersimpan);
+            return border || DAFTAR_BORDER_STARTER[0];
+        }
+
+        function getFotoUntukIdSiswa(idSiswa, namaFallback) {
+            return localStorage.getItem(`student_profile_photo_${idSiswa}`)
+                || `https://ui-avatars.com/api/?name=${encodeURIComponent(namaFallback)}&background=e0e7ff&color=3730a3&size=120`;
+        }
+
+        function getProfilSiswaUntukNama(nama) {
+            if (nama === NAMA_SISWA_AKTIF) {
+                const border = getBorderTerpakai();
+                const efekNama = getEfekNamaClass(border);
+                return {
+                    foto: getFotoProfilAktifQuiz(),
+                    borderFile: border.file,
+                    title: border.rank || '🔰 Pemula',
+                    efekNamaClass: efekNama,
+                    titleBadgeClass: getTitleBadgeClass(efekNama),
+                    badgeDevHtml: getBadgeDevHtml(border),
+                    kelas: getKelasAktifQuiz()
+                };
+            }
+            const dummy = getDaftarAkunDummy().find(p => p.nama.trim().toLowerCase() === nama.trim().toLowerCase());
+            const idSiswa = dummy ? dummy.id : null;
+            const border = idSiswa ? getBorderUntukIdSiswa(idSiswa) : DAFTAR_BORDER_STARTER[0];
+            const efekNama = getEfekNamaClass(border);
+            return {
+                foto: idSiswa ? getFotoUntukIdSiswa(idSiswa, nama) : `https://ui-avatars.com/api/?name=${encodeURIComponent(nama)}&background=e0e7ff&color=3730a3&size=120`,
+                borderFile: border.file,
+                title: border.rank || '🔰 Pemula',
+                efekNamaClass: efekNama,
+                titleBadgeClass: getTitleBadgeClass(efekNama),
+                badgeDevHtml: getBadgeDevHtml(border),
+                kelas: dummy ? dummy.kelas : '-'
+            };
+        }
+
+        // Kelompokkan semua prestasi berstatus "disetujui" per nama siswa, lalu urut
+        // dari poin akumulasi tertinggi (poin sama -> jumlah prestasi terbanyak menang).
+        function bangunLeaderboardPrestasi() {
+            const semua = getPrestasiData().filter(item => item.status === 'disetujui');
+            const map = {};
+            semua.forEach(item => {
+                const nama = item.namaSiswa || 'Tanpa Nama';
+                if (!map[nama]) map[nama] = { nama, items: [], totalPoin: 0 };
+                map[nama].items.push(item);
+                map[nama].totalPoin += hitungPoinPrestasi(item);
+            });
+            return Object.values(map).sort((a, b) => b.totalPoin - a.totalPoin || b.items.length - a.items.length);
+        }
+
+        function renderLeaderboardPrestasi() {
+            const container = document.getElementById('journey-leaderboard-list');
+            const kosongState = document.getElementById('journey-leaderboard-kosong');
+            if (!container || !kosongState) return;
+            container.innerHTML = '';
+
+            const daftar = bangunLeaderboardPrestasi();
+            if (!daftar.length) {
+                kosongState.classList.remove('hidden');
+                return;
+            }
+            kosongState.classList.add('hidden');
+
+            daftar.slice(0, 10).forEach((entri, i) => {
+                const profil = getProfilSiswaUntukNama(entri.nama);
+                const iniSayaSendiri = entri.nama === NAMA_SISWA_AKTIF;
+                const kelasNamaClass = `text-xs font-bold truncate ${profil.efekNamaClass || 'text-slate-800'}`;
+
+                const baris = document.createElement('div');
+                baris.className = `flex items-center justify-between gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${i < 3 ? 'border-amber-200 bg-amber-50/50 hover:bg-amber-50' : 'border-slate-100 bg-slate-50 hover:bg-slate-100'} ${iniSayaSendiri ? 'ring-1 ring-purple-300' : ''}`;
+                baris.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0">
+                        ${buatBadgeMedali(i + 1)}
+                        <div class="profile-wrapper w-10 h-10 flex-shrink-0">
+                            <img src="${profil.foto}" class="user-avatar" alt="Avatar ${entri.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120'">
+                            <img src="${profil.borderFile}" class="user-border" alt="Border ${entri.nama}">
+                        </div>
+                        <div class="min-w-0">
+                            <p class="${kelasNamaClass}">${entri.nama}${profil.badgeDevHtml ? ' ' + profil.badgeDevHtml : ''}${iniSayaSendiri ? ' <span class="text-purple-500">(Kamu)</span>' : ''}</p>
+                            <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold ${profil.titleBadgeClass} truncate max-w-full">${profil.title}</span>
+                            <p class="text-[10px] text-slate-400 truncate mt-0.5">Kelas ${profil.kelas} &middot; ${entri.items.length} prestasi</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1 flex-shrink-0">
+                        <span class="text-sm font-extrabold text-amber-600">${entri.totalPoin}</span>
+                        <span class="text-[10px] text-slate-400 font-semibold">poin</span>
+                    </div>
+                `;
+                baris.addEventListener('click', () => bukaDetailSiswaLeaderboard(entri.nama));
+                container.appendChild(baris);
+            });
+        }
+
+        // Klik salah satu siswa di leaderboard -> tampilkan kartu profilnya
+        // (foto+border+efek nama+title) beserta semua prestasi yang dia upload &
+        // sudah disetujui, lengkap dengan thumbnail bukti (klik buat perbesar lewat
+        // modal zoom yang sama dipakai Riwayat Prestasi milik sendiri).
+        function bukaDetailSiswaLeaderboard(nama) {
+            const profil = getProfilSiswaUntukNama(nama);
+            const iniSayaSendiri = nama === NAMA_SISWA_AKTIF;
+
+            document.getElementById('detail-siswa-foto').src = profil.foto;
+            document.getElementById('detail-siswa-border').src = profil.borderFile;
+            document.getElementById('detail-siswa-nama').innerHTML = `<span class="${profil.efekNamaClass}">${nama}</span>${profil.badgeDevHtml ? ' ' + profil.badgeDevHtml : ''}${iniSayaSendiri ? ' <span class="text-purple-500 text-xs font-normal">(Kamu)</span>' : ''}`;
+            const elTitle = document.getElementById('detail-siswa-title');
+            elTitle.innerText = profil.title;
+            elTitle.className = `inline-block mt-1 px-2.5 py-1 rounded-md text-[10px] font-bold ${profil.titleBadgeClass}`;
+            document.getElementById('detail-siswa-kelas').innerText = `Kelas ${profil.kelas}`;
+
+            const items = (bangunLeaderboardPrestasi().find(e => e.nama === nama) || { items: [] }).items
+                .slice().sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+            const listContainer = document.getElementById('detail-siswa-list-prestasi');
+            listContainer.innerHTML = '';
+            if (!items.length) {
+                listContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Belum ada prestasi yang disetujui.</p>`;
+            } else {
+                items.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center gap-3 p-2.5 rounded-xl border border-slate-200/80';
+                    row.innerHTML = `
+                        <img src="${item.foto}" title="Klik untuk perbesar" class="thumb-bukti-prestasi-leaderboard w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-slate-200 cursor-zoom-in" alt="Bukti ${item.judul}">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-bold text-slate-900 truncate">${item.judul}</p>
+                            <p class="text-[10px] text-slate-400">${item.jenis === 'piala' ? 'Piala' : 'Sertifikat'} &middot; +${hitungPoinPrestasi(item)} poin</p>
+                        </div>
+                    `;
+                    row.querySelector('.thumb-bukti-prestasi-leaderboard').addEventListener('click', () => bukaZoomFotoPrestasi(item.foto, item.judul));
+                    listContainer.appendChild(row);
+                });
+            }
+
+            const modal = document.getElementById('modal-detail-siswa-leaderboard');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function tutupModalDetailSiswaLeaderboard() {
+            const modal = document.getElementById('modal-detail-siswa-leaderboard');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
         }
 
         // Jaga-jaga tambahan: kalau gambar border/avatar gagal dimuat (mis. file
