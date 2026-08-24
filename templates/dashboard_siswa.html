@@ -3343,14 +3343,14 @@
                 <!-- Baris atas: kiri = foto+border+efek nama+title, kanan-bawah = bio siswa -->
                 <div class="flex items-start justify-between gap-4 pr-10">
                     <div class="flex items-center gap-4 min-w-0">
-                        <div class="profile-wrapper w-28 h-28 flex-shrink-0">
+                        <div class="profile-wrapper w-20 h-20 flex-shrink-0">
                             <img id="detail-siswa-foto" src="" class="user-avatar" alt="Avatar siswa">
                             <img id="detail-siswa-border" src="" class="user-border" alt="Border siswa">
                         </div>
                         <div class="min-w-0 text-left">
-                            <p id="detail-siswa-nama" class="text-xl font-bold flex items-center gap-1.5 flex-wrap"></p>
-                            <span id="detail-siswa-title" class="inline-block mt-1.5 px-3 py-1 rounded-md text-xs font-bold"></span>
-                            <p id="detail-siswa-kelas" class="text-sm text-slate-400 mt-1.5"></p>
+                            <p id="detail-siswa-nama" class="text-sm font-bold flex items-center gap-1 flex-wrap"></p>
+                            <span id="detail-siswa-title" class="inline-block mt-1 px-2.5 py-1 rounded-md text-[10px] font-bold"></span>
+                            <p id="detail-siswa-kelas" class="text-[11px] text-slate-400 mt-1"></p>
                         </div>
                     </div>
                     <div id="detail-siswa-bio-wrapper" class="hidden self-end max-w-[50%] sm:max-w-[45%] bg-white/80 border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm">
@@ -3359,9 +3359,9 @@
                     </div>
                 </div>
             </div>
-            <div class="px-7 pb-7 pt-7 mt-1 overflow-y-auto space-y-3">
-                <p class="text-sm font-bold text-slate-600 mb-1">Prestasi yang Diupload</p>
-                <div id="detail-siswa-list-prestasi" class="space-y-3"></div>
+            <div class="px-6 pb-6 pt-6 mt-1 overflow-y-auto space-y-2.5">
+                <p class="text-xs font-bold text-slate-600 mb-1">Prestasi yang Diupload</p>
+                <div id="detail-siswa-list-prestasi" class="space-y-2.5"></div>
             </div>
         </div>
     </div>
@@ -9637,13 +9637,13 @@
                     // (.prestasi-siswa-card-reveal) tapi CSS-nya identik, dan
                     // delay bertahap per baris dibuat dengan pola yang sama
                     // ((i % 9) * 70ms).
-                    row.className = 'prestasi-siswa-card-reveal flex items-center gap-3.5 p-3.5 rounded-xl border border-slate-200/80';
+                    row.className = 'prestasi-siswa-card-reveal flex items-center gap-3 p-2.5 rounded-xl border border-slate-200/80';
                     row.style.transitionDelay = `${(i % 9) * 70}ms`;
                     row.innerHTML = `
-                        <img src="${item.foto}" title="Klik untuk perbesar" class="thumb-bukti-prestasi-leaderboard w-16 h-16 rounded-lg object-cover flex-shrink-0 border border-slate-200 cursor-zoom-in" alt="Bukti ${item.judul}">
+                        <img src="${item.foto}" title="Klik untuk perbesar" class="thumb-bukti-prestasi-leaderboard w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-slate-200 cursor-zoom-in" alt="Bukti ${item.judul}">
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-bold text-slate-900 truncate">${item.judul}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">${item.jenis === 'piala' ? 'Piala' : 'Sertifikat'} &middot; +${hitungPoinPrestasi(item)} poin</p>
+                            <p class="text-xs font-bold text-slate-900 truncate">${item.judul}</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">${item.jenis === 'piala' ? 'Piala' : 'Sertifikat'} &middot; +${hitungPoinPrestasi(item)} poin</p>
                         </div>
                     `;
                     row.querySelector('.thumb-bukti-prestasi-leaderboard').addEventListener('click', () => bukaZoomFotoPrestasi(item.foto, item.judul));
