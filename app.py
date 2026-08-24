@@ -281,8 +281,59 @@ def _simpan_quiz_store():
  
  
 quiz_store = _muat_quiz_store()
- 
- 
+
+
+# ----------------------------------------------------
+# DATA PRESTASI SISWA (SIMULASI TABEL prestasi_submissions)
+# SENGAJA dibuat TERPISAH TOTAL dari quiz_store di atas -- variabel Python
+# beda (prestasi_store, bukan quiz_store), file JSON di disk beda
+# (prestasi_store.json, bukan quiz_store.json), dan endpoint beda
+# (/api/prestasi/..., bukan /api/quiz/...) -- supaya proses baca/tulis
+# salah satu fitur TIDAK PERNAH bentrok/nimpa punya fitur satunya walau
+# dua-duanya sama-sama dipanggil dari dashboard_siswa.html.
+#
+# Beda skema dengan quiz_store: quiz_store dipecah per SLOT (per akun/
+# profil dummy, lihat _kunci_slot_quiz) karena tiap siswa punya progress
+# quiz masing-masing. Prestasi TIDAK begitu -- di client (lihat
+# KEY_PRESTASI_SISWA di dashboard_siswa.html), satu KELAS berbagi SATU
+# daftar pengajuan prestasi (karena guru perlu lihat & approve pengajuan
+# semua siswa di kelas itu dari satu tempat, dan leaderboard prestasi
+# butuh lihat prestasi semua siswa sekelas sekaligus). Jadi di sini
+# prestasi_store dipecah per KELAS, bukan per akun:
+#   prestasi_store[kelas] = [ {id, judul, jenis, keterangan, foto,
+#                               hashFile, teksOCR, namaSiswa,
+#                               tanggalAjukan, status, ...}, ... ]
+# Skema tiap item persis sama dengan objek yang dulu cuma ada di
+# localStorage (lihat ajukanPrestasi() di dashboard_siswa.html) supaya
+# dashboard guru (yang baca/tulis skema yang sama) tetap kompatibel.
+# ----------------------------------------------------
+PRESTASI_STORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'prestasi_store.json')
+
+
+def _muat_prestasi_store():
+    """Baca prestasi_store dari file JSON di disk (kalau ada). File ini
+    SENGAJA terpisah dari quiz_store.json (lihat catatan di atas)."""
+    try:
+        with open(PRESTASI_STORE_PATH, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _simpan_prestasi_store():
+    """Tulis prestasi_store saat ini ke file JSON di disk (atomic, sama
+    pola dengan _simpan_quiz_store supaya tidak korup kalau ketiban
+    proses lain nulis bersamaan)."""
+    os.makedirs(os.path.dirname(PRESTASI_STORE_PATH), exist_ok=True)
+    tmp_path = PRESTASI_STORE_PATH + '.tmp'
+    with open(tmp_path, 'w', encoding='utf-8') as f:
+        json.dump(prestasi_store, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, PRESTASI_STORE_PATH)
+
+
+prestasi_store = _muat_prestasi_store()
+
+
 def _default_quiz_blob(jenis):
     if jenis == 'essay':
         return {'bestByLevel': {'easy': 0, 'medium': 0, 'hard': 0}, 'leaderboard': []}
@@ -874,8 +925,56 @@ def api_quiz_leaderboard_global():
  
     daftar = list(gabungan.values())
     return jsonify(success=True, leaderboard=daftar)
- 
- 
+
+
+# ----------------------------------------------------
+# API: PRESTASI SISWA -- endpoint SENDIRI, terpisah dari /api/quiz/... di
+# atas (lihat catatan di prestasi_store). Dipanggil dari
+# dashboard_siswa.html (savePrestasiData / muatPrestasiDariServer) supaya
+# Leaderboard Prestasi (Journey Prestasi) ikut sinkron lintas akun &
+# perangkat, sama seperti Leaderboard Quiz -- tanpa numpang/nimpa data di
+# quiz_store.
+# ----------------------------------------------------
+@app.route('/api/prestasi/load', methods=['GET'])
+def api_prestasi_load():
+    """Ambil daftar pengajuan prestasi milik SATU kelas dari server.
+    Dipanggil saat dashboard siswa dibuka, supaya prestasi yang diajukan/
+    disetujui dari perangkat/browser lain (siswa lain di kelas yang sama,
+    atau guru yang approve dari dashboard guru) ikut kebaca di sini."""
+    if 'user' not in session:
+        return jsonify(success=False, message='Belum login.'), 401
+
+    kelas = (request.args.get('kelas') or '').strip()
+    if not kelas:
+        return jsonify(success=False, message='Kelas tidak valid.'), 400
+
+    daftar = prestasi_store.get(kelas, [])
+    return jsonify(success=True, data=daftar)
+
+
+@app.route('/api/prestasi/save', methods=['POST'])
+def api_prestasi_save():
+    """Simpan (timpa) seluruh daftar pengajuan prestasi milik SATU kelas
+    ke server. Dipanggil setiap kali daftar lokal berubah (pengajuan baru,
+    atau hasil gabungan dengan data server) -- pola full-list-overwrite
+    ini sengaja sama dengan savePrestasiData() di client, yang memang
+    selalu menulis ulang seluruh array tiap kali ada perubahan."""
+    body = request.get_json(silent=True) or {}
+
+    ok, err_resp, err_code = _cek_sesi_masih_cocok(body.get('expected_username'))
+    if not ok:
+        return err_resp, err_code
+
+    kelas = (body.get('kelas') or '').strip()
+    data = body.get('data')
+    if not kelas or not isinstance(data, list):
+        return jsonify(success=False, message='Data prestasi tidak valid.'), 400
+
+    prestasi_store[kelas] = data
+    _simpan_prestasi_store()
+    return jsonify(success=True)
+
+
 # ----------------------------------------------------
 # API: CARI TEMAN (pencarian siswa, permintaan pertemanan, profil statistik)
 # ----------------------------------------------------
