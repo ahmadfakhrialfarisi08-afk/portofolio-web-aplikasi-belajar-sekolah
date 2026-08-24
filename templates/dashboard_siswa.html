@@ -3335,20 +3335,27 @@
          efek nama+title) di atas, daftar prestasi yang dia upload & disetujui di bawah.
          Dibuka lewat klik salah satu baris di #journey-leaderboard-list. -->
     <div id="modal-detail-siswa-leaderboard" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupModalDetailSiswaLeaderboard()">
-        <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-slate-200 max-h-[85vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 max-h-[88vh] flex flex-col overflow-hidden">
             <div class="relative bg-gradient-to-br from-amber-50 to-white px-6 pt-6 pb-5 border-b border-slate-100 flex-shrink-0">
-                <button onclick="tutupModalDetailSiswaLeaderboard()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100">
+                <button onclick="tutupModalDetailSiswaLeaderboard()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 z-10">
                     <i class="fa-solid fa-xmark text-sm"></i>
                 </button>
-                <div class="flex flex-col items-center text-center gap-2">
-                    <div class="profile-wrapper w-20 h-20 flex-shrink-0">
-                        <img id="detail-siswa-foto" src="" class="user-avatar" alt="Avatar siswa">
-                        <img id="detail-siswa-border" src="" class="user-border" alt="Border siswa">
+                <!-- Baris atas: kiri = foto+border+efek nama+title, kanan-bawah = bio siswa -->
+                <div class="flex items-start justify-between gap-3 pr-8">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="profile-wrapper w-20 h-20 flex-shrink-0">
+                            <img id="detail-siswa-foto" src="" class="user-avatar" alt="Avatar siswa">
+                            <img id="detail-siswa-border" src="" class="user-border" alt="Border siswa">
+                        </div>
+                        <div class="min-w-0 text-left">
+                            <p id="detail-siswa-nama" class="text-sm font-bold flex items-center gap-1 flex-wrap"></p>
+                            <span id="detail-siswa-title" class="inline-block mt-1 px-2.5 py-1 rounded-md text-[10px] font-bold"></span>
+                            <p id="detail-siswa-kelas" class="text-[11px] text-slate-400 mt-1"></p>
+                        </div>
                     </div>
-                    <div class="min-w-0">
-                        <p id="detail-siswa-nama" class="text-sm font-bold flex items-center justify-center gap-1 flex-wrap"></p>
-                        <span id="detail-siswa-title" class="inline-block mt-1 px-2.5 py-1 rounded-md text-[10px] font-bold"></span>
-                        <p id="detail-siswa-kelas" class="text-[11px] text-slate-400 mt-1"></p>
+                    <div id="detail-siswa-bio-wrapper" class="hidden self-end max-w-[50%] sm:max-w-[45%] bg-white/80 border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-0.5"><i class="fa-solid fa-quote-left text-[8px] mr-1"></i>Bio</p>
+                        <p id="detail-siswa-bio" class="text-[11px] text-slate-600 italic leading-snug break-words"></p>
                     </div>
                 </div>
             </div>
@@ -9494,6 +9501,13 @@
                 || `https://ui-avatars.com/api/?name=${encodeURIComponent(namaFallback)}&background=e0e7ff&color=3730a3&size=120`;
         }
 
+        // Bio siswa LAIN dibaca dengan pola key localStorage yang sama dengan
+        // punya akun aktif (lihat keyStudentBio -> `student_bio_${ID_SISWA_AKTIF}`),
+        // hanya beda idSiswa-nya. Dipakai di modal detail Leaderboard Prestasi.
+        function getBioUntukIdSiswa(idSiswa) {
+            return (localStorage.getItem(`student_bio_${idSiswa}`) || '').trim();
+        }
+
         function getProfilSiswaUntukNama(nama) {
             if (nama === NAMA_SISWA_AKTIF) {
                 const border = getBorderTerpakai();
@@ -9505,7 +9519,8 @@
                     efekNamaClass: efekNama,
                     titleBadgeClass: getTitleBadgeClass(efekNama),
                     badgeDevHtml: getBadgeDevHtml(border),
-                    kelas: getKelasAktifQuiz()
+                    kelas: getKelasAktifQuiz(),
+                    bio: getBioUntukIdSiswa(ID_SISWA_AKTIF)
                 };
             }
             const dummy = getDaftarAkunDummy().find(p => p.nama.trim().toLowerCase() === nama.trim().toLowerCase());
@@ -9519,7 +9534,8 @@
                 efekNamaClass: efekNama,
                 titleBadgeClass: getTitleBadgeClass(efekNama),
                 badgeDevHtml: getBadgeDevHtml(border),
-                kelas: dummy ? dummy.kelas : '-'
+                kelas: dummy ? dummy.kelas : '-',
+                bio: idSiswa ? getBioUntukIdSiswa(idSiswa) : ''
             };
         }
 
@@ -9595,6 +9611,17 @@
             elTitle.innerText = profil.title;
             elTitle.className = `inline-block mt-1 px-2.5 py-1 rounded-md text-[10px] font-bold ${profil.titleBadgeClass}`;
             document.getElementById('detail-siswa-kelas').innerText = `Kelas ${profil.kelas}`;
+
+            // Bio hanya ditampilkan (di pojok kanan-bawah kartu profil) kalau
+            // siswa yang bersangkutan memang sudah pernah mengisi bio-nya.
+            const bioWrapper = document.getElementById('detail-siswa-bio-wrapper');
+            const bioText = (profil.bio || '').trim();
+            if (bioText) {
+                document.getElementById('detail-siswa-bio').innerText = bioText;
+                bioWrapper.classList.remove('hidden');
+            } else {
+                bioWrapper.classList.add('hidden');
+            }
 
             const items = (bangunLeaderboardPrestasi().find(e => e.nama === nama) || { items: [] }).items
                 .slice().sort((a, b) => (b.id || '').localeCompare(a.id || ''));
