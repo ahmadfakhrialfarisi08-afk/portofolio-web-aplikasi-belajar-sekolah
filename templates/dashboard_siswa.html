@@ -3335,33 +3335,33 @@
          efek nama+title) di atas, daftar prestasi yang dia upload & disetujui di bawah.
          Dibuka lewat klik salah satu baris di #journey-leaderboard-list. -->
     <div id="modal-detail-siswa-leaderboard" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupModalDetailSiswaLeaderboard()">
-        <div class="bg-white rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 max-h-[88vh] flex flex-col overflow-hidden">
-            <div class="relative bg-gradient-to-br from-amber-50 to-white px-6 pt-6 pb-5 border-b border-slate-100 flex-shrink-0">
-                <button onclick="tutupModalDetailSiswaLeaderboard()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 z-10">
-                    <i class="fa-solid fa-xmark text-sm"></i>
+        <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="relative bg-gradient-to-br from-amber-50 to-white px-8 pt-8 pb-6 border-b border-slate-100 flex-shrink-0">
+                <button onclick="tutupModalDetailSiswaLeaderboard()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-100 z-10">
+                    <i class="fa-solid fa-xmark text-base"></i>
                 </button>
                 <!-- Baris atas: kiri = foto+border+efek nama+title, kanan-bawah = bio siswa -->
-                <div class="flex items-start justify-between gap-3 pr-8">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <div class="profile-wrapper w-20 h-20 flex-shrink-0">
+                <div class="flex items-start justify-between gap-4 pr-10">
+                    <div class="flex items-center gap-4 min-w-0">
+                        <div class="profile-wrapper w-28 h-28 flex-shrink-0">
                             <img id="detail-siswa-foto" src="" class="user-avatar" alt="Avatar siswa">
                             <img id="detail-siswa-border" src="" class="user-border" alt="Border siswa">
                         </div>
                         <div class="min-w-0 text-left">
-                            <p id="detail-siswa-nama" class="text-sm font-bold flex items-center gap-1 flex-wrap"></p>
-                            <span id="detail-siswa-title" class="inline-block mt-1 px-2.5 py-1 rounded-md text-[10px] font-bold"></span>
-                            <p id="detail-siswa-kelas" class="text-[11px] text-slate-400 mt-1"></p>
+                            <p id="detail-siswa-nama" class="text-xl font-bold flex items-center gap-1.5 flex-wrap"></p>
+                            <span id="detail-siswa-title" class="inline-block mt-1.5 px-3 py-1 rounded-md text-xs font-bold"></span>
+                            <p id="detail-siswa-kelas" class="text-sm text-slate-400 mt-1.5"></p>
                         </div>
                     </div>
-                    <div id="detail-siswa-bio-wrapper" class="hidden self-end max-w-[50%] sm:max-w-[45%] bg-white/80 border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-0.5"><i class="fa-solid fa-quote-left text-[8px] mr-1"></i>Bio</p>
-                        <p id="detail-siswa-bio" class="text-[11px] text-slate-600 italic leading-snug break-words"></p>
+                    <div id="detail-siswa-bio-wrapper" class="hidden self-end max-w-[50%] sm:max-w-[45%] bg-white/80 border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1"><i class="fa-solid fa-quote-left text-[9px] mr-1"></i>Bio</p>
+                        <p id="detail-siswa-bio" class="text-xs text-slate-600 italic leading-snug break-words"></p>
                     </div>
                 </div>
             </div>
-            <div class="px-5 pb-5 pt-6 mt-1 overflow-y-auto space-y-2.5">
-                <p class="text-xs font-bold text-slate-600 mb-1">Prestasi yang Diupload</p>
-                <div id="detail-siswa-list-prestasi" class="space-y-2.5"></div>
+            <div class="px-7 pb-7 pt-7 mt-1 overflow-y-auto space-y-3">
+                <p class="text-sm font-bold text-slate-600 mb-1">Prestasi yang Diupload</p>
+                <div id="detail-siswa-list-prestasi" class="space-y-3"></div>
             </div>
         </div>
     </div>
@@ -9637,13 +9637,13 @@
                     // (.prestasi-siswa-card-reveal) tapi CSS-nya identik, dan
                     // delay bertahap per baris dibuat dengan pola yang sama
                     // ((i % 9) * 70ms).
-                    row.className = 'prestasi-siswa-card-reveal flex items-center gap-3 p-2.5 rounded-xl border border-slate-200/80';
+                    row.className = 'prestasi-siswa-card-reveal flex items-center gap-3.5 p-3.5 rounded-xl border border-slate-200/80';
                     row.style.transitionDelay = `${(i % 9) * 70}ms`;
                     row.innerHTML = `
-                        <img src="${item.foto}" title="Klik untuk perbesar" class="thumb-bukti-prestasi-leaderboard w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-slate-200 cursor-zoom-in" alt="Bukti ${item.judul}">
+                        <img src="${item.foto}" title="Klik untuk perbesar" class="thumb-bukti-prestasi-leaderboard w-16 h-16 rounded-lg object-cover flex-shrink-0 border border-slate-200 cursor-zoom-in" alt="Bukti ${item.judul}">
                         <div class="flex-1 min-w-0">
-                            <p class="text-xs font-bold text-slate-900 truncate">${item.judul}</p>
-                            <p class="text-[10px] text-slate-400">${item.jenis === 'piala' ? 'Piala' : 'Sertifikat'} &middot; +${hitungPoinPrestasi(item)} poin</p>
+                            <p class="text-sm font-bold text-slate-900 truncate">${item.judul}</p>
+                            <p class="text-xs text-slate-400 mt-0.5">${item.jenis === 'piala' ? 'Piala' : 'Sertifikat'} &middot; +${hitungPoinPrestasi(item)} poin</p>
                         </div>
                     `;
                     row.querySelector('.thumb-bukti-prestasi-leaderboard').addEventListener('click', () => bukaZoomFotoPrestasi(item.foto, item.judul));
