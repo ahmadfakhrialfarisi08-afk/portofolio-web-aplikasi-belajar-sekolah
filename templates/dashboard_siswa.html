@@ -1080,6 +1080,64 @@
             30%, 100% { top: -50px; left: 85px; }
         }
 
+        /* Dekorasi background header modal detail siswa (Leaderboard Prestasi) --
+           garis kontur topografi + pola silang kecil, gaya sama seperti wallpaper
+           referensi (foto ke-2). Warna biru redup + opacity rendah supaya nyatu
+           di atas gradient amber-50/putih header, tanpa mengganggu keterbacaan
+           avatar/nama/title/bio yang dirender di atasnya (z-0 vs z-[1]). */
+        .detail-siswa-bg-deco {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .detail-siswa-bg-deco svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .deco-contour {
+            fill: none;
+            stroke: #5b6ee8;
+            stroke-width: 1.4;
+            opacity: 0.22;
+        }
+        .deco-contour--soft {
+            opacity: 0.13;
+            stroke-width: 1.1;
+        }
+        .deco-cross-grid {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            display: grid;
+            grid-template-columns: repeat(3, 10px);
+            gap: 8px;
+        }
+        .deco-cross-grid span {
+            position: relative;
+            width: 10px;
+            height: 10px;
+            display: block;
+        }
+        .deco-cross-grid span::before,
+        .deco-cross-grid span::after {
+            content: "";
+            position: absolute;
+            background: #5b6ee8;
+            opacity: 0.3;
+        }
+        .deco-cross-grid span::before {
+            left: 0; right: 0; top: 50%; height: 1.4px;
+            transform: translateY(-50%) rotate(45deg);
+        }
+        .deco-cross-grid span::after {
+            top: 0; bottom: 0; left: 50%; width: 1.4px;
+            transform: translateX(-50%) rotate(45deg);
+        }
+
         /* Badge title "Queen" (border pink / Kupu-kupu Prestasi) — dipasang
            sebagai CSS class sendiri (bukan utility Tailwind kayak bg-pink-400)
            karena badge ini disuntik lewat innerHTML setelah halaman selesai
@@ -3345,12 +3403,31 @@
          Dibuka lewat klik salah satu baris di #journey-leaderboard-list. -->
     <div id="modal-detail-siswa-leaderboard" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupModalDetailSiswaLeaderboard()">
         <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col overflow-hidden">
-            <div class="relative bg-gradient-to-br from-amber-50 to-white px-8 pt-8 pb-6 border-b border-slate-100 flex-shrink-0">
+            <div class="relative bg-gradient-to-br from-amber-50 to-white px-8 pt-8 pb-6 border-b border-slate-100 flex-shrink-0 overflow-hidden">
+                <!-- DEKORASI BACKGROUND HEADER: garis kontur topografi + pola silang
+                     kecil, gaya sama seperti wallpaper referensi (foto ke-2 dari
+                     user). Sengaja HANYA di lapisan background (z-0, pointer-events
+                     none) supaya avatar/nama/title/bio di atasnya tetap bersih &
+                     gampang dibaca -- warna disesuaikan (biru redup, opacity rendah)
+                     biar nyatu sama gradient amber-50/putih header, bukan norak. -->
+                <div class="detail-siswa-bg-deco" aria-hidden="true">
+                    <svg viewBox="0 0 700 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                        <path class="deco-contour" d="M -20 40 C 100 8, 220 72, 340 34 S 600 12, 740 52" />
+                        <path class="deco-contour deco-contour--soft" d="M -20 88 C 120 130, 260 58, 400 100 S 660 132, 740 92" />
+                        <path class="deco-contour deco-contour--soft" d="M -20 10 C 140 46, 300 -16, 460 20 S 700 46, 740 8" />
+                        <path class="deco-contour" d="M 500 -10 C 540 40, 580 15, 615 65 S 670 130, 700 170" />
+                    </svg>
+                    <div class="deco-cross-grid">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
                 <button onclick="tutupModalDetailSiswaLeaderboard()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-100 z-10">
                     <i class="fa-solid fa-xmark text-base"></i>
                 </button>
                 <!-- Baris atas: kiri = foto+border+efek nama+title, kanan-bawah = bio siswa -->
-                <div class="flex items-start justify-between gap-4 pr-10">
+                <div class="relative z-[1] flex items-start justify-between gap-4 pr-10">
                     <div class="flex items-center gap-4 min-w-0">
                         <div class="profile-wrapper w-20 h-20 flex-shrink-0">
                             <img id="detail-siswa-foto" src="" class="user-avatar" alt="Avatar siswa">
