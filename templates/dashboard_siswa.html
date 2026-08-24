@@ -1629,6 +1629,21 @@
             transform: translateY(0);
         }
 
+        /* --- 5d. MODAL DETAIL SISWA (Leaderboard Prestasi): dipakai untuk daftar
+           "Prestasi yang Diupload" di dalam modal. Efek fade-up-nya sengaja
+           SAMA PERSIS dengan .guru-card-reveal di atas (opacity 0 -> 1 +
+           translateY 28px -> 0), cuma nama class dibedakan supaya style
+           daftar guru tidak ikut kesenggol kalau salah satu diubah nanti. */
+        .prestasi-siswa-card-reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.65s cubic-bezier(0.4, 0, 0.2, 1), transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .prestasi-siswa-card-reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         /* --- 5c. DAFTAR GURU DI HP: dari grid masonry (kartu numpuk 1 kolom,
            gede-gede) diubah jadi grid 4 kolom yang rapi berurutan per baris
            (baris 1 = guru ke-1 s/d 4, baris 2 = guru ke-5 s/d 8, dst), tetap
@@ -3337,7 +3352,7 @@
                     </div>
                 </div>
             </div>
-            <div class="p-5 overflow-y-auto space-y-2.5">
+            <div class="px-5 pb-5 pt-6 mt-1 overflow-y-auto space-y-2.5">
                 <p class="text-xs font-bold text-slate-600 mb-1">Prestasi yang Diupload</p>
                 <div id="detail-siswa-list-prestasi" class="space-y-2.5"></div>
             </div>
@@ -7274,6 +7289,7 @@
             renderPerangkat(); // isi badge & tabel perangkat dari server saat halaman dibuka
             updateBerandaPoinQuiz();
             sinkronkanQuizDenganServer(); // tarik progress & leaderboard akun ini dari server
+            sinkronkanPrestasiDenganServer(); // tarik & gabung pengajuan prestasi kelas ini dari server (endpoint terpisah, lihat catatan di app.py)
             renderPanelDummyLeaderboard();
             pastikanBaselineSeenIdsQuiz();
             pastikanBaselineSeenIdsQuizEssay();
@@ -9364,16 +9380,91 @@
 
         function savePrestasiData(list) {
             localStorage.setItem(KEY_PRESTASI_SISWA, JSON.stringify(list));
+            // Dorong juga ke server (endpoint /api/prestasi/..., TERPISAH dari
+            // /api/quiz/... -- lihat catatan panjang di app.py) supaya
+            // pengajuan/persetujuan prestasi kelas ini ikut sinkron ke siswa
+            // lain & Leaderboard Prestasi tidak lagi cuma "kebaca" di browser
+            // yang sama.
+            simpanPrestasiKeServer(list);
+        }
+
+        // ============================================================
+        // SINKRONISASI PRESTASI KE SERVER (endpoint SENDIRI, tidak numpang
+        // di quiz_store -- lihat simpanQuizKeServer utk pola aslinya yang
+        // ditiru di sini: fire-and-forget + keepalive + retry 1x, supaya
+        // request tetap coba jalan walau tab langsung ditinggal/pindah
+        // halaman setelah kirim pengajuan prestasi).
+        // ============================================================
+        function simpanPrestasiKeServer(list, percobaanUlang) {
+            fetch('/api/prestasi/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                keepalive: true,
+                body: JSON.stringify({ kelas: KELAS_AKTIF_SISWA, data: list, expected_username: USERNAME_SISWA_ASLI })
+            })
+                .then(res => res.json())
+                .then(hasil => {
+                    if (hasil && hasil.session_mismatch) tampilkanPeringatanSesiBerubah();
+                })
+                .catch(() => {
+                    if (!percobaanUlang) {
+                        setTimeout(() => simpanPrestasiKeServer(list, true), 1500);
+                    }
+                });
+        }
+
+        // Tarik daftar prestasi kelas ini dari server lalu gabung dengan yang
+        // ada di localStorage (bukan saling timpa begitu saja):
+        //   - Item yang di server tapi tidak ada di lokal (mis. pengajuan
+        //     siswa LAIN di kelas yang sama, atau status yang sudah
+        //     diubah guru dari dashboard guru) -> dipakai apa adanya, server
+        //     dianggap paling baru untuk status persetujuan.
+        //   - Item yang ada di lokal tapi belum sempat ke server (mis.
+        //     tadi sempat offline pas ajukanPrestasi) -> tetap dipertahankan
+        //     & didorong ulang ke server supaya tidak hilang/ketinggalan.
+        // Sama seperti gabungkanDataQuiz(), server menang untuk status siswa
+        // LAIN, tapi item baru milik lokal yang belum ada di server tidak
+        // pernah dibuang.
+        async function sinkronkanPrestasiDenganServer() {
+            try {
+                const res = await fetch(`/api/prestasi/load?kelas=${encodeURIComponent(KELAS_AKTIF_SISWA)}`);
+                const hasil = await res.json();
+                if (!hasil || !hasil.success) return;
+
+                const dariServer = Array.isArray(hasil.data) ? hasil.data : [];
+                const dariLokal = getPrestasiData();
+
+                const peta = new Map();
+                dariServer.forEach(item => peta.set(item.id, item));
+                let adaItemBaruDariLokal = false;
+                dariLokal.forEach(item => {
+                    if (!peta.has(item.id)) {
+                        peta.set(item.id, item);
+                        adaItemBaruDariLokal = true;
+                    }
+                });
+
+                const gabungan = Array.from(peta.values());
+                localStorage.setItem(KEY_PRESTASI_SISWA, JSON.stringify(gabungan));
+
+                // Kalau ada item lokal yang belum sempat nyampe server
+                // (offline/gagal sebelumnya), dorong ulang sekarang.
+                if (adaItemBaruDariLokal) simpanPrestasiKeServer(gabungan);
+
+                if (typeof renderKoleksiBorder === 'function') renderKoleksiBorder();
+                if (typeof renderJourneyPrestasi === 'function') renderJourneyPrestasi();
+            } catch (e) { /* offline -> tetap pakai data lokal yang ada */ }
         }
 
         /* ================= LEADERBOARD PRESTASI (di dalam kartu Journey Prestasi) =================
            Toggle antara "progress diri sendiri" (stat 3 kartu + grafik, sudah ada dari
            awal) dengan peringkat semua siswa berdasarkan jumlah/poin prestasi yang
-           statusnya "disetujui". Karena prestasi TIDAK punya server global endpoint
-           seperti quiz (lihat ambilLeaderboardGabungan), sumber datanya murni dari
-           getPrestasiData() (localStorage per kelas, dibagi lewat akun dummy yang
-           sama-sama dipakai di browser ini) -- konsisten dengan cara "Panel Dummy
-           Leaderboard" mensimulasikan banyak siswa di file ini. */
+           statusnya "disetujui". Sumbernya tetap getPrestasiData() (localStorage per
+           kelas), TAPI localStorage ini sekarang rutin digabung dengan server lewat
+           sinkronkanPrestasiDenganServer() (endpoint /api/prestasi/..., terpisah dari
+           /api/quiz/... -- lihat catatan di app.py) -- jadi leaderboard ini sudah
+           mencakup siswa sekelas dari perangkat/browser LAIN juga, tidak cuma akun
+           dummy di browser yang sama. */
         let modeJourneyLeaderboard = false;
 
         function toggleJourneyLeaderboard() {
@@ -9512,9 +9603,15 @@
             if (!items.length) {
                 listContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Belum ada prestasi yang disetujui.</p>`;
             } else {
-                items.forEach(item => {
+                items.forEach((item, i) => {
                     const row = document.createElement('div');
-                    row.className = 'flex items-center gap-3 p-2.5 rounded-xl border border-slate-200/80';
+                    // Efek fade-up-nya sengaja SAMA seperti kartu di Daftar Guru
+                    // (lihat .guru-card-reveal) -- di sini pakai class terpisah
+                    // (.prestasi-siswa-card-reveal) tapi CSS-nya identik, dan
+                    // delay bertahap per baris dibuat dengan pola yang sama
+                    // ((i % 9) * 70ms).
+                    row.className = 'prestasi-siswa-card-reveal flex items-center gap-3 p-2.5 rounded-xl border border-slate-200/80';
+                    row.style.transitionDelay = `${(i % 9) * 70}ms`;
                     row.innerHTML = `
                         <img src="${item.foto}" title="Klik untuk perbesar" class="thumb-bukti-prestasi-leaderboard w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-slate-200 cursor-zoom-in" alt="Bukti ${item.judul}">
                         <div class="flex-1 min-w-0">
@@ -9524,6 +9621,13 @@
                     `;
                     row.querySelector('.thumb-bukti-prestasi-leaderboard').addEventListener('click', () => bukaZoomFotoPrestasi(item.foto, item.judul));
                     listContainer.appendChild(row);
+                });
+                // Modal langsung terbuka penuh (bukan discroll seperti grid guru),
+                // jadi reveal-nya dipicu langsung sesaat setelah baris ditempel ke
+                // DOM -- bukan lewat IntersectionObserver seperti punya guru
+                // (yang memang menunggu kartu masuk viewport saat discroll).
+                requestAnimationFrame(() => {
+                    listContainer.querySelectorAll('.prestasi-siswa-card-reveal').forEach(el => el.classList.add('revealed'));
                 });
             }
 
