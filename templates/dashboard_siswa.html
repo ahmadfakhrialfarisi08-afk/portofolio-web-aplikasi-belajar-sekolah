@@ -1066,6 +1066,62 @@
             align-items: center;
         }
 
+        /* ============================================================
+           PROFIL DETAIL SISWA (Leaderboard Prestasi) — TEMA BIRU GELAP
+           Sesuai wallpaper referensi user: header modal diganti dari
+           gradient amber-50/putih jadi gradient biru gelap (navy),
+           lengkap dengan sapuan "cahaya" yang sama persis konsepnya
+           dengan efek shine di .badge-dev (DEV) -- cuma diperbesar
+           supaya menyapu seluruh panel header, bukan cuma badge kecil.
+           Warna teks di dalam header (nama/title/kelas/bio/tombol
+           tutup) ikut disesuaikan supaya tetap kebaca di atas gelap.
+           ============================================================ */
+        .detail-siswa-header-biru {
+            background: linear-gradient(135deg, #070a1c 0%, #0e1738 45%, #16215a 80%, #1c2a6e 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .detail-siswa-header-biru::before {
+            content: "";
+            position: absolute;
+            top: -90px;
+            left: -140px;
+            width: 100px;
+            height: 300px;
+            background: linear-gradient(
+                135deg,
+                rgba(147, 175, 255, 0) 0%,
+                rgba(147, 175, 255, 0.55) 50%,
+                rgba(147, 175, 255, 0) 100%
+            );
+            animation: shine-dev-header 4.5s ease-in-out infinite;
+            transform: rotate(-25deg);
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes shine-dev-header {
+            0% { left: -140px; }
+            35%, 100% { left: 120%; }
+        }
+        .detail-siswa-header-biru .deco-contour { stroke: #7c93ff; opacity: 0.4; }
+        .detail-siswa-header-biru .deco-contour--soft { opacity: 0.22; }
+        .detail-siswa-header-biru .deco-cross-grid span::before,
+        .detail-siswa-header-biru .deco-cross-grid span::after { background: #7c93ff; opacity: 0.5; }
+        .detail-siswa-header-biru .detail-siswa-tombol-tutup { color: rgba(226, 232, 255, 0.7); }
+        .detail-siswa-header-biru .detail-siswa-tombol-tutup:hover { color: #fff; background: rgba(255,255,255,0.12); }
+        .detail-siswa-header-biru #detail-siswa-nama { color: #f1f5ff; }
+        .detail-siswa-header-biru #detail-siswa-kelas { color: rgba(199, 210, 255, 0.65); }
+        .detail-siswa-header-biru #detail-siswa-bio-wrapper {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.16);
+            backdrop-filter: blur(4px);
+        }
+        .detail-siswa-header-biru #detail-siswa-bio-wrapper p:first-child { color: rgba(199, 210, 255, 0.6); }
+        .detail-siswa-header-biru #detail-siswa-bio { color: #e8ecff; }
+        @media (prefers-reduced-motion: reduce) {
+            .detail-siswa-header-biru::before { animation: none !important; }
+        }
+
         .badge-dev::after {
             content: "";
             position: absolute;
@@ -3412,7 +3468,7 @@
          Dibuka lewat klik salah satu baris di #journey-leaderboard-list. -->
     <div id="modal-detail-siswa-leaderboard" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupModalDetailSiswaLeaderboard()">
         <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col overflow-hidden">
-            <div class="relative bg-gradient-to-br from-amber-50 to-white px-8 pt-8 pb-6 border-b border-slate-100 flex-shrink-0 overflow-hidden">
+            <div class="detail-siswa-header-biru relative px-8 pt-8 pb-6 border-b border-slate-100 flex-shrink-0 overflow-hidden">
                 <!-- DEKORASI BACKGROUND HEADER: garis kontur topografi + pola silang
                      kecil, gaya sama seperti wallpaper referensi (foto ke-2 dari
                      user). Sengaja HANYA di lapisan background (z-0, pointer-events
@@ -3432,7 +3488,7 @@
                         <span></span><span></span><span></span>
                     </div>
                 </div>
-                <button onclick="tutupModalDetailSiswaLeaderboard()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-100 z-10">
+                <button onclick="tutupModalDetailSiswaLeaderboard()" class="detail-siswa-tombol-tutup absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-100 z-10 transition-colors">
                     <i class="fa-solid fa-xmark text-base"></i>
                 </button>
                 <!-- Baris atas: kiri = foto+border+efek nama+title, kanan-bawah = bio siswa -->
