@@ -146,6 +146,17 @@ users = {
             'border_aktif': 'starter_pemula',
         'foto_profil': FOTO_PROFIL_DEFAULT
     },
+    'setiawan': {
+                'username': 'jibril',
+                'password': 'qwerty46',
+                'role': 'siswa',
+                'email': 'jibril@sekolah.sch.id',
+                'fullname': 'MUHAMMAD JIBRIL AL MANAFI',
+                'identity_number': '0069889999',
+                'kelas': 'XII TKJ 3/TAV',
+                'border_aktif': 'starter_pemula',
+            'foto_profil': FOTO_PROFIL_DEFAULT
+    },
     'afrizal': {
                 'username': 'afrizalmustaqimm',
                 'password': 'afrizalmustaqim',
