@@ -146,7 +146,7 @@ users = {
             'border_aktif': 'starter_pemula',
         'foto_profil': FOTO_PROFIL_DEFAULT
     },
-    'setiawan': {
+    'jibril': {
                 'username': 'jibril',
                 'password': 'qwerty46',
                 'role': 'siswa',
