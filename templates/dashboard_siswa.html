@@ -1783,6 +1783,31 @@
             color: #c2410c;
         }
 
+        /* --- Toggle "Jurusan" (khusus Mapel Produktif) -- warna solid per
+           jurusan waktu aktif, senada tombol "Lihat Kategori Mapel" di Quiz:
+           TKJ biru, TKR hijau, TAV kuning. --- */
+        .jurusan-guru-btn {
+            background: #fff;
+            border-color: #e2e8f0;
+            color: #64748b;
+        }
+        .jurusan-guru-btn:hover { background: #f8fafc; }
+        .jurusan-guru-btn.jurusan-guru-aktif-tkj {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #fff;
+        }
+        .jurusan-guru-btn.jurusan-guru-aktif-tkr {
+            background: #16a34a;
+            border-color: #16a34a;
+            color: #fff;
+        }
+        .jurusan-guru-btn.jurusan-guru-aktif-tav {
+            background: #eab308;
+            border-color: #eab308;
+            color: #fff;
+        }
+
         /* --- 5. DAFTAR GURU: Scroll Reveal (Fade In on Scroll) --- */
         .guru-card-reveal {
             opacity: 0;
@@ -3918,11 +3943,12 @@
                     </div>
                     <div id="wrap-guru-jurusan" class="hidden">
                         <label class="text-[11px] font-bold text-slate-500">Jurusan</label>
-                        <select id="input-guru-jurusan" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
-                            <option value="TKJ">TKJ</option>
-                            <option value="TKR">TKR</option>
-                            <option value="TAV">TAV</option>
-                        </select>
+                        <div class="grid grid-cols-3 gap-2 mt-1">
+                            <button type="button" id="btn-jurusan-guru-tkj" onclick="pilihJurusanGuru('TKJ')" class="jurusan-guru-btn py-2 rounded-lg border text-xs font-bold transition-colors">TKJ</button>
+                            <button type="button" id="btn-jurusan-guru-tkr" onclick="pilihJurusanGuru('TKR')" class="jurusan-guru-btn py-2 rounded-lg border text-xs font-bold transition-colors">TKR</button>
+                            <button type="button" id="btn-jurusan-guru-tav" onclick="pilihJurusanGuru('TAV')" class="jurusan-guru-btn py-2 rounded-lg border text-xs font-bold transition-colors">TAV</button>
+                        </div>
+                        <input id="input-guru-jurusan" type="hidden" value="TKJ">
                         <p class="text-[10px] text-slate-400 mt-1">Khusus guru mapel produktif -- menentukan jurusan mapel yang diajarkan.</p>
                     </div>
                     <div>
@@ -7620,6 +7646,19 @@
             if (wrapJurusan) wrapJurusan.classList.toggle('hidden', jenis !== 'produktif');
         }
 
+        // Toggle "Jurusan" (khusus guru Mapel Produktif): update field hidden
+        // #input-guru-jurusan + styling warna solid pada tombol yang dipilih
+        // (TKJ biru, TKR hijau, TAV kuning), senada tombol "Lihat Kategori Mapel" di Quiz.
+        function pilihJurusanGuru(jurusan) {
+            document.getElementById('input-guru-jurusan').value = jurusan;
+            const peta = { TKJ: 'btn-jurusan-guru-tkj', TKR: 'btn-jurusan-guru-tkr', TAV: 'btn-jurusan-guru-tav' };
+            Object.entries(peta).forEach(([j, id]) => {
+                const btn = document.getElementById(id);
+                if (!btn) return;
+                btn.classList.toggle(`jurusan-guru-aktif-${j.toLowerCase()}`, j === jurusan);
+            });
+        }
+
         // Tingkat (X/XI/XII) TIDAK lagi diinput manual di form -- dulu ada field
         // terpisah "Tingkat" yang gampang tidak sinkron sama "Kelas yang Diajar"
         // (mis. admin pilih Tingkat "X" tapi isi kelas "XI TKJ 2"). Sekarang tingkat
@@ -7646,7 +7685,7 @@
             document.getElementById('form-kelola-guru-judul').textContent = 'Tambah Guru Baru';
             document.getElementById('btn-submit-form-guru').textContent = 'Simpan';
             ['nama', 'lulusan', 'mapel', 'kelas'].forEach(f => { document.getElementById(`input-guru-${f}`).value = ''; });
-            document.getElementById('input-guru-jurusan').value = 'TKJ';
+            pilihJurusanGuru('TKJ');
             pilihJenisGuru('biasa');
             resetPreviewFotoGuru();
             document.getElementById('form-kelola-guru-pesan-gagal').classList.add('hidden');
@@ -7663,7 +7702,7 @@
             document.getElementById('input-guru-lulusan').value = g.lulusan || '';
             document.getElementById('input-guru-mapel').value = g.mapel || '';
             document.getElementById('input-guru-kelas').value = g.kelas || '';
-            document.getElementById('input-guru-jurusan').value = g.jurusan || 'TKJ';
+            pilihJurusanGuru(g.jurusan || 'TKJ');
             pilihJenisGuru(g.jenis || 'biasa');
             // Foto lama tetap dipertahankan di field hidden (dan ditampilkan sebagai
             // pratinjau) sampai admin benar-benar pilih file baru lewat onPilihFotoGuru().
