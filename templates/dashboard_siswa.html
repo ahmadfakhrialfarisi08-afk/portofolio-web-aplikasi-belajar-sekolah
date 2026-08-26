@@ -5443,6 +5443,16 @@
             try {
                 const res = await fetch(`/api/teman/cari?q=${encodeURIComponent(q)}`);
                 const json = await res.json();
+
+                // GUARD RACE CONDITION: request ini butuh waktu ke server, dan selama
+                // nunggu itu user bisa aja udah ubah/hapus teks di kolom pencarian
+                // (lihat onInputCariTeman). Kalau pas hasil ini balik ternyata teks
+                // di kolom sudah beda dari q atau malah sudah dikosongkan, hasil ini
+                // sudah basi -- buang aja, jangan dipaksa render (ini yang bikin
+                // hasil pencarian lama kelihatan "nyangkut" walau kolom sudah kosong).
+                const inputSaatIni = document.getElementById('input-cari-teman');
+                if (!inputSaatIni || inputSaatIni.value.trim() !== q) return;
+
                 const hasil = json.success ? json.hasil : [];
 
                 if (hasil.length === 0) {
