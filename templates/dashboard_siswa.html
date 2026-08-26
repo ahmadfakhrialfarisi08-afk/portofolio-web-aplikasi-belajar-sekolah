@@ -3914,24 +3914,16 @@
                     <div>
                         <label class="text-[11px] font-bold text-slate-500">Kelas yang Diajar</label>
                         <input id="input-guru-kelas" type="text" placeholder="Contoh: X TKJ 1" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
+                        <p class="text-[10px] text-slate-400 mt-1">Tingkat (X/XI/XII) otomatis terbaca dari sini, tidak perlu diisi terpisah.</p>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="text-[11px] font-bold text-slate-500">Tingkat</label>
-                            <select id="input-guru-tingkat" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
-                                <option value="X">X</option>
-                                <option value="XI">XI</option>
-                                <option value="XII">XII</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-[11px] font-bold text-slate-500">Jurusan</label>
-                            <select id="input-guru-jurusan" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
-                                <option value="TKJ">TKJ</option>
-                                <option value="TKR">TKR</option>
-                                <option value="TAV">TAV</option>
-                            </select>
-                        </div>
+                    <div id="wrap-guru-jurusan" class="hidden">
+                        <label class="text-[11px] font-bold text-slate-500">Jurusan</label>
+                        <select id="input-guru-jurusan" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
+                            <option value="TKJ">TKJ</option>
+                            <option value="TKR">TKR</option>
+                            <option value="TAV">TAV</option>
+                        </select>
+                        <p class="text-[10px] text-slate-400 mt-1">Khusus guru mapel produktif -- menentukan jurusan mapel yang diajarkan.</p>
                     </div>
                     <div>
                         <label class="text-[11px] font-bold text-slate-500">Foto Guru</label>
@@ -7502,9 +7494,19 @@
             const badge = document.getElementById('guru-jumlah-badge');
             if (!grid) return;
 
+            // Tingkat & Jurusan tidak lagi diinput manual di form Kelola Guru --
+            // g.tingkat (bisa multi-value dipisah koma, lihat simpanFormGuru())
+            // dan g.jurusan (khusus guru Produktif) dipakai duluan kalau ada,
+            // fallback ke deteksi otomatis dari teks "Kelas yang Diajar" untuk
+            // data lama / guru mapel Biasa yang memang tidak dipatok 1 jurusan.
             const hasil = daftarGuruSekolah.filter(g => {
-                const cocokTingkat = filterGuruAktif.tingkat === 'semua' || g.tingkat === filterGuruAktif.tingkat;
-                const cocokJurusan = filterGuruAktif.jurusan === 'semua' || g.jurusan === filterGuruAktif.jurusan;
+                const tingkatGuru = (g.tingkat ? g.tingkat.split(',').map(t => t.trim()).filter(Boolean) : []);
+                const tingkatFinal = tingkatGuru.length > 0 ? tingkatGuru : ambilTingkatDariKelas(g.kelas);
+                const cocokTingkat = filterGuruAktif.tingkat === 'semua' || tingkatFinal.includes(filterGuruAktif.tingkat);
+
+                const jurusanFinal = (g.jenis === 'produktif' && g.jurusan) ? [g.jurusan] : ambilJurusanDariKelas(g.kelas);
+                const cocokJurusan = filterGuruAktif.jurusan === 'semua' || jurusanFinal.length === 0 || jurusanFinal.includes(filterGuruAktif.jurusan);
+
                 return cocokTingkat && cocokJurusan;
             });
 
@@ -7582,7 +7584,7 @@
             list.innerHTML = daftarGuruSekolah.map(g => {
                 const jenisProduktif = g.jenis === 'produktif';
                 const badgeJenis = jenisProduktif
-                    ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-orange-50 text-orange-600 border border-orange-100 text-[9px] font-bold flex-shrink-0"><i class="fa-solid fa-screwdriver-wrench"></i> Produktif</span>`
+                    ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-orange-50 text-orange-600 border border-orange-100 text-[9px] font-bold flex-shrink-0"><i class="fa-solid fa-screwdriver-wrench"></i> Produktif${g.jurusan ? ' · ' + g.jurusan : ''}</span>`
                     : `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 border border-blue-100 text-[9px] font-bold flex-shrink-0"><i class="fa-solid fa-book-open"></i> Biasa</span>`;
                 return `
                 <div class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200">
@@ -7604,13 +7606,39 @@
         }
 
         // Toggle "Jenis Mata Pelajaran": update field hidden #input-guru-jenis
-        // + styling aktif pada tombol yang dipilih (biru = Biasa, oranye = Produktif).
+        // + styling aktif pada tombol yang dipilih (biru = Biasa, oranye = Produktif)
+        // + field "Jurusan" cuma relevan (dan cuma ditampilkan) buat guru Produktif,
+        // karena guru mapel biasa (Matematika, B. Indonesia, dst) umumnya ngajar
+        // lintas jurusan jadi tidak perlu dipatok ke satu jurusan tertentu.
         function pilihJenisGuru(jenis) {
             document.getElementById('input-guru-jenis').value = jenis;
             const btnBiasa = document.getElementById('btn-jenis-guru-biasa');
             const btnProduktif = document.getElementById('btn-jenis-guru-produktif');
             if (btnBiasa) btnBiasa.classList.toggle('jenis-guru-aktif-biasa', jenis === 'biasa');
             if (btnProduktif) btnProduktif.classList.toggle('jenis-guru-aktif-produktif', jenis === 'produktif');
+            const wrapJurusan = document.getElementById('wrap-guru-jurusan');
+            if (wrapJurusan) wrapJurusan.classList.toggle('hidden', jenis !== 'produktif');
+        }
+
+        // Tingkat (X/XI/XII) TIDAK lagi diinput manual di form -- dulu ada field
+        // terpisah "Tingkat" yang gampang tidak sinkron sama "Kelas yang Diajar"
+        // (mis. admin pilih Tingkat "X" tapi isi kelas "XI TKJ 2"). Sekarang tingkat
+        // dibaca otomatis dari teks "Kelas yang Diajar", dan dipakai baik saat
+        // simpan (payload.tingkat) maupun saat filter chip Tingkat di Daftar Guru.
+        // Mendukung banyak kelas sekaligus dipisah koma, mis. "X TKJ 1, XI TKJ 2".
+        function ambilTingkatDariKelas(kelasStr) {
+            const teks = (kelasStr || '').toUpperCase();
+            const ditemukan = teks.match(/\bXII\b|\bXI\b|\bX\b/g) || [];
+            return [...new Set(ditemukan)];
+        }
+
+        // Sama seperti ambilTingkatDariKelas() tapi untuk kode jurusan (TKJ/TKR/TAV)
+        // -- dipakai sebagai fallback filter jurusan buat guru mapel biasa yang
+        // memang tidak dipatok ke satu jurusan (field Jurusan disembunyikan).
+        function ambilJurusanDariKelas(kelasStr) {
+            const teks = (kelasStr || '').toUpperCase();
+            const ditemukan = teks.match(/\bTKJ\b|\bTKR\b|\bTAV\b/g) || [];
+            return [...new Set(ditemukan)];
         }
 
         function bukaFormTambahGuru() {
@@ -7618,7 +7646,6 @@
             document.getElementById('form-kelola-guru-judul').textContent = 'Tambah Guru Baru';
             document.getElementById('btn-submit-form-guru').textContent = 'Simpan';
             ['nama', 'lulusan', 'mapel', 'kelas'].forEach(f => { document.getElementById(`input-guru-${f}`).value = ''; });
-            document.getElementById('input-guru-tingkat').value = 'X';
             document.getElementById('input-guru-jurusan').value = 'TKJ';
             pilihJenisGuru('biasa');
             resetPreviewFotoGuru();
@@ -7636,7 +7663,6 @@
             document.getElementById('input-guru-lulusan').value = g.lulusan || '';
             document.getElementById('input-guru-mapel').value = g.mapel || '';
             document.getElementById('input-guru-kelas').value = g.kelas || '';
-            document.getElementById('input-guru-tingkat').value = g.tingkat || 'X';
             document.getElementById('input-guru-jurusan').value = g.jurusan || 'TKJ';
             pilihJenisGuru(g.jenis || 'biasa');
             // Foto lama tetap dipertahankan di field hidden (dan ditampilkan sebagai
@@ -7700,14 +7726,25 @@
 
         async function simpanFormGuru(event) {
             event.preventDefault();
+            const kelasNilai = document.getElementById('input-guru-kelas').value.trim();
+            const jenisNilai = document.getElementById('input-guru-jenis').value;
+            // Tingkat tidak diinput manual lagi -- dibaca otomatis dari teks
+            // "Kelas yang Diajar" (lihat ambilTingkatDariKelas()). Kalau ada
+            // beberapa tingkat sekaligus (mis. "X TKJ 1, XI TKJ 2"), simpan
+            // semuanya dipisah koma supaya filter chip Tingkat di Daftar Guru
+            // tetap bisa cocokkan salah satunya.
+            const tingkatTerbaca = ambilTingkatDariKelas(kelasNilai).join(',');
             const payload = {
                 nama: document.getElementById('input-guru-nama').value.trim(),
                 lulusan: document.getElementById('input-guru-lulusan').value.trim(),
                 mapel: document.getElementById('input-guru-mapel').value.trim(),
-                kelas: document.getElementById('input-guru-kelas').value.trim(),
-                tingkat: document.getElementById('input-guru-tingkat').value,
-                jurusan: document.getElementById('input-guru-jurusan').value,
-                jenis: document.getElementById('input-guru-jenis').value,
+                kelas: kelasNilai,
+                tingkat: tingkatTerbaca,
+                // Jurusan cuma relevan buat guru Produktif -- guru Biasa dikirim
+                // string kosong supaya filter jurusan otomatis fallback ke hasil
+                // ambilJurusanDariKelas() (lihat renderDaftarGuru()).
+                jurusan: jenisNilai === 'produktif' ? document.getElementById('input-guru-jurusan').value : '',
+                jenis: jenisNilai,
                 foto: document.getElementById('input-guru-foto').value.trim()
             };
             const pesanGagal = document.getElementById('form-kelola-guru-pesan-gagal');
