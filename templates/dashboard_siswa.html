@@ -2852,43 +2852,45 @@
 
                 <!-- ============ VIEW 0: PILIH JENIS QUIZ ============ -->
                 <div id="quiz-view-jenis">
-                    <div class="relative rounded-3xl bg-gradient-to-r from-blue-900 to-slate-900 p-5 sm:p-8 text-white overflow-hidden shadow-xl shadow-blue-900/20">
-                        <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+                    <div class="relative rounded-2xl sm:rounded-3xl bg-gradient-to-r from-blue-900 to-slate-900 p-4 sm:p-8 text-white overflow-hidden shadow-xl shadow-blue-900/20">
+                        <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-5">
                             <div class="max-w-md">
-                                <span class="bg-white/25 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 inline-block">Quiz & Leaderboard</span>
-                                <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">🎮 Uji Wawasanmu, Kumpulkan Poin!</h2>
-                                <p class="text-blue-100 text-sm leading-relaxed">Pilih jenis soal, kategori & mapel, lalu tentukan tingkat kesulitan yang mau kamu jajal.</p>
+                                <span class="bg-white/25 backdrop-blur-md px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-2 sm:mb-3 inline-block">Quiz & Leaderboard</span>
+                                <h2 class="text-base sm:text-3xl font-extrabold mb-1 sm:mb-2 leading-snug">🎮 Uji Wawasanmu, Kumpulkan Poin!</h2>
+                                <p class="text-blue-100 text-[11px] sm:text-sm leading-snug sm:leading-relaxed">Pilih jenis soal, kategori & mapel, lalu tentukan tingkat kesulitan yang mau kamu jajal.</p>
                             </div>
-                            <div class="flex sm:flex-col gap-4 sm:gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-5 py-4 flex-shrink-0">
+                            <div class="flex sm:flex-col gap-3 sm:gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:px-5 sm:py-4 flex-shrink-0">
                                 <div class="text-center sm:text-left">
-                                    <p class="text-[10px] uppercase tracking-wide text-blue-100 font-semibold">Total Poin Kamu</p>
-                                    <p id="quiz-total-poin-display" class="text-2xl font-extrabold">0</p>
+                                    <p class="text-[8px] sm:text-[10px] uppercase tracking-wide text-blue-100 font-semibold">Total Poin Kamu</p>
+                                    <p id="quiz-total-poin-display" class="text-base sm:text-2xl font-extrabold">0</p>
                                 </div>
-                                <div class="text-center sm:text-left border-l sm:border-l-0 sm:border-t border-white/20 pl-4 sm:pl-0 sm:pt-2">
-                                    <p class="text-[10px] uppercase tracking-wide text-blue-100 font-semibold">Rank Kamu</p>
-                                    <p id="quiz-rank-display" class="text-sm font-bold">🔰 Pemula</p>
+                                <div class="text-center sm:text-left border-l sm:border-l-0 sm:border-t border-white/20 pl-3.5 sm:pl-0 sm:pt-2">
+                                    <p class="text-[8px] sm:text-[10px] uppercase tracking-wide text-blue-100 font-semibold">Rank Kamu</p>
+                                    <p id="quiz-rank-display" class="text-[11px] sm:text-sm font-bold">🔰 Pemula</p>
                                 </div>
                             </div>
                         </div>
-                        <i class="fa-solid fa-trophy absolute -right-8 -bottom-8 text-white/10 text-9xl"></i>
+                        <i class="fa-solid fa-trophy absolute -right-4 -bottom-4 sm:-right-8 sm:-bottom-8 text-white/10 text-6xl sm:text-9xl"></i>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
-                        <button type="button" onclick="pilihJenisQuiz('pg')" class="text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-200 transition-shadow p-4 sm:p-6 flex flex-col">
-                            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-list-check"></i></div>
-                            <h3 class="font-bold text-lg text-slate-900">Pilihan Ganda</h3>
-                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Jawab dengan memilih 1 dari 4 opsi. Ada leaderboard & border koleksi yang bisa dibuka lewat jalur ini.</p>
-                            <span class="w-full py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
-                                Lihat Kategori Mapel <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    <div class="grid grid-cols-2 gap-3 sm:gap-6 mt-4 sm:mt-6">
+                        <button type="button" onclick="pilihJenisQuiz('pg')" class="text-left bg-white rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-200 transition-shadow p-3 sm:p-6 flex flex-col">
+                            <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xs sm:text-xl mb-2 sm:mb-3"><i class="fa-solid fa-list-check"></i></div>
+                            <h3 class="font-bold text-xs sm:text-lg text-slate-900 leading-tight">Pilihan Ganda</h3>
+                            <p class="hidden sm:block text-xs text-slate-400 mt-1 mb-4 flex-1">Jawab dengan memilih 1 dari 4 opsi. Ada leaderboard & border koleksi yang bisa dibuka lewat jalur ini.</p>
+                            <p class="sm:hidden text-[10px] text-slate-400 mt-1 mb-3 flex-1 leading-snug line-clamp-2">Pilih 1 dari 4 opsi jawaban.</p>
+                            <span class="w-full py-1.5 sm:py-2.5 bg-blue-600 text-white rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1 sm:gap-2 text-center">
+                                <span class="hidden sm:inline">Lihat Kategori Mapel</span><span class="sm:hidden">Lihat Mapel</span> <i class="fa-solid fa-arrow-right text-[8px] sm:text-[10px]"></i>
                             </span>
                         </button>
 
-                        <button type="button" onclick="pilihJenisQuiz('essay')" class="text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-200 transition-shadow p-4 sm:p-6 flex flex-col">
-                            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-pen-to-square"></i></div>
-                            <h3 class="font-bold text-lg text-slate-900">Essay</h3>
-                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Ketik sendiri jawabanmu, langsung dicocokkan otomatis dengan kunci jawaban.</p>
-                            <span class="w-full py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
-                                Lihat Kategori Mapel <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        <button type="button" onclick="pilihJenisQuiz('essay')" class="text-left bg-white rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-200 transition-shadow p-3 sm:p-6 flex flex-col">
+                            <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xs sm:text-xl mb-2 sm:mb-3"><i class="fa-solid fa-pen-to-square"></i></div>
+                            <h3 class="font-bold text-xs sm:text-lg text-slate-900 leading-tight">Essay</h3>
+                            <p class="hidden sm:block text-xs text-slate-400 mt-1 mb-4 flex-1">Ketik sendiri jawabanmu, langsung dicocokkan otomatis dengan kunci jawaban.</p>
+                            <p class="sm:hidden text-[10px] text-slate-400 mt-1 mb-3 flex-1 leading-snug line-clamp-2">Ketik & cocok otomatis.</p>
+                            <span class="w-full py-1.5 sm:py-2.5 bg-blue-600 text-white rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1 sm:gap-2 text-center">
+                                <span class="hidden sm:inline">Lihat Kategori Mapel</span><span class="sm:hidden">Lihat Mapel</span> <i class="fa-solid fa-arrow-right text-[8px] sm:text-[10px]"></i>
                             </span>
                         </button>
                     </div>
