@@ -3769,21 +3769,44 @@
          'evaluasi_guru'), jadi angkanya selalu konsisten. -->
     <div id="modal-detail-guru" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[106] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupModalDetailGuru()">
         <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="relative bg-cyan-50 border-b border-cyan-100 p-4 sm:p-6 text-center flex-shrink-0">
-                <button onclick="tutupModalDetailGuru()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/70 hover:bg-white text-slate-500 flex items-center justify-center transition-colors" aria-label="Tutup">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-                <img id="detail-guru-foto" src="" alt="" class="w-16 h-16 rounded-2xl object-cover mx-auto border border-cyan-100 shadow-sm">
-                <h3 id="detail-guru-nama" class="font-extrabold text-base mt-3 leading-tight text-slate-900">-</h3>
-                <p id="detail-guru-mapel" class="text-xs text-slate-500 mt-1">-</p>
+            <button onclick="tutupModalDetailGuru()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/70 hover:bg-white text-slate-500 flex items-center justify-center transition-colors z-10" aria-label="Tutup">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- Layout 2 kolom dengan GARIS PEMBATAS vertikal (border-r) yang
+                 membelah seluruh tinggi modal, persis seperti garis merah di
+                 sketsa: KIRI = foto guru saja (sama persis dengan foto di kartu
+                 Daftar Guru) memenuhi seluruh tinggi kolom. KANAN = nama, mapel,
+                 skor total gabungan (rata-rata SEMUA bintang di semua aspek),
+                 rincian per-aspek, dan jumlah siswa yang menilai -- semua
+                 ditumpuk vertikal di kolom kanan. -->
+            <div class="flex flex-1 min-h-0 overflow-y-auto">
+                <div class="w-[38%] flex-shrink-0 border-r border-slate-200 bg-cyan-50">
+                    <img id="detail-guru-foto" src="" alt="" class="w-full h-full object-cover min-h-[220px]">
+                </div>
+                <div class="flex-1 min-w-0 p-4 sm:p-5 space-y-3">
+                    <div>
+                        <h3 id="detail-guru-nama" class="font-extrabold text-base leading-tight text-slate-900">-</h3>
+                        <p id="detail-guru-mapel" class="text-xs text-slate-500 mt-0.5">-</p>
+                    </div>
+
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Skor Total</p>
+                        <div class="flex items-center gap-1.5 mt-1">
+                            <span id="detail-guru-total-bintang" class="text-amber-400 text-sm tracking-tight">-</span>
+                            <span id="detail-guru-skor-total" class="text-sm font-extrabold text-slate-900">-</span>
+                        </div>
+                        <p id="detail-guru-jumlah-siswa" class="text-[11px] text-slate-500 mt-1">-</p>
+                    </div>
+
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Rincian Per Aspek</p>
+                        <div id="detail-guru-aspek-list" class="space-y-2 mt-1.5"></div>
+                    </div>
+                </div>
             </div>
 
-            <div class="p-4 sm:p-6 space-y-3 overflow-y-auto">
-                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Rata-rata Penilaian Siswa</p>
-                <div id="detail-guru-aspek-list" class="space-y-2.5"></div>
-
-                <p id="detail-guru-total-menilai" class="text-[11px] text-slate-400 text-center pt-1">-</p>
-
+            <div class="p-4 sm:p-5 border-t border-slate-100 flex-shrink-0">
                 <button id="detail-guru-btn-saran" type="button" class="btn-beri-saran-guru w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
                     <i class="fa-solid fa-comment-dots"></i> Beri Saran
                 </button>
@@ -7265,6 +7288,10 @@
             const g = daftarGuruSekolah.find(x => x.id === idGuru);
             if (!g) return;
             const r = hitungRatingGuruPerAspek(g.nama);
+            // Skor gabungan (rata-rata dari SEMUA bintang di 3 aspek, bukan cuma
+            // salah satu aspek) -- ini angka "total keseluruhan" yang ditampilkan
+            // di header kanan foto, terpisah dari rincian per-aspek di bawahnya.
+            const keseluruhan = hitungRatingGuru(g.nama);
 
             const elFoto = document.getElementById('detail-guru-foto');
             if (elFoto) { elFoto.src = g.foto; elFoto.alt = g.nama; }
@@ -7272,6 +7299,17 @@
             if (elNama) elNama.innerText = g.nama;
             const elMapel = document.getElementById('detail-guru-mapel');
             if (elMapel) elMapel.innerText = g.mapel;
+
+            const elBintangTotal = document.getElementById('detail-guru-total-bintang');
+            if (elBintangTotal) elBintangTotal.innerHTML = renderBintangTampilan(keseluruhan.rata);
+            const elSkorTotal = document.getElementById('detail-guru-skor-total');
+            if (elSkorTotal) elSkorTotal.innerText = keseluruhan.rata !== null ? `${keseluruhan.rata.toFixed(1)}/5` : 'Belum ada nilai';
+            const elJumlahSiswa = document.getElementById('detail-guru-jumlah-siswa');
+            if (elJumlahSiswa) {
+                elJumlahSiswa.innerText = keseluruhan.jumlah === 0
+                    ? 'Belum ada siswa yang menilai'
+                    : `Dari ${keseluruhan.jumlah} siswa yang menilai`;
+            }
 
             const aspekList = [
                 { label: 'Penjelasan Materi', nilai: r.penjelasan },
@@ -7289,13 +7327,6 @@
                         </div>
                     </div>
                 `).join('');
-            }
-
-            const elTotal = document.getElementById('detail-guru-total-menilai');
-            if (elTotal) {
-                elTotal.innerText = r.jumlah === 0
-                    ? 'Belum ada siswa yang menilai guru ini.'
-                    : `${r.jumlah} siswa sudah memberi penilaian.`;
             }
 
             const btnSaran = document.getElementById('detail-guru-btn-saran');
