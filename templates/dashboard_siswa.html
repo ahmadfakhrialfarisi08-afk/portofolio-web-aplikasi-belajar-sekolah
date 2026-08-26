@@ -3748,18 +3748,26 @@
     <!-- ID CARD: muncul saat nama siswa di hasil pencarian "Cari Teman" diklik,
          menampilkan identitas + statistik quiz siswa tersebut -->
     <div id="modal-id-card-teman" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[106] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupIdCardTeman()">
-        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-sm overflow-hidden">
-            <div class="relative bg-blue-50 border-b border-blue-100 p-4 sm:p-6 text-center">
-                <button onclick="tutupIdCardTeman()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/70 hover:bg-white text-slate-500 flex items-center justify-center transition-colors" aria-label="Tutup">
+        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden">
+            <div class="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-white border-b border-blue-100 p-5 sm:p-7 text-center overflow-hidden">
+                <button onclick="tutupIdCardTeman()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/70 hover:bg-white text-slate-500 flex items-center justify-center transition-colors z-10" aria-label="Tutup">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
-                <div class="profile-wrapper w-20 h-20 mx-auto relative">
+
+                <!-- Sosmed teman (IG, TikTok, dll) -- pojok kanan atas, sejajar
+                     avatar. Dibangun dinamis dari profil.sosmed lewat
+                     renderSosmedIdCard(); disembunyikan otomatis (class
+                     "hidden") kalau siswa itu belum isi sosmed apa pun,
+                     supaya tidak nongol kotak kosong. -->
+                <div id="idcard-sosmed" class="hidden absolute top-12 right-3 sm:top-14 sm:right-4 flex flex-col gap-1.5 z-10"></div>
+
+                <div class="profile-wrapper w-24 h-24 sm:w-28 sm:h-28 mx-auto relative">
                     <img id="idcard-avatar-foto" src="" class="user-avatar" alt="Avatar">
                     <img id="idcard-avatar-border" src="" class="user-border" alt="Border">
                 </div>
-                <h3 id="idcard-nama" class="font-extrabold text-lg mt-3 leading-tight text-slate-900">-</h3>
-                <span id="idcard-title-badge" class="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold title-badge-default">-</span>
-                <p id="idcard-kelas" class="text-xs text-slate-500 mt-1">-</p>
+                <h3 id="idcard-nama" class="font-extrabold text-xl mt-3 leading-tight text-slate-900">-</h3>
+                <span id="idcard-title-badge" class="inline-block mt-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold title-badge-default">-</span>
+                <p id="idcard-kelas" class="text-xs text-slate-500 mt-1.5">-</p>
             </div>
             <div class="p-4 sm:p-6 space-y-4">
                 <div class="grid grid-cols-3 gap-2 text-center">
@@ -5625,9 +5633,11 @@
 
             const elNama = document.getElementById('idcard-nama');
             elNama.textContent = profil.nama;
-            elNama.className = `font-extrabold text-lg mt-3 leading-tight ${efekNamaProfil || 'text-slate-900'}`.trim();
+            elNama.className = `font-extrabold text-xl mt-3 leading-tight ${efekNamaProfil || 'text-slate-900'}`.trim();
             const badgeDevProfil = getBadgeDevHtml(borderProfil);
             if (badgeDevProfil) elNama.innerHTML += ' ' + badgeDevProfil;
+
+            renderSosmedIdCard(profil.sosmed || {});
 
             document.getElementById('idcard-kelas').textContent = `Siswa • ${profil.kelas}`;
             document.getElementById('idcard-poin-pg').textContent = profil.quiz_pg_total_poin;
@@ -5657,6 +5667,42 @@
             btn.innerHTML = `<i class="${cfg.ikon} text-[10px]"></i> <span>${cfg.teks}</span>`;
             btn.disabled = cfg.nonaktif;
             btn.dataset.status = profil.status_pertemanan;
+        }
+
+        // Ikon sosmed di ID Card teman. Data diharapkan datang dari backend
+        // lewat profil.sosmed (mis. { instagram: "namaakun", tiktok: "@namaakun" }).
+        // Kalau field/endpoint itu belum ada di server, objeknya otomatis
+        // kosong ({}) sehingga kontainer tetap disembunyikan (class "hidden")
+        // -- jadi fitur ini aman dipasang duluan di frontend, tidak akan
+        // menampilkan kotak kosong/rusak sebelum backend menambah datanya.
+        const PLATFORM_SOSMED_IDCARD = {
+            instagram: { label: 'Instagram', ikon: 'fa-brands fa-instagram', warna: 'bg-gradient-to-br from-fuchsia-500 via-pink-500 to-amber-400', url: v => /^https?:\/\//i.test(v) ? v : `https://instagram.com/${v.replace(/^@/, '')}` },
+            tiktok:    { label: 'TikTok',    ikon: 'fa-brands fa-tiktok',    warna: 'bg-slate-900',   url: v => /^https?:\/\//i.test(v) ? v : `https://tiktok.com/@${v.replace(/^@/, '')}` },
+            youtube:   { label: 'YouTube',   ikon: 'fa-brands fa-youtube',   warna: 'bg-red-600',     url: v => /^https?:\/\//i.test(v) ? v : `https://youtube.com/@${v.replace(/^@/, '')}` },
+            twitter:   { label: 'X',         ikon: 'fa-brands fa-x-twitter', warna: 'bg-slate-800',   url: v => /^https?:\/\//i.test(v) ? v : `https://x.com/${v.replace(/^@/, '')}` },
+            facebook:  { label: 'Facebook',  ikon: 'fa-brands fa-facebook-f',warna: 'bg-blue-600',    url: v => /^https?:\/\//i.test(v) ? v : `https://facebook.com/${v.replace(/^@/, '')}` },
+            whatsapp:  { label: 'WhatsApp',  ikon: 'fa-brands fa-whatsapp',  warna: 'bg-emerald-500', url: v => /^https?:\/\//i.test(v) ? v : `https://wa.me/${v.replace(/[^0-9]/g, '')}` }
+        };
+
+        function renderSosmedIdCard(sosmed) {
+            const kontainer = document.getElementById('idcard-sosmed');
+            if (!kontainer) return;
+
+            const entri = Object.entries(sosmed || {}).filter(([platform, nilai]) => PLATFORM_SOSMED_IDCARD[platform] && nilai);
+
+            if (!entri.length) {
+                kontainer.innerHTML = '';
+                kontainer.classList.add('hidden');
+                return;
+            }
+
+            kontainer.innerHTML = entri.map(([platform, nilai]) => {
+                const p = PLATFORM_SOSMED_IDCARD[platform];
+                return `<a href="${p.url(nilai)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="${p.label}" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full ${p.warna} text-white flex items-center justify-center shadow-sm hover:scale-110 transition-transform">
+                    <i class="${p.ikon} text-[11px] sm:text-xs"></i>
+                </a>`;
+            }).join('');
+            kontainer.classList.remove('hidden');
         }
 
         function tutupIdCardTeman() {
