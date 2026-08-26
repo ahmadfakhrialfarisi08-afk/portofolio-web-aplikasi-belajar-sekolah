@@ -2828,9 +2828,17 @@
                             <h3 class="font-bold text-xl text-slate-900">👨‍🏫 Daftar Guru & Tenaga Pengajar</h3>
                             <p class="text-xs text-slate-400 mt-0.5">Daftar pengajar di SMK Banjar Asri Cimaung.</p>
                         </div>
-                        <span id="guru-jumlah-badge" class="px-4 py-2 bg-blue-50 text-blue-700 font-extrabold text-sm rounded-xl border border-blue-200 whitespace-nowrap">
-                            <i class="fa-solid fa-users mr-1"></i> 0 Guru
-                        </span>
+                        <div class="flex items-center gap-2 flex-wrap justify-end">
+                            <!-- KHUSUS Admin/Developer: disembunyikan (class hidden) secara
+                                 default, baru dimunculkan lewat JS di init kalau akunIniAdminDev()
+                                 -- endpoint di server juga sudah menggerbangi hal yang sama. -->
+                            <button id="btn-buka-kelola-guru" onclick="bukaModalKelolaGuru()" type="button" class="hidden px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 whitespace-nowrap transition-colors">
+                                <i class="fa-solid fa-user-gear"></i> Kelola Guru
+                            </button>
+                            <span id="guru-jumlah-badge" class="px-4 py-2 bg-blue-50 text-blue-700 font-extrabold text-sm rounded-xl border border-blue-200 whitespace-nowrap">
+                                <i class="fa-solid fa-users mr-1"></i> 0 Guru
+                            </span>
+                        </div>
                     </div>
 
                     <div class="mt-5 space-y-3">
@@ -3828,6 +3836,87 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <!-- Modal "Kelola Guru" — KHUSUS Admin/Developer (tombol pemicunya juga
+         disembunyikan buat akun lain, lihat init & akunIniAdminDev()). Berisi
+         list semua guru (dengan tombol Edit/Hapus per baris) + form
+         tambah/edit yang muncul di bagian bawah saat "+ Tambah Guru Baru"
+         atau salah satu tombol Edit diklik. Satu form dipakai bergantian
+         untuk mode tambah maupun edit -- dibedakan lewat _idGuruDiedit
+         (null = mode tambah, angka = mode edit guru dengan id tsb). -->
+    <div id="modal-kelola-guru" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[106] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupModalKelolaGuru()">
+        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
+                <div>
+                    <h3 class="font-extrabold text-lg text-slate-900"><i class="fa-solid fa-user-gear mr-1.5 text-slate-500"></i>Kelola Guru</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Tambah, ubah, atau hapus data guru & tenaga pengajar.</p>
+                </div>
+                <button onclick="tutupModalKelolaGuru()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors flex-shrink-0" aria-label="Tutup">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
+                <button type="button" onclick="bukaFormTambahGuru()" class="w-full py-2.5 rounded-xl text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-plus"></i> Tambah Guru Baru
+                </button>
+
+                <div id="list-kelola-guru" class="space-y-2"></div>
+
+                <!-- Form tambah/edit, disembunyikan sampai salah satu tombol di atas diklik -->
+                <form id="form-kelola-guru" onsubmit="simpanFormGuru(event)" class="hidden space-y-3 p-4 rounded-2xl border border-slate-200 bg-slate-50">
+                    <p id="form-kelola-guru-judul" class="text-xs font-extrabold text-slate-700 uppercase tracking-wide">Tambah Guru Baru</p>
+
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500">Nama Lengkap + Gelar</label>
+                        <input id="input-guru-nama" type="text" required placeholder="Contoh: Hendra, S.Kom" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500">Riwayat Lulusan</label>
+                        <input id="input-guru-lulusan" type="text" placeholder="Contoh: S1 Ilmu Komputer - Universitas Padjadjaran" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500">Mata Pelajaran Diampu</label>
+                        <input id="input-guru-mapel" type="text" placeholder="Contoh: Dasar-Dasar TKI" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500">Kelas yang Diajar</label>
+                        <input id="input-guru-kelas" type="text" placeholder="Contoh: X TKJ 1" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-500">Tingkat</label>
+                            <select id="input-guru-tingkat" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
+                                <option value="X">X</option>
+                                <option value="XI">XI</option>
+                                <option value="XII">XII</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-500">Jurusan</label>
+                            <select id="input-guru-jurusan" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
+                                <option value="TKJ">TKJ</option>
+                                <option value="TKR">TKR</option>
+                                <option value="TAV">TAV</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500">Link Foto (URL gambar)</label>
+                        <input id="input-guru-foto" type="url" placeholder="https://..." class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
+                        <p class="text-[10px] text-slate-400 mt-1">Kalau dikosongkan, otomatis pakai avatar inisial nama.</p>
+                    </div>
+
+                    <p id="form-kelola-guru-pesan-gagal" class="hidden text-[11px] font-semibold text-red-600"></p>
+
+                    <div class="flex items-center gap-2 pt-1">
+                        <button type="submit" id="btn-submit-form-guru" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white transition-colors">Simpan</button>
+                        <button type="button" onclick="tutupFormGuru()" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors">Batal</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -7188,36 +7277,34 @@
 
         /* ================= DAFTAR GURU & TENAGA PENGAJAR ================= */
         // Data pengajar per kelas di seluruh jurusan & tingkat (X, XI, XII / TKJ, TKR, TAV).
-        const daftarGuruSekolah = [
-            { nama: 'Hendra, S.Kom', lulusan: 'S1 Ilmu Komputer - Universitas Padjadjaran', mapel: 'Dasar-Dasar TKI', kelas: 'X TKJ 1', tingkat: 'X', jurusan: 'TKJ', foto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Siti, S.T', lulusan: 'S1 Teknik Informatika - Universitas Telkom', mapel: 'Dasar-Dasar TKI', kelas: 'X TKJ 2', tingkat: 'X', jurusan: 'TKJ', foto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Rudi, S.Kom', lulusan: 'S1 Sistem Informasi - Universitas Widyatama', mapel: 'Dasar-Dasar TKI', kelas: 'X TKJ 3', tingkat: 'X', jurusan: 'TKJ', foto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Joko, S.Pd', lulusan: 'S1 Pendidikan Teknik Otomotif - UPI Bandung', mapel: 'Gambar Teknik Otomotif', kelas: 'X TKR 1', tingkat: 'X', jurusan: 'TKR', foto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Agus, S.T', lulusan: 'S1 Teknik Mesin - Institut Teknologi Nasional', mapel: 'Gambar Teknik Otomotif', kelas: 'X TKR 2', tingkat: 'X', jurusan: 'TKR', foto: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Dedi, S.T', lulusan: 'S1 Teknik Elektro - Universitas Jenderal Achmad Yani', mapel: 'Dasar Listrik & Elektronika', kelas: 'X TAV 1', tingkat: 'X', jurusan: 'TAV', foto: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Eko, S.Pd', lulusan: 'S1 Pendidikan Teknik Elektro - UPI Bandung', mapel: 'Dasar Listrik & Elektronika', kelas: 'X TAV 2', tingkat: 'X', jurusan: 'TAV', foto: 'https://images.unsplash.com/photo-1500336624523-d727130c3328?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Fitri, S.Kom', lulusan: 'S1 Teknik Informatika - Universitas Komputer Indonesia', mapel: 'Teknologi WAN', kelas: 'XI TKJ 1', tingkat: 'XI', jurusan: 'TKJ', foto: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Bayu, S.T', lulusan: 'S1 Teknik Komputer - Politeknik Negeri Bandung', mapel: 'Teknologi WAN', kelas: 'XI TKJ 2', tingkat: 'XI', jurusan: 'TKJ', foto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Yudi, S.Kom', lulusan: 'S1 Ilmu Komputer - Universitas Padjadjaran', mapel: 'Teknologi WAN', kelas: 'XI TKJ 3', tingkat: 'XI', jurusan: 'TKJ', foto: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Bambang, S.Pd', lulusan: 'S1 Pendidikan Teknik Otomotif - UPI Bandung', mapel: 'Pemeliharaan Sasis Kendaraan', kelas: 'XI TKR 1', tingkat: 'XI', jurusan: 'TKR', foto: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Yanto, S.T', lulusan: 'S1 Teknik Mesin - Universitas Jenderal Achmad Yani', mapel: 'Pemeliharaan Sasis Kendaraan', kelas: 'XI TKR 2', tingkat: 'XI', jurusan: 'TKR', foto: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Suryana, S.T', lulusan: 'S1 Teknik Elektro - Institut Teknologi Nasional', mapel: 'Mikroprosesor & Mikrokontroler', kelas: 'XI TAV 1', tingkat: 'XI', jurusan: 'TAV', foto: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Tukiman, S.Pd', lulusan: 'S1 Pendidikan Teknik Elektro - UPI Bandung', mapel: 'Mikroprosesor & Mikrokontroler', kelas: 'XI TAV 2', tingkat: 'XI', jurusan: 'TAV', foto: 'https://images.unsplash.com/photo-1615109398623-88346a601842?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Dian, S.Kom', lulusan: 'S1 Sistem Informasi - Universitas Widyatama', mapel: 'Administrasi Server', kelas: 'XII TKJ 1', tingkat: 'XII', jurusan: 'TKJ', foto: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Oky, S.T', lulusan: 'S1 Teknik Komputer - Politeknik Negeri Bandung', mapel: 'Administrasi Server', kelas: 'XII TKJ 2', tingkat: 'XII', jurusan: 'TKJ', foto: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Ahmad, S.T', lulusan: 'S1 Teknik Informatika - Universitas Telkom', mapel: 'Administrasi Infrastruktur Jaringan', kelas: 'XII TKJ 3', tingkat: 'XII', jurusan: 'TKJ', foto: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Dadan, S.Pd', lulusan: 'S1 Pendidikan Teknik Otomotif - UPI Bandung', mapel: 'Pemeliharaan Mesin Kendaraan Ringan', kelas: 'XII TKR 1', tingkat: 'XII', jurusan: 'TKR', foto: 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Toto, S.T', lulusan: 'S1 Teknik Mesin - Institut Teknologi Nasional', mapel: 'Pemeliharaan Kelistrikan Kendaraan', kelas: 'XII TKR 2', tingkat: 'XII', jurusan: 'TKR', foto: 'https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Yana, S.T', lulusan: 'S1 Teknik Elektro - Universitas Jenderal Achmad Yani', mapel: 'Audio Video Sistem', kelas: 'XII TAV 1', tingkat: 'XII', jurusan: 'TAV', foto: 'https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?auto=format&fit=crop&q=80&w=500' },
-            { nama: 'Heri, S.Pd', lulusan: 'S1 Pendidikan Teknik Elektro - UPI Bandung', mapel: 'Audio Video Sistem', kelas: 'XII TAV 2', tingkat: 'XII', jurusan: 'TAV', foto: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?auto=format&fit=crop&q=80&w=500' }
-        ];
+        // BUG YANG DIPERBAIKI: dulu ini array statis hardcode di sini (const
+        // daftarGuruSekolah = [...]) -- jadi kalau mau tambah/ubah/hapus guru,
+        // harus edit langsung file HTML-nya satu-satu, dan siswa lain juga
+        // tidak pernah ikut lihat perubahannya. Sekarang datanya diambil dari
+        // server (/api/guru/list, sumber: data/guru_store.json), jadi begitu
+        // Admin/Developer menambah/mengedit/menghapus guru lewat panel
+        // "Kelola Guru", SEMUA siswa yang buka menu ini otomatis melihat versi
+        // terbaru. Id tiap guru juga sekarang datang dari server (stabil,
+        // tidak dihitung ulang dari urutan array di sini).
+        let daftarGuruSekolah = [];
 
         let filterGuruAktif = { tingkat: 'semua', jurusan: 'semua' };
 
-        // ID stabil per guru (dipakai modal Beri Saran) — dihitung dari urutan
-        // array asli, BUKAN dari hasil filter, supaya id tidak berubah-ubah
-        // saat siswa gonta-ganti filter tingkat/jurusan.
-        daftarGuruSekolah.forEach((g, idx) => { g.id = idx; });
+        async function muatDaftarGuru() {
+            try {
+                const res = await fetch('/api/guru/list');
+                const json = await res.json();
+                if (json.success) {
+                    daftarGuruSekolah = json.guru;
+                    renderDaftarGuru();
+                    // Panel "Kelola Guru" (kalau sedang terbuka, mis. abis
+                    // simpan/hapus) ikut di-refresh supaya listnya juga sinkron.
+                    renderListKelolaGuru();
+                }
+            } catch (e) {
+                console.error('Gagal memuat daftar guru:', e);
+            }
+        }
 
         // Beberapa variasi tinggi & posisi foto supaya penataannya terasa "bebas" / tidak
         // kaku baris-per-baris (masonry), tetap konsisten setiap kali di-render ulang.
@@ -7419,6 +7506,143 @@
             }).join('');
 
             aktifkanScrollRevealGuru();
+        }
+
+        // ============================================================
+        // MODAL "Kelola Guru" — KHUSUS Admin/Developer (tombol pemicu &
+        // seluruh isi modal ini cuma dimunculkan buat akunIniAdminDev(),
+        // TAPI proteksi sesungguhnya tetap di server: /api/guru/tambah,
+        // /api/guru/edit, /api/guru/hapus semuanya cek session admin
+        // sendiri-sendiri, jadi walau ada yang coba akses modal ini lewat
+        // DevTools/console, request ke server tetap ditolak untuk siswa
+        // biasa. Satu form (#form-kelola-guru) dipakai gantian untuk mode
+        // tambah maupun edit, dibedakan lewat _idGuruDiedit (null = tambah).
+        // ============================================================
+        let _idGuruDiedit = null;
+
+        function bukaModalKelolaGuru() {
+            if (!akunIniAdminDev()) return; // jaga-jaga; tombolnya memang sudah disembunyikan
+            tutupFormGuru();
+            renderListKelolaGuru();
+            const modal = document.getElementById('modal-kelola-guru');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function tutupModalKelolaGuru() {
+            const modal = document.getElementById('modal-kelola-guru');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function renderListKelolaGuru() {
+            const list = document.getElementById('list-kelola-guru');
+            if (!list) return; // modal belum pernah dibuka / bukan akun admin
+            list.innerHTML = daftarGuruSekolah.map(g => `
+                <div class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200">
+                    <img src="${g.foto}" alt="${g.nama}" class="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(g.nama)}&background=e0e7ff&color=3730a3&size=80'">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-bold text-slate-800 truncate">${g.nama}</p>
+                        <p class="text-[10px] text-slate-400 truncate">${g.mapel} • ${g.kelas}</p>
+                    </div>
+                    <button type="button" onclick="bukaFormEditGuru(${g.id})" class="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0" title="Edit" aria-label="Edit ${g.nama}">
+                        <i class="fa-solid fa-pen text-xs"></i>
+                    </button>
+                    <button type="button" onclick="hapusGuru(${g.id})" class="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0" title="Hapus" aria-label="Hapus ${g.nama}">
+                        <i class="fa-solid fa-trash text-xs"></i>
+                    </button>
+                </div>
+            `).join('') || '<p class="text-xs text-slate-400 text-center py-4">Belum ada data guru.</p>';
+        }
+
+        function bukaFormTambahGuru() {
+            _idGuruDiedit = null;
+            document.getElementById('form-kelola-guru-judul').textContent = 'Tambah Guru Baru';
+            document.getElementById('btn-submit-form-guru').textContent = 'Simpan';
+            ['nama', 'lulusan', 'mapel', 'kelas', 'foto'].forEach(f => { document.getElementById(`input-guru-${f}`).value = ''; });
+            document.getElementById('input-guru-tingkat').value = 'X';
+            document.getElementById('input-guru-jurusan').value = 'TKJ';
+            document.getElementById('form-kelola-guru-pesan-gagal').classList.add('hidden');
+            document.getElementById('form-kelola-guru').classList.remove('hidden');
+        }
+
+        function bukaFormEditGuru(idGuru) {
+            const g = daftarGuruSekolah.find(x => x.id === idGuru);
+            if (!g) return;
+            _idGuruDiedit = idGuru;
+            document.getElementById('form-kelola-guru-judul').textContent = `Edit Guru: ${g.nama}`;
+            document.getElementById('btn-submit-form-guru').textContent = 'Simpan Perubahan';
+            document.getElementById('input-guru-nama').value = g.nama || '';
+            document.getElementById('input-guru-lulusan').value = g.lulusan || '';
+            document.getElementById('input-guru-mapel').value = g.mapel || '';
+            document.getElementById('input-guru-kelas').value = g.kelas || '';
+            document.getElementById('input-guru-tingkat').value = g.tingkat || 'X';
+            document.getElementById('input-guru-jurusan').value = g.jurusan || 'TKJ';
+            document.getElementById('input-guru-foto').value = g.foto || '';
+            document.getElementById('form-kelola-guru-pesan-gagal').classList.add('hidden');
+            document.getElementById('form-kelola-guru').classList.remove('hidden');
+        }
+
+        function tutupFormGuru() {
+            _idGuruDiedit = null;
+            const form = document.getElementById('form-kelola-guru');
+            if (form) form.classList.add('hidden');
+        }
+
+        async function simpanFormGuru(event) {
+            event.preventDefault();
+            const payload = {
+                nama: document.getElementById('input-guru-nama').value.trim(),
+                lulusan: document.getElementById('input-guru-lulusan').value.trim(),
+                mapel: document.getElementById('input-guru-mapel').value.trim(),
+                kelas: document.getElementById('input-guru-kelas').value.trim(),
+                tingkat: document.getElementById('input-guru-tingkat').value,
+                jurusan: document.getElementById('input-guru-jurusan').value,
+                foto: document.getElementById('input-guru-foto').value.trim()
+            };
+            const pesanGagal = document.getElementById('form-kelola-guru-pesan-gagal');
+            pesanGagal.classList.add('hidden');
+
+            const url = _idGuruDiedit === null ? '/api/guru/tambah' : `/api/guru/edit/${_idGuruDiedit}`;
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+                if (!json.success) {
+                    pesanGagal.textContent = json.message || 'Gagal menyimpan data guru.';
+                    pesanGagal.classList.remove('hidden');
+                    return;
+                }
+                tutupFormGuru();
+                await muatDaftarGuru(); // tarik ulang list terbaru dari server (sekaligus refresh grid & panel kelola)
+                triggerDynamicIsland(_idGuruDiedit === null ? `Guru "${payload.nama}" berhasil ditambahkan.` : `Data "${payload.nama}" berhasil diperbarui.`);
+            } catch (e) {
+                console.error('Gagal menyimpan data guru:', e);
+                pesanGagal.textContent = 'Gagal menghubungi server. Coba lagi.';
+                pesanGagal.classList.remove('hidden');
+            }
+        }
+
+        async function hapusGuru(idGuru) {
+            const g = daftarGuruSekolah.find(x => x.id === idGuru);
+            if (!g) return;
+            if (!confirm(`Yakin mau hapus "${g.nama}" dari daftar guru? Tindakan ini tidak bisa dibatalkan.`)) return;
+            try {
+                const res = await fetch(`/api/guru/hapus/${idGuru}`, { method: 'POST' });
+                const json = await res.json();
+                if (!json.success) {
+                    alert(json.message || 'Gagal menghapus guru.');
+                    return;
+                }
+                await muatDaftarGuru();
+                triggerDynamicIsland(`Guru "${g.nama}" berhasil dihapus.`);
+            } catch (e) {
+                console.error('Gagal menghapus guru:', e);
+                alert('Gagal menghubungi server. Coba lagi.');
+            }
         }
 
         // ============================================================
@@ -7730,7 +7954,13 @@
             loadDarkModePreference();
             loadAksenTemaPreference();
             loadBioSiswa();
-            renderDaftarGuru();
+            muatDaftarGuru();
+            // Tombol "+ Kelola Guru" cuma boleh kelihatan buat akun Admin/Developer
+            // asli -- endpoint tambah/edit/hapus di server juga sudah menggerbangi
+            // hal yang sama, jadi ini cuma soal kerapian UI (siswa biasa memang
+            // tidak akan pernah bisa memakainya walau tombolnya dipaksa dimunculkan).
+            const btnKelolaGuru = document.getElementById('btn-buka-kelola-guru');
+            if (btnKelolaGuru && akunIniAdminDev()) btnKelolaGuru.classList.remove('hidden');
             backfillRiwayatJikaPerlu();
             sinkronkanRiwayatDenganTugasAktif();
             renderRiwayatPengumpulan();

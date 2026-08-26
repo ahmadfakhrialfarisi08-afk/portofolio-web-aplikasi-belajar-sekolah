@@ -1,0 +1,212 @@
+[
+  {
+    "nama": "Hendra, S.Kom",
+    "lulusan": "S1 Ilmu Komputer - Universitas Padjadjaran",
+    "mapel": "Dasar-Dasar TKI",
+    "kelas": "X TKJ 1",
+    "tingkat": "X",
+    "jurusan": "TKJ",
+    "foto": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=500",
+    "id": 0
+  },
+  {
+    "nama": "Siti, S.T",
+    "lulusan": "S1 Teknik Informatika - Universitas Telkom",
+    "mapel": "Dasar-Dasar TKI",
+    "kelas": "X TKJ 2",
+    "tingkat": "X",
+    "jurusan": "TKJ",
+    "foto": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=500",
+    "id": 1
+  },
+  {
+    "nama": "Rudi, S.Kom",
+    "lulusan": "S1 Sistem Informasi - Universitas Widyatama",
+    "mapel": "Dasar-Dasar TKI",
+    "kelas": "X TKJ 3",
+    "tingkat": "X",
+    "jurusan": "TKJ",
+    "foto": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=500",
+    "id": 2
+  },
+  {
+    "nama": "Joko, S.Pd",
+    "lulusan": "S1 Pendidikan Teknik Otomotif - UPI Bandung",
+    "mapel": "Gambar Teknik Otomotif",
+    "kelas": "X TKR 1",
+    "tingkat": "X",
+    "jurusan": "TKR",
+    "foto": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=500",
+    "id": 3
+  },
+  {
+    "nama": "Agus, S.T",
+    "lulusan": "S1 Teknik Mesin - Institut Teknologi Nasional",
+    "mapel": "Gambar Teknik Otomotif",
+    "kelas": "X TKR 2",
+    "tingkat": "X",
+    "jurusan": "TKR",
+    "foto": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=500",
+    "id": 4
+  },
+  {
+    "nama": "Dedi, S.T",
+    "lulusan": "S1 Teknik Elektro - Universitas Jenderal Achmad Yani",
+    "mapel": "Dasar Listrik & Elektronika",
+    "kelas": "X TAV 1",
+    "tingkat": "X",
+    "jurusan": "TAV",
+    "foto": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=500",
+    "id": 5
+  },
+  {
+    "nama": "Eko, S.Pd",
+    "lulusan": "S1 Pendidikan Teknik Elektro - UPI Bandung",
+    "mapel": "Dasar Listrik & Elektronika",
+    "kelas": "X TAV 2",
+    "tingkat": "X",
+    "jurusan": "TAV",
+    "foto": "https://images.unsplash.com/photo-1500336624523-d727130c3328?auto=format&fit=crop&q=80&w=500",
+    "id": 6
+  },
+  {
+    "nama": "Fitri, S.Kom",
+    "lulusan": "S1 Teknik Informatika - Universitas Komputer Indonesia",
+    "mapel": "Teknologi WAN",
+    "kelas": "XI TKJ 1",
+    "tingkat": "XI",
+    "jurusan": "TKJ",
+    "foto": "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=500",
+    "id": 7
+  },
+  {
+    "nama": "Bayu, S.T",
+    "lulusan": "S1 Teknik Komputer - Politeknik Negeri Bandung",
+    "mapel": "Teknologi WAN",
+    "kelas": "XI TKJ 2",
+    "tingkat": "XI",
+    "jurusan": "TKJ",
+    "foto": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=500",
+    "id": 8
+  },
+  {
+    "nama": "Yudi, S.Kom",
+    "lulusan": "S1 Ilmu Komputer - Universitas Padjadjaran",
+    "mapel": "Teknologi WAN",
+    "kelas": "XI TKJ 3",
+    "tingkat": "XI",
+    "jurusan": "TKJ",
+    "foto": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=500",
+    "id": 9
+  },
+  {
+    "nama": "Bambang, S.Pd",
+    "lulusan": "S1 Pendidikan Teknik Otomotif - UPI Bandung",
+    "mapel": "Pemeliharaan Sasis Kendaraan",
+    "kelas": "XI TKR 1",
+    "tingkat": "XI",
+    "jurusan": "TKR",
+    "foto": "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?auto=format&fit=crop&q=80&w=500",
+    "id": 10
+  },
+  {
+    "nama": "Yanto, S.T",
+    "lulusan": "S1 Teknik Mesin - Universitas Jenderal Achmad Yani",
+    "mapel": "Pemeliharaan Sasis Kendaraan",
+    "kelas": "XI TKR 2",
+    "tingkat": "XI",
+    "jurusan": "TKR",
+    "foto": "https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&q=80&w=500",
+    "id": 11
+  },
+  {
+    "nama": "Suryana, S.T",
+    "lulusan": "S1 Teknik Elektro - Institut Teknologi Nasional",
+    "mapel": "Mikroprosesor & Mikrokontroler",
+    "kelas": "XI TAV 1",
+    "tingkat": "XI",
+    "jurusan": "TAV",
+    "foto": "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=500",
+    "id": 12
+  },
+  {
+    "nama": "Tukiman, S.Pd",
+    "lulusan": "S1 Pendidikan Teknik Elektro - UPI Bandung",
+    "mapel": "Mikroprosesor & Mikrokontroler",
+    "kelas": "XI TAV 2",
+    "tingkat": "XI",
+    "jurusan": "TAV",
+    "foto": "https://images.unsplash.com/photo-1615109398623-88346a601842?auto=format&fit=crop&q=80&w=500",
+    "id": 13
+  },
+  {
+    "nama": "Dian, S.Kom",
+    "lulusan": "S1 Sistem Informasi - Universitas Widyatama",
+    "mapel": "Administrasi Server",
+    "kelas": "XII TKJ 1",
+    "tingkat": "XII",
+    "jurusan": "TKJ",
+    "foto": "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=500",
+    "id": 14
+  },
+  {
+    "nama": "Oky, S.T",
+    "lulusan": "S1 Teknik Komputer - Politeknik Negeri Bandung",
+    "mapel": "Administrasi Server",
+    "kelas": "XII TKJ 2",
+    "tingkat": "XII",
+    "jurusan": "TKJ",
+    "foto": "https://images.unsplash.com/photo-1552058544-f2b08422138a?auto=format&fit=crop&q=80&w=500",
+    "id": 15
+  },
+  {
+    "nama": "Ahmad, S.T",
+    "lulusan": "S1 Teknik Informatika - Universitas Telkom",
+    "mapel": "Administrasi Infrastruktur Jaringan",
+    "kelas": "XII TKJ 3",
+    "tingkat": "XII",
+    "jurusan": "TKJ",
+    "foto": "https://images.unsplash.com/photo-1633332755192-727a05c4013d?auto=format&fit=crop&q=80&w=500",
+    "id": 16
+  },
+  {
+    "nama": "Dadan, S.Pd",
+    "lulusan": "S1 Pendidikan Teknik Otomotif - UPI Bandung",
+    "mapel": "Pemeliharaan Mesin Kendaraan Ringan",
+    "kelas": "XII TKR 1",
+    "tingkat": "XII",
+    "jurusan": "TKR",
+    "foto": "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?auto=format&fit=crop&q=80&w=500",
+    "id": 17
+  },
+  {
+    "nama": "Toto, S.T",
+    "lulusan": "S1 Teknik Mesin - Institut Teknologi Nasional",
+    "mapel": "Pemeliharaan Kelistrikan Kendaraan",
+    "kelas": "XII TKR 2",
+    "tingkat": "XII",
+    "jurusan": "TKR",
+    "foto": "https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?auto=format&fit=crop&q=80&w=500",
+    "id": 18
+  },
+  {
+    "nama": "Yana, S.T",
+    "lulusan": "S1 Teknik Elektro - Universitas Jenderal Achmad Yani",
+    "mapel": "Audio Video Sistem",
+    "kelas": "XII TAV 1",
+    "tingkat": "XII",
+    "jurusan": "TAV",
+    "foto": "https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?auto=format&fit=crop&q=80&w=500",
+    "id": 19
+  },
+  {
+    "nama": "Heri, S.Pd",
+    "lulusan": "S1 Pendidikan Teknik Elektro - UPI Bandung",
+    "mapel": "Audio Video Sistem",
+    "kelas": "XII TAV 2",
+    "tingkat": "XII",
+    "jurusan": "TAV",
+    "foto": "https://images.unsplash.com/photo-1633332755192-727a05c4013d?auto=format&fit=crop&q=80&w=500",
+    "id": 20
+  }
+]

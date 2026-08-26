@@ -235,7 +235,84 @@ def _simpan_users_store():
 
 
 _muat_users_store()
- 
+
+
+def _akun_ini_admin_dev():
+    """True hanya kalau yang sedang login adalah akun Admin/Developer ASLI
+    (USERNAME_ADMIN_DEV) -- dipakai buat menggerbangi endpoint kelola data
+    guru di bawah (tambah/edit/hapus), sama persis pola proteksinya dengan
+    border admin di /api/profil/border. Dicek dari session Flask sungguhan,
+    BUKAN dari nama tampilan, supaya tidak bisa "ditipu" lewat request
+    langsung mengatasnamakan akun lain."""
+    return 'user' in session and session['user'].get('username') == USERNAME_ADMIN_DEV
+
+# ----------------------------------------------------
+# DATA GURU & TENAGA PENGAJAR (menu "Daftar Guru")
+# ----------------------------------------------------
+# Dulu daftar guru ini hardcode statis di dashboard_siswa.html (const
+# daftarGuruSekolah). Sekarang dipindah ke sini supaya bisa dikelola
+# (tambah/edit/hapus) oleh SATU akun Admin/Developer lewat menu "Kelola
+# Guru", dan perubahannya langsung kelihatan oleh SEMUA siswa lain lewat
+# /api/guru/list -- bukan cuma nempel di browser admin sendiri.
+GURU_STORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'guru_store.json')
+
+DAFTAR_GURU_DEFAULT = [
+    {'nama': 'Hendra, S.Kom', 'lulusan': 'S1 Ilmu Komputer - Universitas Padjadjaran', 'mapel': 'Dasar-Dasar TKI', 'kelas': 'X TKJ 1', 'tingkat': 'X', 'jurusan': 'TKJ', 'foto': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Siti, S.T', 'lulusan': 'S1 Teknik Informatika - Universitas Telkom', 'mapel': 'Dasar-Dasar TKI', 'kelas': 'X TKJ 2', 'tingkat': 'X', 'jurusan': 'TKJ', 'foto': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Rudi, S.Kom', 'lulusan': 'S1 Sistem Informasi - Universitas Widyatama', 'mapel': 'Dasar-Dasar TKI', 'kelas': 'X TKJ 3', 'tingkat': 'X', 'jurusan': 'TKJ', 'foto': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Joko, S.Pd', 'lulusan': 'S1 Pendidikan Teknik Otomotif - UPI Bandung', 'mapel': 'Gambar Teknik Otomotif', 'kelas': 'X TKR 1', 'tingkat': 'X', 'jurusan': 'TKR', 'foto': 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Agus, S.T', 'lulusan': 'S1 Teknik Mesin - Institut Teknologi Nasional', 'mapel': 'Gambar Teknik Otomotif', 'kelas': 'X TKR 2', 'tingkat': 'X', 'jurusan': 'TKR', 'foto': 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Dedi, S.T', 'lulusan': 'S1 Teknik Elektro - Universitas Jenderal Achmad Yani', 'mapel': 'Dasar Listrik & Elektronika', 'kelas': 'X TAV 1', 'tingkat': 'X', 'jurusan': 'TAV', 'foto': 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Eko, S.Pd', 'lulusan': 'S1 Pendidikan Teknik Elektro - UPI Bandung', 'mapel': 'Dasar Listrik & Elektronika', 'kelas': 'X TAV 2', 'tingkat': 'X', 'jurusan': 'TAV', 'foto': 'https://images.unsplash.com/photo-1500336624523-d727130c3328?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Fitri, S.Kom', 'lulusan': 'S1 Teknik Informatika - Universitas Komputer Indonesia', 'mapel': 'Teknologi WAN', 'kelas': 'XI TKJ 1', 'tingkat': 'XI', 'jurusan': 'TKJ', 'foto': 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Bayu, S.T', 'lulusan': 'S1 Teknik Komputer - Politeknik Negeri Bandung', 'mapel': 'Teknologi WAN', 'kelas': 'XI TKJ 2', 'tingkat': 'XI', 'jurusan': 'TKJ', 'foto': 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Yudi, S.Kom', 'lulusan': 'S1 Ilmu Komputer - Universitas Padjadjaran', 'mapel': 'Teknologi WAN', 'kelas': 'XI TKJ 3', 'tingkat': 'XI', 'jurusan': 'TKJ', 'foto': 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Bambang, S.Pd', 'lulusan': 'S1 Pendidikan Teknik Otomotif - UPI Bandung', 'mapel': 'Pemeliharaan Sasis Kendaraan', 'kelas': 'XI TKR 1', 'tingkat': 'XI', 'jurusan': 'TKR', 'foto': 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Yanto, S.T', 'lulusan': 'S1 Teknik Mesin - Universitas Jenderal Achmad Yani', 'mapel': 'Pemeliharaan Sasis Kendaraan', 'kelas': 'XI TKR 2', 'tingkat': 'XI', 'jurusan': 'TKR', 'foto': 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Suryana, S.T', 'lulusan': 'S1 Teknik Elektro - Institut Teknologi Nasional', 'mapel': 'Mikroprosesor & Mikrokontroler', 'kelas': 'XI TAV 1', 'tingkat': 'XI', 'jurusan': 'TAV', 'foto': 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Tukiman, S.Pd', 'lulusan': 'S1 Pendidikan Teknik Elektro - UPI Bandung', 'mapel': 'Mikroprosesor & Mikrokontroler', 'kelas': 'XI TAV 2', 'tingkat': 'XI', 'jurusan': 'TAV', 'foto': 'https://images.unsplash.com/photo-1615109398623-88346a601842?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Dian, S.Kom', 'lulusan': 'S1 Sistem Informasi - Universitas Widyatama', 'mapel': 'Administrasi Server', 'kelas': 'XII TKJ 1', 'tingkat': 'XII', 'jurusan': 'TKJ', 'foto': 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Oky, S.T', 'lulusan': 'S1 Teknik Komputer - Politeknik Negeri Bandung', 'mapel': 'Administrasi Server', 'kelas': 'XII TKJ 2', 'tingkat': 'XII', 'jurusan': 'TKJ', 'foto': 'https://images.unsplash.com/photo-1552058544-f2b08422138a?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Ahmad, S.T', 'lulusan': 'S1 Teknik Informatika - Universitas Telkom', 'mapel': 'Administrasi Infrastruktur Jaringan', 'kelas': 'XII TKJ 3', 'tingkat': 'XII', 'jurusan': 'TKJ', 'foto': 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Dadan, S.Pd', 'lulusan': 'S1 Pendidikan Teknik Otomotif - UPI Bandung', 'mapel': 'Pemeliharaan Mesin Kendaraan Ringan', 'kelas': 'XII TKR 1', 'tingkat': 'XII', 'jurusan': 'TKR', 'foto': 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Toto, S.T', 'lulusan': 'S1 Teknik Mesin - Institut Teknologi Nasional', 'mapel': 'Pemeliharaan Kelistrikan Kendaraan', 'kelas': 'XII TKR 2', 'tingkat': 'XII', 'jurusan': 'TKR', 'foto': 'https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Yana, S.T', 'lulusan': 'S1 Teknik Elektro - Universitas Jenderal Achmad Yani', 'mapel': 'Audio Video Sistem', 'kelas': 'XII TAV 1', 'tingkat': 'XII', 'jurusan': 'TAV', 'foto': 'https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?auto=format&fit=crop&q=80&w=500'},
+    {'nama': 'Heri, S.Pd', 'lulusan': 'S1 Pendidikan Teknik Elektro - UPI Bandung', 'mapel': 'Audio Video Sistem', 'kelas': 'XII TAV 2', 'tingkat': 'XII', 'jurusan': 'TAV', 'foto': 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?auto=format&fit=crop&q=80&w=500'},
+]
+
+
+def _muat_daftar_guru():
+    """Baca guru_store.json (hasil tambah/edit/hapus admin sebelumnya) kalau
+    sudah ada. Kalau belum pernah ada sama sekali (baru pertama kali server
+    dijalankan), pakai DAFTAR_GURU_DEFAULT di atas dengan id 0..N diisi dari
+    urutan array-nya."""
+    try:
+        with open(GURU_STORE_PATH, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return [dict(g, id=i) for i, g in enumerate(DAFTAR_GURU_DEFAULT)]
+
+
+daftar_guru = _muat_daftar_guru()
+
+
+def _simpan_daftar_guru():
+    """Tulis SELURUH isi list `daftar_guru` saat ini ke file JSON di disk,
+    persis pola yang sama dengan _simpan_users_store() -- atomic write lewat
+    file .tmp dulu baru di-rename, supaya file tidak korup kalau proses mati
+    di tengah penulisan."""
+    os.makedirs(os.path.dirname(GURU_STORE_PATH), exist_ok=True)
+    tmp_path = GURU_STORE_PATH + '.tmp'
+    with open(tmp_path, 'w', encoding='utf-8') as f:
+        json.dump(daftar_guru, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, GURU_STORE_PATH)
+
+
+# Kalau file store belum ada sama sekali (server baru pertama kali jalan),
+# langsung simpan versi default-nya supaya file-nya beneran tercipta di disk.
+if not os.path.exists(GURU_STORE_PATH):
+    _simpan_daftar_guru()
+
 # ----------------------------------------------------
 # DATA QUIZ SISWA (SIMULASI TABEL quiz_scores)
 # Struktur: quiz_store[username][jenis] = { ...struktur data quiz milik siswa
@@ -1090,8 +1167,90 @@ def api_profil_border():
         users[me]['border_aktif'] = border_id
         _simpan_users_store()
     return jsonify(success=True)
- 
- 
+
+
+# ----------------------------------------------------
+# API: KELOLA DAFTAR GURU (menu "Daftar Guru")
+# ----------------------------------------------------
+@app.route('/api/guru/list', methods=['GET'])
+def api_guru_list():
+    """Ambil daftar guru terbaru -- dibaca siapapun yang sudah login
+    (siswa/guru/staf), supaya menu 'Daftar Guru' semua orang selalu sinkron
+    dengan hasil kelola admin, bukan lagi hardcode statis per file HTML."""
+    if 'user' not in session:
+        return jsonify(success=False, message='Belum login.'), 401
+    return jsonify(success=True, guru=daftar_guru)
+
+
+@app.route('/api/guru/tambah', methods=['POST'])
+def api_guru_tambah():
+    """Tambah data guru baru -- KHUSUS akun Admin/Developer asli. Dicek di
+    server (bukan cuma disembunyikan di UI) supaya tidak bisa ditembus lewat
+    request langsung ke endpoint ini mengatasnamakan akun lain."""
+    if not _akun_ini_admin_dev():
+        return jsonify(success=False, message='Khusus akun Admin/Developer yang boleh mengelola daftar guru.'), 403
+
+    data = request.get_json(silent=True) or {}
+    nama = (data.get('nama') or '').strip()
+    if not nama:
+        return jsonify(success=False, message='Nama guru wajib diisi.'), 400
+
+    id_baru = max((g['id'] for g in daftar_guru), default=-1) + 1
+    guru_baru = {
+        'id': id_baru,
+        'nama': nama,
+        'lulusan': (data.get('lulusan') or '').strip(),
+        'mapel': (data.get('mapel') or '').strip(),
+        'kelas': (data.get('kelas') or '').strip(),
+        'tingkat': (data.get('tingkat') or '').strip(),
+        'jurusan': (data.get('jurusan') or '').strip(),
+        'foto': (data.get('foto') or '').strip(),
+    }
+    daftar_guru.append(guru_baru)
+    _simpan_daftar_guru()
+    return jsonify(success=True, guru=guru_baru)
+
+
+@app.route('/api/guru/edit/<int:id_guru>', methods=['POST'])
+def api_guru_edit(id_guru):
+    """Ubah data guru yang sudah ada -- KHUSUS Admin/Developer, sama seperti
+    /api/guru/tambah di atas."""
+    if not _akun_ini_admin_dev():
+        return jsonify(success=False, message='Khusus akun Admin/Developer yang boleh mengelola daftar guru.'), 403
+
+    target = next((g for g in daftar_guru if g['id'] == id_guru), None)
+    if not target:
+        return jsonify(success=False, message='Guru tidak ditemukan.'), 404
+
+    data = request.get_json(silent=True) or {}
+    nama = (data.get('nama') or '').strip()
+    if not nama:
+        return jsonify(success=False, message='Nama guru wajib diisi.'), 400
+
+    for field in ('nama', 'lulusan', 'mapel', 'kelas', 'tingkat', 'jurusan', 'foto'):
+        if field in data:
+            target[field] = (data.get(field) or '').strip()
+
+    _simpan_daftar_guru()
+    return jsonify(success=True, guru=target)
+
+
+@app.route('/api/guru/hapus/<int:id_guru>', methods=['POST'])
+def api_guru_hapus(id_guru):
+    """Hapus data guru -- KHUSUS Admin/Developer."""
+    if not _akun_ini_admin_dev():
+        return jsonify(success=False, message='Khusus akun Admin/Developer yang boleh mengelola daftar guru.'), 403
+
+    global daftar_guru
+    sebelum = len(daftar_guru)
+    daftar_guru = [g for g in daftar_guru if g['id'] != id_guru]
+    if len(daftar_guru) == sebelum:
+        return jsonify(success=False, message='Guru tidak ditemukan.'), 404
+
+    _simpan_daftar_guru()
+    return jsonify(success=True)
+
+
 @app.route('/api/profil/foto', methods=['POST'])
 def api_profil_foto():
     """Simpan foto profil (base64) siswa ke server -- pola sama persis dengan
