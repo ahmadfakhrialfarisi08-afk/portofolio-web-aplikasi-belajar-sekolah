@@ -3828,11 +3828,6 @@
                 </div>
             </div>
 
-            <div class="p-5 sm:p-6 border-t border-slate-100 flex-shrink-0">
-                <button id="detail-guru-btn-saran" type="button" class="btn-beri-saran-guru w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-comment-dots"></i> Beri Saran
-                </button>
-            </div>
         </div>
     </div>
 
@@ -7350,9 +7345,6 @@
                     </div>
                 `).join('');
             }
-
-            const btnSaran = document.getElementById('detail-guru-btn-saran');
-            if (btnSaran) btnSaran.onclick = () => { tutupModalDetailGuru(); bukaModalSaranGuru(g.id); };
 
             const modal = document.getElementById('modal-detail-guru');
             modal.classList.remove('hidden');
