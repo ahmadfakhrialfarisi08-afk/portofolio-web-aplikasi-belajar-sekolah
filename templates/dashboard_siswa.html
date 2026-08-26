@@ -1765,6 +1765,24 @@
         }
         .btn-kirim-saran-guru:active { transform: translateY(0); }
 
+        /* --- Toggle "Jenis Mata Pelajaran" (Biasa / Produktif) di form Kelola Guru --- */
+        .jenis-guru-btn {
+            background: #fff;
+            border-color: #e2e8f0;
+            color: #64748b;
+        }
+        .jenis-guru-btn:hover { background: #f8fafc; }
+        .jenis-guru-btn.jenis-guru-aktif-biasa {
+            background: #eff6ff;
+            border-color: #93c5fd;
+            color: #1d4ed8;
+        }
+        .jenis-guru-btn.jenis-guru-aktif-produktif {
+            background: #fff7ed;
+            border-color: #fdba74;
+            color: #c2410c;
+        }
+
         /* --- 5. DAFTAR GURU: Scroll Reveal (Fade In on Scroll) --- */
         .guru-card-reveal {
             opacity: 0;
@@ -3882,6 +3900,18 @@
                         <input id="input-guru-mapel" type="text" placeholder="Contoh: Dasar-Dasar TKI" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
                     </div>
                     <div>
+                        <label class="text-[11px] font-bold text-slate-500">Jenis Mata Pelajaran</label>
+                        <div class="flex items-center gap-2 mt-1">
+                            <button type="button" id="btn-jenis-guru-biasa" onclick="pilihJenisGuru('biasa')" class="jenis-guru-btn flex-1 py-2 rounded-lg border text-xs font-bold transition-colors">
+                                <i class="fa-solid fa-book-open mr-1"></i> Mapel Biasa
+                            </button>
+                            <button type="button" id="btn-jenis-guru-produktif" onclick="pilihJenisGuru('produktif')" class="jenis-guru-btn flex-1 py-2 rounded-lg border text-xs font-bold transition-colors">
+                                <i class="fa-solid fa-screwdriver-wrench mr-1"></i> Mapel Produktif
+                            </button>
+                        </div>
+                        <input id="input-guru-jenis" type="hidden" value="biasa">
+                    </div>
+                    <div>
                         <label class="text-[11px] font-bold text-slate-500">Kelas yang Diajar</label>
                         <input id="input-guru-kelas" type="text" placeholder="Contoh: X TKJ 1" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
                     </div>
@@ -3904,9 +3934,20 @@
                         </div>
                     </div>
                     <div>
-                        <label class="text-[11px] font-bold text-slate-500">Link Foto (URL gambar)</label>
-                        <input id="input-guru-foto" type="url" placeholder="https://..." class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
-                        <p class="text-[10px] text-slate-400 mt-1">Kalau dikosongkan, otomatis pakai avatar inisial nama.</p>
+                        <label class="text-[11px] font-bold text-slate-500">Foto Guru</label>
+                        <div class="flex items-center gap-3 mt-1">
+                            <img id="preview-guru-foto" src="" alt="Pratinjau foto" class="hidden w-14 h-14 rounded-lg object-cover border border-slate-200 flex-shrink-0 bg-slate-100">
+                            <label class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-dashed border-slate-300 bg-white text-slate-500 text-xs font-semibold cursor-pointer hover:bg-slate-50 transition-colors">
+                                <i class="fa-solid fa-upload"></i>
+                                <span id="label-guru-foto-file">Pilih foto dari perangkat...</span>
+                                <input id="input-guru-foto-file" type="file" accept="image/*" class="hidden" onchange="onPilihFotoGuru(event)">
+                            </label>
+                        </div>
+                        <!-- Hidden field ini yang beneran dibaca simpanFormGuru() -- isinya base64
+                             (data URL) hasil FileReader, ATAU foto lama (kalau mode edit dan admin
+                             tidak pilih file baru), sama persis pola 'foto_profil' siswa di server. -->
+                        <input id="input-guru-foto" type="hidden" value="">
+                        <p class="text-[10px] text-slate-400 mt-1">Kalau tidak pilih foto, otomatis pakai avatar inisial nama.</p>
                     </div>
 
                     <p id="form-kelola-guru-pesan-gagal" class="hidden text-[11px] font-semibold text-red-600"></p>
@@ -7538,13 +7579,19 @@
         function renderListKelolaGuru() {
             const list = document.getElementById('list-kelola-guru');
             if (!list) return; // modal belum pernah dibuka / bukan akun admin
-            list.innerHTML = daftarGuruSekolah.map(g => `
+            list.innerHTML = daftarGuruSekolah.map(g => {
+                const jenisProduktif = g.jenis === 'produktif';
+                const badgeJenis = jenisProduktif
+                    ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-orange-50 text-orange-600 border border-orange-100 text-[9px] font-bold flex-shrink-0"><i class="fa-solid fa-screwdriver-wrench"></i> Produktif</span>`
+                    : `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 border border-blue-100 text-[9px] font-bold flex-shrink-0"><i class="fa-solid fa-book-open"></i> Biasa</span>`;
+                return `
                 <div class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200">
                     <img src="${g.foto}" alt="${g.nama}" class="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(g.nama)}&background=e0e7ff&color=3730a3&size=80'">
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-bold text-slate-800 truncate">${g.nama}</p>
                         <p class="text-[10px] text-slate-400 truncate">${g.mapel} • ${g.kelas}</p>
                     </div>
+                    ${badgeJenis}
                     <button type="button" onclick="bukaFormEditGuru(${g.id})" class="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0" title="Edit" aria-label="Edit ${g.nama}">
                         <i class="fa-solid fa-pen text-xs"></i>
                     </button>
@@ -7552,16 +7599,29 @@
                         <i class="fa-solid fa-trash text-xs"></i>
                     </button>
                 </div>
-            `).join('') || '<p class="text-xs text-slate-400 text-center py-4">Belum ada data guru.</p>';
+            `;
+            }).join('') || '<p class="text-xs text-slate-400 text-center py-4">Belum ada data guru.</p>';
+        }
+
+        // Toggle "Jenis Mata Pelajaran": update field hidden #input-guru-jenis
+        // + styling aktif pada tombol yang dipilih (biru = Biasa, oranye = Produktif).
+        function pilihJenisGuru(jenis) {
+            document.getElementById('input-guru-jenis').value = jenis;
+            const btnBiasa = document.getElementById('btn-jenis-guru-biasa');
+            const btnProduktif = document.getElementById('btn-jenis-guru-produktif');
+            if (btnBiasa) btnBiasa.classList.toggle('jenis-guru-aktif-biasa', jenis === 'biasa');
+            if (btnProduktif) btnProduktif.classList.toggle('jenis-guru-aktif-produktif', jenis === 'produktif');
         }
 
         function bukaFormTambahGuru() {
             _idGuruDiedit = null;
             document.getElementById('form-kelola-guru-judul').textContent = 'Tambah Guru Baru';
             document.getElementById('btn-submit-form-guru').textContent = 'Simpan';
-            ['nama', 'lulusan', 'mapel', 'kelas', 'foto'].forEach(f => { document.getElementById(`input-guru-${f}`).value = ''; });
+            ['nama', 'lulusan', 'mapel', 'kelas'].forEach(f => { document.getElementById(`input-guru-${f}`).value = ''; });
             document.getElementById('input-guru-tingkat').value = 'X';
             document.getElementById('input-guru-jurusan').value = 'TKJ';
+            pilihJenisGuru('biasa');
+            resetPreviewFotoGuru();
             document.getElementById('form-kelola-guru-pesan-gagal').classList.add('hidden');
             document.getElementById('form-kelola-guru').classList.remove('hidden');
         }
@@ -7578,13 +7638,62 @@
             document.getElementById('input-guru-kelas').value = g.kelas || '';
             document.getElementById('input-guru-tingkat').value = g.tingkat || 'X';
             document.getElementById('input-guru-jurusan').value = g.jurusan || 'TKJ';
+            pilihJenisGuru(g.jenis || 'biasa');
+            // Foto lama tetap dipertahankan di field hidden (dan ditampilkan sebagai
+            // pratinjau) sampai admin benar-benar pilih file baru lewat onPilihFotoGuru().
             document.getElementById('input-guru-foto').value = g.foto || '';
+            tampilkanPreviewFotoGuru(g.foto || '');
             document.getElementById('form-kelola-guru-pesan-gagal').classList.add('hidden');
             document.getElementById('form-kelola-guru').classList.remove('hidden');
         }
 
+        function resetPreviewFotoGuru() {
+            document.getElementById('input-guru-foto').value = '';
+            document.getElementById('input-guru-foto-file').value = '';
+            document.getElementById('label-guru-foto-file').textContent = 'Pilih foto dari perangkat...';
+            const preview = document.getElementById('preview-guru-foto');
+            preview.src = '';
+            preview.classList.add('hidden');
+        }
+
+        function tampilkanPreviewFotoGuru(src) {
+            const preview = document.getElementById('preview-guru-foto');
+            if (!src) {
+                preview.src = '';
+                preview.classList.add('hidden');
+                return;
+            }
+            preview.src = src;
+            preview.classList.remove('hidden');
+        }
+
+        // Baca file yang dipilih admin jadi base64 (data URL) lewat FileReader,
+        // lalu taruh di field hidden #input-guru-foto -- sama persis pola
+        // updateProfilePhoto() untuk foto profil siswa (base64 disimpan langsung
+        // sebagai string di server, tidak perlu upload/host file terpisah).
+        async function onPilihFotoGuru(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                const dataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = () => reject(new Error('Gagal membaca file'));
+                    reader.readAsDataURL(file);
+                });
+                document.getElementById('input-guru-foto').value = dataUrl;
+                document.getElementById('label-guru-foto-file').textContent = file.name;
+                tampilkanPreviewFotoGuru(dataUrl);
+            } catch (e) {
+                alert('Gagal membuka foto. Coba pilih file lain.');
+                event.target.value = '';
+            }
+        }
+
+
         function tutupFormGuru() {
             _idGuruDiedit = null;
+            resetPreviewFotoGuru();
             const form = document.getElementById('form-kelola-guru');
             if (form) form.classList.add('hidden');
         }
@@ -7598,6 +7707,7 @@
                 kelas: document.getElementById('input-guru-kelas').value.trim(),
                 tingkat: document.getElementById('input-guru-tingkat').value,
                 jurusan: document.getElementById('input-guru-jurusan').value,
+                jenis: document.getElementById('input-guru-jenis').value,
                 foto: document.getElementById('input-guru-foto').value.trim()
             };
             const pesanGagal = document.getElementById('form-kelola-guru-pesan-gagal');
