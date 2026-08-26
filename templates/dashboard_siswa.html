@@ -1648,6 +1648,25 @@
             #detail-guru-foto-wrap.foto-guru-masuk { animation: none !important; }
         }
 
+        /* --- Modal "Detail Penilaian Guru": bagian KANAN (nama, skor total,
+           rincian per-aspek) ikut "muncul" tiap modal dibuka, pakai efek fade-up
+           yang SAMA PERSIS dengan kartu di Daftar Guru saat discroll
+           (.guru-card-reveal: opacity 0 -> 1 + translateY 28px -> 0). Sebelumnya
+           cuma foto di kolom kiri yang beranimasi, kolom kanan langsung tampil
+           tanpa efek. Class-nya dipasang ulang lewat JS (bukaModalDetailGuru)
+           tiap klik lewat reflow trick yang sama seperti foto-guru-masuk, biar
+           animasinya selalu replay. */
+        #detail-guru-info-wrap.info-guru-masuk {
+            animation: infoGuruMasukNaik 0.65s cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
+        @keyframes infoGuruMasukNaik {
+            from { transform: translateY(28px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #detail-guru-info-wrap.info-guru-masuk { animation: none !important; }
+        }
+
         /* --- 5b. DAFTAR GURU: kartu pakai bg-white/70 & border-white/60 (transparan),
            selector dark mode umum di atas cuma menarget class "bg-white" polos,
            jadi varian transparansi ini tidak pernah ke-cover saat mode gelap aktif ->
@@ -3864,7 +3883,7 @@
                         <img id="detail-guru-foto" src="" alt="" class="w-full h-full object-cover">
                     </div>
                 </div>
-                <div class="flex-1 min-w-0 p-5 sm:p-7 space-y-4">
+                <div id="detail-guru-info-wrap" class="flex-1 min-w-0 p-5 sm:p-7 space-y-4">
                     <div>
                         <h3 id="detail-guru-nama" class="font-extrabold text-xl leading-tight text-slate-900">-</h3>
                         <p id="detail-guru-mapel" class="text-sm text-slate-500 mt-1">-</p>
@@ -7512,6 +7531,16 @@
                 fotoWrap.classList.remove('foto-guru-masuk');
                 void fotoWrap.offsetWidth;
                 fotoWrap.classList.add('foto-guru-masuk');
+            }
+
+            // Replay animasi fade-up di kolom KANAN (nama/skor/rincian aspek),
+            // pakai trik reflow yang sama seperti foto di atas supaya animasinya
+            // selalu jalan ulang tiap kali modal dibuka, bukan cuma sekali.
+            const infoWrap = document.getElementById('detail-guru-info-wrap');
+            if (infoWrap) {
+                infoWrap.classList.remove('info-guru-masuk');
+                void infoWrap.offsetWidth;
+                infoWrap.classList.add('info-guru-masuk');
             }
         }
 
