@@ -2188,7 +2188,7 @@
 
                 <button onclick="switchTab('akademik')" id="btn-akademik" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-amber-500/20 hover:text-amber-700 font-medium text-sm transition-colors duration-150">
                     <div class="flex items-center gap-3 nav-btn-label">
-                        <i class="fa-solid fa-crown w-4 text-center text-[13px]"></i> Koleksi Prestasi
+                        <i class="fa-solid fa-crown w-4 text-center text-[13px]"></i> Koleksi Border
                     </div>
                 </button>
 
@@ -2494,14 +2494,16 @@
                                 <button onclick="toggleProfileDropdown(event)" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xs"></i></button>
                             </div>
                             <div class="flex flex-col items-center justify-center space-y-2">
-                                <div class="relative w-16 h-16 rounded-full overflow-hidden border-2 border-blue-500 shadow-md cursor-pointer group bg-slate-100 flex items-center justify-center" onclick="openExpandedPhoto(event)" title="Klik untuk memperbesar foto">
+                                <div class="relative w-16 h-16 rounded-full overflow-hidden border-2 border-blue-500 shadow-md cursor-pointer group bg-slate-100 flex items-center justify-center" onclick="openExpandedPhoto(event)" title="Klik untuk lihat foto & bio kamu">
                                     <i class="fa-solid fa-user text-slate-300 text-2xl"></i>
                                     <img id="dropdown-user-avatar" src="{{ foto_profil }}" class="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105" alt="Current Avatar" onerror="this.style.display='none'">
                                     <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                         <i class="fa-solid fa-magnifying-glass-plus text-white text-xs"></i>
                                     </div>
                                 </div>
-                                <span class="text-[11px] font-semibold text-slate-600 text-center">Foto Profil Saat Ini (Klik untuk memperbesar)</span>
+                                <button type="button" onclick="openExpandedPhoto(event)" class="text-[11px] font-semibold text-blue-600 hover:underline text-center">
+                                    <i class="fa-solid fa-id-card text-[10px] mr-1"></i>Lihat Foto & Bio Kamu
+                                </button>
                             </div>
                             <div class="pt-1">
                                 <label class="block w-full text-center py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl cursor-pointer shadow-sm transition-all">
@@ -2512,16 +2514,6 @@
                         </div>
 
                         <div class="px-4 pb-4 space-y-3">
-                        <div class="pt-2 border-t border-slate-100 space-y-1.5">
-                            <label class="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
-                                <i class="fa-solid fa-pen-nib text-blue-600 text-[10px]"></i> Bio Singkat
-                            </label>
-                            <textarea id="input-bio-siswa" rows="2" maxlength="120" placeholder="Tulis bio singkat tentang kamu..." class="w-full p-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 bg-white resize-none"></textarea>
-                            <button onclick="simpanBioSiswa()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5">
-                                <i class="fa-solid fa-floppy-disk text-[10px]"></i> Simpan Bio
-                            </button>
-                        </div>
-
                         <div class="pt-2 border-t border-slate-100">
                             <a href="{{ url_for('logout') }}" class="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5">
                                 <i class="fa-solid fa-right-from-bracket text-[10px]"></i> Keluar / Logout
@@ -3303,11 +3295,21 @@
             <button onclick="closeExpandedPhoto()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-            <h3 class="font-bold text-base text-slate-900">Foto Profil</h3>
+            <h3 class="font-bold text-base text-slate-900">Foto Profil & Bio</h3>
             <div class="w-64 h-64 rounded-2xl overflow-hidden border-4 border-slate-100 shadow-lg">
                 <img id="expanded-photo-img" src="" class="w-full h-full object-cover" alt="Expanded Avatar">
             </div>
             <p class="text-xs text-slate-400 text-center nama-siswa-efektif">{{ nama }}</p>
+
+            <div class="w-full pt-2 border-t border-slate-100 space-y-1.5">
+                <label class="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-pen-nib text-blue-600 text-[10px]"></i> Bio Singkat
+                </label>
+                <textarea id="input-bio-siswa" rows="2" maxlength="120" placeholder="Tulis bio singkat tentang kamu..." class="w-full p-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 bg-white resize-none"></textarea>
+                <button onclick="simpanBioSiswa()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-floppy-disk text-[10px]"></i> Simpan Bio
+                </button>
+            </div>
         </div>
     </div>
 
@@ -3951,6 +3953,7 @@
             if (dropdownAvatar && expandedImg && modal) {
                 expandedImg.src = dropdownAvatar.src;
                 modal.classList.remove('hidden');
+                loadBioSiswa(); // pastikan bio yang tampil selalu versi terbaru
             }
         }
 
