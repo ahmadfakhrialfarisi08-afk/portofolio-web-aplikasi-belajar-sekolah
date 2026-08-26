@@ -2975,12 +2975,27 @@
                         </div>
                     </div>
 
-                    <div id="hasil-cari-teman-kosong" class="p-5 sm:p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                    <div id="hasil-cari-teman-kosong" class="hidden p-5 sm:p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
                         <i class="fa-solid fa-user-group text-2xl mb-2"></i>
                         <p class="text-xs font-medium">Ketik nama di kolom pencarian untuk mulai mencari teman.</p>
                     </div>
 
                     <div id="hasil-cari-teman-list" class="hidden space-y-2"></div>
+
+                    <!-- Daftar teman yang sudah saling add -- tampil di bawah search bar
+                         selama kolom pencarian kosong. Begitu user mulai ngetik, blok ini
+                         disembunyikan & digantikan hasil pencarian (lihat onInputCariTeman). -->
+                    <div id="daftar-teman-wrapper">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-group text-[11px]" aria-hidden="true"></i> Teman
+                            <span id="daftar-teman-jumlah" class="text-slate-400 font-semibold normal-case">(0)</span>
+                        </h4>
+                        <div id="daftar-teman-list" class="space-y-2"></div>
+                        <div id="daftar-teman-kosong" class="hidden p-5 sm:p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                            <i class="fa-solid fa-user-group text-2xl mb-2"></i>
+                            <p class="text-xs font-medium">Belum ada teman yang saling nge-add. Coba cari & tambah teman lewat kolom pencarian di atas.</p>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -5161,6 +5176,63 @@
                 console.error('Gagal menanggapi permintaan pertemanan:', e);
             }
             renderPermintaanTeman();
+            // Kalau yang diterima itu permintaan pertemanan, orangnya langsung
+            // masuk daftar "Teman" di bawah search bar -- refresh juga di sini.
+            renderDaftarTeman();
+        }
+
+        /* ---------- Daftar Teman (yang sudah saling add) ---------- */
+        // Ditaro di bawah search bar "Cari Teman". Datanya diambil dari field
+        // "teman" hasil ambilRelasiPertemanan() (endpoint /api/teman/relasi) --
+        // field ini sebelumnya sudah dikirim server tapi belum pernah dirender
+        // di mana pun, jadi tinggal dipakai di sini.
+        async function renderDaftarTeman() {
+            const list = document.getElementById('daftar-teman-list');
+            const kosong = document.getElementById('daftar-teman-kosong');
+            const jumlahEl = document.getElementById('daftar-teman-jumlah');
+            if (!list) return;
+
+            const { teman: daftarTeman } = await ambilRelasiPertemanan();
+
+            list.innerHTML = '';
+            if (jumlahEl) jumlahEl.textContent = `(${daftarTeman.length})`;
+
+            if (daftarTeman.length === 0) {
+                if (kosong) kosong.classList.remove('hidden');
+                return;
+            }
+            if (kosong) kosong.classList.add('hidden');
+
+            daftarTeman.forEach(item => {
+                // Pola sama dengan hasil "Cari Teman" & dropdown permintaan masuk --
+                // avatar+border, efek nama gradasi, & title ikut ditampilkan.
+                const borderItem = getSemuaBorder().find(b => b.id === item.border) || DAFTAR_BORDER_STARTER[0];
+                const efekNamaItem = getEfekNamaClass(borderItem);
+                const titleBadgeClassItem = getTitleBadgeClass(efekNamaItem);
+                const badgeDevItem = getBadgeDevHtml(borderItem);
+                const fotoItem = item.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama)}&background=e0e7ff&color=3730a3&size=120`;
+
+                const row = document.createElement('div');
+                row.className = 'w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/40 transition-colors cursor-pointer';
+                row.setAttribute('role', 'button');
+                row.setAttribute('tabindex', '0');
+                row.innerHTML = `
+                    <div class="profile-wrapper w-11 h-11 flex-shrink-0">
+                        <img src="${fotoItem}" class="user-avatar" alt="Avatar ${item.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama)}&background=e0e7ff&color=3730a3&size=120'">
+                        <img src="${borderItem.file}" class="user-border" alt="Border ${item.nama}">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold truncate ${efekNamaItem || 'text-slate-800'}">${item.nama}${badgeDevItem ? ' ' + badgeDevItem : ''}</p>
+                        <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold ${titleBadgeClassItem} truncate max-w-full">${borderItem.rank || '🔰 Pemula'}</span>
+                        <p class="text-[11px] text-slate-400 truncate mt-0.5">${item.kelas}</p>
+                    </div>
+                    <span class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600 flex-shrink-0">Teman</span>
+                `;
+                row.addEventListener('click', () => bukaIdCardTeman(item.username));
+                row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bukaIdCardTeman(item.username); } });
+
+                list.appendChild(row);
+            });
         }
 
         /* ================= PERANGKAT (Master Device & Approval Device Kedua) ================= */
@@ -5347,15 +5419,21 @@
             const q = nilai.trim();
             const kosongState = document.getElementById('hasil-cari-teman-kosong');
             const listState = document.getElementById('hasil-cari-teman-list');
+            const daftarTemanWrapper = document.getElementById('daftar-teman-wrapper');
 
             if (!q) {
-                kosongState.querySelector('p').textContent = 'Ketik nama di kolom pencarian untuk mulai mencari teman.';
-                kosongState.classList.remove('hidden');
+                // Kolom kosong -> sembunyikan area hasil pencarian, tampilkan
+                // lagi daftar teman yang sudah saling add di bawahnya.
+                kosongState.classList.add('hidden');
                 listState.classList.add('hidden');
                 listState.innerHTML = '';
+                if (daftarTemanWrapper) daftarTemanWrapper.classList.remove('hidden');
                 return;
             }
 
+            // Lagi mencari -> daftar teman disembunyikan dulu supaya nggak
+            // dobel sama hasil pencarian di bawahnya.
+            if (daftarTemanWrapper) daftarTemanWrapper.classList.add('hidden');
             TIMER_DEBOUNCE_CARI_TEMAN = setTimeout(() => jalankanPencarianTeman(q), 250);
         }
 
@@ -5814,6 +5892,13 @@
                 saveTasksSiswa(tasks);
                 checkTaskBadgeStatus();
                 renderLiveTaskContent();
+            }
+
+            // Setiap kali tab "Cari Teman" dibuka, refresh daftar teman yang
+            // sudah saling add (biar update terbaru -- mis. abis nerima
+            // permintaan pertemanan di sesi/tab lain -- langsung kelihatan).
+            if (tabName === 'cari-teman') {
+                renderDaftarTeman();
             }
         }
 
@@ -8189,6 +8274,7 @@
             renderLiveTaskContent(); // render awal: langsung munculin status tugas terdekat saat halaman baru dibuka
             checkTaskBadgeStatus();
             renderPermintaanTeman(); // sekalian isi badge dropdown pertemanan dari server saat halaman dibuka
+            renderDaftarTeman(); // isi daftar teman yang sudah saling add di bawah search bar "Cari Teman"
             renderPerangkat(); // isi badge & tabel perangkat dari server saat halaman dibuka
             updateBerandaPoinQuiz();
             sinkronkanQuizDenganServer(); // tarik progress & leaderboard akun ini dari server
@@ -8206,6 +8292,7 @@
                 cekNotifBaruStatusPrestasi();
                 updateTaskCounter(); // biar streak otomatis putus/berubah warna begitu deadline lewat, tanpa perlu refresh
                 renderPermintaanTeman(); // cek permintaan pertemanan baru dari server -- biar titik merah di sidebar & badge dropdown langsung muncul di sisi penerima walau dashboard sudah kebuka duluan
+                renderDaftarTeman(); // biar daftar teman ikut update kalau ada pertemanan baru terbentuk dari sisi lain
                 updateBadgePerangkatNavSaja(); // cek ada tidaknya perangkat baru yang pending, tanpa nge-render ulang tabel penuh tiap 3 detik
             }, 3000);
             cekNotifBaruTugasDitarik();
