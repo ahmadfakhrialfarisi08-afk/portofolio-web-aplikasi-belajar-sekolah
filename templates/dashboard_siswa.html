@@ -2647,23 +2647,27 @@
                         </div>
                         <span id="badge-jumlah-border-dimiliki" class="flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 whitespace-nowrap">0 border</span>
                     </div>
-                    <div id="grid-border-dimiliki" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"></div>
+                    <div id="grid-border-dimiliki" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5"></div>
                     <p id="teks-kosong-border-dimiliki" class="hidden text-xs text-slate-400 text-center py-6">Belum ada border yang dimiliki. Main quiz atau ajukan prestasi untuk membuka border pertamamu!</p>
                 </div>
 
-                <!-- ================= BORDER YANG BELUM DIMILIKI (collapsible) ================= -->
-                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6">
-                    <div class="flex items-center justify-between gap-3">
-                        <div>
+                <!-- ================= BORDER YANG BELUM DIMILIKI (collapsible) =================
+                     Di HP tampil sebagai tulisan/link ringkas (bukan kotak terpisah) supaya tidak
+                     makan tempat; di layar lebih besar (sm+) tetap tampil sebagai kartu penuh
+                     seperti versi laptop, lengkap dengan judul & deskripsi. -->
+                <div class="sm:bg-white sm:rounded-2xl sm:border sm:border-slate-200/80 sm:shadow-sm sm:p-6">
+                    <div class="flex items-center sm:justify-between gap-3">
+                        <div class="hidden sm:block">
                             <h3 class="font-bold text-lg text-slate-900"><i class="fa-solid fa-lock text-slate-400 mr-1.5"></i>Border yang Belum Dimiliki</h3>
                             <p class="text-xs text-slate-400 mt-0.5">Border lain yang masih terkunci, dari jalur Quiz maupun Prestasi.</p>
                         </div>
-                        <button onclick="toggleBorderBelumDimiliki()" id="btn-toggle-border-belum" class="flex-shrink-0 text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white transition-all whitespace-nowrap">
+                        <button onclick="toggleBorderBelumDimiliki()" id="btn-toggle-border-belum" class="flex-shrink-0 flex items-center gap-1.5 text-xs sm:text-sm font-bold text-blue-600 sm:text-white px-0 py-1 sm:px-4 sm:py-2.5 rounded-xl sm:bg-slate-800 sm:hover:bg-slate-900 transition-all whitespace-nowrap">
+                            <i class="fa-solid fa-lock text-[10px] sm:hidden"></i>
                             <span id="teks-toggle-border-belum">Tampilkan Semua (0)</span>
-                            <i id="icon-toggle-border-belum" class="fa-solid fa-chevron-down ml-1.5 text-[10px] transition-transform"></i>
+                            <i id="icon-toggle-border-belum" class="fa-solid fa-chevron-down ml-0.5 sm:ml-1.5 text-[10px] transition-transform"></i>
                         </button>
                     </div>
-                    <div id="grid-border-belum-dimiliki" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-6"></div>
+                    <div id="grid-border-belum-dimiliki" class="hidden grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mt-3 sm:mt-6"></div>
                 </div>
 
                 <!-- ================= JOURNEY PRESTASI (rekam jejak per tahun ajaran) =================
@@ -10645,26 +10649,26 @@
             }
 
             const card = document.createElement('div');
-            card.className = `rounded-2xl border p-5 flex flex-col items-center text-center transition-all ${sedangDipakai ? 'border-amber-400 bg-amber-50/50 shadow-md' : (siapDiklaim ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-200 bg-white')} ${!terbuka ? 'opacity-70' : ''}`;
+            card.className = `rounded-xl sm:rounded-2xl border p-2.5 sm:p-5 flex flex-col items-center text-center transition-all ${sedangDipakai ? 'border-amber-400 bg-amber-50/50 shadow-md' : (siapDiklaim ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-200 bg-white')} ${!terbuka ? 'opacity-70' : ''}`;
 
             card.innerHTML = `
-                <div class="profile-wrapper w-20 h-20 mb-3 relative">
+                <div class="profile-wrapper w-12 h-12 sm:w-20 sm:h-20 mb-2 sm:mb-3 relative">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23000'/%3E%3C/svg%3E" class="user-avatar" alt="Preview Avatar">
                     <img src="${border.file}" class="user-border ${!terbuka ? 'grayscale' : ''}" alt="Border_${border.nama}">
-                    ${!terbuka ? `<div class="absolute inset-0 flex items-center justify-center ${siapDiklaim ? 'bg-emerald-600/30' : 'bg-slate-900/40'} rounded-full"><i class="fa-solid ${siapDiklaim ? 'fa-unlock' : 'fa-lock'} text-white text-lg"></i></div>` : ''}
+                    ${!terbuka ? `<div class="absolute inset-0 flex items-center justify-center ${siapDiklaim ? 'bg-emerald-600/30' : 'bg-slate-900/40'} rounded-full"><i class="fa-solid ${siapDiklaim ? 'fa-unlock' : 'fa-lock'} text-[10px] sm:text-lg text-white"></i></div>` : ''}
                 </div>
-                <h4 class="font-bold text-sm text-slate-900">${border.nama}</h4>
-                <p class="text-[10px] text-slate-400 mt-0.5">${border.rank}</p>
-                <p class="text-[10px] ${terbuka ? 'text-emerald-600' : 'text-slate-400'} mb-3 leading-snug">${deskripsiSumberBorder(border)}</p>
+                <h4 class="font-bold text-[11px] sm:text-sm text-slate-900 leading-tight">${border.nama}</h4>
+                <p class="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">${border.rank}</p>
+                <p class="hidden sm:block text-[10px] ${terbuka ? 'text-emerald-600' : 'text-slate-400'} mb-3 leading-snug">${deskripsiSumberBorder(border)}</p>
                 ${ceklisSyaratHtml}
                 ${terbuka
-                    ? `<button onclick="pakaiBorder('${border.id}')" ${sedangDipakai ? 'disabled' : ''} class="w-full py-2 rounded-xl text-xs font-bold transition-all ${sedangDipakai ? 'bg-emerald-100 text-emerald-700 cursor-default' : 'bg-slate-800 hover:bg-slate-900 text-white'}">${sedangDipakai ? '<i class="fa-solid fa-check mr-1"></i>Sedang Dipakai' : 'Pakai Border'}</button>`
+                    ? `<button onclick="pakaiBorder('${border.id}')" ${sedangDipakai ? 'disabled' : ''} class="w-full mt-1.5 sm:mt-0 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold transition-all ${sedangDipakai ? 'bg-emerald-100 text-emerald-700 cursor-default' : 'bg-slate-800 hover:bg-slate-900 text-white'}">${sedangDipakai ? '<i class="fa-solid fa-check mr-1"></i>Dipakai' : 'Pakai Border'}</button>`
                     : (siapDiklaim
-                        ? `<button onclick="klaimBorder('${border.id}')" class="w-full py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white transition-all"><i class="fa-solid fa-award mr-1"></i>Klaim Border</button>`
+                        ? `<button onclick="klaimBorder('${border.id}')" class="w-full mt-1.5 sm:mt-0 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white transition-all"><i class="fa-solid fa-award mr-1"></i>Klaim</button>`
                         : (sumberPoinBorder(border) === 'prestasi'
-                            ? `<p class="text-[10px] text-amber-600 font-semibold mb-2">${labelKurang}</p>
-                               <button onclick="bukaModalBukaBorder('${border.id}')" class="w-full py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition-all"><i class="fa-solid fa-unlock mr-1"></i>Buka Border</button>`
-                            : `<button disabled class="w-full py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed"><i class="fa-solid fa-lock mr-1"></i>${labelKurang}</button>`))
+                            ? `<p class="hidden sm:block text-[10px] text-amber-600 font-semibold mb-2">${labelKurang}</p>
+                               <button onclick="bukaModalBukaBorder('${border.id}')" class="w-full mt-1.5 sm:mt-0 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition-all"><i class="fa-solid fa-unlock mr-1"></i>Buka</button>`
+                            : `<button disabled class="w-full mt-1.5 sm:mt-0 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed leading-tight"><i class="fa-solid fa-lock mr-1"></i><span class="hidden sm:inline">${labelKurang}</span><span class="sm:hidden">Terkunci</span></button>`))
                 }
             `;
             return card;
