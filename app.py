@@ -158,7 +158,7 @@ users = {
             'foto_profil': FOTO_PROFIL_DEFAULT
     },
     'afrizal': {
-                'username': 'afrizalmustaqimm',
+                'username': 'afrizalmustaqim',
                 'password': 'afrizalmustaqim',
                 'role': 'siswa',
                 'email': 'afrizal@sekolah.sch.id',
