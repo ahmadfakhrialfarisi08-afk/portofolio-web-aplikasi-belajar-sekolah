@@ -1458,7 +1458,7 @@ def api_ai_chat():
 # ----------------------------------------------------
 @app.route('/guru')
 @app.route('/daftar_guru.html')
-def daftar_guru():
+def halaman_daftar_guru():
     if 'user' not in session:
         return redirect(url_for('login'))
     return render_template('daftar_guru.html', username=session['user']['nama'])
