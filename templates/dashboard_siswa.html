@@ -3761,6 +3761,36 @@
         </div>
     </div>
 
+    <!-- Modal "Detail Penilaian Guru" — muncul saat kartu guru di Daftar Guru di-klik
+         (bukan tombol "Beri Saran" di dalamnya). Menampilkan rata-rata bintang per
+         aspek (Penjelasan Materi, Keadilan Nilai, Komunikasi) beserta total siswa
+         yang sudah menilai -- dihitung dari data yang sama dengan yang dipakai
+         renderDaftarGuru() untuk angka X.X/5 di tiap kartu (localStorage
+         'evaluasi_guru'), jadi angkanya selalu konsisten. -->
+    <div id="modal-detail-guru" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[106] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupModalDetailGuru()">
+        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="relative bg-cyan-50 border-b border-cyan-100 p-4 sm:p-6 text-center flex-shrink-0">
+                <button onclick="tutupModalDetailGuru()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/70 hover:bg-white text-slate-500 flex items-center justify-center transition-colors" aria-label="Tutup">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <img id="detail-guru-foto" src="" alt="" class="w-16 h-16 rounded-2xl object-cover mx-auto border border-cyan-100 shadow-sm">
+                <h3 id="detail-guru-nama" class="font-extrabold text-base mt-3 leading-tight text-slate-900">-</h3>
+                <p id="detail-guru-mapel" class="text-xs text-slate-500 mt-1">-</p>
+            </div>
+
+            <div class="p-4 sm:p-6 space-y-3 overflow-y-auto">
+                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Rata-rata Penilaian Siswa</p>
+                <div id="detail-guru-aspek-list" class="space-y-2.5"></div>
+
+                <p id="detail-guru-total-menilai" class="text-[11px] text-slate-400 text-center pt-1">-</p>
+
+                <button id="detail-guru-btn-saran" type="button" class="btn-beri-saran-guru w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-comment-dots"></i> Beri Saran
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function getAccurateNow() {
             return new Date();
@@ -7190,6 +7220,98 @@
             return '';
         }
 
+        // Sama seperti hitungRatingGuru() (rata-rata gabungan buat kartu), tapi
+        // hasilnya dipecah per-aspek (Penjelasan/Keadilan/Komunikasi) buat modal
+        // detail. Skema lama (1 rating gabungan) tetap kehitung di ketiga aspek
+        // supaya data lama nggak hilang dari rata-rata.
+        function hitungRatingGuruPerAspek(namaGuru) {
+            let semua = [];
+            try { semua = JSON.parse(localStorage.getItem('evaluasi_guru') || '[]'); } catch (e) { semua = []; }
+            const milikGuru = semua.filter(x => x.guruNama === namaGuru);
+            const jumlah = milikGuru.length;
+            if (jumlah === 0) return { penjelasan: null, keadilan: null, komunikasi: null, jumlah: 0 };
+
+            const jumlahkan = (kunci) => milikGuru.reduce((total, x) => {
+                const nilai = (typeof x.ratingPenjelasan === 'number') ? x[kunci] : (x.rating || 0);
+                return total + nilai;
+            }, 0);
+
+            return {
+                penjelasan: jumlahkan('ratingPenjelasan') / jumlah,
+                keadilan: jumlahkan('ratingKeadilan') / jumlah,
+                komunikasi: jumlahkan('ratingKomunikasi') / jumlah,
+                jumlah
+            };
+        }
+
+        // Render 5 ikon bintang (read-only) sesuai rata-rata: penuh kalau sisanya
+        // >= 0.75, setengah kalau >= 0.25, sisanya bintang kosong. null (belum ada
+        // yang menilai) dirender 5 bintang kosong semua.
+        function renderBintangTampilan(rata) {
+            let html = '';
+            for (let i = 1; i <= 5; i++) {
+                const sisa = rata === null ? -1 : rata - (i - 1);
+                if (sisa >= 0.75) html += '<i class="fa-solid fa-star"></i>';
+                else if (sisa >= 0.25) html += '<i class="fa-solid fa-star-half-stroke"></i>';
+                else html += '<i class="fa-regular fa-star"></i>';
+            }
+            return html;
+        }
+
+        // Modal "Detail Penilaian Guru": dipicu klik di kartu guru (area foto/info),
+        // BUKAN tombol "Beri Saran" -- tombol itu punya event.stopPropagation()
+        // sendiri di renderDaftarGuru() supaya kedua aksi ini gak saling tabrak.
+        function bukaModalDetailGuru(idGuru) {
+            const g = daftarGuruSekolah.find(x => x.id === idGuru);
+            if (!g) return;
+            const r = hitungRatingGuruPerAspek(g.nama);
+
+            const elFoto = document.getElementById('detail-guru-foto');
+            if (elFoto) { elFoto.src = g.foto; elFoto.alt = g.nama; }
+            const elNama = document.getElementById('detail-guru-nama');
+            if (elNama) elNama.innerText = g.nama;
+            const elMapel = document.getElementById('detail-guru-mapel');
+            if (elMapel) elMapel.innerText = g.mapel;
+
+            const aspekList = [
+                { label: 'Penjelasan Materi', nilai: r.penjelasan },
+                { label: 'Keadilan Nilai', nilai: r.keadilan },
+                { label: 'Komunikasi', nilai: r.komunikasi }
+            ];
+            const elAspek = document.getElementById('detail-guru-aspek-list');
+            if (elAspek) {
+                elAspek.innerHTML = aspekList.map(a => `
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-xs font-semibold text-slate-600">${a.label}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-amber-400 text-sm tracking-tight">${renderBintangTampilan(a.nilai)}</span>
+                            <span class="text-xs font-bold text-slate-900 w-7 text-right">${a.nilai !== null ? a.nilai.toFixed(1) : '-'}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            const elTotal = document.getElementById('detail-guru-total-menilai');
+            if (elTotal) {
+                elTotal.innerText = r.jumlah === 0
+                    ? 'Belum ada siswa yang menilai guru ini.'
+                    : `${r.jumlah} siswa sudah memberi penilaian.`;
+            }
+
+            const btnSaran = document.getElementById('detail-guru-btn-saran');
+            if (btnSaran) btnSaran.onclick = () => { tutupModalDetailGuru(); bukaModalSaranGuru(g.id); };
+
+            const modal = document.getElementById('modal-detail-guru');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function tutupModalDetailGuru() {
+            const modal = document.getElementById('modal-detail-guru');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
         function renderDaftarGuru() {
             const grid = document.getElementById('grid-daftar-guru');
             const emptyState = document.getElementById('guru-kosong-state');
@@ -7219,7 +7341,7 @@
                     : `<span class="text-[10px] text-slate-400 font-semibold">Belum ada rating</span>`;
                 const badgeHtml = badgeStatusGuru(r.rata);
                 return `
-                <div class="guru-card-reveal mb-6 break-inside-avoid" style="transition-delay: ${(i % 9) * 70}ms">
+                <div class="guru-card-reveal mb-6 break-inside-avoid cursor-pointer" style="transition-delay: ${(i % 9) * 70}ms" onclick="bukaModalDetailGuru(${g.id})" role="button" tabindex="0" aria-label="Lihat detail penilaian ${g.nama}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();bukaModalDetailGuru(${g.id});}">
                     <div class="relative rounded-3xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100 ${v.tinggi} group">
                         <img src="${g.foto}" class="w-full h-full object-cover ${v.posisi} group-hover:scale-105 transition-transform duration-500" alt="${g.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(g.nama)}&background=e0e7ff&color=3730a3&size=500'">
                     </div>
@@ -7232,7 +7354,7 @@
                             ${badgeHtml}
                         </div>
                         <span class="inline-block mt-2 px-2.5 py-1 bg-blue-50/90 text-blue-700 text-[10px] font-bold rounded-lg border border-blue-100">Mengajar Kelas ${g.kelas}</span>
-                        <button type="button" onclick="bukaModalSaranGuru(${g.id})" class="btn-beri-saran-guru mt-2 w-full py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1.5">
+                        <button type="button" onclick="event.stopPropagation(); bukaModalSaranGuru(${g.id})" class="btn-beri-saran-guru mt-2 w-full py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1.5">
                             <i class="fa-solid fa-comment-dots"></i> Beri Saran
                         </button>
                     </div>
