@@ -8,7 +8,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js"></script>
     <!-- OCR (Ekstraksi Teks Otomatis) untuk verifikasi foto bukti prestasi -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- CATATAN OPTIMASI (halaman terasa berat): Tesseract.js dulu dimuat di sini
+         lewat <script src> biasa, jadi library OCR (beberapa MB, jarang dipakai)
+         ke-download & ke-parse browser di SETIAP siswa buka dashboard, walau
+         yang benar-benar upload foto prestasi cuma sebagian kecil. Sekarang
+         TIDAK dimuat otomatis lagi -- baru di-fetch on-demand lewat
+         muatTesseractJikaBelum() persis sebelum jalankanOCRFotoPrestasi()
+         dipanggil (lihat bagian OCR di bawah), jadi mayoritas siswa yang
+         nggak lagi ngajuin prestasi nggak ikut nanggung beratnya sama sekali. -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
     
@@ -10684,6 +10691,26 @@
         let teksOCRFotoPrestasiTerkini = null;
         let ocrFotoPrestasiSedangProses = false;
 
+        // Lazy-load Tesseract.js: script <script src> baru disisipkan ke <head>
+        // pas fungsi ini dipanggil pertama kali (dari jalankanOCRFotoPrestasi()),
+        // BUKAN otomatis pas halaman dibuka -- ini yang bikin dashboard jadi
+        // jauh lebih ringan buat siswa yang nggak lagi ngajuin prestasi.
+        // _janjiTesseract di-cache supaya kalau dipanggil berkali-kali (mis. ganti
+        // foto beberapa kali) library cuma benar-benar di-download sekali saja.
+        let _janjiTesseract = null;
+        function muatTesseractJikaBelum() {
+            if (typeof Tesseract !== 'undefined') return Promise.resolve();
+            if (_janjiTesseract) return _janjiTesseract;
+            _janjiTesseract = new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+                s.onload = () => resolve();
+                s.onerror = () => { _janjiTesseract = null; reject(new Error('Gagal memuat library OCR')); };
+                document.head.appendChild(s);
+            });
+            return _janjiTesseract;
+        }
+
         function resetPanelOCRPrestasi() {
             teksOCRFotoPrestasiTerkini = null;
             ocrFotoPrestasiSedangProses = false;
@@ -10710,6 +10737,10 @@
             elLoading.classList.remove('hidden');
 
             try {
+                // Baru fetch library-nya sekarang (kalau belum pernah), jadi
+                // siswa yang nggak pernah nyentuh fitur prestasi nggak pernah
+                // ikut download Tesseract.js sama sekali.
+                await muatTesseractJikaBelum();
                 if (typeof Tesseract === 'undefined') throw new Error('Library OCR belum termuat');
 
                 // 'ind+eng' -- sertifikat/piala di Indonesia umumnya campuran teks
