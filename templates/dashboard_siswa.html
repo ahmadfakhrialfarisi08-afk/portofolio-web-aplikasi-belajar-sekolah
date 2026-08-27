@@ -2613,6 +2613,11 @@
                                     <input type="file" id="input-ganti-foto" accept="image/*" class="hidden" onchange="updateProfilePhoto(event)">
                                 </label>
                             </div>
+                            <div class="pt-1">
+                                <button type="button" onclick="bukaModalAturSosmed()" class="block w-full text-center py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-xl shadow-sm transition-all">
+                                    <i class="fa-solid fa-share-nodes mr-1"></i> Atur Sosial Media
+                                </button>
+                            </div>
                         </div>
 
                         <div class="px-4 pb-4 space-y-3">
@@ -3816,6 +3821,31 @@
                     <i class="fa-solid fa-user-plus text-[10px]"></i> <span>Tambah Teman</span>
                 </button>
                 <p id="idcard-pesan" class="hidden text-[10px] text-center text-slate-400"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal "Atur Sosial Media" -- dipicu tombol di dropdown profil sendiri
+         (pojok kanan atas). Isinya input link/username per platform, dipakai
+         balik oleh renderSosmedIdCard() saat siswa LAIN membuka ID Card kita
+         lewat "Cari Teman". Dimuat dari & disimpan ke /api/profil/sosmed,
+         pola sama seperti /api/profil/foto & /api/profil/border. -->
+    <div id="modal-atur-sosmed" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[108] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupModalAturSosmed()">
+        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 shrink-0">
+                <h3 class="font-extrabold text-slate-900">Atur Sosial Media</h3>
+                <button onclick="tutupModalAturSosmed()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors" aria-label="Tutup">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+            <div class="p-4 sm:p-5 space-y-3 overflow-y-auto">
+                <p class="text-xs text-slate-400">Isi username/link kamu. Kosongkan yang tidak dipakai — ikon itu otomatis tidak tampil di profil kamu.</p>
+                <div id="form-atur-sosmed" class="space-y-2.5"></div>
+            </div>
+            <div class="p-4 sm:p-5 border-t border-slate-100 shrink-0">
+                <button id="btn-simpan-sosmed" onclick="simpanSosmedSaya()" class="w-full py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-floppy-disk text-[10px]"></i> <span>Simpan</span>
+                </button>
             </div>
         </div>
     </div>
@@ -5723,6 +5753,89 @@
                 </a>`;
             }).join('');
             box.classList.remove('hidden');
+        }
+
+        // ===== Modal "Atur Sosial Media" (profil sendiri) =====
+        // Dipicu dari dropdown profil pojok kanan atas. Formnya dibangun
+        // dinamis dari daftar PLATFORM_SOSMED_IDCARD yang sama dengan yang
+        // dipakai untuk menampilkan sosmed di ID Card teman -- jadi kalau
+        // suatu saat ada platform baru ditambahkan, cukup ubah di satu
+        // tempat itu saja.
+        async function bukaModalAturSosmed() {
+            // Tutup dropdown profil dulu biar tidak numpuk (langsung manipulasi
+            // class, bukan panggil toggleProfileDropdown() yang butuh objek
+            // event asli dari klik pemicunya).
+            const dropdown = document.getElementById('profile-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+
+            const form = document.getElementById('form-atur-sosmed');
+            form.innerHTML = Object.entries(PLATFORM_SOSMED_IDCARD).map(([platform, p]) => `
+                <label class="flex items-center gap-2.5">
+                    <span class="w-9 h-9 rounded-lg ${p.warna} text-white flex items-center justify-center shrink-0">
+                        <i class="${p.ikon} text-sm"></i>
+                    </span>
+                    <input type="text" id="sosmed-input-${platform}" placeholder="${p.label} (username atau link)" class="flex-1 min-w-0 px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/40">
+                </label>
+            `).join('');
+
+            const modal = document.getElementById('modal-atur-sosmed');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            // Muat data yang sudah tersimpan sebelumnya dari server (best-effort
+            // -- kalau endpoint/datanya belum ada, form dibiarkan kosong saja,
+            // bukan dianggap error yang mengganggu).
+            try {
+                const res = await fetch('/api/profil/sosmed');
+                const json = await res.json().catch(() => null);
+                const sosmedTersimpan = (json && json.sosmed) || {};
+                Object.entries(sosmedTersimpan).forEach(([platform, nilai]) => {
+                    const input = document.getElementById(`sosmed-input-${platform}`);
+                    if (input) input.value = nilai;
+                });
+            } catch (e) {
+                console.error('Gagal memuat sosial media tersimpan:', e);
+            }
+        }
+
+        function tutupModalAturSosmed() {
+            const modal = document.getElementById('modal-atur-sosmed');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        async function simpanSosmedSaya() {
+            const btn = document.getElementById('btn-simpan-sosmed');
+            const sosmed = {};
+            Object.keys(PLATFORM_SOSMED_IDCARD).forEach(platform => {
+                const input = document.getElementById(`sosmed-input-${platform}`);
+                const nilai = input ? input.value.trim() : '';
+                if (nilai) sosmed[platform] = nilai;
+            });
+
+            const teksAsli = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[10px]"></i> <span>Menyimpan...</span>';
+
+            try {
+                const res = await fetch('/api/profil/sosmed', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sosmed })
+                });
+                const json = await res.json().catch(() => null);
+                if (!res.ok || !json || !json.success) {
+                    throw new Error('Respons server tidak sukses');
+                }
+                triggerDynamicIsland('Sosial media berhasil disimpan!');
+                tutupModalAturSosmed();
+            } catch (e) {
+                console.error('Gagal menyimpan sosial media ke server:', e);
+                triggerDynamicIsland('Gagal menyimpan, coba lagi ya.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = teksAsli;
+            }
         }
 
         // Karya (portofolio) teman -- dibangun dinamis dari profil.karya.
