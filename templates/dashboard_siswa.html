@@ -3737,42 +3737,48 @@
              sm ke atas. Di layar HP sempit (di bawah sm) tetap flex-col biar
              tidak kepepet, sisanya sama persis (id & fungsi JS tidak berubah). -->
         <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md sm:max-w-2xl lg:max-w-3xl overflow-hidden max-h-[92vh] flex flex-col sm:flex-row">
-            <div class="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-white border-b sm:border-b-0 sm:border-r border-blue-100 p-5 sm:p-8 pt-12 sm:pt-14 text-center overflow-hidden shrink-0 sm:w-64 flex flex-col items-center justify-start">
+            <div class="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-white border-b sm:border-b-0 sm:border-r border-blue-100 p-5 sm:p-8 text-center overflow-hidden shrink-0 sm:w-64 flex flex-col items-center justify-center">
                 <button onclick="tutupIdCardTeman()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/70 hover:bg-white text-slate-500 flex items-center justify-center transition-colors z-10" aria-label="Tutup">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
 
-                <!-- Kartu identitas: foto+border, nama (dengan efek nama),
-                     title badge, dan kelas. Semua dipetakan dari
-                     profil.border lewat renderIdCardTeman(). -->
+                <!-- Kartu identitas: cuma foto+border di sini. Nama, title
+                     badge, dan kelas dipindah ke baris atas kolom kanan
+                     (sebaris dengan ikon sosmed) -- lihat #idcard-header-row
+                     di bawah. Semua tetap dipetakan dari profil.border lewat
+                     renderIdCardTeman(), cuma lokasi elemennya yang beda. -->
                 <div class="profile-wrapper w-28 h-28 sm:w-32 sm:h-32 mx-auto relative">
                     <img id="idcard-avatar-foto" src="" class="user-avatar" alt="Avatar">
                     <img id="idcard-avatar-border" src="" class="user-border" alt="Border">
                 </div>
-                <h3 id="idcard-nama" class="font-extrabold text-xl sm:text-2xl mt-3 leading-tight text-slate-900">-</h3>
-                <span id="idcard-title-badge" class="inline-block mt-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold title-badge-default">-</span>
-                <p id="idcard-kelas" class="text-xs text-slate-500 mt-1.5">-</p>
             </div>
             <div class="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
-                <!-- Kotak Sosmed (kuning) -- baris PALING ATAS kolom kanan,
-                     rata kanan, mengarah ke ujung kanan atas kartu -- persis
-                     arah panah kuning di sketsa (dipindah dari sebelah foto
-                     ke sini). Selalu tampil di posisi ini baik pas lihat ID
-                     Card sendiri maupun teman (tidak bergantung ke Bio
-                     Singkat, yang cuma muncul kalau punya sendiri).
-                     Dibangun dinamis dari profil.sosmed lewat
-                     renderSosmedIdCard(); ikon = link ke sosmed asli (klik
-                     langsung buka di tab baru). Otomatis disembunyikan
-                     ("hidden") kalau siswa itu belum isi sosmed apa pun. -->
-                <div id="idcard-sosmed-box" class="hidden">
-                    <div id="idcard-sosmed" class="flex items-center justify-end flex-wrap gap-2"></div>
+                <!-- Baris atas kolom kanan: nama+badge+kelas di kiri,
+                     ikon sosmed di kanan -- sebaris, dengan jarak (gap-3)
+                     di antara keduanya supaya tidak mepet. Nama dkk SELALU
+                     tampil (baik ID Card sendiri maupun teman); ikon sosmed
+                     tetap punya logic hidden sendiri lewat #idcard-sosmed-box
+                     kalau siswa belum isi sosmed apa pun -- jadi kalau
+                     sosmed kosong, nama dkk tetap rapi sendirian di kiri. -->
+                <div class="flex items-start justify-between gap-3">
+                    <div class="text-left min-w-0">
+                        <h3 id="idcard-nama" class="font-extrabold text-sm sm:text-base leading-tight text-slate-900 truncate">-</h3>
+                        <span id="idcard-title-badge" class="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold title-badge-default">-</span>
+                        <p id="idcard-kelas" class="text-[11px] text-slate-500 mt-1">-</p>
+                    </div>
+                    <!-- Kotak Sosmed (kuning) -- dibangun dinamis dari
+                         profil.sosmed lewat renderSosmedIdCard(); ikon =
+                         link ke sosmed asli (klik langsung buka di tab
+                         baru). Otomatis disembunyikan ("hidden") kalau
+                         siswa itu belum isi sosmed apa pun. -->
+                    <div id="idcard-sosmed-box" class="hidden shrink-0">
+                        <div id="idcard-sosmed" class="flex items-center justify-end flex-wrap gap-2"></div>
+                    </div>
                 </div>
 
-                <!-- Bio Singkat: HANYA muncul kalau ID Card yang sedang dibuka
-                     adalah milik sendiri (status_pertemanan === 'diri_sendiri').
-                     Disembunyikan ("hidden") secara default & baru dimunculkan
-                     lewat renderIdCardTeman() saat kondisi itu terpenuhi, jadi
-                     tetap tidak nongol saat kita buka ID Card teman lain. -->
+                <!-- Bio Singkat: untuk sementara dihilangkan dulu dari
+                     tampilan ID Card sesuai permintaan (markup lama disimpan
+                     sebagai komentar biar gampang dikembalikan lagi nanti):
                 <div id="idcard-bio-wrapper" class="hidden pt-1 space-y-1.5">
                     <label class="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
                         <i class="fa-solid fa-pen-nib text-blue-600 text-[10px]"></i> Bio Singkat
@@ -3782,6 +3788,7 @@
                         <i class="fa-solid fa-floppy-disk text-[10px]"></i> Simpan Bio
                     </button>
                 </div>
+                -->
 
                 <!-- Karya: kotak khusus di bawah kotak sosmed, menampilkan
                      karya/portofolio siswa. Dibangun dinamis dari
