@@ -1860,6 +1860,25 @@
             transform: translateY(0);
         }
 
+        /* --- 5e. ID CARD (modal-id-card-teman): efek "muncul" per-bagian SAMA
+           PERSIS dengan .guru-card-reveal di Daftar Guru (opacity 0 -> 1 +
+           translateY 28px -> 0), cuma dipicu SAAT MODAL DIBUKA (bukan pas
+           discroll, karena ID Card selalu langsung penuh di layar begitu
+           modalnya nongol) -- jadi tiap bagian (header, karya, statistik,
+           skor quiz, tombol aksi) fade+geser naik satu-satu susul-menyusul
+           lewat stagger transition-delay dari JS (aktifkanRevealIdCard()),
+           bukan langsung tampil semua sekaligus. Class terpisah biar
+           Daftar Guru tidak ikut kesenggol kalau salah satu diubah nanti. */
+        .idcard-reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .idcard-reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         /* --- 5c. DAFTAR GURU DI HP: dari grid masonry (kartu numpuk 1 kolom,
            gede-gede) diubah jadi grid 4 kolom yang rapi berurutan per baris
            (baris 1 = guru ke-1 s/d 4, baris 2 = guru ke-5 s/d 8, dst), tetap
@@ -3749,7 +3768,7 @@
                      (baik ID Card sendiri maupun teman); ikon sosmed tetap
                      punya logic hidden sendiri lewat #idcard-sosmed-box
                      kalau siswa belum isi sosmed apa pun. -->
-                <div class="flex flex-wrap sm:flex-nowrap items-start justify-between gap-x-4 gap-y-2 pr-10">
+                <div class="idcard-reveal flex flex-wrap sm:flex-nowrap items-start justify-between gap-x-4 gap-y-2 pr-10">
                     <div class="flex items-center gap-3 min-w-0">
                         <div class="profile-wrapper w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 relative">
                             <img id="idcard-avatar-foto" src="" class="user-avatar" alt="Avatar">
@@ -3796,13 +3815,13 @@
                      karya/portofolio siswa. Dibangun dinamis dari
                      profil.karya lewat renderKaryaIdCard(); otomatis
                      menampilkan pesan "belum ada" kalau datanya kosong. -->
-                <div class="rounded-2xl border border-amber-100 bg-amber-50/50 p-3">
+                <div class="idcard-reveal rounded-2xl border border-amber-100 bg-amber-50/50 p-3">
                     <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2">Karya</p>
                     <div id="idcard-karya" class="grid grid-cols-3 gap-2"></div>
                     <p id="idcard-karya-kosong" class="text-[11px] text-slate-400 italic">Belum ada karya yang diunggah</p>
                 </div>
 
-                <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="idcard-reveal grid grid-cols-3 gap-2 text-center">
                     <div class="bg-slate-50 rounded-xl p-2.5">
                         <p id="idcard-poin-pg" class="text-lg font-extrabold text-slate-900">0</p>
                         <p class="text-[9px] text-slate-400 font-semibold uppercase mt-0.5">Poin PG</p>
@@ -3817,7 +3836,7 @@
                     </div>
                 </div>
 
-                <div class="space-y-1.5">
+                <div class="idcard-reveal space-y-1.5">
                     <p class="text-[11px] font-bold text-slate-600">Skor Terbaik Quiz PG</p>
                     <div class="flex items-center gap-1.5 text-[10px]">
                         <span class="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold flex-1 text-center">Easy: <span id="idcard-pg-easy">0</span></span>
@@ -3826,10 +3845,12 @@
                     </div>
                 </div>
 
-                <button id="idcard-btn-aksi" onclick="klikAksiIdCardTeman()" class="w-full py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-user-plus text-[10px]"></i> <span>Tambah Teman</span>
-                </button>
-                <p id="idcard-pesan" class="hidden text-[10px] text-center text-slate-400"></p>
+                <div class="idcard-reveal space-y-1.5">
+                    <button id="idcard-btn-aksi" onclick="klikAksiIdCardTeman()" class="w-full py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-user-plus text-[10px]"></i> <span>Tambah Teman</span>
+                    </button>
+                    <p id="idcard-pesan" class="hidden text-[10px] text-center text-slate-400"></p>
+                </div>
             </div>
         </div>
     </div>
@@ -5640,6 +5661,27 @@
         /* ---------- ID Card statistik siswa ---------- */
         let USERNAME_ID_CARD_TERBUKA = null;
 
+        // Efek "muncul" per-bagian di ID Card (header, karya, statistik, skor
+        // quiz, tombol aksi) -- SAMA PERSIS dengan .guru-card-reveal di Daftar
+        // Guru (opacity 0 -> 1 + translateY 28px -> 0), tapi dipicu saat modal
+        // dibuka, bukan saat discroll. Tiap bagian dikasih transition-delay
+        // bertingkat (stagger) biar keliatan muncul satu-satu susul-menyusul,
+        // bukan langsung tampil semua sekaligus. Class-nya dilepas & dipasang
+        // ulang tiap dipanggil (pakai reflow trick seperti animasi lain di
+        // file ini) supaya animasinya selalu replay dari awal tiap ID Card
+        // dibuka -- baik pas buka ID Card teman maupun ID Card sendiri.
+        function aktifkanRevealIdCard() {
+            const modal = document.getElementById('modal-id-card-teman');
+            if (!modal) return;
+            const bagianBagian = modal.querySelectorAll('.idcard-reveal');
+            bagianBagian.forEach((el, i) => {
+                el.classList.remove('revealed');
+                el.style.transitionDelay = `${i * 90}ms`;
+            });
+            void modal.offsetWidth; // paksa reflow, supaya transisi replay dari awal tiap dibuka
+            bagianBagian.forEach(el => el.classList.add('revealed'));
+        }
+
         async function bukaIdCardTeman(username) {
             try {
                 const res = await fetch(`/api/teman/profil/${encodeURIComponent(username)}`);
@@ -5651,6 +5693,7 @@
                 renderIdCardTeman(json.profil);
                 document.getElementById('modal-id-card-teman').classList.remove('hidden');
                 document.getElementById('modal-id-card-teman').classList.add('flex');
+                aktifkanRevealIdCard();
             } catch (e) {
                 console.error('Gagal memuat ID card teman:', e);
             }
