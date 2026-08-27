@@ -6,7 +6,6 @@
     <title>Portal Aplikasi Sekolah - Dashboard Siswa</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js"></script>
     <!-- OCR (Ekstraksi Teks Otomatis) untuk verifikasi foto bukti prestasi -->
     <!-- CATATAN OPTIMASI (halaman terasa berat): Tesseract.js dulu dimuat di sini
          lewat <script src> biasa, jadi library OCR (beberapa MB, jarang dipakai)
@@ -16,7 +15,19 @@
          muatTesseractJikaBelum() persis sebelum jalankanOCRFotoPrestasi()
          dipanggil (lihat bagian OCR di bawah), jadi mayoritas siswa yang
          nggak lagi ngajuin prestasi nggak ikut nanggung beratnya sama sekali. -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CATATAN OPTIMASI (lanjutan): Chart.js (±200KB) sebelumnya juga ikut
+         <script src> di <head> ini, padahal cuma dipakai untuk 1 grafik di tab
+         "Journey Prestasi" yang tidak semua siswa buka. Sekarang library-nya
+         dimuat on-demand lewat muatChartJsJikaBelum(), dipanggil dari
+         renderChartJourneyPrestasi() persis sebelum grafik dirender pertama
+         kali -- lihat bagian Journey Prestasi di bawah. -->
+    <!-- CATATAN OPTIMASI (lanjutan): CSS Font Awesome (ikon) dibuat non-render-blocking
+         lewat trik preload+swap di bawah ini -- browser tetap download file-nya,
+         tapi TIDAK menunda render konten halaman sambil menunggunya selesai.
+         Ini tidak mengubah kecepatan efek/animasi apa pun, cuma bikin body halaman
+         bisa mulai tampil lebih cepat sebelum font ikon selesai dimuat. -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="../static/css/border_polos.css">
@@ -5222,8 +5233,8 @@
                 row.className = 'flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 transition-colors';
                 row.innerHTML = `
                     <button class="btn-lihat-idcard profile-wrapper w-10 h-10 flex-shrink-0" title="Lihat statistik">
-                        <img src="${fotoItem}" class="user-avatar" alt="Avatar ${item.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama)}&background=e0e7ff&color=3730a3&size=120'">
-                        <img src="${borderItem.file}" class="user-border" alt="Border ${item.nama}">
+                        <img loading="lazy" decoding="async" src="${fotoItem}" class="user-avatar" alt="Avatar ${item.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama)}&background=e0e7ff&color=3730a3&size=120'">
+                        <img loading="lazy" decoding="async" src="${borderItem.file}" class="user-border" alt="Border ${item.nama}">
                     </button>
                     <button class="btn-lihat-idcard flex-1 min-w-0 text-left">
                         <p class="text-xs font-bold truncate ${efekNamaItem || 'text-slate-800'}">${item.nama}${badgeDevItem ? ' ' + badgeDevItem : ''}</p>
@@ -5306,8 +5317,8 @@
                 row.setAttribute('tabindex', '0');
                 row.innerHTML = `
                     <div class="profile-wrapper w-11 h-11 flex-shrink-0">
-                        <img src="${fotoItem}" class="user-avatar" alt="Avatar ${item.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama)}&background=e0e7ff&color=3730a3&size=120'">
-                        <img src="${borderItem.file}" class="user-border" alt="Border ${item.nama}">
+                        <img loading="lazy" decoding="async" src="${fotoItem}" class="user-avatar" alt="Avatar ${item.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama)}&background=e0e7ff&color=3730a3&size=120'">
+                        <img loading="lazy" decoding="async" src="${borderItem.file}" class="user-border" alt="Border ${item.nama}">
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-bold truncate ${efekNamaItem || 'text-slate-800'}">${item.nama}${badgeDevItem ? ' ' + badgeDevItem : ''}</p>
@@ -5572,8 +5583,8 @@
                     row.setAttribute('tabindex', '0');
                     row.innerHTML = `
                         <div class="profile-wrapper w-11 h-11 flex-shrink-0">
-                            <img src="${fotoItem}" class="user-avatar" alt="Avatar ${item.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama)}&background=e0e7ff&color=3730a3&size=120'">
-                            <img src="${borderItem.file}" class="user-border" alt="Border ${item.nama}">
+                            <img loading="lazy" decoding="async" src="${fotoItem}" class="user-avatar" alt="Avatar ${item.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama)}&background=e0e7ff&color=3730a3&size=120'">
+                            <img loading="lazy" decoding="async" src="${borderItem.file}" class="user-border" alt="Border ${item.nama}">
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-bold truncate ${efekNamaItem || 'text-slate-800'}">${item.nama}${badgeDevItem ? ' ' + badgeDevItem : ''}</p>
@@ -5928,7 +5939,7 @@
                 const gambar = k.gambar || `https://ui-avatars.com/api/?name=${encodeURIComponent(k.judul || 'Karya')}&background=fef3c7&color=92400e&size=120`;
                 const judul = k.judul || 'Karya';
                 return `<a href="${k.url || gambar}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="${judul}" class="group block rounded-lg overflow-hidden border border-amber-100 bg-white aspect-square relative">
-                    <img src="${gambar}" alt="${judul}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                    <img loading="lazy" decoding="async" src="${gambar}" alt="${judul}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
                     <span class="absolute inset-x-0 bottom-0 bg-black/50 text-white text-[9px] px-1.5 py-1 truncate">${judul}</span>
                 </a>`;
             }).join('');
@@ -6591,7 +6602,7 @@
                 teacherImageHTML = `
                     <div class="mt-3">
                         <p class="text-[11px] font-semibold text-slate-500 mb-1"><i class="fa-solid fa-image mr-1"></i> Lampiran Soal dari Guru:</p>
-                        <img src="${data.teacherImage}" class="max-h-64 rounded-xl border border-slate-200 object-contain shadow-sm" alt="Lampiran Guru">
+                        <img loading="lazy" decoding="async" src="${data.teacherImage}" class="max-h-64 rounded-xl border border-slate-200 object-contain shadow-sm" alt="Lampiran Guru">
                     </div>
                 `;
             }
@@ -6640,12 +6651,12 @@
                         <div class="mt-2">
                             <span class="text-[10px] text-slate-400">Foto Tugas Dikirim (${data.studentImages.length}):</span>
                             <div class="grid grid-cols-4 gap-1.5 mt-1">
-                                ${data.studentImages.map(src => `<img src="${src}" onclick="window.open(this.src, '_blank')" class="w-full h-14 object-cover rounded-lg border border-slate-200 shadow-sm cursor-zoom-in">`).join('')}
+                                ${data.studentImages.map(src => `<img loading="lazy" decoding="async" src="${src}" onclick="window.open(this.src, '_blank')" class="w-full h-14 object-cover rounded-lg border border-slate-200 shadow-sm cursor-zoom-in">`).join('')}
                             </div>
                         </div>`;
                 } else if (data.studentImage) {
                     // Data lama (sebelum fitur kirim banyak foto) cuma nyimpen 1 foto.
-                    studentImagePreview = `<div class="mt-2"><span class="text-[10px] text-slate-400">Foto Tugas Dikirim:</span><br><img src="${data.studentImage}" class="max-h-32 rounded-lg border mt-1 shadow-sm"></div>`;
+                    studentImagePreview = `<div class="mt-2"><span class="text-[10px] text-slate-400">Foto Tugas Dikirim:</span><br><img loading="lazy" decoding="async" src="${data.studentImage}" class="max-h-32 rounded-lg border mt-1 shadow-sm"></div>`;
                 }
                 statusActionHTML = `
                     <div class="space-y-2 text-right">
@@ -6877,7 +6888,7 @@
             container.classList.remove('hidden');
             container.innerHTML = daftarFoto.map((src, i) => `
                 <div class="relative group">
-                    <img src="${src}" class="w-full h-14 object-cover rounded-lg border border-slate-200 shadow-sm">
+                    <img loading="lazy" decoding="async" src="${src}" class="w-full h-14 object-cover rounded-lg border border-slate-200 shadow-sm">
                     <button type="button" onclick="hapusFotoTugasSementara('${taskId}', ${i})" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-600 text-white text-[10px] flex items-center justify-center shadow-md">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
@@ -7961,7 +7972,7 @@
                 return `
                 <div class="guru-card-reveal mb-6 break-inside-avoid cursor-pointer" style="transition-delay: ${(i % 9) * 70}ms" onclick="bukaModalDetailGuru(${g.id})" role="button" tabindex="0" aria-label="Lihat detail penilaian ${g.nama}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();bukaModalDetailGuru(${g.id});}">
                     <div class="relative rounded-3xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100 ${v.tinggi} group">
-                        <img src="${g.foto}" class="w-full h-full object-cover ${v.posisi} group-hover:scale-105 transition-transform duration-500" alt="${g.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(g.nama)}&background=e0e7ff&color=3730a3&size=500'">
+                        <img loading="lazy" decoding="async" src="${g.foto}" class="w-full h-full object-cover ${v.posisi} group-hover:scale-105 transition-transform duration-500" alt="${g.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(g.nama)}&background=e0e7ff&color=3730a3&size=500'">
                     </div>
                     <div class="-mt-9 mx-3 relative z-10 bg-white border border-slate-200 rounded-2xl shadow-sm p-3.5 text-center">
                         <h4 class="font-bold text-slate-900 text-xs leading-tight">${g.nama}</h4>
@@ -8020,7 +8031,7 @@
                     : `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 border border-blue-100 text-[9px] font-bold flex-shrink-0"><i class="fa-solid fa-book-open"></i> Biasa</span>`;
                 return `
                 <div class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200">
-                    <img src="${g.foto}" alt="${g.nama}" class="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(g.nama)}&background=e0e7ff&color=3730a3&size=80'">
+                    <img loading="lazy" decoding="async" src="${g.foto}" alt="${g.nama}" class="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(g.nama)}&background=e0e7ff&color=3730a3&size=80'">
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-bold text-slate-800 truncate">${g.nama}</p>
                         <p class="text-[10px] text-slate-400 truncate">${g.mapel} • ${g.kelas}</p>
@@ -9248,7 +9259,7 @@
                 btn.className = `text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-${aksenKategori}-200 transition-shadow p-4 sm:p-5 flex flex-col`;
                 btn.onclick = () => pilihMapelQuiz(m.id);
                 btn.innerHTML = `
-                    <div class="w-11 h-11 rounded-xl bg-${warnaIkon}-50 text-${warnaIkon}-600 flex items-center justify-center text-lg mb-3 overflow-hidden">${m.gambar ? `<img src="${m.gambar}" alt="${m.nama}" class="w-6 h-6 object-contain">` : `<i class="fa-solid ${m.icon || 'fa-book'}"></i>`}</div>
+                    <div class="w-11 h-11 rounded-xl bg-${warnaIkon}-50 text-${warnaIkon}-600 flex items-center justify-center text-lg mb-3 overflow-hidden">${m.gambar ? `<img loading="lazy" decoding="async" src="${m.gambar}" alt="${m.nama}" class="w-6 h-6 object-contain">` : `<i class="fa-solid ${m.icon || 'fa-book'}"></i>`}</div>
                     <h3 class="font-bold text-sm text-slate-900">${m.kode ? `${m.kode} · ` : ''}${m.nama}</h3>
                     <p class="text-xs text-slate-400 mt-1 mb-3 flex-1">${m.deskripsi || ''}</p>
                     <span class="w-full py-2 bg-${aksenKategori}-600 text-white rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center justify-center gap-2">
@@ -9824,8 +9835,8 @@
                     <div class="flex items-center gap-3 min-w-0">
                         ${buatBadgeMedali(i + 1)}
                         <div class="profile-wrapper w-10 h-10 flex-shrink-0">
-                            <img src="${fotoEntri}" class="user-avatar avatar-leaderboard-zoom cursor-zoom-in transition-transform hover:scale-110" title="Klik untuk perbesar foto" alt="Avatar ${namaEntri}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120'">
-                            <img src="${borderEntri}" class="user-border" alt="Border ${namaEntri}">
+                            <img loading="lazy" decoding="async" src="${fotoEntri}" class="user-avatar avatar-leaderboard-zoom cursor-zoom-in transition-transform hover:scale-110" title="Klik untuk perbesar foto" alt="Avatar ${namaEntri}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120'">
+                            <img loading="lazy" decoding="async" src="${borderEntri}" class="user-border" alt="Border ${namaEntri}">
                         </div>
                         <div class="min-w-0">
                             <p class="${kelasNamaEntri}">${namaEntri}${badgeDevEntri ? ' ' + badgeDevEntri : ''}${iniSayaSendiri ? ' <span class="text-purple-500">(Kamu)</span>' : ''}</p>
@@ -9965,8 +9976,8 @@
                     <div class="flex items-center gap-3 min-w-0">
                         ${buatBadgeMedali(i + 1)}
                         <div class="profile-wrapper w-10 h-10 flex-shrink-0">
-                            <img src="${fotoEntri}" class="user-avatar avatar-leaderboard-zoom cursor-zoom-in transition-transform hover:scale-110" title="Klik untuk perbesar foto" alt="Avatar ${namaEntri}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120'">
-                            <img src="${borderEntri}" class="user-border" alt="Border ${namaEntri}">
+                            <img loading="lazy" decoding="async" src="${fotoEntri}" class="user-avatar avatar-leaderboard-zoom cursor-zoom-in transition-transform hover:scale-110" title="Klik untuk perbesar foto" alt="Avatar ${namaEntri}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120'">
+                            <img loading="lazy" decoding="async" src="${borderEntri}" class="user-border" alt="Border ${namaEntri}">
                         </div>
                         <div class="min-w-0">
                             <p class="${kelasNamaEntri}">${namaEntri}${badgeDevEntri ? ' ' + badgeDevEntri : ''}${iniSayaSendiri ? ' <span class="text-indigo-500">(Kamu)</span>' : ''}</p>
@@ -10075,8 +10086,8 @@
             toast.innerHTML = `
                 <div class="flex items-start gap-3">
                     <div class="profile-wrapper w-10 h-10 flex-shrink-0">
-                        <img src="${fotoPenikung}" class="user-avatar" alt="Avatar ${entri.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120'">
-                        <img src="${borderPenikung}" class="user-border" alt="Border ${entri.nama}">
+                        <img loading="lazy" decoding="async" src="${fotoPenikung}" class="user-avatar" alt="Avatar ${entri.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120'">
+                        <img loading="lazy" decoding="async" src="${borderPenikung}" class="user-border" alt="Border ${entri.nama}">
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-extrabold text-slate-900 dark:text-slate-100">😱 Kamu Ditikung di Leaderboard Essay!</p>
@@ -10347,8 +10358,8 @@
             toast.innerHTML = `
                 <div class="flex items-start gap-3">
                     <div class="profile-wrapper w-10 h-10 flex-shrink-0">
-                        <img src="${fotoPenikung}" class="user-avatar" alt="Avatar ${entri.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120'">
-                        <img src="${borderPenikung}" class="user-border" alt="Border ${entri.nama}">
+                        <img loading="lazy" decoding="async" src="${fotoPenikung}" class="user-avatar" alt="Avatar ${entri.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120'">
+                        <img loading="lazy" decoding="async" src="${borderPenikung}" class="user-border" alt="Border ${entri.nama}">
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-extrabold text-slate-900 dark:text-slate-100">😱 Kamu Ditikung di Leaderboard!</p>
@@ -10562,6 +10573,25 @@
         let kelasAktifJourneyPrestasi = 'XII';
         let chartJourneyPrestasi = null;
 
+        // Lazy-load Chart.js: sama seperti pola muatTesseractJikaBelum() di bawah --
+        // library-nya (±200KB) baru benar-benar di-download pas siswa pertama kali
+        // buka tab "Journey Prestasi" yang butuh grafik, BUKAN otomatis di setiap
+        // halaman dashboard dibuka. _janjiChartJs di-cache supaya cuma di-download
+        // sekali walau tabnya dibuka-tutup berkali-kali.
+        let _janjiChartJs = null;
+        function muatChartJsJikaBelum() {
+            if (typeof Chart !== 'undefined') return Promise.resolve();
+            if (_janjiChartJs) return _janjiChartJs;
+            _janjiChartJs = new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js';
+                s.onload = () => resolve();
+                s.onerror = () => { _janjiChartJs = null; reject(new Error('Gagal memuat library grafik')); };
+                document.head.appendChild(s);
+            });
+            return _janjiChartJs;
+        }
+
         function setTabJourneyPrestasi(kodeKelas) {
             kelasAktifJourneyPrestasi = kodeKelas;
             document.querySelectorAll('.tab-journey-kelas').forEach(btn => {
@@ -10611,7 +10641,14 @@
 
         function renderChartJourneyPrestasi(items) {
             const canvas = document.getElementById('chart-journey-prestasi');
-            if (!canvas || typeof Chart === 'undefined') return;
+            if (!canvas) return;
+            if (typeof Chart === 'undefined') {
+                // Chart.js belum ke-download -- muat dulu, lalu render ulang begitu siap.
+                muatChartJsJikaBelum()
+                    .then(() => renderChartJourneyPrestasi(items))
+                    .catch(() => {}); // gagal muat grafik tidak boleh menghentikan halaman
+                return;
+            }
 
             // Bucket poin per bulan, urut mulai dari bulan awal tahun ajaran (Juli) s/d Juni.
             const labelBulan = ['Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'];
@@ -10861,8 +10898,8 @@
                     <div class="flex items-center gap-3 min-w-0">
                         ${buatBadgeMedali(i + 1)}
                         <div class="profile-wrapper w-10 h-10 flex-shrink-0">
-                            <img src="${profil.foto}" class="user-avatar" alt="Avatar ${entri.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120'">
-                            <img src="${profil.borderFile}" class="user-border" alt="Border ${entri.nama}">
+                            <img loading="lazy" decoding="async" src="${profil.foto}" class="user-avatar" alt="Avatar ${entri.nama}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120'">
+                            <img loading="lazy" decoding="async" src="${profil.borderFile}" class="user-border" alt="Border ${entri.nama}">
                         </div>
                         <div class="min-w-0">
                             <p class="${kelasNamaClass}">${entri.nama}${profil.badgeDevHtml ? ' ' + profil.badgeDevHtml : ''}${iniSayaSendiri ? ' <span class="text-purple-500">(Kamu)</span>' : ''}</p>
@@ -10924,7 +10961,7 @@
                     row.className = 'prestasi-siswa-card-reveal flex items-center gap-3 p-2.5 rounded-xl border border-slate-200/80';
                     row.style.transitionDelay = `${(i % 9) * 70}ms`;
                     row.innerHTML = `
-                        <img src="${item.foto}" title="Klik untuk perbesar" class="thumb-bukti-prestasi-leaderboard w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-slate-200 cursor-zoom-in" alt="Bukti ${item.judul}">
+                        <img loading="lazy" decoding="async" src="${item.foto}" title="Klik untuk perbesar" class="thumb-bukti-prestasi-leaderboard w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-slate-200 cursor-zoom-in" alt="Bukti ${item.judul}">
                         <div class="flex-1 min-w-0">
                             <p class="text-xs font-bold text-slate-900 truncate">${item.judul}</p>
                             <p class="text-[10px] text-slate-400 mt-0.5">${item.jenis === 'piala' ? 'Piala' : 'Sertifikat'} &middot; +${hitungPoinPrestasi(item)} poin</p>
@@ -11767,7 +11804,7 @@
             card.innerHTML = `
                 <div class="profile-wrapper w-12 h-12 sm:w-20 sm:h-20 mb-2 sm:mb-3 relative">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23000'/%3E%3C/svg%3E" class="user-avatar" alt="Preview Avatar">
-                    <img src="${border.file}" class="user-border ${!terbuka ? 'grayscale' : ''}" alt="Border_${border.nama}">
+                    <img loading="lazy" decoding="async" src="${border.file}" class="user-border ${!terbuka ? 'grayscale' : ''}" alt="Border_${border.nama}">
                     ${!terbuka ? `<div class="absolute inset-0 flex items-center justify-center ${siapDiklaim ? 'bg-emerald-600/30' : 'bg-slate-900/40'} rounded-full"><i class="fa-solid ${siapDiklaim ? 'fa-unlock' : 'fa-lock'} text-[10px] sm:text-lg text-white"></i></div>` : ''}
                 </div>
                 <h4 class="font-bold text-[11px] sm:text-sm text-slate-900 leading-tight">${border.nama}</h4>
@@ -11868,7 +11905,7 @@
                 const row = document.createElement('div');
                 row.className = 'flex items-center gap-4 p-3 rounded-xl border border-slate-200/80';
                 row.innerHTML = `
-                    <img src="${item.foto}" title="Klik untuk perbesar" class="thumb-bukti-prestasi w-14 h-14 rounded-lg object-cover flex-shrink-0 border border-slate-200" alt="Bukti ${item.judul}">
+                    <img loading="lazy" decoding="async" src="${item.foto}" title="Klik untuk perbesar" class="thumb-bukti-prestasi w-14 h-14 rounded-lg object-cover flex-shrink-0 border border-slate-200" alt="Bukti ${item.judul}">
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-bold text-slate-900 truncate">${item.judul}</p>
                         <p class="text-[11px] text-slate-400">${item.jenis === 'piala' ? 'Piala' : 'Sertifikat'} &middot; diajukan ${item.tanggalAjukan}</p>
