@@ -3730,8 +3730,14 @@
     <!-- ID CARD: muncul saat nama siswa di hasil pencarian "Cari Teman" diklik,
          menampilkan identitas + statistik quiz siswa tersebut -->
     <div id="modal-id-card-teman" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[106] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupIdCardTeman()">
-        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md sm:max-w-lg overflow-hidden max-h-[92vh] flex flex-col">
-            <div class="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-white border-b border-blue-100 p-5 sm:p-8 text-center overflow-hidden shrink-0">
+        <!-- Layout kartu diubah jadi LANDSCAPE (melebar ke samping, bukan
+             menumpuk ke bawah): kolom kiri = identitas (foto+border, kotak
+             sosmed kuning, nama+efek, title, kelas), kolom kanan = bio/karya/
+             statistik/tombol aksi, berdampingan lewat flex-row mulai layar
+             sm ke atas. Di layar HP sempit (di bawah sm) tetap flex-col biar
+             tidak kepepet, sisanya sama persis (id & fungsi JS tidak berubah). -->
+        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md sm:max-w-2xl lg:max-w-3xl overflow-hidden max-h-[92vh] flex flex-col sm:flex-row">
+            <div class="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-white border-b sm:border-b-0 sm:border-r border-blue-100 p-5 sm:p-8 text-center overflow-hidden shrink-0 sm:w-64 flex flex-col items-center justify-center">
                 <button onclick="tutupIdCardTeman()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/70 hover:bg-white text-slate-500 flex items-center justify-center transition-colors z-10" aria-label="Tutup">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
@@ -3759,7 +3765,7 @@
                 <span id="idcard-title-badge" class="inline-block mt-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold title-badge-default">-</span>
                 <p id="idcard-kelas" class="text-xs text-slate-500 mt-1.5">-</p>
             </div>
-            <div class="p-4 sm:p-6 space-y-4 overflow-y-auto">
+            <div class="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
                 <!-- Bio Singkat: HANYA muncul kalau ID Card yang sedang dibuka
                      adalah milik sendiri (status_pertemanan === 'diri_sendiri').
                      Disembunyikan ("hidden") secara default & baru dimunculkan
