@@ -3736,7 +3736,7 @@
              dengan nama, bukan foto besar terpisah di kolom sendiri).
              Di bawah header baru karya/statistik/tombol aksi, full width.
              id & fungsi JS tidak berubah, cuma lokasi elemennya. -->
-        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md sm:max-w-lg overflow-hidden max-h-[92vh] flex flex-col">
+        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md sm:max-w-xl lg:max-w-2xl overflow-hidden max-h-[92vh] flex flex-col">
             <div class="relative p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
                 <button onclick="tutupIdCardTeman()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors z-10" aria-label="Tutup">
                     <i class="fa-solid fa-xmark text-xs"></i>
@@ -3749,7 +3749,7 @@
                      (baik ID Card sendiri maupun teman); ikon sosmed tetap
                      punya logic hidden sendiri lewat #idcard-sosmed-box
                      kalau siswa belum isi sosmed apa pun. -->
-                <div class="flex items-start justify-between gap-3 pr-10">
+                <div class="flex flex-wrap sm:flex-nowrap items-start justify-between gap-x-4 gap-y-2 pr-10">
                     <div class="flex items-center gap-3 min-w-0">
                         <div class="profile-wrapper w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 relative">
                             <img id="idcard-avatar-foto" src="" class="user-avatar" alt="Avatar">
@@ -3768,9 +3768,13 @@
                          profil.sosmed lewat renderSosmedIdCard(); ikon =
                          link ke sosmed asli (klik langsung buka di tab
                          baru). Otomatis disembunyikan ("hidden") kalau
-                         siswa itu belum isi sosmed apa pun. -->
-                    <div id="idcard-sosmed-box" class="hidden shrink-0">
-                        <div id="idcard-sosmed" class="flex items-center justify-end flex-wrap gap-2"></div>
+                         siswa itu belum isi sosmed apa pun. Di layar sempit
+                         (di bawah sm, gara-gara flex-wrap di atas) baris ini
+                         otomatis turun ke bawah nama & rata kiri (bukan
+                         numpuk dempet); di layar sm ke atas tetap sebaris
+                         rata kanan seperti biasa. -->
+                    <div id="idcard-sosmed-box" class="hidden shrink-0 w-full sm:w-auto">
+                        <div id="idcard-sosmed" class="flex items-center flex-wrap gap-2 justify-start sm:justify-end"></div>
                     </div>
                 </div>
 
