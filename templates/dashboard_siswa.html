@@ -1871,12 +1871,19 @@
            Daftar Guru tidak ikut kesenggol kalau salah satu diubah nanti. */
         .idcard-reveal {
             opacity: 0;
-            transform: translateY(28px);
-            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(10px);
+            transition: opacity 0.22s ease-out, transform 0.22s ease-out;
         }
         .idcard-reveal.revealed {
             opacity: 1;
             transform: translateY(0);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .idcard-reveal, .idcard-reveal.revealed {
+                transition: none !important;
+                transform: none !important;
+                opacity: 1 !important;
+            }
         }
 
         /* --- 5c. DAFTAR GURU DI HP: dari grid masonry (kartu numpuk 1 kolom,
@@ -3748,7 +3755,7 @@
 
     <!-- ID CARD: muncul saat nama siswa di hasil pencarian "Cari Teman" diklik,
          menampilkan identitas + statistik quiz siswa tersebut -->
-    <div id="modal-id-card-teman" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[106] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupIdCardTeman()">
+    <div id="modal-id-card-teman" class="fixed inset-0 bg-slate-950/80 z-[106] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupIdCardTeman()">
         <!-- Layout kartu SATU KOLOM: header berisi avatar kecil + nama+badge
              +kelas sebaris di kiri, ikon sosmed di kanan -- meniru posisi
              profil kecil di topbar dashboard (avatar kecil bersebelahan
@@ -5676,7 +5683,7 @@
             const bagianBagian = modal.querySelectorAll('.idcard-reveal');
             bagianBagian.forEach((el, i) => {
                 el.classList.remove('revealed');
-                el.style.transitionDelay = `${i * 90}ms`;
+                el.style.transitionDelay = `${i * 30}ms`;
             });
             void modal.offsetWidth; // paksa reflow, supaya transisi replay dari awal tiap dibuka
             bagianBagian.forEach(el => el.classList.add('revealed'));
