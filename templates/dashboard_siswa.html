@@ -3742,18 +3742,6 @@
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
 
-                <!-- Kotak Sosmed teman (IG, TikTok, dll) -- pojok kanan atas
-                     header, sejajar avatar, persis posisi & ukuran kotak
-                     kuning di sketsa. Dibangun dinamis dari profil.sosmed
-                     lewat renderSosmedIdCard(); tiap ikon berbentuk persegi
-                     dengan warna latar sesuai warna khas platformnya
-                     masing-masing. Kotak ini otomatis disembunyikan (class
-                     "hidden") kalau siswa itu belum isi sosmed apa pun,
-                     supaya tidak nongol kotak kosong. -->
-                <div id="idcard-sosmed-box" class="hidden absolute top-12 right-3 sm:top-14 sm:right-4 bg-white/80 backdrop-blur-sm rounded-xl p-1.5 shadow-sm z-10">
-                    <div id="idcard-sosmed" class="grid grid-cols-2 gap-1.5"></div>
-                </div>
-
                 <!-- Kartu identitas: foto+border, nama (dengan efek nama),
                      title badge, dan kelas. Semua dipetakan dari
                      profil.border lewat renderIdCardTeman(). -->
@@ -3766,6 +3754,20 @@
                 <p id="idcard-kelas" class="text-xs text-slate-500 mt-1.5">-</p>
             </div>
             <div class="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
+                <!-- Kotak Sosmed (IG, TikTok, dll) -- SEKARANG di kolom kanan,
+                     baris horizontal rata kanan di paling atas, persis posisi
+                     & bentuk kotak-kotak kuning di sketsa (bukan lagi kotak
+                     kecil nempel di avatar kolom kiri). Selalu jadi elemen
+                     PALING ATAS di kolom kanan -- tidak peduli status Bio
+                     Singkat (punya sendiri/teman) -- supaya selalu sejajar
+                     dekat tombol Tutup. Dibangun dinamis dari profil.sosmed
+                     lewat renderSosmedIdCard(); ikon = link ke sosmed asli
+                     (klik langsung buka di tab baru). Otomatis disembunyikan
+                     ("hidden") kalau siswa itu belum isi sosmed apa pun. -->
+                <div id="idcard-sosmed-box" class="hidden">
+                    <div id="idcard-sosmed" class="flex items-center justify-end flex-wrap gap-2"></div>
+                </div>
+
                 <!-- Bio Singkat: HANYA muncul kalau ID Card yang sedang dibuka
                      adalah milik sendiri (status_pertemanan === 'diri_sendiri').
                      Disembunyikan ("hidden") secara default & baru dimunculkan
@@ -5751,8 +5753,8 @@
 
             kontainer.innerHTML = entri.map(([platform, nilai]) => {
                 const p = PLATFORM_SOSMED_IDCARD[platform];
-                return `<a href="${p.url(nilai)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="${p.label}" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${p.warna} text-white flex items-center justify-center shadow-sm hover:scale-105 transition-transform">
-                    <i class="${p.ikon} text-xs sm:text-sm"></i>
+                return `<a href="${p.url(nilai)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="${p.label}" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl ${p.warna} text-white flex items-center justify-center shadow-sm hover:scale-105 transition-transform">
+                    <i class="${p.ikon} text-sm sm:text-base"></i>
                 </a>`;
             }).join('');
             box.classList.remove('hidden');
