@@ -5806,7 +5806,7 @@
 
             kontainer.innerHTML = entri.map(([platform, nilai]) => {
                 const p = PLATFORM_SOSMED_IDCARD[platform];
-                return `<a href="${p.url(nilai)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="${p.label}" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl ${p.warna} text-white flex items-center justify-center shadow-sm hover:scale-105 transition-transform">
+                return `<a href="${p.url(nilai)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="${p.label}" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl ${p.warna} text-white flex items-center justify-center shadow-sm hover:shadow-lg hover:-translate-y-1 hover:scale-110 transition-all duration-200">
                     <i class="${p.ikon} text-sm sm:text-base"></i>
                 </a>`;
             }).join('');
