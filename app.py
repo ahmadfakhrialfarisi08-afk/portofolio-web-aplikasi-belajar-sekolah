@@ -82,6 +82,12 @@ BORDER_ID_ADMIN = 'admin_dev'
 # dashboard_siswa.html, supaya konsisten saat dipakai sebagai src <img>
 # dari halaman yang sama.
 FOTO_PROFIL_DEFAULT = '../static/img/foto_profil_default.jpg'
+
+# Daftar platform sosmed yang diizinkan disimpan lewat /api/profil/sosmed --
+# dicek juga di server (bukan cuma di frontend PLATFORM_SOSMED_IDCARD di
+# dashboard_siswa.html) supaya field aneh/asal tidak ikut kesimpan kalau ada
+# yang kirim request langsung ke endpoint ini.
+PLATFORM_SOSMED_DIIZINKAN = {'instagram', 'tiktok', 'youtube', 'twitter', 'facebook', 'whatsapp'}
  
 users = {
     'guru': {
@@ -1251,6 +1257,47 @@ def api_guru_hapus(id_guru):
     return jsonify(success=True)
 
 
+@app.route('/api/profil/sosmed', methods=['GET'])
+def api_profil_sosmed_get():
+    """Ambil sosial media milik akun sendiri yang sedang login, buat isi awal
+    form modal 'Atur Sosial Media' di dashboard_siswa.html supaya siswa lihat
+    lagi apa yang sudah pernah diisi sebelumnya, bukan form kosong melulu."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login.'), 401
+
+    me = session['user']['username']
+    sosmed = users.get(me, {}).get('sosmed') or {}
+    return jsonify(success=True, sosmed=sosmed)
+
+
+@app.route('/api/profil/sosmed', methods=['POST'])
+def api_profil_sosmed_post():
+    """Simpan sosial media (IG, TikTok, dll) siswa ke server -- pola sama
+    dengan /api/profil/foto & /api/profil/border di atas. Dipakai balik oleh
+    renderSosmedIdCard() saat siswa LAIN membuka ID Card kita lewat
+    'Cari Teman' (lihat /api/teman/profil/<username> di bawah)."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login.'), 401
+
+    data = request.get_json(silent=True) or {}
+    sosmed_mentah = data.get('sosmed')
+    if not isinstance(sosmed_mentah, dict):
+        return jsonify(success=False, message='Format sosmed tidak valid.'), 400
+
+    # Cuma simpan platform yang dikenal & yang isinya tidak kosong -- field
+    # yang dikosongkan siswa di form otomatis hilang dari data tersimpan.
+    sosmed_bersih = {}
+    for platform, nilai in sosmed_mentah.items():
+        if platform in PLATFORM_SOSMED_DIIZINKAN and isinstance(nilai, str) and nilai.strip():
+            sosmed_bersih[platform] = nilai.strip()[:200]
+
+    me = session['user']['username']
+    if me in users:
+        users[me]['sosmed'] = sosmed_bersih
+        _simpan_users_store()
+    return jsonify(success=True, sosmed=sosmed_bersih)
+
+
 @app.route('/api/profil/foto', methods=['POST'])
 def api_profil_foto():
     """Simpan foto profil (base64) siswa ke server -- pola sama persis dengan
@@ -1404,7 +1451,12 @@ def api_teman_profil(username):
         # belum otomatis fallback ke foto_profil_default.jpg -- tidak pernah
         # menimpa foto yang sudah diganti siswa yang bersangkutan.
         'border': u.get('border_aktif') or 'starter_pemula',
-        'foto': u.get('foto_profil') or FOTO_PROFIL_DEFAULT
+        'foto': u.get('foto_profil') or FOTO_PROFIL_DEFAULT,
+        # Sosial media yang diisi siswa itu sendiri lewat modal "Atur Sosial
+        # Media" -> disimpan lewat /api/profil/sosmed di atas. Dipetakan jadi
+        # ikon-ikon berwarna di kotak sosmed ID Card oleh renderSosmedIdCard()
+        # di dashboard_siswa.html.
+        'sosmed': u.get('sosmed') or {}
     })
  
  
