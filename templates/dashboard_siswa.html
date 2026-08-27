@@ -3742,29 +3742,32 @@
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
 
-                <!-- Baris paling atas kolom kiri: foto+border di KIRI, kotak
-                     sosmed (kuning) di KANAN, sejajar satu baris -- persis
-                     seperti yang diminta ("sejajar sama foto, baris paling
-                     atas"). Dibangun dinamis dari profil.sosmed lewat
-                     renderSosmedIdCard(); ikon = link ke sosmed asli (klik
-                     langsung buka di tab baru). Otomatis disembunyikan
-                     ("hidden") kalau siswa itu belum isi sosmed apa pun --
-                     kalau kosong, foto otomatis balik ke tengah karena cuma
-                     tersisa satu child di flex justify-center ini. -->
-                <div class="w-full flex items-start justify-center gap-3">
-                    <div class="profile-wrapper w-24 h-24 sm:w-28 sm:h-28 relative shrink-0">
-                        <img id="idcard-avatar-foto" src="" class="user-avatar" alt="Avatar">
-                        <img id="idcard-avatar-border" src="" class="user-border" alt="Border">
-                    </div>
-                    <div id="idcard-sosmed-box" class="hidden">
-                        <div id="idcard-sosmed" class="grid grid-cols-2 gap-1.5"></div>
-                    </div>
+                <!-- Kartu identitas: foto+border, nama (dengan efek nama),
+                     title badge, dan kelas. Semua dipetakan dari
+                     profil.border lewat renderIdCardTeman(). -->
+                <div class="profile-wrapper w-28 h-28 sm:w-32 sm:h-32 mx-auto relative">
+                    <img id="idcard-avatar-foto" src="" class="user-avatar" alt="Avatar">
+                    <img id="idcard-avatar-border" src="" class="user-border" alt="Border">
                 </div>
                 <h3 id="idcard-nama" class="font-extrabold text-xl sm:text-2xl mt-3 leading-tight text-slate-900">-</h3>
                 <span id="idcard-title-badge" class="inline-block mt-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold title-badge-default">-</span>
                 <p id="idcard-kelas" class="text-xs text-slate-500 mt-1.5">-</p>
             </div>
             <div class="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
+                <!-- Kotak Sosmed (kuning) -- baris PALING ATAS kolom kanan,
+                     rata kanan, mengarah ke ujung kanan atas kartu -- persis
+                     arah panah kuning di sketsa (dipindah dari sebelah foto
+                     ke sini). Selalu tampil di posisi ini baik pas lihat ID
+                     Card sendiri maupun teman (tidak bergantung ke Bio
+                     Singkat, yang cuma muncul kalau punya sendiri).
+                     Dibangun dinamis dari profil.sosmed lewat
+                     renderSosmedIdCard(); ikon = link ke sosmed asli (klik
+                     langsung buka di tab baru). Otomatis disembunyikan
+                     ("hidden") kalau siswa itu belum isi sosmed apa pun. -->
+                <div id="idcard-sosmed-box" class="hidden">
+                    <div id="idcard-sosmed" class="flex items-center justify-end flex-wrap gap-2"></div>
+                </div>
+
                 <!-- Bio Singkat: HANYA muncul kalau ID Card yang sedang dibuka
                      adalah milik sendiri (status_pertemanan === 'diri_sendiri').
                      Disembunyikan ("hidden") secara default & baru dimunculkan
@@ -5750,8 +5753,8 @@
 
             kontainer.innerHTML = entri.map(([platform, nilai]) => {
                 const p = PLATFORM_SOSMED_IDCARD[platform];
-                return `<a href="${p.url(nilai)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="${p.label}" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${p.warna} text-white flex items-center justify-center shadow-sm hover:scale-105 transition-transform">
-                    <i class="${p.ikon} text-xs sm:text-sm"></i>
+                return `<a href="${p.url(nilai)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="${p.label}" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl ${p.warna} text-white flex items-center justify-center shadow-sm hover:scale-105 transition-transform">
+                    <i class="${p.ikon} text-sm sm:text-base"></i>
                 </a>`;
             }).join('');
             box.classList.remove('hidden');
