@@ -1,0 +1,98 @@
+{
+  "guru": {
+    "username": "guru",
+    "password": "guru123",
+    "role": "guru",
+    "email": "guru@sekolah.sch.id",
+    "fullname": "Guru Pengajar",
+    "identity_number": "198501012010011001"
+  },
+  "siswa": {
+    "username": "siswa",
+    "password": "siswa123",
+    "role": "siswa",
+    "email": "ahmad.fakhrialfarisi08@gmail.com",
+    "fullname": "AHMAD FAKHRI AL FARISI",
+    "identity_number": "0051234567",
+    "kelas": "XII TKJ 3/TAV",
+    "border_aktif": "admin_dev",
+    "foto_profil": "../static/img/foto_profil_default.jpg",
+    "sosmed": {
+      "tiktok": "anjay mbar bis"
+    }
+  },
+  "staf1": {
+    "username": "staf1",
+    "password": "passstaf",
+    "role": "staf_kebersihan",
+    "email": "staf1@sekolah.sch.id",
+    "fullname": "Staf Kebersihan 01",
+    "identity_number": "STAF-001"
+  },
+  "syam": {
+    "username": "syam",
+    "password": "semBandung",
+    "role": "siswa",
+    "email": "syam@sekolah.sch.id",
+    "fullname": "SYAM KHOERATUL MUKMIN",
+    "identity_number": "0059999999",
+    "kelas": "XII TKJ 3/TAV",
+    "border_aktif": "starter_pemula",
+    "foto_profil": "../static/img/foto_profil_default.jpg"
+  },
+  "waldi": {
+    "username": "waldi",
+    "password": "waldi123",
+    "role": "siswa",
+    "email": "waldi@sekolah.sch.id",
+    "fullname": "WALDI WAHIDIN",
+    "identity_number": "0059999998",
+    "kelas": "XII TKJ 3/TAV",
+    "border_aktif": "starter_pemula",
+    "foto_profil": "../static/img/foto_profil_default.jpg"
+  },
+  "setiawan": {
+    "username": "setiawan",
+    "password": "setiawan",
+    "role": "siswa",
+    "email": "setiawan@sekolah.sch.id",
+    "fullname": "SETIAWAN SAPUTRA",
+    "identity_number": "0069999999",
+    "kelas": "XII TKJ 3/TAV",
+    "border_aktif": "starter_pemula",
+    "foto_profil": "../static/img/foto_profil_default.jpg"
+  },
+  "jibril": {
+    "username": "jibril",
+    "password": "qwerty46",
+    "role": "siswa",
+    "email": "jibril@sekolah.sch.id",
+    "fullname": "MUHAMMAD JIBRIL AL MANAFI",
+    "identity_number": "0069886099",
+    "kelas": "XII TKJ 3/TAV",
+    "border_aktif": "starter_pemula",
+    "foto_profil": "../static/img/foto_profil_default.jpg"
+  },
+  "afrizal": {
+    "username": "afrizalmustaqim",
+    "password": "afrizalmustaqim",
+    "role": "siswa",
+    "email": "afrizal@sekolah.sch.id",
+    "fullname": "AFRIZAL MUSTAQIM",
+    "identity_number": "0067989099",
+    "kelas": "XII TKJ 3/TAV",
+    "border_aktif": "starter_pemula",
+    "foto_profil": "../static/img/foto_profil_default.jpg"
+  },
+  "fadzri": {
+    "username": "fadzri",
+    "password": "fadzri123",
+    "role": "siswa",
+    "email": "fadzri@sekolah.sch.id",
+    "fullname": "MUHAMMAD FADZRI",
+    "identity_number": "0059999997",
+    "kelas": "XII TKJ 3/TAV",
+    "border_aktif": "starter_pemula",
+    "foto_profil": "../static/img/foto_profil_default.jpg"
+  }
+}
