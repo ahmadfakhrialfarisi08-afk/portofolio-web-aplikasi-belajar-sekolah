@@ -3754,6 +3754,18 @@
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
 
+                <!-- Kotak Sosmed teman (IG, TikTok, dll) -- pojok kanan atas
+                     header, sejajar avatar, persis posisi & ukuran kotak
+                     kuning di sketsa. Dibangun dinamis dari profil.sosmed
+                     lewat renderSosmedIdCard(); tiap ikon berbentuk persegi
+                     dengan warna latar sesuai warna khas platformnya
+                     masing-masing. Kotak ini otomatis disembunyikan (class
+                     "hidden") kalau siswa itu belum isi sosmed apa pun,
+                     supaya tidak nongol kotak kosong. -->
+                <div id="idcard-sosmed-box" class="hidden absolute top-12 right-3 sm:top-14 sm:right-4 bg-white/80 backdrop-blur-sm rounded-xl p-1.5 shadow-sm z-10">
+                    <div id="idcard-sosmed" class="grid grid-cols-2 gap-1.5"></div>
+                </div>
+
                 <!-- Kartu identitas: foto+border, nama (dengan efek nama),
                      title badge, dan kelas. Semua dipetakan dari
                      profil.border lewat renderIdCardTeman(). -->
@@ -3766,23 +3778,14 @@
                 <p id="idcard-kelas" class="text-xs text-slate-500 mt-1.5">-</p>
             </div>
             <div class="p-4 sm:p-6 space-y-4 overflow-y-auto">
-                <!-- Sosmed & Karya: kotak khusus tersendiri (bukan lagi
-                     mengambang di atas avatar) supaya rapi & tidak menutupi
-                     elemen lain. Sosmed dibangun dinamis dari profil.sosmed
-                     lewat renderSosmedIdCard(); Karya dari profil.karya
-                     lewat renderKaryaIdCard(). Keduanya otomatis menampilkan
-                     pesan "belum ada" kalau datanya kosong. -->
-                <div class="rounded-2xl border border-amber-100 bg-amber-50/50 p-3 space-y-3">
-                    <div>
-                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2">Sosial Media</p>
-                        <div id="idcard-sosmed" class="flex flex-wrap items-center gap-2"></div>
-                        <p id="idcard-sosmed-kosong" class="hidden text-[11px] text-slate-400 italic">Belum menambahkan sosial media</p>
-                    </div>
-                    <div class="pt-2.5 border-t border-amber-100">
-                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2">Karya</p>
-                        <div id="idcard-karya" class="grid grid-cols-3 gap-2"></div>
-                        <p id="idcard-karya-kosong" class="text-[11px] text-slate-400 italic">Belum ada karya yang diunggah</p>
-                    </div>
+                <!-- Karya: kotak khusus di bawah kotak sosmed, menampilkan
+                     karya/portofolio siswa. Dibangun dinamis dari
+                     profil.karya lewat renderKaryaIdCard(); otomatis
+                     menampilkan pesan "belum ada" kalau datanya kosong. -->
+                <div class="rounded-2xl border border-amber-100 bg-amber-50/50 p-3">
+                    <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2">Karya</p>
+                    <div id="idcard-karya" class="grid grid-cols-3 gap-2"></div>
+                    <p id="idcard-karya-kosong" class="text-[11px] text-slate-400 italic">Belum ada karya yang diunggah</p>
                 </div>
 
                 <div class="grid grid-cols-3 gap-2 text-center">
@@ -5701,25 +5704,25 @@
         };
 
         function renderSosmedIdCard(sosmed) {
+            const box = document.getElementById('idcard-sosmed-box');
             const kontainer = document.getElementById('idcard-sosmed');
-            const pesanKosong = document.getElementById('idcard-sosmed-kosong');
-            if (!kontainer) return;
+            if (!kontainer || !box) return;
 
             const entri = Object.entries(sosmed || {}).filter(([platform, nilai]) => PLATFORM_SOSMED_IDCARD[platform] && nilai);
 
             if (!entri.length) {
                 kontainer.innerHTML = '';
-                if (pesanKosong) pesanKosong.classList.remove('hidden');
+                box.classList.add('hidden');
                 return;
             }
 
-            if (pesanKosong) pesanKosong.classList.add('hidden');
             kontainer.innerHTML = entri.map(([platform, nilai]) => {
                 const p = PLATFORM_SOSMED_IDCARD[platform];
-                return `<a href="${p.url(nilai)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="${p.label}" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full ${p.warna} text-white flex items-center justify-center shadow-sm hover:scale-110 transition-transform">
+                return `<a href="${p.url(nilai)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="${p.label}" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${p.warna} text-white flex items-center justify-center shadow-sm hover:scale-105 transition-transform">
                     <i class="${p.ikon} text-xs sm:text-sm"></i>
                 </a>`;
             }).join('');
+            box.classList.remove('hidden');
         }
 
         // Karya (portofolio) teman -- dibangun dinamis dari profil.karya.
