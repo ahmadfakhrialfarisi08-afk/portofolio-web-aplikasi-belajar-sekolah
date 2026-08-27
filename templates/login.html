@@ -442,7 +442,11 @@
     }
 
     /* ===================== TRANSISI "MASUK AKUN" (diperbaiki + dipercantik) ===================== */
-    #transisi-masuk {
+    /* Dijadikan class bersama (.transisi-halaman) supaya gaya (ring, partikel, kisi,
+       gradasi biru/hijau/kuning di atas dasar gelap) ini bisa dipakai ulang persis
+       sama untuk transisi lain -- misalnya saat klik "Buat Akun Baru" -- tanpa
+       menghilangkan ciri khas transisi login yang sudah ada. */
+    .transisi-halaman {
       position: fixed; inset: 0; z-index: 60;
       background:
         radial-gradient(circle at 18% 20%, rgba(37,99,235,0.5), transparent 52%),
@@ -451,12 +455,11 @@
         linear-gradient(160deg, #0b1120 0%, #111827 55%, #0b1120 100%);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       opacity: 0; visibility: hidden; pointer-events: none;
-      transition: opacity 0.4s ease, visibility 0.4s ease;
+      transition: opacity 0.4s ease, visibility 0.4s ease, background 0.5s ease;
       overflow: hidden;
     }
-    #transisi-masuk.tampil { opacity: 1; visibility: visible; pointer-events: auto; }
+    .transisi-halaman.tampil { opacity: 1; visibility: visible; pointer-events: auto; }
     /* Saat login GAGAL, ganti nuansa gradasi jadi kemerahan (dari hijau/biru default) */
-    #transisi-masuk { transition: opacity 0.4s ease, visibility 0.4s ease, background 0.5s ease; }
     #transisi-masuk.gagal {
       background:
         radial-gradient(circle at 18% 20%, rgba(239,68,68,0.4), transparent 52%),
@@ -465,7 +468,7 @@
         linear-gradient(160deg, #1f0b0b 0%, #241010 55%, #1f0b0b 100%);
     }
     /* aksen kisi halus supaya background berasa lebih hidup, bukan gradasi polos */
-    #transisi-masuk::before {
+    .transisi-halaman::before {
       content: "";
       position: absolute; inset: 0;
       background-image:
@@ -771,14 +774,14 @@
 
     <div class="bottom-links">
       <a href="{{ url_for('lupa_password') }}" class="link">Lupa Password?</a>
-      <a href="{{ url_for('register') }}" class="link">Buat Akun Baru</a>
+      <a href="{{ url_for('register') }}" id="tautanDaftar" class="link">Buat Akun Baru</a>
     </div>
   </div>
 
 </div>
 
 <!-- Transisi setelah klik "Masuk Akun" -->
-<div id="transisi-masuk">
+<div id="transisi-masuk" class="transisi-halaman">
   <div class="transisi-cincin-wrap">
     <svg viewBox="0 0 136 136">
       <circle class="transisi-cincin-bg" cx="68" cy="68" r="61.5"/>
@@ -808,6 +811,35 @@
 
   <p class="transisi-teks" id="transisiTeks">Memverifikasi akun kamu</p>
   <p class="transisi-subteks" id="transisiSubteks">Menghubungkan ke server...</p>
+</div>
+
+<!-- Transisi setelah klik "Buat Akun Baru" -- gaya SAMA (ring, partikel, gradasi
+     biru/hijau/kuning di atas dasar gelap) supaya ciri khas transisi login tetap
+     kelihatan, cuma ikon & teks tengahnya diganti supaya sesuai konteks daftar. -->
+<div id="transisi-daftar" class="transisi-halaman">
+  <div class="transisi-cincin-wrap">
+    <svg viewBox="0 0 136 136">
+      <circle class="transisi-cincin-bg" cx="68" cy="68" r="61.5"/>
+      <circle class="transisi-cincin-isi" id="cincinDaftarIsi" cx="68" cy="68" r="61.5"/>
+    </svg>
+
+    <div class="transisi-persen" id="transisiDaftarPersen">
+      <span class="transisi-persen-angka" id="transisiDaftarAngka">0%</span>
+      <span class="transisi-persen-label">Memuat</span>
+    </div>
+
+    <div class="transisi-lencana-check tampil" id="transisiIkonDaftar">
+      <svg viewBox="0 0 60 60" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="30" cy="30" r="23" stroke="#3b82f6"/>
+        <circle cx="24" cy="25" r="6.5" stroke="#facc15"/>
+        <path d="M13 43c1.5-7 5.5-11 11-11s9.5 4 11 11" stroke="#facc15"/>
+        <path d="M40 24v12M34 30h12" stroke="#22c55e"/>
+      </svg>
+    </div>
+  </div>
+
+  <p class="transisi-teks">Menyiapkan formulir pendaftaran</p>
+  <p class="transisi-subteks" id="transisiDaftarSubteks">Menghubungkan ke halaman daftar...</p>
 </div>
 
 <script>
@@ -992,7 +1024,7 @@
 
     var KELILING_CINCIN = 2 * Math.PI * 61.5; // = keliling lingkaran r=61.5 (samakan dgn CSS stroke-dasharray)
 
-    function buatPartikel() {
+    function buatPartikel(kontainer) {
       for (var i = 0; i < 16; i++) {
         var p = document.createElement('span');
         p.className = 'transisi-partikel';
@@ -1002,12 +1034,13 @@
         p.style.left = (Math.random() * 100) + '%';
         p.style.animationDuration = (3 + Math.random() * 3) + 's';
         p.style.animationDelay = (Math.random() * 3) + 's';
-        transisiMasuk.appendChild(p);
+        kontainer.appendChild(p);
       }
     }
-    buatPartikel();
+    buatPartikel(transisiMasuk);
 
     var subteksTahap = ['Menghubungkan ke server...', 'Memeriksa data akun...', 'Hampir selesai...'];
+    var subteksTahapDaftar = ['Menyiapkan formulir...', 'Menyusun kolom pendaftaran...', 'Hampir siap...'];
 
     /* ---------- Peta nama halaman tujuan sesuai role ---------- */
     var petaHalamanRole = {
@@ -1123,6 +1156,55 @@
           }
         }
         requestAnimationFrame(langkah);
+      });
+    }
+
+    /* ---------- Transisi saat klik "Buat Akun Baru" ----------
+       Pakai ring + partikel + gradasi yang SAMA persis dengan transisi login
+       (ciri khasnya tetap), cuma ikon & teks tengahnya beda supaya nyambung
+       ke konteks pendaftaran. Progress ring di sini murni animasi (tanpa
+       nunggu server), lalu pindah ke halaman daftar. */
+    var tautanDaftar = document.getElementById('tautanDaftar');
+    var transisiDaftar = document.getElementById('transisi-daftar');
+    var cincinDaftarIsi = document.getElementById('cincinDaftarIsi');
+    var transisiDaftarAngka = document.getElementById('transisiDaftarAngka');
+    var transisiDaftarSubteks = document.getElementById('transisiDaftarSubteks');
+
+    if (tautanDaftar && transisiDaftar) {
+      buatPartikel(transisiDaftar);
+
+      tautanDaftar.addEventListener('click', function (e) {
+        e.preventDefault();
+        var tujuan = tautanDaftar.getAttribute('href');
+
+        transisiDaftar.classList.add('tampil');
+
+        var durasiDaftar = 1100;
+        var mulaiDaftar = null;
+
+        function langkahDaftar(waktu) {
+          if (!mulaiDaftar) mulaiDaftar = waktu;
+          var progres = Math.min(1, (waktu - mulaiDaftar) / durasiDaftar);
+          var persen = Math.round(progres * 100);
+
+          cincinDaftarIsi.style.strokeDashoffset = KELILING_CINCIN * (1 - progres);
+          transisiDaftarAngka.textContent = persen + '%';
+
+          var warna = warnaProgres(persen);
+          cincinDaftarIsi.style.stroke = warna;
+          cincinDaftarIsi.style.filter = 'drop-shadow(0 0 7px ' + warna + ')';
+
+          var tahap = Math.min(2, Math.floor(progres * 3));
+          transisiDaftarSubteks.textContent = subteksTahapDaftar[tahap];
+
+          if (progres < 1) {
+            requestAnimationFrame(langkahDaftar);
+          } else {
+            transisiDaftarSubteks.textContent = 'Membuka formulir...';
+            setTimeout(function () { window.location.href = tujuan; }, 280);
+          }
+        }
+        requestAnimationFrame(langkahDaftar);
       });
     }
   })();

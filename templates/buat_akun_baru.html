@@ -43,6 +43,42 @@
         .logo-wrap { opacity: 0; animation: logoMasuk 0.6s ease-out 0.15s forwards; }
         @keyframes logoMasuk { from { opacity: 0; transform: scale(0.8) rotate(-6deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
 
+        /* ===================== Popup jurusan (ganti logo statis SMK) =====================
+           Bukan lagi satu logo diam -- sekarang bergantian (siklus) menampilkan:
+           logo SMK Banjar Asri -> TKJ -> TAV -> TKR, tiap slide "pop" masuk dengan
+           efek elastis yang sama nuansanya dengan animasi lain di kartu ini. */
+        .jurusan-wrap {
+            position: relative;
+            width: 84px; height: 84px;
+            border-radius: 22px;
+            margin: 0 auto 12px auto;
+            box-shadow: 0 10px 22px -8px rgba(37,99,235,0.45);
+            opacity: 0; animation: logoMasuk 0.6s ease-out 0.15s forwards;
+            overflow: hidden;
+        }
+        .jurusan-slide {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 3px;
+            opacity: 0;
+            transform: scale(0.55) rotate(-10deg);
+            animation: jurusanSiklus 8s ease-in-out infinite;
+        }
+        .jurusan-slide.slide-sekolah { background: #ffffff; padding: 10px; animation-delay: 0s; }
+        .jurusan-slide.slide-sekolah img { width: 100%; height: 100%; object-fit: contain; }
+        .jurusan-slide.slide-tkj { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; animation-delay: 2s; }
+        .jurusan-slide.slide-tav { background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); color: #fff; animation-delay: 4s; }
+        .jurusan-slide.slide-tkr { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: #fff; animation-delay: 6s; }
+        .jurusan-slide i { font-size: 26px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15)); }
+        .jurusan-slide .jurusan-teks { font-size: 10px; font-weight: 800; letter-spacing: 0.6px; }
+        @keyframes jurusanSiklus {
+            0%   { opacity: 0; transform: scale(0.55) rotate(-10deg); }
+            3%   { opacity: 1; transform: scale(1) rotate(0deg); }
+            22%  { opacity: 1; transform: scale(1) rotate(0deg); }
+            28%  { opacity: 0; transform: scale(0.55) rotate(10deg); }
+            100% { opacity: 0; }
+        }
+
         .header-text { opacity: 0; animation: teksMasuk 0.5s ease-out 0.3s forwards; }
         @keyframes teksMasuk { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -67,6 +103,59 @@
         .btn-shine:hover::before { transform: translateX(120%); }
 
         .footer-anim { opacity: 0; animation: teksMasuk 0.5s ease-out 0.95s forwards; }
+
+        /* ===================== Transisi saat klik "Masuk di sini" =====================
+           Gaya SAMA dengan transisi di halaman Login (ring progres + partikel +
+           gradasi biru/hijau/kuning di atas dasar gelap) supaya ciri khasnya
+           konsisten di kedua halaman, cuma teks & ikon tengah disesuaikan. */
+        .transisi-halaman {
+            position: fixed; inset: 0; z-index: 60;
+            background:
+                radial-gradient(circle at 18% 20%, rgba(37,99,235,0.5), transparent 52%),
+                radial-gradient(circle at 82% 28%, rgba(34,197,94,0.42), transparent 52%),
+                radial-gradient(circle at 50% 95%, rgba(250,204,21,0.2), transparent 60%),
+                linear-gradient(160deg, #0b1120 0%, #111827 55%, #0b1120 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden; pointer-events: none;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+            overflow: hidden;
+        }
+        .transisi-halaman.tampil { opacity: 1; visibility: visible; pointer-events: auto; }
+        .transisi-halaman::before {
+            content: ""; position: absolute; inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+            background-size: 26px 26px; opacity: 0.5; z-index: 0;
+            animation: kisiGeser 22s linear infinite;
+        }
+        @keyframes kisiGeser { 0% { background-position: 0 0; } 100% { background-position: 260px 260px; } }
+
+        .transisi-partikel { position: absolute; bottom: -20px; border-radius: 50%; background: rgba(255,255,255,0.5); animation: partikelNaik linear infinite; }
+        @keyframes partikelNaik {
+            0%   { transform: translateY(0) scale(1); opacity: 0; }
+            10%  { opacity: 0.8; }
+            90%  { opacity: 0.3; }
+            100% { transform: translateY(-120vh) scale(0.4); opacity: 0; }
+        }
+
+        .transisi-cincin-wrap { position: relative; width: 148px; height: 148px; margin-bottom: 26px; z-index: 1; }
+        .transisi-cincin-wrap > svg { width: 100%; height: 100%; transform: rotate(-90deg); display: block; }
+        .transisi-cincin-bg { fill: none; stroke: rgba(255,255,255,0.22); stroke-width: 7; }
+        .transisi-cincin-isi {
+            fill: none; stroke: #facc15; stroke-width: 7; stroke-linecap: round;
+            stroke-dasharray: 386; stroke-dashoffset: 386;
+            filter: drop-shadow(0 0 7px rgba(250,204,21,0.75));
+            transition: stroke-dashoffset 0.12s linear;
+        }
+        .transisi-persen { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .transisi-persen-angka { color: #ffffff; font-size: 26px; font-weight: 800; letter-spacing: 0.5px; }
+        .transisi-persen-label { color: rgba(255,255,255,0.75); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; margin-top: -2px; }
+
+        .transisi-ikon-tengah { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; animation: ikonPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s forwards; }
+        @keyframes ikonPop { 0% { opacity: 0; transform: scale(0.3) rotate(-16deg); } 60% { opacity: 1; transform: scale(1.12) rotate(4deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+        .transisi-ikon-tengah svg { width: 54px; height: 54px; }
+
+        .transisi-teks { color: #ffffff; font-size: 15px; font-weight: 700; letter-spacing: 0.3px; text-align: center; z-index: 1; }
+        .transisi-subteks { color: rgba(255,255,255,0.82); font-size: 12.5px; margin-top: 4px; z-index: 1; min-height: 16px; }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-800 min-h-screen flex items-center justify-center p-4 overflow-hidden">
@@ -78,8 +167,22 @@
     <div class="register-card w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden p-8 space-y-6">
         
         <div class="text-center space-y-2">
-            <div class="logo-wrap w-12 h-12 rounded-2xl bg-blue-600 mx-auto flex items-center justify-center shadow-lg shadow-blue-500/30 overflow-hidden mb-3">
-                <img src="https://smkba.sch.id/storage/settings/01KSS8AQ39D852VCW0SD8XDZPA.png" alt="Logo Sekolah" class="w-full h-full object-contain p-1" />
+            <div class="jurusan-wrap">
+                <div class="jurusan-slide slide-sekolah">
+                    <img src="https://smkba.sch.id/storage/settings/01KSS8AQ39D852VCW0SD8XDZPA.png" alt="Logo SMK Banjar Asri" />
+                </div>
+                <div class="jurusan-slide slide-tkj">
+                    <i class="fa-solid fa-computer"></i>
+                    <span class="jurusan-teks">TKJ</span>
+                </div>
+                <div class="jurusan-slide slide-tav">
+                    <i class="fa-solid fa-video"></i>
+                    <span class="jurusan-teks">TAV</span>
+                </div>
+                <div class="jurusan-slide slide-tkr">
+                    <i class="fa-solid fa-car-side"></i>
+                    <span class="jurusan-teks">TKR</span>
+                </div>
             </div>
             <h2 class="header-text text-2xl font-extrabold text-slate-900">Pendaftaran Akun</h2>
             <p class="header-text text-xs text-slate-400">Isi formulir di bawah untuk membuat akun baru</p>
@@ -159,13 +262,38 @@
         <div class="footer-anim text-center border-t border-slate-100 pt-4">
             <p class="text-xs text-slate-500">
                 Sudah punya akun? 
-                <a href="{{ url_for('login') }}" class="text-blue-600 font-bold hover:underline">
+                <a href="{{ url_for('login') }}" id="tautanMasuk" class="text-blue-600 font-bold hover:underline">
                     Masuk di sini
                 </a>
             </p>
         </div>
 
     </div>
+
+    <!-- Transisi setelah klik "Masuk di sini" -- ring & gradasi senada dengan
+         transisi di halaman Login supaya berasa satu kesatuan. -->
+    <div id="transisi-masuk-login" class="transisi-halaman">
+        <div class="transisi-cincin-wrap">
+            <svg viewBox="0 0 136 136">
+                <circle class="transisi-cincin-bg" cx="68" cy="68" r="61.5"/>
+                <circle class="transisi-cincin-isi" id="cincinMasukIsi" cx="68" cy="68" r="61.5"/>
+            </svg>
+            <div class="transisi-persen">
+                <span class="transisi-persen-angka" id="transisiMasukAngka">0%</span>
+                <span class="transisi-persen-label">Memuat</span>
+            </div>
+            <div class="transisi-ikon-tengah">
+                <svg viewBox="0 0 60 60" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="30" cy="30" r="23" stroke="#3b82f6"/>
+                    <path d="M27 20l-8 10 8 10" stroke="#facc15"/>
+                    <path d="M19 30h22" stroke="#22c55e"/>
+                </svg>
+            </div>
+        </div>
+        <p class="transisi-teks">Kembali ke halaman masuk</p>
+        <p class="transisi-subteks" id="transisiMasukSubteks">Menghubungkan ke server...</p>
+    </div>
+
     <script>
         const togglePasswordBtn = document.getElementById('togglePasswordBtn');
         const passwordInput = document.getElementById('passwordInput');
@@ -177,6 +305,71 @@
             togglePasswordIcon.classList.toggle('fa-eye');
             togglePasswordIcon.classList.toggle('fa-eye-slash');
         });
+
+        /* ---------- Transisi saat klik "Masuk di sini" ---------- */
+        const tautanMasuk = document.getElementById('tautanMasuk');
+        const transisiMasukLogin = document.getElementById('transisi-masuk-login');
+        const cincinMasukIsi = document.getElementById('cincinMasukIsi');
+        const transisiMasukAngka = document.getElementById('transisiMasukAngka');
+        const transisiMasukSubteks = document.getElementById('transisiMasukSubteks');
+        const KELILING_CINCIN_MASUK = 2 * Math.PI * 61.5;
+        const subteksMasuk = ['Menghubungkan ke server...', 'Menyiapkan halaman masuk...', 'Hampir selesai...'];
+
+        function buatPartikelMasuk() {
+            for (let i = 0; i < 16; i++) {
+                const p = document.createElement('span');
+                p.className = 'transisi-partikel';
+                const ukuran = 3 + Math.random() * 5;
+                p.style.width = ukuran + 'px';
+                p.style.height = ukuran + 'px';
+                p.style.left = (Math.random() * 100) + '%';
+                p.style.animationDuration = (3 + Math.random() * 3) + 's';
+                p.style.animationDelay = (Math.random() * 3) + 's';
+                transisiMasukLogin.appendChild(p);
+            }
+        }
+        buatPartikelMasuk();
+
+        function lerpMasuk(a, b, t) { return a + (b - a) * t; }
+        function warnaProgresMasuk(persen) {
+            const merah = [239, 68, 68], kuning = [250, 204, 21], hijau = [34, 197, 94];
+            let awal, akhir, t;
+            if (persen <= 50) { awal = merah; akhir = kuning; t = persen / 50; }
+            else { awal = kuning; akhir = hijau; t = (persen - 50) / 50; }
+            const r = Math.round(lerpMasuk(awal[0], akhir[0], t));
+            const g = Math.round(lerpMasuk(awal[1], akhir[1], t));
+            const b = Math.round(lerpMasuk(awal[2], akhir[2], t));
+            return 'rgb(' + r + ',' + g + ',' + b + ')';
+        }
+
+        if (tautanMasuk) {
+            tautanMasuk.addEventListener('click', function (e) {
+                e.preventDefault();
+                const tujuan = tautanMasuk.getAttribute('href');
+                transisiMasukLogin.classList.add('tampil');
+
+                const durasi = 1100;
+                let mulai = null;
+                function langkah(waktu) {
+                    if (!mulai) mulai = waktu;
+                    const progres = Math.min(1, (waktu - mulai) / durasi);
+                    const persen = Math.round(progres * 100);
+                    cincinMasukIsi.style.strokeDashoffset = KELILING_CINCIN_MASUK * (1 - progres);
+                    transisiMasukAngka.textContent = persen + '%';
+                    const warna = warnaProgresMasuk(persen);
+                    cincinMasukIsi.style.stroke = warna;
+                    cincinMasukIsi.style.filter = 'drop-shadow(0 0 7px ' + warna + ')';
+                    const tahap = Math.min(2, Math.floor(progres * 3));
+                    transisiMasukSubteks.textContent = subteksMasuk[tahap];
+                    if (progres < 1) {
+                        requestAnimationFrame(langkah);
+                    } else {
+                        setTimeout(function () { window.location.href = tujuan; }, 280);
+                    }
+                }
+                requestAnimationFrame(langkah);
+            });
+        }
     </script>
 
 </body>
