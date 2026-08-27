@@ -3756,7 +3756,10 @@
                             <img id="idcard-avatar-border" src="" class="user-border" alt="Border">
                         </div>
                         <div class="text-left min-w-0">
-                            <h3 id="idcard-nama" class="font-extrabold text-sm sm:text-base leading-tight text-slate-900 truncate">-</h3>
+                            <div class="flex items-center gap-1 flex-wrap min-w-0">
+                                <h3 id="idcard-nama" class="font-extrabold text-sm sm:text-base leading-tight text-slate-900 truncate max-w-full">-</h3>
+                                <span id="idcard-badge-dev" class="shrink-0"></span>
+                            </div>
                             <span id="idcard-title-badge" class="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold title-badge-default">-</span>
                             <p id="idcard-kelas" class="text-[11px] text-slate-500 mt-1">-</p>
                         </div>
@@ -5678,9 +5681,10 @@
 
             const elNama = document.getElementById('idcard-nama');
             elNama.textContent = profil.nama;
-            elNama.className = `font-extrabold text-xl mt-3 leading-tight ${efekNamaProfil || 'text-slate-900'}`.trim();
+            elNama.className = `font-extrabold text-sm sm:text-base leading-tight truncate max-w-full ${efekNamaProfil || 'text-slate-900'}`.trim();
             const badgeDevProfil = getBadgeDevHtml(borderProfil);
-            if (badgeDevProfil) elNama.innerHTML += ' ' + badgeDevProfil;
+            const elBadgeDev = document.getElementById('idcard-badge-dev');
+            if (elBadgeDev) elBadgeDev.innerHTML = badgeDevProfil || '';
 
             renderSosmedIdCard(profil.sosmed || {});
             renderKaryaIdCard(profil.karya || []);
