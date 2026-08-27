@@ -3730,41 +3730,36 @@
     <!-- ID CARD: muncul saat nama siswa di hasil pencarian "Cari Teman" diklik,
          menampilkan identitas + statistik quiz siswa tersebut -->
     <div id="modal-id-card-teman" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[106] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupIdCardTeman()">
-        <!-- Layout kartu diubah jadi LANDSCAPE (melebar ke samping, bukan
-             menumpuk ke bawah): kolom kiri = identitas (foto+border, kotak
-             sosmed kuning, nama+efek, title, kelas), kolom kanan = bio/karya/
-             statistik/tombol aksi, berdampingan lewat flex-row mulai layar
-             sm ke atas. Di layar HP sempit (di bawah sm) tetap flex-col biar
-             tidak kepepet, sisanya sama persis (id & fungsi JS tidak berubah). -->
-        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md sm:max-w-2xl lg:max-w-3xl overflow-hidden max-h-[92vh] flex flex-col sm:flex-row">
-            <div class="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-white border-b sm:border-b-0 sm:border-r border-blue-100 p-5 sm:p-8 text-center overflow-hidden shrink-0 sm:w-64 flex flex-col items-center justify-center">
-                <button onclick="tutupIdCardTeman()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/70 hover:bg-white text-slate-500 flex items-center justify-center transition-colors z-10" aria-label="Tutup">
+        <!-- Layout kartu SATU KOLOM: header berisi avatar kecil + nama+badge
+             +kelas sebaris di kiri, ikon sosmed di kanan -- meniru posisi
+             profil kecil di topbar dashboard (avatar kecil bersebelahan
+             dengan nama, bukan foto besar terpisah di kolom sendiri).
+             Di bawah header baru karya/statistik/tombol aksi, full width.
+             id & fungsi JS tidak berubah, cuma lokasi elemennya. -->
+        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md sm:max-w-lg overflow-hidden max-h-[92vh] flex flex-col">
+            <div class="relative p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
+                <button onclick="tutupIdCardTeman()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors z-10" aria-label="Tutup">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
 
-                <!-- Kartu identitas: cuma foto+border di sini. Nama, title
-                     badge, dan kelas dipindah ke baris atas kolom kanan
-                     (sebaris dengan ikon sosmed) -- lihat #idcard-header-row
-                     di bawah. Semua tetap dipetakan dari profil.border lewat
-                     renderIdCardTeman(), cuma lokasi elemennya yang beda. -->
-                <div class="profile-wrapper w-28 h-28 sm:w-32 sm:h-32 mx-auto relative">
-                    <img id="idcard-avatar-foto" src="" class="user-avatar" alt="Avatar">
-                    <img id="idcard-avatar-border" src="" class="user-border" alt="Border">
-                </div>
-            </div>
-            <div class="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
-                <!-- Baris atas kolom kanan: nama+badge+kelas di kiri,
-                     ikon sosmed di kanan -- sebaris, dengan jarak (gap-3)
-                     di antara keduanya supaya tidak mepet. Nama dkk SELALU
-                     tampil (baik ID Card sendiri maupun teman); ikon sosmed
-                     tetap punya logic hidden sendiri lewat #idcard-sosmed-box
-                     kalau siswa belum isi sosmed apa pun -- jadi kalau
-                     sosmed kosong, nama dkk tetap rapi sendirian di kiri. -->
-                <div class="flex items-start justify-between gap-3">
-                    <div class="text-left min-w-0">
-                        <h3 id="idcard-nama" class="font-extrabold text-sm sm:text-base leading-tight text-slate-900 truncate">-</h3>
-                        <span id="idcard-title-badge" class="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold title-badge-default">-</span>
-                        <p id="idcard-kelas" class="text-[11px] text-slate-500 mt-1">-</p>
+                <!-- Header: avatar kecil (foto+border) + nama+badge+kelas di
+                     kiri, ikon sosmed di kanan -- sebaris, dengan jarak
+                     (gap-3) di antara keduanya. pr-10 biar tidak nabrak
+                     tombol X di pojok kanan atas. Nama dkk SELALU tampil
+                     (baik ID Card sendiri maupun teman); ikon sosmed tetap
+                     punya logic hidden sendiri lewat #idcard-sosmed-box
+                     kalau siswa belum isi sosmed apa pun. -->
+                <div class="flex items-start justify-between gap-3 pr-10">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="profile-wrapper w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 relative">
+                            <img id="idcard-avatar-foto" src="" class="user-avatar" alt="Avatar">
+                            <img id="idcard-avatar-border" src="" class="user-border" alt="Border">
+                        </div>
+                        <div class="text-left min-w-0">
+                            <h3 id="idcard-nama" class="font-extrabold text-sm sm:text-base leading-tight text-slate-900 truncate">-</h3>
+                            <span id="idcard-title-badge" class="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold title-badge-default">-</span>
+                            <p id="idcard-kelas" class="text-[11px] text-slate-500 mt-1">-</p>
+                        </div>
                     </div>
                     <!-- Kotak Sosmed (kuning) -- dibangun dinamis dari
                          profil.sosmed lewat renderSosmedIdCard(); ikon =
