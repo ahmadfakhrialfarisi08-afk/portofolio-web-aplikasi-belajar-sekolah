@@ -3748,28 +3748,43 @@
     <!-- ID CARD: muncul saat nama siswa di hasil pencarian "Cari Teman" diklik,
          menampilkan identitas + statistik quiz siswa tersebut -->
     <div id="modal-id-card-teman" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[106] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupIdCardTeman()">
-        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden">
-            <div class="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-white border-b border-blue-100 p-5 sm:p-7 text-center overflow-hidden">
+        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md sm:max-w-lg overflow-hidden max-h-[92vh] flex flex-col">
+            <div class="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-white border-b border-blue-100 p-5 sm:p-8 text-center overflow-hidden shrink-0">
                 <button onclick="tutupIdCardTeman()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/70 hover:bg-white text-slate-500 flex items-center justify-center transition-colors z-10" aria-label="Tutup">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
 
-                <!-- Sosmed teman (IG, TikTok, dll) -- pojok kanan atas, sejajar
-                     avatar. Dibangun dinamis dari profil.sosmed lewat
-                     renderSosmedIdCard(); disembunyikan otomatis (class
-                     "hidden") kalau siswa itu belum isi sosmed apa pun,
-                     supaya tidak nongol kotak kosong. -->
-                <div id="idcard-sosmed" class="hidden absolute top-12 right-3 sm:top-14 sm:right-4 flex flex-col gap-1.5 z-10"></div>
-
-                <div class="profile-wrapper w-24 h-24 sm:w-28 sm:h-28 mx-auto relative">
+                <!-- Kartu identitas: foto+border, nama (dengan efek nama),
+                     title badge, dan kelas. Semua dipetakan dari
+                     profil.border lewat renderIdCardTeman(). -->
+                <div class="profile-wrapper w-28 h-28 sm:w-32 sm:h-32 mx-auto relative">
                     <img id="idcard-avatar-foto" src="" class="user-avatar" alt="Avatar">
                     <img id="idcard-avatar-border" src="" class="user-border" alt="Border">
                 </div>
-                <h3 id="idcard-nama" class="font-extrabold text-xl mt-3 leading-tight text-slate-900">-</h3>
+                <h3 id="idcard-nama" class="font-extrabold text-xl sm:text-2xl mt-3 leading-tight text-slate-900">-</h3>
                 <span id="idcard-title-badge" class="inline-block mt-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold title-badge-default">-</span>
                 <p id="idcard-kelas" class="text-xs text-slate-500 mt-1.5">-</p>
             </div>
-            <div class="p-4 sm:p-6 space-y-4">
+            <div class="p-4 sm:p-6 space-y-4 overflow-y-auto">
+                <!-- Sosmed & Karya: kotak khusus tersendiri (bukan lagi
+                     mengambang di atas avatar) supaya rapi & tidak menutupi
+                     elemen lain. Sosmed dibangun dinamis dari profil.sosmed
+                     lewat renderSosmedIdCard(); Karya dari profil.karya
+                     lewat renderKaryaIdCard(). Keduanya otomatis menampilkan
+                     pesan "belum ada" kalau datanya kosong. -->
+                <div class="rounded-2xl border border-amber-100 bg-amber-50/50 p-3 space-y-3">
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2">Sosial Media</p>
+                        <div id="idcard-sosmed" class="flex flex-wrap items-center gap-2"></div>
+                        <p id="idcard-sosmed-kosong" class="hidden text-[11px] text-slate-400 italic">Belum menambahkan sosial media</p>
+                    </div>
+                    <div class="pt-2.5 border-t border-amber-100">
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2">Karya</p>
+                        <div id="idcard-karya" class="grid grid-cols-3 gap-2"></div>
+                        <p id="idcard-karya-kosong" class="text-[11px] text-slate-400 italic">Belum ada karya yang diunggah</p>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-3 gap-2 text-center">
                     <div class="bg-slate-50 rounded-xl p-2.5">
                         <p id="idcard-poin-pg" class="text-lg font-extrabold text-slate-900">0</p>
@@ -5638,6 +5653,7 @@
             if (badgeDevProfil) elNama.innerHTML += ' ' + badgeDevProfil;
 
             renderSosmedIdCard(profil.sosmed || {});
+            renderKaryaIdCard(profil.karya || []);
 
             document.getElementById('idcard-kelas').textContent = `Siswa • ${profil.kelas}`;
             document.getElementById('idcard-poin-pg').textContent = profil.quiz_pg_total_poin;
@@ -5686,23 +5702,55 @@
 
         function renderSosmedIdCard(sosmed) {
             const kontainer = document.getElementById('idcard-sosmed');
+            const pesanKosong = document.getElementById('idcard-sosmed-kosong');
             if (!kontainer) return;
 
             const entri = Object.entries(sosmed || {}).filter(([platform, nilai]) => PLATFORM_SOSMED_IDCARD[platform] && nilai);
 
             if (!entri.length) {
                 kontainer.innerHTML = '';
-                kontainer.classList.add('hidden');
+                if (pesanKosong) pesanKosong.classList.remove('hidden');
                 return;
             }
 
+            if (pesanKosong) pesanKosong.classList.add('hidden');
             kontainer.innerHTML = entri.map(([platform, nilai]) => {
                 const p = PLATFORM_SOSMED_IDCARD[platform];
-                return `<a href="${p.url(nilai)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="${p.label}" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full ${p.warna} text-white flex items-center justify-center shadow-sm hover:scale-110 transition-transform">
-                    <i class="${p.ikon} text-[11px] sm:text-xs"></i>
+                return `<a href="${p.url(nilai)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="${p.label}" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full ${p.warna} text-white flex items-center justify-center shadow-sm hover:scale-110 transition-transform">
+                    <i class="${p.ikon} text-xs sm:text-sm"></i>
                 </a>`;
             }).join('');
-            kontainer.classList.remove('hidden');
+        }
+
+        // Karya (portofolio) teman -- dibangun dinamis dari profil.karya.
+        // Diharapkan berupa array objek, mis:
+        // [{ judul: "Desain Poster", gambar: "url_gambar.jpg" }, ...]
+        // Kalau field/endpoint itu belum ada di server, arraynya otomatis
+        // kosong sehingga tampil pesan "Belum ada karya" -- jadi bagian ini
+        // aman dipasang duluan di frontend, tidak akan menampilkan kotak
+        // rusak sebelum backend menambah datanya.
+        function renderKaryaIdCard(karya) {
+            const kontainer = document.getElementById('idcard-karya');
+            const pesanKosong = document.getElementById('idcard-karya-kosong');
+            if (!kontainer) return;
+
+            const daftar = Array.isArray(karya) ? karya.filter(k => k && (k.gambar || k.judul)) : [];
+
+            if (!daftar.length) {
+                kontainer.innerHTML = '';
+                if (pesanKosong) pesanKosong.classList.remove('hidden');
+                return;
+            }
+
+            if (pesanKosong) pesanKosong.classList.add('hidden');
+            kontainer.innerHTML = daftar.map(k => {
+                const gambar = k.gambar || `https://ui-avatars.com/api/?name=${encodeURIComponent(k.judul || 'Karya')}&background=fef3c7&color=92400e&size=120`;
+                const judul = k.judul || 'Karya';
+                return `<a href="${k.url || gambar}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="${judul}" class="group block rounded-lg overflow-hidden border border-amber-100 bg-white aspect-square relative">
+                    <img src="${gambar}" alt="${judul}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                    <span class="absolute inset-x-0 bottom-0 bg-black/50 text-white text-[9px] px-1.5 py-1 truncate">${judul}</span>
+                </a>`;
+            }).join('');
         }
 
         function tutupIdCardTeman() {
