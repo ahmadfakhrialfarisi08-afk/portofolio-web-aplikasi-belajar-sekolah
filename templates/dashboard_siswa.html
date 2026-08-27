@@ -2596,15 +2596,15 @@
                                 <button onclick="toggleProfileDropdown(event)" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xs"></i></button>
                             </div>
                             <div class="flex flex-col items-center justify-center space-y-2">
-                                <div class="relative w-16 h-16 rounded-full overflow-hidden border-2 border-blue-500 shadow-md cursor-pointer group bg-slate-100 flex items-center justify-center" onclick="openExpandedPhoto(event)" title="Klik untuk lihat foto & bio kamu">
+                                <div class="relative w-16 h-16 rounded-full overflow-hidden border-2 border-blue-500 shadow-md cursor-pointer group bg-slate-100 flex items-center justify-center" onclick="lihatProfilSendiri(event)" title="Klik untuk lihat ID Card & bio kamu">
                                     <i class="fa-solid fa-user text-slate-300 text-2xl"></i>
                                     <img id="dropdown-user-avatar" src="{{ foto_profil }}" class="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105" alt="Current Avatar" onerror="this.style.display='none'">
                                     <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                         <i class="fa-solid fa-magnifying-glass-plus text-white text-xs"></i>
                                     </div>
                                 </div>
-                                <button type="button" onclick="openExpandedPhoto(event)" class="text-[11px] font-semibold text-blue-600 hover:underline text-center">
-                                    <i class="fa-solid fa-id-card text-[10px] mr-1"></i>Lihat Foto & Bio Kamu
+                                <button type="button" onclick="lihatProfilSendiri(event)" class="text-[11px] font-semibold text-blue-600 hover:underline text-center">
+                                    <i class="fa-solid fa-id-card text-[10px] mr-1"></i>Lihat ID Card & Bio Kamu
                                 </button>
                             </div>
                             <div class="pt-1">
@@ -3429,29 +3429,6 @@
         </div>
     </div>
 
-    <div id="modalExpandedPhoto" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
-        <div class="relative bg-white rounded-3xl max-w-sm w-full p-4 sm:p-6 shadow-2xl border border-slate-200 flex flex-col items-center space-y-4">
-            <button onclick="closeExpandedPhoto()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <h3 class="font-bold text-base text-slate-900">Foto Profil & Bio</h3>
-            <div class="w-64 h-64 rounded-2xl overflow-hidden border-4 border-slate-100 shadow-lg">
-                <img id="expanded-photo-img" src="" class="w-full h-full object-cover" alt="Expanded Avatar">
-            </div>
-            <p class="text-xs text-slate-400 text-center nama-siswa-efektif">{{ nama }}</p>
-
-            <div class="w-full pt-2 border-t border-slate-100 space-y-1.5">
-                <label class="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
-                    <i class="fa-solid fa-pen-nib text-blue-600 text-[10px]"></i> Bio Singkat
-                </label>
-                <textarea id="input-bio-siswa" rows="2" maxlength="120" placeholder="Tulis bio singkat tentang kamu..." class="w-full p-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 bg-white resize-none"></textarea>
-                <button onclick="simpanBioSiswa()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-floppy-disk text-[10px]"></i> Simpan Bio
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal "Buka Border": form pengajuan prestasi versi popup, dipicu dari tombol
          "Buka Border" di kartu border prestasi yang masih terkunci. Field & id form
          sengaja tetap sama (form-ajukan-prestasi, input-judul-prestasi, dst) supaya
@@ -3783,6 +3760,21 @@
                 <p id="idcard-kelas" class="text-xs text-slate-500 mt-1.5">-</p>
             </div>
             <div class="p-4 sm:p-6 space-y-4 overflow-y-auto">
+                <!-- Bio Singkat: HANYA muncul kalau ID Card yang sedang dibuka
+                     adalah milik sendiri (status_pertemanan === 'diri_sendiri').
+                     Disembunyikan ("hidden") secara default & baru dimunculkan
+                     lewat renderIdCardTeman() saat kondisi itu terpenuhi, jadi
+                     tetap tidak nongol saat kita buka ID Card teman lain. -->
+                <div id="idcard-bio-wrapper" class="hidden pt-1 space-y-1.5">
+                    <label class="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                        <i class="fa-solid fa-pen-nib text-blue-600 text-[10px]"></i> Bio Singkat
+                    </label>
+                    <textarea id="input-bio-siswa" rows="2" maxlength="120" placeholder="Tulis bio singkat tentang kamu..." class="w-full p-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 bg-white resize-none"></textarea>
+                    <button onclick="simpanBioSiswa()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-floppy-disk text-[10px]"></i> Simpan Bio
+                    </button>
+                </div>
+
                 <!-- Karya: kotak khusus di bawah kotak sosmed, menampilkan
                      karya/portofolio siswa. Dibangun dinamis dari
                      profil.karya lewat renderKaryaIdCard(); otomatis
@@ -4286,24 +4278,19 @@
             }
         }
 
-        function openExpandedPhoto(event) {
-            event.stopPropagation();
-            const dropdownAvatar = document.getElementById('dropdown-user-avatar');
-            const expandedImg = document.getElementById('expanded-photo-img');
-            const modal = document.getElementById('modalExpandedPhoto');
-            
-            if (dropdownAvatar && expandedImg && modal) {
-                expandedImg.src = dropdownAvatar.src;
-                modal.classList.remove('hidden');
-                loadBioSiswa(); // pastikan bio yang tampil selalu versi terbaru
-            }
-        }
-
-        function closeExpandedPhoto() {
-            const modal = document.getElementById('modalExpandedPhoto');
-            if (modal) {
-                modal.classList.add('hidden');
-            }
+        // Diklik dari avatar/tombol "Lihat ID Card & Bio Kamu" di dropdown profil.
+        // Sengaja pakai modal ID Card yang SAMA dengan yang dipakai untuk lihat
+        // profil teman (bukaIdCardTeman) -- supaya foto profil+border, efek nama,
+        // title/badge, dan kotak sosmed (kuning) tampil identik persis seperti
+        // sketsa, bukan modal foto polos yang terpisah seperti sebelumnya.
+        // Statusnya otomatis kebaca 'diri_sendiri' oleh backend (username yang
+        // dikirim = akun yang lagi login sendiri), jadi tombol aksi di bawah
+        // otomatis jadi "Ini Kamu" & bagian Bio Singkat ikut dimunculkan.
+        function lihatProfilSendiri(event) {
+            if (event) event.stopPropagation();
+            const dropdown = document.getElementById('profile-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+            bukaIdCardTeman(USERNAME_SISWA_AKTIF);
         }
 
         // Fungsi (bukan const) supaya aman dari urutan deklarasi ID_SISWA_AKTIF.
@@ -5716,6 +5703,16 @@
             btn.innerHTML = `<i class="${cfg.ikon} text-[10px]"></i> <span>${cfg.teks}</span>`;
             btn.disabled = cfg.nonaktif;
             btn.dataset.status = profil.status_pertemanan;
+
+            // Bio Singkat cuma relevan & bisa diedit kalau ID Card yang lagi
+            // dibuka ini punya kita sendiri -- untuk ID Card teman, bagian ini
+            // tetap disembunyikan.
+            const bioWrapper = document.getElementById('idcard-bio-wrapper');
+            if (bioWrapper) {
+                const iniDiriSendiri = profil.status_pertemanan === 'diri_sendiri';
+                bioWrapper.classList.toggle('hidden', !iniDiriSendiri);
+                if (iniDiriSendiri) loadBioSiswa();
+            }
         }
 
         // Ikon sosmed di ID Card teman. Data diharapkan datang dari backend
