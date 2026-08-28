@@ -184,26 +184,6 @@
     }
     @keyframes sinarSapu { 0% { left: -60%; } 100% { left: 140%; } }
 
-    /* Logo sekolah -- pojok kiri atas panel ilustrasi, kaca (glassmorphism) */
-    .logo-sekolah {
-      position: absolute;
-      top: 18px; left: 18px;
-      width: 92px; height: 92px;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.85);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.5);
-      display: flex; align-items: center; justify-content: center;
-      padding: 6px;
-      box-shadow: 0 8px 20px -6px rgba(3,10,25,0.5), 0 0 0 1px rgba(56,189,248,0.15);
-      z-index: 3;
-      opacity: 0; transform: scale(0.6) translateY(-6px);
-      animation: logoMasuk 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s forwards;
-    }
-    @keyframes logoMasuk { to { opacity: 1; transform: scale(1) translateY(0); } }
-    .logo-sekolah img { width: 100%; height: 100%; object-fit: contain; }
-
     .illustration-panel .dot-kuning { position: absolute; border-radius: 50%; background: #38bdf8; box-shadow: 0 0 14px 3px rgba(56,189,248,0.75); }
     .dot-kuning.d1 { width: 14px; height: 14px; top: 18%; left: 18%; animation: melayangDot 5s ease-in-out infinite; }
     .dot-kuning.d2 { width: 9px; height: 9px; top: 70%; left: 78%; animation: melayangDot 4s ease-in-out infinite 0.6s; }
@@ -224,17 +204,20 @@
       margin-bottom: 26px;
       z-index: 2;
     }
-    .stage-icon { position: absolute; font-size: 52px; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.18)); animation: iconSiklus 9s ease-in-out infinite; opacity: 0; }
-    .stage-icon.i1 { animation-delay: 0s; }
-    .stage-icon.i2 { animation-delay: 3s; }
-    .stage-icon.i3 { animation-delay: 6s; }
-    @keyframes iconSiklus {
-      0%   { opacity: 0; transform: translateY(10px) scale(0.85); }
-      4%   { opacity: 1; transform: translateY(0) scale(1); }
-      11%  { transform: translateY(-8px) scale(1); }
-      22%  { opacity: 1; transform: translateY(0) scale(1); }
-      27%  { opacity: 0; transform: translateY(-10px) scale(0.9); }
-      100% { opacity: 0; }
+    /* Logo jurusan di dalam lingkaran -- sumbernya diatur dari backend
+       (query string ?jurusan=... atau nilai default) lewat Jinja, filenya
+       diambil dari folder static/img/logo_jurusan/ */
+    .stage-logo {
+      width: 118px; height: 118px;
+      object-fit: contain;
+      border-radius: 50%;
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,0.25));
+      opacity: 0;
+      animation: logoJurusanMasuk 0.6s ease-out 0.3s forwards;
+    }
+    @keyframes logoJurusanMasuk {
+      0%   { opacity: 0; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1); }
     }
 
     .illustration-title { position: relative; z-index: 2; font-size: 19px; font-weight: 700; text-align: center; margin: 0 0 8px 0; opacity: 0; animation: teksMasuk 0.5s ease-out 0.5s forwards; }
@@ -671,18 +654,19 @@
 
   <!-- Panel ilustrasi animasi (pengganti video/gif) -->
   <div class="illustration-panel">
-    <div class="logo-sekolah">
-      <img src="https://www.smkba.sch.id/storage/settings/01KSS8AQ39D852VCW0SD8XDZPA.png" alt="Logo SMK Banjar Asri Cimaung">
-    </div>
-
     <span class="dot-kuning d1"></span>
     <span class="dot-kuning d2"></span>
     <span class="dot-kuning d3"></span>
 
     <div class="stage">
-      <span class="stage-icon i1">🎓</span>
-      <span class="stage-icon i2">🌐</span>
-      <span class="stage-icon i3">💻</span>
+      {% set jurusan = request.args.get('jurusan', 'smkba') %}
+      <img
+        class="stage-logo"
+        src="{{ url_for('static', filename='img/logo_jurusan/' ~ jurusan ~ '.png') }}"
+        data-fallback="{{ url_for('static', filename='img/logo_jurusan/smkba.png') }}"
+        alt="Logo {{ jurusan|upper }}"
+        onerror="this.onerror=null; this.src=this.dataset.fallback;"
+      >
     </div>
 
     <p class="illustration-title">SMK BANJAR ASRI CIMAUNG</p>
