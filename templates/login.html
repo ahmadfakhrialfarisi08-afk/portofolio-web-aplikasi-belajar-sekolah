@@ -204,20 +204,28 @@
       margin-bottom: 26px;
       z-index: 2;
     }
-    /* Logo jurusan di dalam lingkaran -- sumbernya diatur dari backend
-       (query string ?jurusan=... atau nilai default) lewat Jinja, filenya
-       diambil dari folder static/img/logo_jurusan/ */
+    /* Logo jurusan di dalam lingkaran -- 4 logo (SMK Banjar Asri, TKJ, TAV, TKR)
+       bergantian otomatis, filenya diambil dari folder static/img/logo_jurusan/
+       Total siklus 12s, tiap logo tampil ~3s (jeda sedang, gak kelamaan gak kesebentar) */
     .stage-logo {
+      position: absolute;
       width: 118px; height: 118px;
       object-fit: contain;
       border-radius: 50%;
       filter: drop-shadow(0 6px 12px rgba(0,0,0,0.25));
       opacity: 0;
-      animation: logoJurusanMasuk 0.6s ease-out 0.3s forwards;
+      animation: logoSiklus 12s ease-in-out infinite;
     }
-    @keyframes logoJurusanMasuk {
-      0%   { opacity: 0; transform: scale(0.8); }
-      100% { opacity: 1; transform: scale(1); }
+    .stage-logo.l1 { animation-delay: 0s; }
+    .stage-logo.l2 { animation-delay: 3s; }
+    .stage-logo.l3 { animation-delay: 6s; }
+    .stage-logo.l4 { animation-delay: 9s; }
+    @keyframes logoSiklus {
+      0%   { opacity: 0; transform: scale(0.85) translateY(8px); }
+      4%   { opacity: 1; transform: scale(1) translateY(0); }
+      20%  { opacity: 1; transform: scale(1) translateY(0); }
+      25%  { opacity: 0; transform: scale(0.9) translateY(-8px); }
+      100% { opacity: 0; }
     }
 
     .illustration-title { position: relative; z-index: 2; font-size: 19px; font-weight: 700; text-align: center; margin: 0 0 8px 0; opacity: 0; animation: teksMasuk 0.5s ease-out 0.5s forwards; }
@@ -659,14 +667,10 @@
     <span class="dot-kuning d3"></span>
 
     <div class="stage">
-      {% set jurusan = request.args.get('jurusan', 'smkba') %}
-      <img
-        class="stage-logo"
-        src="{{ url_for('static', filename='img/logo_jurusan/' ~ jurusan ~ '.png') }}"
-        data-fallback="{{ url_for('static', filename='img/logo_jurusan/smkba.png') }}"
-        alt="Logo {{ jurusan|upper }}"
-        onerror="this.onerror=null; this.src=this.dataset.fallback;"
-      >
+      <img class="stage-logo l1" src="{{ url_for('static', filename='img/logo_jurusan/smkba.png') }}" alt="Logo SMK Banjar Asri Cimaung" onerror="this.style.display='none';">
+      <img class="stage-logo l2" src="{{ url_for('static', filename='img/logo_jurusan/tkj.png') }}" alt="Logo TKJ" onerror="this.style.display='none';">
+      <img class="stage-logo l3" src="{{ url_for('static', filename='img/logo_jurusan/tav.png') }}" alt="Logo TAV" onerror="this.style.display='none';">
+      <img class="stage-logo l4" src="{{ url_for('static', filename='img/logo_jurusan/tkr.png') }}" alt="Logo TKR" onerror="this.style.display='none';">
     </div>
 
     <p class="illustration-title">SMK BANJAR ASRI CIMAUNG</p>
