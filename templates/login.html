@@ -422,6 +422,26 @@
     .link:hover::after { width: 100%; }
 
     @media (max-width: 720px) {
+      /* Di HP, kartu login + kartu "lupa password"/dll bisa lebih tinggi dari
+         layar (apalagi kalau keyboard HP muncul saat isi field Password), jadi
+         overflow:hidden di body (dipakai buat desktop) diganti scroll vertikal
+         di sini supaya field Password & tombol Masuk tetap bisa dicapai dengan
+         cara di-scroll, bukan ke-clip/hilang di bawah layar. */
+      html, body { height: auto; min-height: 100%; }
+      body {
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        /* align-items:center (punya desktop) SENGAJA tidak dipakai di sini --
+           kalau konten lebih tinggi dari layar, kombinasi flex-center +
+           overflow:auto punya bug lama di sebagian browser mobile (terutama
+           Safari iOS): bagian atas konten yang "kepotong" karena centering
+           jadi tidak bisa di-scroll ke sekalipun overflow-nya sudah auto.
+           flex-start + padding atas/bawah di bawah ini aman di semua browser
+           & tetap kelihatan rapi kalau kontennya muat pas di layar. */
+        align-items: flex-start;
+        padding: 28px 0;
+      }
       .illustration-panel { display: none; }
       .login-container { transform: translateY(24px); }
       @keyframes panelMasukKanan { to { opacity: 1; transform: translateY(0); } }
