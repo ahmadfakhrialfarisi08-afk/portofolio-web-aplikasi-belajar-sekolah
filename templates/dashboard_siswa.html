@@ -12222,6 +12222,19 @@
                     ketAdmin = `<p class="text-[11px] text-orange-500 font-semibold mt-1"><i class="fa-solid fa-rotate-left mr-1"></i>Sebelumnya ${statusSebelum}, dibatalkan oleh ${item.pembatalanTerakhir.oleh} &middot; ${item.pembatalanTerakhir.tanggal} — sedang ditinjau ulang</p>`;
                 }
 
+                // Baris "sidik jari" pHash (biner, dipotong) + badge "Terverifikasi LSB".
+                // Cuma ditampilkan kalau item ini punya `phash` (data lama dari sebelum
+                // fitur ini ada -- yang tidak punya field ini -- otomatis dilewati/tidak
+                // menampilkan baris ini sama sekali, tidak menyebabkan error).
+                const idAmanDom = String(item.id).replace(/[^a-zA-Z0-9_-]/g, '');
+                const barisFingerprint = item.phash ? `
+                    <div class="flex items-center gap-2 mt-1 flex-wrap">
+                        <span class="font-mono text-[10px] text-slate-400 tracking-wide" id="phash-bin-${idAmanDom}">&hellip;</span>
+                        <span class="hidden text-[10px] font-bold text-indigo-500 items-center gap-1" id="lsb-badge-${idAmanDom}">
+                            <i class="fa-solid fa-shield-halved"></i> Terverifikasi LSB
+                        </span>
+                    </div>` : '';
+
                 const row = document.createElement('div');
                 row.className = 'flex items-center gap-4 p-3 rounded-xl border border-slate-200/80';
                 row.innerHTML = `
@@ -12230,6 +12243,7 @@
                         <p class="text-sm font-bold text-slate-900 truncate">${item.judul}</p>
                         <p class="text-[11px] text-slate-400">${item.jenis === 'piala' ? 'Piala' : 'Sertifikat'} &middot; diajukan ${item.tanggalAjukan}</p>
                         ${ketAdmin}
+                        ${barisFingerprint}
                     </div>
                     <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
                         <span class="text-[10px] font-bold px-2.5 py-1 rounded-full self-end ${status.kelas}">${status.teks}</span>
@@ -12249,6 +12263,67 @@
                     btnHapus.addEventListener('click', () => hapusPengajuanPrestasi(item.id));
                 }
                 container.appendChild(row);
+
+                if (item.phash) {
+                    tampilkanFingerprintPrestasi(item, idAmanDom);
+                }
+            });
+        }
+
+        // Cache hasil verifikasi ulang watermark LSB per id prestasi, supaya foto
+        // (bisa besar) tidak perlu di-decode ulang ke canvas setiap kali daftar
+        // riwayat dirender ulang (mis. abis hapus 1 item, seluruh list re-render).
+        const _cacheVerifikasiLSB = new Map();
+
+        // Tampilkan pHash dalam bentuk biner (dipotong) di baris riwayat, LALU
+        // verifikasi ULANG watermark LSB langsung dari gambar yang tersimpan
+        // (bukan cuma percaya begitu saja flag `watermark.tersisip` yang disimpan
+        // saat upload) -- baru munculkan badge "Terverifikasi LSB" kalau memang
+        // valid. Ini konsisten dengan prinsip di fitur ini: nilai dari client
+        // tidak dianggap sumber kebenaran mutlak tanpa dicek ulang.
+        async function tampilkanFingerprintPrestasi(item, idAmanDom) {
+            const elBin = document.getElementById(`phash-bin-${idAmanDom}`);
+            if (elBin) {
+                // Hex 64-bit -> biner 64-bit, dipotong biar muat di 1 baris.
+                const biner = BigInt('0x' + item.phash).toString(2).padStart(64, '0');
+                elBin.innerText = biner.slice(0, 28) + '\u2026';
+                elBin.title = biner; // hash biner lengkap kalau di-hover
+            }
+
+            const elBadge = document.getElementById(`lsb-badge-${idAmanDom}`);
+            if (!elBadge || !item.watermark || !item.watermark.tersisip) return;
+
+            try {
+                let hasil = _cacheVerifikasiLSB.get(item.id);
+                if (!hasil) {
+                    const img = await _muatGambarDariDataUrl(item.foto);
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    canvas.getContext('2d').drawImage(img, 0, 0);
+                    hasil = verifikasiWatermarkLSB(canvas);
+                    _cacheVerifikasiLSB.set(item.id, hasil);
+                }
+                if (hasil && hasil.valid) {
+                    elBadge.classList.remove('hidden');
+                    elBadge.classList.add('inline-flex');
+                }
+            } catch (e) {
+                // Gagal verifikasi (mis. foto sudah dikompres ulang di tempat lain
+                // sehingga bit LSB rusak) -- badge cukup TIDAK dimunculkan, tanpa
+                // mengganggu render riwayat lainnya.
+            }
+        }
+
+        // Sama seperti _muatGambarDariFile(), tapi sumbernya string data: URL
+        // (base64) yang sudah tersimpan -- dipakai buat verifikasi ulang watermark
+        // dari foto yang sudah ada di riwayat, bukan dari File input baru.
+        function _muatGambarDariDataUrl(dataUrl) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('Gagal membaca gambar tersimpan'));
+                img.src = dataUrl;
             });
         }
 
