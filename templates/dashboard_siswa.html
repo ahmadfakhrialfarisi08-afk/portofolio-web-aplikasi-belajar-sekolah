@@ -2248,6 +2248,91 @@
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
+
+        /* ============================================================
+           SENTUHAN MANUSIA (HUMAN TOUCH) — LAPISAN PENYEMPURNAAN VISUAL
+           Ditumpuk paling akhir di atas design system yang sudah ada.
+           HANYA CSS tambahan: tidak ada class/id/atribut baru di markup,
+           tidak ada baris JS yang disentuh/ditambah/dihapus. Semua efek
+           di bawah ini bekerja lewat selector terhadap struktur & class
+           yang SUDAH ada (termasuk yang dirender lewat JS), jadi otomatis
+           konsisten di semua tab/section tanpa perlu diulang manual.
+
+           Ringkasan:
+           1) Ritme napas antar-blok di SETIAP tab (bukan cuma Beranda),
+              dibuat sedikit lebih lega & tidak seragam-kaku.
+           2) Kartu statistik Beranda dipecah kesan "kotak seragam"-nya
+              lewat variasi radius/shadow/waktu-masuk antar kartu.
+           3) Kontras ketebalan teks (angka besar vs label kecil) sedikit
+              dipertegas supaya hierarki terasa lebih hidup.
+           4) Transisi halus dirapikan supaya konsisten di semua elemen
+              interaktif (tombol, tautan, input, item menu).
+           5) Sisa warna lama (indigo-*) & abu-abu Tailwind polos
+              (slate-50/100) dipetakan ke token permukaan/brand yang sama
+              dipakai elemen lain, supaya tidak ada bagian yang "bocor"
+              balik ke putih/abu polos saat tema gelap atau warna aksen
+              lain aktif — konsisten dari header, sidebar, konten utama,
+              tombol, sampai modal.
+           ============================================================ */
+
+        /* ---- 1. Ritme napas antar-blok, berlaku di semua tab ---- */
+        .tab-content > * + * {
+            margin-top: 1.75rem !important;
+        }
+        .tab-content > *:nth-child(3n+2) {
+            margin-top: 2.25rem !important;
+        }
+
+        /* ---- 2. Variasi organik kartu statistik Beranda ---- */
+        .bento-stat-card {
+            animation: humanTouchFadeUp .5s cubic-bezier(.16,1,.3,1) both;
+        }
+        .bento-stat-card:nth-of-type(1) { animation-delay: .02s; }
+        .bento-stat-card:nth-of-type(2) { animation-delay: .10s; border-radius: 18px !important; }
+        .bento-stat-card:nth-of-type(3) { animation-delay: .18s; border-radius: 13px !important; }
+        .bento-stat-card:nth-of-type(2):hover { transform: translateY(-2px) rotate(-.2deg); }
+        .bento-stat-card:nth-of-type(3):hover { transform: translateY(-1.5px) rotate(.25deg); }
+        @keyframes humanTouchFadeUp {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .bento-stat-card, .tab-content > * { animation: none !important; }
+        }
+
+        /* ---- 3. Kontras ketebalan teks (hierarki lebih hidup) ---- */
+        main h3.font-bold, main h3.font-extrabold, main .font-extrabold {
+            letter-spacing: -0.018em;
+        }
+        main p.uppercase, main span.uppercase {
+            font-weight: 500;
+            letter-spacing: 0.07em;
+        }
+
+        /* ---- 4. Transisi halus konsisten di semua elemen interaktif ---- */
+        main button, main a[href], main input, main select, main textarea,
+        #sidebar-menu .nav-btn, aside button, aside a[href],
+        header button, header a[href] {
+            transition: background-color .22s ease, border-color .22s ease,
+                        box-shadow .22s ease, color .18s ease,
+                        transform .18s cubic-bezier(.4,0,.2,1);
+        }
+        header, aside#sidebar-utama {
+            transition: background-color .3s ease, border-color .3s ease;
+        }
+
+        /* ---- 5. Konsistensi penuh token permukaan & brand ---- */
+        html:not(.dark) .bg-slate-50 { background-color: color-mix(in srgb, var(--page-bg) 55%, var(--surface)) !important; }
+        html:not(.dark) .bg-slate-100 { background-color: var(--surface-hover) !important; }
+
+        .bg-indigo-600, .from-indigo-600, .via-indigo-600, .to-indigo-600 { background-color: var(--brand) !important; }
+        .hover\:bg-indigo-700:hover { background-color: var(--brand-dark) !important; }
+        .bg-indigo-50, .from-indigo-50 { background-color: var(--brand-tint-50) !important; }
+        .bg-indigo-100 { background-color: var(--brand-tint-100) !important; }
+        .text-indigo-600, .text-indigo-700, .text-indigo-500 { color: var(--brand) !important; }
+        .border-indigo-600, .focus\:border-indigo-500:focus, .focus\:border-indigo-400:focus { border-color: var(--brand) !important; }
+        .border-indigo-200\/70 { border-color: var(--border-strong) !important; }
+        .ring-indigo-300 { --tw-ring-color: var(--brand-tint-100) !important; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden">
