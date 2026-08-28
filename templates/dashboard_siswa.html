@@ -28,7 +28,7 @@
          bisa mulai tampil lebih cepat sebelum font ikon selesai dimuat. -->
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="../static/css/border_polos.css">
     <link rel="stylesheet" href="../static/css/border_pink.css">
@@ -54,11 +54,11 @@
             --brand-tint-50: #f0eeff;
             --brand-tint-100: #e3defe;
             --surface-hover: #f1f5f9;
-            --font-display: 'Fraunces', ui-serif, Georgia, serif;
+            --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif; /* dulu font serif dekoratif (Fraunces), diganti sans yang konsisten dgn body */
             --radius-card: 1rem;
             --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.03);
-            --shadow-card-hover: 0 4px 12px -4px rgba(16, 24, 40, 0.08);
-            --shadow-pop: 0 12px 32px -8px rgba(16, 24, 40, 0.16), 0 4px 10px -4px rgba(16, 24, 40, 0.08);
+            --shadow-card-hover: 0 3px 8px -3px rgba(16, 24, 40, 0.07);
+            --shadow-pop: 0 8px 20px -6px rgba(16, 24, 40, 0.12), 0 3px 8px -3px rgba(16, 24, 40, 0.06);
         }
 
         /* ============================================================
@@ -891,28 +891,26 @@
             overflow-y: auto;
             padding-bottom: 20px;
         }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text-primary); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+        body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; color: var(--text-primary); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 
-        /* Skala tipografi lebih rapat & konsisten ala Linear/Notion */
+        /* Skala tipografi lebih rapat & konsisten ala aplikasi sekolah sehari-hari */
         h1, h2, h3, h4 { letter-spacing: -0.012em; }
         .tab-content h3.font-bold { color: var(--text-primary); }
 
-        /* Sentuhan tipografi: h2 dipakai utk sapaan & judul section besar
-           (mis. "Selamat Pagi, ...", "Border Avatar Kamu") — pakai serif
-           hangat di sini saja sbg momen "hero", bukan di seluruh body,
-           supaya area padat data (tabel, badge, tombol) tetap sans yg
-           ringkas & legible. h1 (wordmark sidebar) sengaja tidak disentuh. */
+        /* h2 dipakai utk sapaan & judul section (mis. "Selamat Pagi, ...",
+           "Border Avatar Kamu") — tetap satu keluarga sans yang sama dengan
+           body (bukan font display terpisah), cuma weight sedikit lebih tegas
+           supaya tetap terasa sebagai judul. */
         h2 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
 
-        /* --- Banner sapaan "Selamat Pagi": beda dari h2 lain, sengaja sans-serif
-           bold (bukan serif Fraunces) + gradient gelap senada sidebar. --- */
+        /* --- Banner sapaan "Selamat Pagi" --- */
         #banner-sapaan {
             background: linear-gradient(135deg, #0f172a, #1e293b);
             border: 1px solid rgba(6, 182, 212, 0.35);
         }
         #banner-sapaan h2 {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-weight: 800;
+            font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+            font-weight: 700;
         }
         #banner-sapaan .banner-sapaan-sub {
             color: rgba(255, 255, 255, 0.75);
@@ -974,10 +972,19 @@
         .border-slate-200, .border-slate-200\/80 { border-color: var(--border-subtle) !important; }
         .border-slate-100 { border-color: var(--border-subtle) !important; }
         .shadow-sm { box-shadow: var(--shadow-card) !important; }
-        .shadow-md { box-shadow: 0 6px 16px -4px rgba(16,24,40,.08), 0 2px 6px -2px rgba(16,24,40,.04) !important; }
-        .shadow-lg { box-shadow: 0 14px 28px -8px rgba(16,24,40,.12), 0 4px 10px -4px rgba(16,24,40,.06) !important; }
+        .shadow-md { box-shadow: 0 2px 8px -2px rgba(16,24,40,.06), 0 1px 3px -1px rgba(16,24,40,.04) !important; }
+        .shadow-lg { box-shadow: 0 4px 12px -4px rgba(16,24,40,.08), 0 2px 4px -2px rgba(16,24,40,.05) !important; }
         .shadow-xl { box-shadow: var(--shadow-pop) !important; }
-        html.dark .shadow-sm, html.dark .shadow-md, html.dark .shadow-lg, html.dark .shadow-xl { box-shadow: none !important; }
+        /* shadow-2xl disisakan lebih terlihat drpd level lain, khusus dipakai
+           elemen yg memang floating (modal/dropdown/popup) supaya tetap
+           terasa "mengambang" dibanding card biasa di halaman. */
+        .shadow-2xl { box-shadow: 0 14px 30px -8px rgba(16,24,40,.18), 0 4px 10px -4px rgba(16,24,40,.08) !important; }
+        html.dark .shadow-sm, html.dark .shadow-md, html.dark .shadow-lg, html.dark .shadow-xl, html.dark .shadow-2xl { box-shadow: none !important; }
+
+        /* Radius kartu diturunkan supaya tidak terlalu "melayang"/membulat
+           ala template AI — rounded-full (avatar/status) sengaja tidak disentuh. */
+        .rounded-2xl { border-radius: 0.75rem !important; }
+        .rounded-3xl { border-radius: 0.875rem !important; }
 
         /* Kartu premium: transisi elevasi halus saat hover (bukan animasi baru,
            cuma transisi shadow — ringan & tidak mengganggu). */
@@ -1736,8 +1743,8 @@
         .modal-saran-guru-card {
             background: #0f172a;
             border: 1px solid rgba(6, 182, 212, 0.3);
-            border-radius: 16px;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            border-radius: 14px;
+            font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
         }
         .modal-saran-guru-header {
             border-bottom: 1px solid rgba(148, 163, 184, 0.15);
