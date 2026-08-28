@@ -3538,7 +3538,16 @@
                     <textarea id="input-keterangan-prestasi" rows="2" placeholder="Contoh: Diselenggarakan Dinas Pendidikan, Maret 2026" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></textarea>
                 </div>
 
-                <button type="submit" class="btn-kirim-prestasi field-kirim-prestasi w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]" style="--delay:4">
+                <!-- Status proses pHash (deteksi kemiripan) + penyisipan watermark LSB,
+                     muncul sesaat saat form dikirim (lihat ajukanPrestasi()). Beda dari
+                     panel OCR (#panel-ocr-prestasi) yang berjalan lebih dulu saat file
+                     baru dipilih. -->
+                <p id="status-proses-prestasi" class="hidden field-kirim-prestasi -mt-1 text-[11px] font-semibold text-slate-500 flex items-center gap-1.5" style="--delay:4">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    <span id="teks-status-proses-prestasi">Memeriksa keaslian dan kemiripan gambar&hellip;</span>
+                </p>
+
+                <button type="submit" class="btn-kirim-prestasi field-kirim-prestasi w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0" style="--delay:5">
                     <i class="fa-solid fa-paper-plane mr-1.5"></i>Kirim untuk Dikonfirmasi
                 </button>
             </form>
@@ -11233,6 +11242,311 @@
             return getPrestasiData().find(p => p.hashFile === hash && p.status === 'disetujui');
         }
 
+        /* ================= pHASH 64-BIT — DETEKSI KEMIRIPAN GAMBAR (BUKAN CUMA IDENTIK 100%) =================
+           Beda dengan hitungHashKontenFile() di atas (checksum isi file -- cuma
+           mendeteksi file yang PERSIS SAMA byte-nya), pHash di sini mendeteksi
+           gambar yang MIRIP walau sudah di-resize, dikompres ulang, atau ganti
+           format ringan (mis. sertifikat yang sama difoto ulang/screenshot ulang
+           lalu diupload lagi). Kedua mekanisme ini SENGAJA berjalan BERSAMAAN,
+           bukan saling menggantikan:
+             - hitungHashKontenFile()  -> tangkap duplikat identik 100%
+             - hitungPHashGambar()     -> tangkap duplikat "mirip" (similarity >= 80%)
+
+           CATATAN KEAMANAN (WAJIB DIBACA): pHash & checksum yang dihitung di sini
+           HANYA pemeriksaan awal di sisi BROWSER. localStorage dan kode JavaScript
+           client bisa dimanipulasi siapa saja lewat DevTools, jadi nilai `phash`
+           yang tersimpan/terkirim dari sini TIDAK BOLEH dianggap sumber kebenaran
+           mutlak. Backend WAJIB menghitung ulang pHash & checksum dari file yang
+           benar-benar diterima server sebelum benar-benar menyetujui/menyimpan
+           prestasi secara permanen. */
+        const UKURAN_PHASH = 32;      // gambar dinormalisasi ke 32x32 grayscale sebelum DCT
+        const UKURAN_BLOK_DCT = 8;    // blok frekuensi rendah 8x8 -> 64 bit hash
+        let _tabelKosinusDCT = null;
+
+        function _bangunTabelKosinusDCT() {
+            if (_tabelKosinusDCT) return _tabelKosinusDCT;
+            const n = UKURAN_PHASH;
+            const tabel = new Float64Array(n * n);
+            for (let u = 0; u < n; u++) {
+                for (let x = 0; x < n; x++) {
+                    tabel[u * n + x] = Math.cos(((2 * x + 1) * u * Math.PI) / (2 * n));
+                }
+            }
+            _tabelKosinusDCT = tabel;
+            return tabel;
+        }
+
+        // DCT-II 1 dimensi, dipakai 2x (baris lalu kolom) supaya total kompleksitas
+        // cuma O(n^3) -- bukan O(n^4) kalau DCT 2D dihitung langsung -- tetap ringan
+        // dijalankan di browser tanpa perlu library eksternal apa pun.
+        function _dct1D(vektor, tabel, n) {
+            const hasil = new Float64Array(n);
+            for (let u = 0; u < n; u++) {
+                let jumlah = 0;
+                for (let x = 0; x < n; x++) {
+                    jumlah += vektor[x] * tabel[u * n + x];
+                }
+                const cu = u === 0 ? Math.sqrt(1 / n) : Math.sqrt(2 / n);
+                hasil[u] = cu * jumlah;
+            }
+            return hasil;
+        }
+
+        function _dct2D(matriks, n) {
+            const tabel = _bangunTabelKosinusDCT();
+            const antara = [];
+            for (let y = 0; y < n; y++) antara.push(_dct1D(matriks[y], tabel, n));
+            const hasil = [];
+            for (let x = 0; x < n; x++) hasil.push(new Float64Array(n));
+            for (let x = 0; x < n; x++) {
+                const kolom = new Float64Array(n);
+                for (let y = 0; y < n; y++) kolom[y] = antara[y][x];
+                const dctKolom = _dct1D(kolom, tabel, n);
+                for (let y = 0; y < n; y++) hasil[y][x] = dctKolom[y];
+            }
+            return hasil;
+        }
+
+        // Muat File/Blob gambar jadi HTMLImageElement lewat object URL lokal
+        // (bukan upload ke mana-mana, cuma dibaca browser sendiri) supaya bisa
+        // di-`await` di alur upload.
+        function _muatGambarDariFile(file) {
+            return new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Gagal membaca gambar')); };
+                img.src = url;
+            });
+        }
+
+        // Normalisasi gambar ke grayscale UKURAN_PHASH x UKURAN_PHASH. Resize atau
+        // kompresi ulang ringan tetap menghasilkan hash yang sama/nyaris sama,
+        // karena pHash cuma menyimpan komponen frekuensi RENDAH (bentuk/pola besar
+        // gambar), bukan detail piksel presisi.
+        function _gambarKeMatriksGrayscale(img, n) {
+            const canvas = document.createElement('canvas');
+            canvas.width = n;
+            canvas.height = n;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(img, 0, 0, n, n);
+            const data = ctx.getImageData(0, 0, n, n).data;
+            const matriks = [];
+            for (let y = 0; y < n; y++) {
+                const baris = new Float64Array(n);
+                for (let x = 0; x < n; x++) {
+                    const i = (y * n + x) * 4;
+                    // Luminance ITU-R BT.601 -- konversi RGB ke grayscale.
+                    baris[x] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                }
+                matriks.push(baris);
+            }
+            return matriks;
+        }
+
+        // Cache pHash per file (kunci dari nama+ukuran+lastModified) supaya gambar
+        // yang sama tidak dihitung ulang berkali-kali kalau user gagal kirim lalu
+        // coba lagi tanpa ganti file (optimasi -- lihat poin 7 di instruksi fitur).
+        const _cachePHash = new Map();
+
+        async function hitungPHashGambar(file) {
+            const kunciCache = `${file.name}_${file.size}_${file.lastModified}`;
+            if (_cachePHash.has(kunciCache)) return _cachePHash.get(kunciCache);
+
+            const img = await _muatGambarDariFile(file);
+            const n = UKURAN_PHASH;
+            const matriks = _gambarKeMatriksGrayscale(img, n);
+            const dct = _dct2D(matriks, n);
+
+            // Blok frekuensi rendah 8x8 pojok kiri-atas, TANPA koefisien DC di [0][0]
+            // saat menghitung median (praktik umum pHash) -- supaya hash mewakili
+            // pola/struktur gambar, bukan sekadar kecerahan rata-rata.
+            const nilaiBlok = [];
+            for (let y = 0; y < UKURAN_BLOK_DCT; y++) {
+                for (let x = 0; x < UKURAN_BLOK_DCT; x++) {
+                    if (y === 0 && x === 0) continue;
+                    nilaiBlok.push(dct[y][x]);
+                }
+            }
+            const terurut = [...nilaiBlok].sort((a, b) => a - b);
+            const median = terurut[Math.floor(terurut.length / 2)];
+
+            let bit = 0n;
+            let indeks = 0n;
+            for (let y = 0; y < UKURAN_BLOK_DCT; y++) {
+                for (let x = 0; x < UKURAN_BLOK_DCT; x++) {
+                    if (y === 0 && x === 0) continue;
+                    const nyala = dct[y][x] > median ? 1n : 0n;
+                    bit |= (nyala << indeks);
+                    indeks += 1n;
+                }
+            }
+            const hashHex = bit.toString(16).padStart(16, '0');
+            _cachePHash.set(kunciCache, hashHex);
+            return hashHex;
+        }
+
+        // Hamming distance antar dua pHash 64-bit (format hex string 16 karakter).
+        function hammingDistancePHash(hashA, hashB) {
+            try {
+                const a = BigInt('0x' + hashA);
+                const b = BigInt('0x' + hashB);
+                let xorNya = a ^ b;
+                let jarak = 0;
+                while (xorNya > 0n) {
+                    jarak += Number(xorNya & 1n);
+                    xorNya >>= 1n;
+                }
+                return jarak;
+            } catch (e) {
+                return 64; // gagal parse -> anggap paling beda, jangan sampai salah blokir
+            }
+        }
+
+        // similarity = 1 - (hammingDistance / 64), persis rumus di instruksi fitur.
+        function similarityPHash(hashA, hashB) {
+            return 1 - (hammingDistancePHash(hashA, hashB) / 64);
+        }
+
+        // Cari prestasi berstatus 'disetujui' dengan pHash paling mirip (similarity
+        // >= ambangBatas) dibanding hash baru. Data prestasi LAMA yang belum punya
+        // field `phash` (dibuat sebelum fitur ini ada) otomatis DILEWATI di sini --
+        // tidak menyebabkan error ataupun ke-anggap "mirip" secara keliru.
+        function cariPrestasiDisetujuiMiripPHash(hashBaru, ambangBatas) {
+            let ditemukan = null;
+            let similarityTertinggi = 0;
+            for (const p of getPrestasiData()) {
+                if (p.status !== 'disetujui' || !p.phash) continue;
+                const sim = similarityPHash(hashBaru, p.phash);
+                if (sim >= ambangBatas && sim > similarityTertinggi) {
+                    similarityTertinggi = sim;
+                    ditemukan = p;
+                }
+            }
+            return ditemukan ? { item: ditemukan, similarity: similarityTertinggi } : null;
+        }
+
+        /* ================= WATERMARK DIGITAL TAK TERLIHAT (LSB) =================
+           Menyisipkan identitas internal "PRESTASI|ID_SISWA|TIMESTAMP" ke bit PALING
+           RENDAH (LSB) tiap channel R, G, B piksel gambar (alpha channel SENGAJA
+           tidak disentuh sama sekali). Karena cuma bit terendah yang diubah, selisih
+           nilai warna maksimum cuma ±1 dari 0-255 -- tidak terlihat mata manusia
+           dalam kondisi normal. Hasil watermark disimpan sebagai PNG (lossless)
+           supaya bit LSB-nya tidak rusak oleh kompresi JPEG.
+           CATATAN KEAMANAN: ini watermark level klien untuk jejak internal/forensik
+           ringan, BUKAN pengaman anti-pemalsuan yang absah secara hukum -- backend
+           tetap wajib melakukan verifikasi ulang, bukan sekadar percaya begitu saja
+           kalau browser "bilang" watermark berhasil disisipkan. */
+        const MAGIC_WATERMARK_LSB = 'PRESTASI';
+
+        function _teksKeBitLSB(teks) {
+            let bit = '';
+            for (let i = 0; i < teks.length; i++) {
+                bit += teks.charCodeAt(i).toString(2).padStart(8, '0');
+            }
+            return bit;
+        }
+
+        function _bitKeTeksLSB(bit) {
+            let teks = '';
+            for (let i = 0; i + 8 <= bit.length; i += 8) {
+                const kode = parseInt(bit.substr(i, 8), 2);
+                if (!kode) break;
+                teks += String.fromCharCode(kode);
+            }
+            return teks;
+        }
+
+        // Sisipkan payload ke LSB channel R,G,B canvas. 16 bit pertama menyimpan
+        // PANJANG payload, supaya proses baca-ulang tahu persis kapan berhenti
+        // tanpa perlu menandai/merusak bagian lain gambar.
+        function sisipkanWatermarkLSB(canvas, idSiswa, timestamp) {
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const { width, height } = canvas;
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+
+            const payload = `${MAGIC_WATERMARK_LSB}|${idSiswa}|${timestamp}`;
+            const bitPayload = _teksKeBitLSB(payload);
+            const panjangBit = bitPayload.length.toString(2).padStart(16, '0');
+            const bitLengkap = panjangBit + bitPayload;
+
+            const kapasitasBit = Math.floor((data.length / 4) * 3); // 3 channel (R,G,B) per piksel
+            if (bitLengkap.length > kapasitasBit) {
+                // Gambar terlalu kecil untuk menampung payload -- jangan sisipkan
+                // apa pun daripada merusak sebagian data secara acak/terpotong.
+                return { berhasil: false, alasan: 'Ukuran gambar terlalu kecil untuk watermark' };
+            }
+
+            let posisiBit = 0;
+            for (let i = 0; i < data.length && posisiBit < bitLengkap.length; i += 4) {
+                for (let kanal = 0; kanal < 3 && posisiBit < bitLengkap.length; kanal++) {
+                    data[i + kanal] = (data[i + kanal] & 0xFE) | Number(bitLengkap[posisiBit]);
+                    posisiBit++;
+                }
+                // data[i+3] = alpha -> SENGAJA tidak disentuh sama sekali.
+            }
+
+            ctx.putImageData(imgData, 0, 0);
+            return { berhasil: true, magic: MAGIC_WATERMARK_LSB, idSiswa, timestamp };
+        }
+
+        // Baca kembali watermark dari canvas & validasi header MAGIC-nya. Dipakai
+        // untuk self-check langsung setelah menyisipkan watermark (lihat
+        // ajukanPrestasi()), dan bisa dipakai ulang nanti kalau perlu verifikasi
+        // dari riwayat/dashboard guru.
+        function verifikasiWatermarkLSB(canvas) {
+            try {
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                const { width, height } = canvas;
+                const data = ctx.getImageData(0, 0, width, height).data;
+
+                // Iterator kecil yang jalan lurus SEKALI SAJA lewat data piksel
+                // (channel R->G->B, alpha dilewati), supaya baca 16 bit panjang
+                // payload lalu lanjut baca isi payload dari posisi yang sama --
+                // bukan mengulang scan dari awal gambar.
+                let indeksData = 0, kanalSaatIni = 0;
+                function bacaBitBerikutnya() {
+                    while (indeksData < data.length) {
+                        if (kanalSaatIni < 3) {
+                            const bit = data[indeksData + kanalSaatIni] & 1;
+                            kanalSaatIni++;
+                            return bit;
+                        }
+                        kanalSaatIni = 0;
+                        indeksData += 4;
+                    }
+                    return null;
+                }
+
+                let bitPanjang = '';
+                for (let i = 0; i < 16; i++) {
+                    const b = bacaBitBerikutnya();
+                    if (b === null) return { valid: false };
+                    bitPanjang += b;
+                }
+                const panjangPayload = parseInt(bitPanjang, 2);
+                if (!Number.isFinite(panjangPayload) || panjangPayload <= 0 || panjangPayload > 4000) {
+                    return { valid: false };
+                }
+
+                let bitPayload = '';
+                for (let i = 0; i < panjangPayload; i++) {
+                    const b = bacaBitBerikutnya();
+                    if (b === null) return { valid: false };
+                    bitPayload += b;
+                }
+
+                const payload = _bitKeTeksLSB(bitPayload);
+                const bagian = payload.split('|');
+                if (bagian[0] !== MAGIC_WATERMARK_LSB) return { valid: false };
+                return { valid: true, magic: bagian[0], idSiswa: bagian[1] || null, timestamp: bagian[2] || null };
+            } catch (e) {
+                return { valid: false };
+            }
+        }
+
+
         /* ================= NOTIFIKASI STATUS PRESTASI (disetujui/ditolak guru) =================
            Beda dengan notif tugas ditarik (yang dikirim guru lewat key notif terpisah),
            status prestasi diubah LANGSUNG di objek prestasi itu sendiri oleh Dashboard
@@ -11578,6 +11892,12 @@
             const radioSertifikat = document.querySelector('input[name="pilihan-jenis-prestasi"][value="sertifikat"]');
             if (radioSertifikat) radioSertifikat.checked = true;
             resetPanelOCRPrestasi();
+            // Jaga-jaga: pastikan status proses pHash/watermark & tombol kirim dari
+            // sesi sebelumnya (kalau modal ditutup paksa di tengah proses submit)
+            // sudah ke-reset lagi setiap kali modal ini dibuka.
+            _sembunyikanStatusProsesPrestasi();
+            const tombolKirimReset = document.querySelector('#form-ajukan-prestasi .btn-kirim-prestasi');
+            if (tombolKirimReset) tombolKirimReset.disabled = false;
 
             const modal = document.getElementById('modal-buka-border-prestasi');
             if (!modal) return;
@@ -11958,7 +12278,27 @@
             renderKoleksiBorder();
         }
 
-        function ajukanPrestasi(event) {
+        function _tampilkanStatusProsesPrestasi(teks) {
+            const el = document.getElementById('status-proses-prestasi');
+            const elTeks = document.getElementById('teks-status-proses-prestasi');
+            if (elTeks) elTeks.innerText = teks;
+            if (el) el.classList.remove('hidden');
+        }
+
+        function _sembunyikanStatusProsesPrestasi() {
+            const el = document.getElementById('status-proses-prestasi');
+            if (el) el.classList.add('hidden');
+        }
+
+        // ================= ALUR UPLOAD PRESTASI (versi async) =================
+        // Urutan: pilih gambar -> validasi file -> hitung pHash -> bandingkan dgn
+        // prestasi 'disetujui' -> similarity >= 80% => TOLAK -> kalau aman, buat
+        // watermark LSB -> simpan hasil PNG -> hitung checksum -> simpan metadata
+        // phash + watermark -> lanjut proses upload existing (localStorage + sync
+        // server). Checksum exact-match existing (hitungHashKontenFile) TETAP
+        // dijalankan lebih dulu & tidak diubah -- pHash cuma menambah, bukan
+        // menggantikan mekanisme itu.
+        async function ajukanPrestasi(event) {
             event.preventDefault();
             const judul = document.getElementById('input-judul-prestasi').value.trim();
             const jenis = document.getElementById('input-jenis-prestasi').value;
@@ -11967,16 +12307,20 @@
             const file = fileInput.files && fileInput.files[0];
             if (!judul || !file) return;
 
-            const now = new Date();
-            const bulanSingkat = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-            const tanggalAjukan = now.getDate() + ' ' + bulanSingkat[now.getMonth()] + ' ' + now.getFullYear() + ', ' +
-                                   String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+            const tombolKirim = document.querySelector('#form-ajukan-prestasi .btn-kirim-prestasi');
+            if (tombolKirim) tombolKirim.disabled = true;
 
-            const reader = new FileReader();
-            reader.onload = () => {
-                const base64File = reader.result;
+            try {
+                // ===== Baca isi file asli (dipakai buat checksum exact-duplicate,
+                // mekanisme lama -- TIDAK DIUBAH) =====
+                const base64File = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => reject(new Error('Gagal membaca file'));
+                    reader.readAsDataURL(file);
+                });
 
-                // ===== VERIFIKASI ANTI-DUPLIKAT (checksum isi file) =====
+                // ===== VERIFIKASI ANTI-DUPLIKAT (checksum isi file, identik 100%) =====
                 // Hash dihitung dari ISI file (base64 hasil FileReader), BUKAN dari
                 // nama filenya -- jadi kalau file yang SAMA PERSIS diupload lagi
                 // walau sudah di-rename, hash yang dihasilkan tetap identik &
@@ -11995,6 +12339,70 @@
                     return;
                 }
 
+                // ===== pHASH: deteksi KEMIRIPAN (bukan cuma identik 100%) =====
+                _tampilkanStatusProsesPrestasi('Memeriksa keaslian dan kemiripan gambar\u2026');
+                let phashBaru = null;
+                try {
+                    phashBaru = await hitungPHashGambar(file);
+                } catch (e) {
+                    // Gagal hitung pHash (mis. format gambar tak didukung canvas) --
+                    // jangan blokir upload karenanya, checksum exact-match di atas
+                    // tetap jadi pengaman utama untuk kasus ini.
+                    phashBaru = null;
+                }
+
+                if (phashBaru) {
+                    const mirip = cariPrestasiDisetujuiMiripPHash(phashBaru, 0.8);
+                    if (mirip) {
+                        const persen = Math.round(mirip.similarity * 100);
+                        tampilkanGagalPrestasi(`Upload ditolak: gambar terdeteksi sebagai duplikat dengan tingkat kemiripan ${persen}%.`);
+                        fileInput.value = '';
+                        return;
+                    }
+                }
+
+                // ===== WATERMARK LSB (hanya kalau lolos semua pemeriksaan di atas) =====
+                _tampilkanStatusProsesPrestasi('Menyisipkan tanda keaslian ke gambar\u2026');
+                const timestampWatermark = Date.now();
+                let base64Final = base64File;
+                let infoWatermark = null;
+                try {
+                    const img = await _muatGambarDariFile(file);
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    canvas.getContext('2d').drawImage(img, 0, 0);
+
+                    const hasilSisip = sisipkanWatermarkLSB(canvas, ID_SISWA_AKTIF, timestampWatermark);
+                    if (hasilSisip.berhasil) {
+                        // PNG dipakai (bukan JPEG) supaya kompresi tidak merusak bit LSB.
+                        base64Final = canvas.toDataURL('image/png');
+                        infoWatermark = {
+                            tersisip: true,
+                            idSiswa: ID_SISWA_AKTIF,
+                            timestamp: timestampWatermark
+                        };
+                    } else {
+                        infoWatermark = { tersisip: false, alasan: hasilSisip.alasan };
+                    }
+                } catch (e) {
+                    // Watermark gagal disisipkan (mis. gambar rusak / tidak didukung
+                    // Canvas) -- upload TETAP lanjut pakai file asli, watermark
+                    // bukan syarat mutlak supaya siswa tidak terhambat kirim bukti.
+                    infoWatermark = { tersisip: false, alasan: 'Gagal memproses watermark' };
+                }
+
+                const now = new Date();
+                const bulanSingkat = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+                const tanggalAjukan = now.getDate() + ' ' + bulanSingkat[now.getMonth()] + ' ' + now.getFullYear() + ', ' +
+                                       String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+
+                // checksum PNG hasil watermark -- disimpan sebagai info tambahan saja
+                // (BUKAN dipakai utk blokir exact-duplicate, karena tiap PNG watermark
+                // pasti unik gara-gara timestamp yang disisipkan; blokir exact-duplicate
+                // tetap pakai hashFileBaru dari file ASLI di atas).
+                const checksumWatermark = hitungHashKontenFile(base64Final);
+
                 // Skema field di sini SAMA dengan yang dibaca Dashboard Guru
                 // (judul, jenis, keterangan, foto, namaSiswa, status, tanggalAjukan)
                 // supaya pengajuan ini langsung muncul & bisa dikonfirmasi di sana.
@@ -12004,8 +12412,16 @@
                     judul,
                     jenis,
                     keterangan: keterangan || null,
-                    foto: base64File,
+                    foto: base64Final,
                     hashFile: hashFileBaru,
+                    // pHash 64-bit (hex) dari gambar ASLI (belum diberi watermark) --
+                    // dipakai cariPrestasiDisetujuiMiripPHash() utk cek upload berikutnya.
+                    // Data prestasi LAMA yang belum punya field ini otomatis dilewati
+                    // saat dibandingkan (lihat cariPrestasiDisetujuiMiripPHash), jadi
+                    // TIDAK menyebabkan error di data lama.
+                    phash: phashBaru,
+                    watermark: infoWatermark,
+                    checksumWatermark,
                     // Teks hasil Ekstraksi Teks Otomatis (OCR) dari foto -- bahan
                     // cross-check tambahan buat guru saat menilai (mis. kalau nama
                     // lomba yang diketik siswa gak nyambung sama teks di foto).
@@ -12028,8 +12444,12 @@
                 tutupModalBukaBorder();
                 renderKoleksiBorder();
                 tampilkanSuksesPrestasi(`Bukti "${judul}" berhasil dikirim dan sedang menunggu konfirmasi dari guru/admin.`);
-            };
-            reader.readAsDataURL(file);
+            } catch (e) {
+                tampilkanGagalPrestasi('Terjadi kesalahan saat memproses file. Silakan coba lagi.');
+            } finally {
+                _sembunyikanStatusProsesPrestasi();
+                if (tombolKirim) tombolKirim.disabled = false;
+            }
         }
 
         function renderKoleksiBorder() {
