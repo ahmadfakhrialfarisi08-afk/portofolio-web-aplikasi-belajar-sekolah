@@ -941,6 +941,38 @@
             transform: translateY(-1px);
         }
 
+        /* ---------- Bottom Navigation Bar (khusus HP): mengikuti tata letak
+           foto referensi -- 5 menu utama, dipasang fixed di dasar layar,
+           menggantikan peran utama tombol hamburger untuk navigasi utama.
+           Menu lain (Akademik/Border, Guru, Cari Teman, Perangkat, AI Support,
+           Bantuan) tetap bisa diakses lewat tombol hamburger di header. ---------- */
+        #bottom-nav-mobile {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 40;
+            background: var(--surface);
+            border-top: 1px solid var(--border-subtle);
+            box-shadow: 0 -4px 16px -8px rgba(16, 24, 40, 0.12);
+            padding-bottom: env(safe-area-inset-bottom, 0);
+        }
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            flex: 1;
+            padding: 8px 2px 7px;
+            color: var(--text-secondary);
+            font-size: 10px;
+            font-weight: 600;
+            transition: color .15s ease;
+        }
+        .bottom-nav-item i { font-size: 15px; }
+        .bottom-nav-item.bottom-nav-item--active { color: #2563eb; }
+
         /* ============================================================
            PALET BRAND BARU: indigo-violet hangat menggantikan biru
            korporat generik. Menimpa utility Tailwind blue-* dengan cara
@@ -2703,7 +2735,7 @@
                 </div>
                 
                 <div class="relative">
-                    <div id="profile-menu-trigger" onclick="toggleProfileDropdown(event)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleProfileDropdown(event);}" aria-label="Buka menu profil" class="flex items-center gap-1.5 sm:gap-3 pl-1.5 sm:pl-3 border-l border-slate-200 cursor-pointer select-none py-1">
+                    <div id="profile-menu-trigger" onclick="toggleProfileDropdown(event)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleProfileDropdown(event);}" aria-label="Buka menu profil" class="hidden sm:flex items-center gap-1.5 sm:gap-3 pl-1.5 sm:pl-3 border-l border-slate-200 cursor-pointer select-none py-1">
                         <div class="profile-wrapper w-8 h-8 sm:w-11 sm:h-11 flex-shrink-0">
                             <img id="header-user-avatar" src="{{ foto_profil }}" class="user-avatar" alt="Avatar">
                             <img src="../static/img/border_pemula.jpg" class="user-border" alt="Border_Pemula">
@@ -2761,7 +2793,7 @@
             </div>
         </header>
 
-        <main id="main-content" class="p-5 sm:p-7 lg:p-8 space-y-6">
+        <main id="main-content" class="p-5 sm:p-7 lg:p-8 space-y-6 pb-24 sm:pb-7 lg:pb-8">
 
             <div id="banner-mode-dummy" class="hidden flex items-center justify-between gap-3 bg-purple-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm">
                 <span><i class="fa-solid fa-user-astronaut mr-1.5"></i> Sedang login sebagai akun dummy: <span id="banner-mode-dummy-nama"></span> — progress quiz &amp; prestasi disimpan terpisah dari akun asli kamu.</span>
@@ -2769,10 +2801,25 @@
             </div>
             
             <section id="tab-beranda" class="tab-content space-y-6">
-                <div id="banner-sapaan" class="relative rounded-[16px] p-7 sm:p-8 text-white overflow-hidden">
+                <!-- Kartu sapaan khusus HP: foto profil di kiri + sapaan waktu, nama, dan
+                     kelas -- ini sekarang jadi satu-satunya tempat foto profil tampil di HP
+                     (trigger profil di pojok kanan header disembunyikan di layar kecil). -->
+                <button type="button" onclick="toggleProfileDropdown(event)" class="sm:hidden w-full flex items-center gap-3 bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm text-left" aria-label="Buka menu profil">
+                    <div class="profile-wrapper w-12 h-12 flex-shrink-0">
+                        <img id="greeting-card-avatar" src="{{ foto_profil }}" class="user-avatar" alt="Avatar">
+                        <img src="../static/img/border_pemula.jpg" class="user-border" alt="Border_Pemula">
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs text-slate-400"><span class="teks-sapaan-waktu-efektif">Selamat Pagi</span>,</p>
+                        <h3 class="font-bold text-base text-slate-900 truncate nama-siswa-efektif">{{ nama }}</h3>
+                        <p class="text-xs text-blue-600 font-medium">Siswa • XII TKJ 3/TAV</p>
+                    </div>
+                </button>
+
+                <div id="banner-sapaan" class="hidden sm:block relative rounded-[16px] p-7 sm:p-8 text-white overflow-hidden">
                     <div class="max-w-xl relative z-10">
                         <span class="bg-white/15 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider mb-3 inline-block">Tahun Ajaran 2026/2027</span>
-                        <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 leading-tight"><span id="teks-sapaan-waktu">Selamat Pagi</span>, <span class="nama-siswa-efektif">{{ nama }}</span>! 👋</h2>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 leading-tight"><span id="teks-sapaan-waktu" class="teks-sapaan-waktu-efektif">Selamat Pagi</span>, <span class="nama-siswa-efektif">{{ nama }}</span>! 👋</h2>
                         <p class="banner-sapaan-sub text-sm leading-relaxed">Jangan lupa masuk sebelum jam 06:30 WIB hari ini. Semoga harimu menyenangkan di sekolah!</p>
                     </div>
                     <svg class="banner-sapaan-deco absolute right-0 top-0 h-full w-auto pointer-events-none" viewBox="0 0 320 260" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -2806,7 +2853,7 @@
                         </div>
 
                         <div class="bento-stat-card p-5 rounded-[16px] transition-all duration-200 flex flex-col justify-between">
-                            <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm mb-2.5" aria-hidden="true"><i class="fa-solid fa-clock"></i></div>
+                            <div class="w-9 h-9 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center text-sm mb-2.5" aria-hidden="true"><i class="fa-solid fa-clock"></i></div>
                             <div>
                                 <p class="text-xs font-medium text-slate-500">Tugas Belum Selesai</p>
                                 <h3 class="text-xl font-bold text-slate-900 mt-0.5"><span id="count-pending-tasks">0</span> <span class="text-xs font-normal text-slate-400">Tugas</span></h3>
@@ -2824,52 +2871,54 @@
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 space-y-6">
-                        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm">
-                            <div class="flex items-center justify-between mb-5">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-calendar-day"></i></div>
-                                    <div>
-                                        <h3 class="font-bold text-base text-slate-900">Jadwal Hari Ini</h3>
-                                        <p id="current-date-text" class="text-xs text-slate-400">Loading tanggal...</p>
-                                    </div>
+                    <!-- Urutan di HP mengikuti foto referensi: Jadwal -> Pengumuman -> Tugas Terdekat.
+                         Di layar lebar (lg+) urutan diatur ulang lewat lg:order-* supaya tetap
+                         2 kolom seperti sebelumnya (Jadwal & Tugas Terdekat kiri, Pengumuman kanan). -->
+                    <div class="order-1 lg:order-1 lg:col-span-2 bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm">
+                        <div class="flex items-center justify-between mb-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-calendar-day"></i></div>
+                                <div>
+                                    <h3 class="font-bold text-base text-slate-900">Jadwal Hari Ini</h3>
+                                    <p id="current-date-text" class="text-xs text-slate-400">Loading tanggal...</p>
                                 </div>
-                                <button onclick="openModalJadwal()" class="text-xs font-semibold text-blue-600 hover:underline flex-shrink-0">Lihat Semua</button>
                             </div>
-                            <div id="today-schedule-list" class="space-y-3"></div>
+                            <button onclick="openModalJadwal()" class="text-xs font-semibold text-blue-600 hover:underline flex-shrink-0">Lihat Semua</button>
                         </div>
+                        <div id="today-schedule-list" class="space-y-3"></div>
+                    </div>
 
-                        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm">
-                            <div class="flex items-center justify-between mb-5">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-list-check"></i></div>
-                                    <h3 class="font-bold text-base text-slate-900">Tugas Terdekat</h3>
-                                </div>
-                                <button onclick="switchTab('tugas')" class="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 flex-shrink-0">
-                                    Lihat Semua <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
-                                </button>
+                    <div class="order-2 lg:order-3 bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-bullhorn"></i></div>
+                                <h3 class="font-bold text-base text-slate-900">Pengumuman Sekolah</h3>
                             </div>
-                            <div id="container-tugas-terdekat"></div>
+                            <button onclick="switchTab('pengumuman')" class="text-xs font-semibold text-blue-600 hover:underline flex-shrink-0">Semua</button>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md uppercase tracking-wide">Ujian</span>
+                                    <span class="text-[10px] font-semibold text-slate-400">20 Juli 2026</span>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-800 mt-1.5">Jadwal Ujian Tengah Semester</h4>
+                                <p class="text-xs text-slate-500 mt-1">UTS Semester Ganjil akan dilaksanakan mulai pertengahan bulan depan...</p>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="space-y-6">
-                        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm">
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-bullhorn"></i></div>
-                                    <h3 class="font-bold text-base text-slate-900">Pengumuman Sekolah</h3>
-                                </div>
-                                <button onclick="switchTab('pengumuman')" class="text-xs font-semibold text-blue-600 hover:underline flex-shrink-0">Semua</button>
+                    <div class="order-3 lg:order-2 lg:col-span-2 bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm">
+                        <div class="flex items-center justify-between mb-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-list-check"></i></div>
+                                <h3 class="font-bold text-base text-slate-900">Tugas Terdekat</h3>
                             </div>
-                            <div class="space-y-4">
-                                <div class="border-b border-slate-100 pb-3 last:border-0 last:pb-0">
-                                    <span class="text-[10px] font-semibold text-blue-600">20 Juli 2026</span>
-                                    <h4 class="text-sm font-bold text-slate-800 mt-0.5">Jadwal Ujian Tengah Semester</h4>
-                                    <p class="text-xs text-slate-500 mt-1">UTS Semester Ganjil akan dilaksanakan mulai pertengahan bulan depan...</p>
-                                </div>
-                            </div>
+                            <button onclick="switchTab('tugas')" class="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 flex-shrink-0">
+                                Lihat Semua <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
+                            </button>
                         </div>
+                        <div id="container-tugas-terdekat"></div>
                     </div>
                 </div>
             </section>
@@ -3537,6 +3586,30 @@
             </section>
 
         </main>
+
+        <!-- Bottom Navigation Bar (khusus HP, sesuai foto referensi) -->
+        <nav id="bottom-nav-mobile" class="sm:hidden flex items-stretch" aria-label="Navigasi utama">
+            <button type="button" class="bottom-nav-item bottom-nav-item--active" data-bottom-tab="beranda" onclick="switchTab('beranda')">
+                <i class="fa-solid fa-house" aria-hidden="true"></i>
+                <span>Beranda</span>
+            </button>
+            <button type="button" class="bottom-nav-item" data-bottom-tab="tugas" onclick="switchTab('tugas')">
+                <i class="fa-solid fa-book-open" aria-hidden="true"></i>
+                <span>Tugas</span>
+            </button>
+            <button type="button" class="bottom-nav-item" data-bottom-tab="quiz" onclick="switchTab('quiz')">
+                <i class="fa-solid fa-medal" aria-hidden="true"></i>
+                <span>Quiz</span>
+            </button>
+            <button type="button" class="bottom-nav-item" data-bottom-tab="pengumuman" onclick="switchTab('pengumuman')">
+                <i class="fa-solid fa-bullhorn" aria-hidden="true"></i>
+                <span>Pengumuman</span>
+            </button>
+            <button type="button" class="bottom-nav-item" data-bottom-tab="profil" onclick="toggleProfileDropdown(event)">
+                <i class="fa-solid fa-user" aria-hidden="true"></i>
+                <span>Profil</span>
+            </button>
+        </nav>
     </div>
 
     <div id="modalJadwal" class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -4421,10 +4494,12 @@
             event.stopPropagation();
             const dropdown = document.getElementById('profile-dropdown');
             const moreDropdown = document.getElementById('dropdown-more-header');
+            const btnProfilBawah = document.querySelector('.bottom-nav-item[data-bottom-tab="profil"]');
             if (moreDropdown) moreDropdown.classList.add('hidden');
             if (dropdown) {
                 const akanTampil = dropdown.classList.contains('hidden');
                 dropdown.classList.toggle('hidden');
+                if (btnProfilBawah) btnProfilBawah.classList.toggle('bottom-nav-item--active', akanTampil);
                 if (akanTampil) {
                     // Pastikan panel selalu mulai kebaca dari atas (foto profil dulu),
                     // bukan langsung ke bagian tengah/bawah. Header sudah "sticky top-0",
@@ -4652,9 +4727,11 @@
             const headerAvatar = document.getElementById('header-user-avatar');
             const dropdownAvatar = document.getElementById('dropdown-user-avatar');
             const islandAvatar = document.getElementById('island-user-avatar');
+            const greetingAvatar = document.getElementById('greeting-card-avatar');
             if (headerAvatar) headerAvatar.src = base64Image;
             if (dropdownAvatar) { dropdownAvatar.src = base64Image; dropdownAvatar.style.display = ''; }
             if (islandAvatar) islandAvatar.src = base64Image;
+            if (greetingAvatar) greetingAvatar.src = base64Image;
 
             // Foto baru langsung disebar ke SEMUA entri leaderboard milik
             // siswa ini (bukan cuma foto di header/dropdown) supaya foto
@@ -6297,6 +6374,14 @@
             if (tabName === 'cari-teman') {
                 renderDaftarTeman();
             }
+
+            // Sinkronkan status aktif Bottom Navigation Bar (khusus HP) dengan tab
+            // yang sedang dibuka. Menu di luar 5 item bottom nav (mis. Akademik,
+            // Guru, Cari Teman, dll -- diakses lewat hamburger) tidak akan
+            // menyalakan ikon manapun di bawah, itu wajar.
+            document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+                btn.classList.toggle('bottom-nav-item--active', btn.dataset.bottomTab === tabName);
+            });
         }
 
         /* ================= AI SUPPORT (chat bantuan berbasis kata kunci) =================
@@ -6489,9 +6574,10 @@
 
             if (tasks.length === 0) {
                 container.innerHTML = `
-                    <div class="p-4 sm:p-6 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
-                        <i class="fa-solid fa-calendar-check text-2xl mb-1 text-slate-300"></i>
-                        <p class="text-xs font-medium">Belum ada tugas terdekat. Semua aman!</p>
+                    <div class="py-6 sm:py-8 text-center">
+                        <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg mx-auto mb-3"><i class="fa-solid fa-check"></i></div>
+                        <p class="text-sm font-bold text-slate-800">Belum ada tugas terdekat. Semua aman!</p>
+                        <p class="text-xs text-slate-400 mt-1">Nikmati waktumu atau pelajari materi kuis selanjutnya.</p>
                     </div>`;
                 return;
             }
@@ -6567,7 +6653,7 @@
         }
 
         const jadwalPelajaran = {
-            "Senin": [{ start: "06:30", end: "07:30", mapel: "Upacara Bendera", guru: "Semua Guru • Lapangan" }],
+            "Senin": [{ start: "06:30", end: "07:30", mapel: "Upacara Bendera", guru: "Semua Guru • Lapangan Sekolah" }],
             "Selasa": [{ start: "07:30", end: "09:00", mapel: "Administrasi Jaringan", guru: "Ahmad, S.T • Lab TKJ 1" }],
             "Rabu": [{ start: "07:30", end: "09:00", mapel: "Matematika Peminatan", guru: "Drs. Eko Prasetyo • Lab Komputer 1" }],
             "Kamis": [{ start: "07:30", end: "09:00", mapel: "Pemrograman Web", guru: "Ahmad Fakhri • Lab Komputer 2" }],
@@ -6603,29 +6689,27 @@
                 const endTotalMinutes = endH * 60 + endM;
 
                 let cardStyle = "border-slate-200 bg-white";
-                let badgeStyle = "bg-slate-100 text-slate-600";
-                let statusLabel = `<span class="text-[10px] font-bold text-slate-400">Akan Datang</span>`;
+                let timeBadgeStyle = "bg-blue-50 text-blue-700";
+                let statusLabel = `<span class="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-extrabold uppercase tracking-wide rounded-md">Akan Datang</span>`;
 
                 if (currentTotalMinutes >= startTotalMinutes && currentTotalMinutes <= endTotalMinutes) {
                     cardStyle = "border-emerald-500 bg-emerald-50/50 shadow-sm";
-                    badgeStyle = "bg-emerald-500 text-white animate-pulse";
-                    statusLabel = `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-extrabold rounded-md animate-pulse">Sedang Berlangsung</span>`;
+                    timeBadgeStyle = "bg-emerald-500 text-white animate-pulse";
+                    statusLabel = `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-extrabold uppercase tracking-wide rounded-md animate-pulse">Berlangsung</span>`;
                 } else if (currentTotalMinutes > endTotalMinutes) {
                     cardStyle = "border-slate-200 bg-slate-50 opacity-75";
-                    badgeStyle = "bg-slate-200 text-slate-500";
-                    statusLabel = `<span class="text-[10px] font-bold text-slate-400">Selesai</span>`;
+                    timeBadgeStyle = "bg-blue-50 text-blue-700";
+                    statusLabel = `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-extrabold uppercase tracking-wide rounded-md">Selesai</span>`;
                 }
 
                 html += `
-                    <div class="flex items-center justify-between p-3.5 border rounded-xl transition-all ${cardStyle}">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold px-2.5 py-1 rounded-lg ${badgeStyle}">${item.start} - ${item.end}</span>
+                    <div class="p-3.5 border rounded-xl transition-all ${cardStyle}">
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                            <span class="text-xs font-bold px-2.5 py-1 rounded-lg ${timeBadgeStyle}">${item.start} - ${item.end}</span>
                             ${statusLabel}
                         </div>
-                        <div class="text-right">
-                            <h4 class="font-bold text-slate-800 text-sm">${item.mapel}</h4>
-                            <p class="text-xs text-slate-400">${item.guru}</p>
-                        </div>
+                        <h4 class="font-bold text-slate-800 text-sm">${item.mapel}</h4>
+                        <p class="text-xs text-slate-400">${item.guru}</p>
                     </div>`;
             });
             container.innerHTML = html;
@@ -7067,8 +7151,7 @@
             const sapaan = dapatkanSapaanWaktu(now);
             if (sapaan === _sapaanTerakhirDitampilkan) return;
             _sapaanTerakhirDitampilkan = sapaan;
-            const elSapaan = document.getElementById('teks-sapaan-waktu');
-            if (elSapaan) elSapaan.textContent = sapaan;
+            document.querySelectorAll('.teks-sapaan-waktu-efektif').forEach(el => { el.textContent = sapaan; });
         }
 
         let _menitTerakhirDitampilkan = null;
