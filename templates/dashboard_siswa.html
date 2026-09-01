@@ -9187,6 +9187,7 @@
             pastikanBaselineSeenIdsQuiz();
             pastikanBaselineSeenIdsQuizEssay();
             terapkanBorderKeAvatar();
+            sinkronkanBorderAktifDariServer(); // tarik ulang border aktif dari server -- biar sinkron kalau baru diganti dari perangkat lain
             cekPembaruanTugasRealtime(); // set snapshot awal sebagai baseline
             updateGlobalCountdown();
             setInterval(updateGlobalCountdown, 1000);
@@ -12601,6 +12602,46 @@
                 img.alt = `Border_${border.nama}`;
             });
             terapkanEfekNamaHeader(border);
+        }
+
+        // ===== Sinkronisasi border aktif LINTAS PERANGKAT =====
+        // AKAR MASALAH "efek nama beda antara laptop & HP": getBorderTerpakai()
+        // di atas cuma baca localStorage -- yaitu penyimpanan KHUSUS PER
+        // PERANGKAT/BROWSER. pakaiBorder() memang sudah mengirim border yang
+        // dipilih ke server (POST /api/profil/border) supaya siswa LAIN bisa
+        // lihat lewat "Cari Teman", tapi nilai itu tidak pernah ditarik BALIK
+        // ke localStorage perangkat lain milik siswa yang sama -- jadi kalau
+        // ganti border di laptop, localStorage HP tetap pakai nilai lama/
+        // default-nya sendiri, dan efek nama pun ikut beda.
+        //
+        // Fix: begitu halaman dibuka di perangkat mana pun, tarik dulu border
+        // aktif YANG SEBENARNYA dari server lewat endpoint yang sama dipakai
+        // untuk melihat profil teman (/api/teman/profil/<username>), tapi
+        // dipanggil ke username akun sendiri. Kalau hasilnya beda dari yang
+        // tersimpan lokal, localStorage perangkat ini diperbarui dan avatar +
+        // efek nama dirender ulang supaya benar-benar sinkron dengan
+        // perangkat lain. Best-effort: kalau gagal (offline/endpoint tidak
+        // mengizinkan lihat profil sendiri), diam-diam dilewati saja dan
+        // border hasil localStorage lokal tetap dipakai seperti sebelumnya.
+        async function sinkronkanBorderAktifDariServer() {
+            if (!USERNAME_SISWA_ASLI) return;
+            try {
+                const res = await fetch(`/api/teman/profil/${encodeURIComponent(USERNAME_SISWA_ASLI)}`);
+                const json = await res.json();
+                const idBorderServer = json && json.success && json.profil ? json.profil.border : null;
+                if (!idBorderServer) return;
+
+                const borderServer = getSemuaBorder().find(b => b.id === idBorderServer);
+                if (!borderServer || !isBorderTerbuka(borderServer)) return;
+
+                if (idBorderServer !== localStorage.getItem(KEY_BORDER_TERPAKAI)) {
+                    localStorage.setItem(KEY_BORDER_TERPAKAI, idBorderServer);
+                    terapkanBorderKeAvatar();
+                    renderKoleksiBorder();
+                }
+            } catch (e) {
+                console.error('Gagal sinkron border aktif dari server:', e);
+            }
         }
 
         // ===== Efek Nama & Badge (ikut tier border yang sedang dipakai) =====
