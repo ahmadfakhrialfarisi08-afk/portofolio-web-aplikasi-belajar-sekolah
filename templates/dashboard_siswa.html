@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Aplikasi Sekolah - Dashboard Siswa</title>
+    <title>Aplikasi Belajar - Dashboard Siswa</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- OCR (Ekstraksi Teks Otomatis) untuk verifikasi foto bukti prestasi -->
@@ -2199,6 +2199,10 @@
         @media (prefers-reduced-motion: reduce) {
             .nav-btn, .nav-btn-picking { transition: none !important; transform: none !important; }
         }
+        /* Gestur tahan+geser (lihat setupAnimasiPickerMenuLainnya) butuh touch-action
+           none di area menu ini supaya browser tidak buru-buru menganggapnya
+           gestur scroll biasa. */
+        #sidebar-menu { touch-action: none; }
 
         /* --- ANIMASI "SEOLAH DIPILIH" SAAT BOTTOM NAV DITAHAN + DIGESER JARI
            (tanpa dilepas), mirip picker-wheel di sidebar tapi arahnya
@@ -6284,10 +6288,7 @@
             const sedangTerbuka = !sidebar.classList.contains('translate-y-full');
             sidebar.classList.toggle('translate-y-full');
             overlay.classList.toggle('hidden');
-            if (tombolLainnya) {
-                tombolLainnya.setAttribute('aria-expanded', String(!sedangTerbuka));
-                tombolLainnya.classList.toggle('bottom-nav-item--active', !sedangTerbuka);
-            }
+            if (tombolLainnya) tombolLainnya.setAttribute('aria-expanded', String(!sedangTerbuka));
         }
 
         function closeSidebarMobile() {
@@ -6297,10 +6298,7 @@
             if (!sidebar || !overlay) return;
             sidebar.classList.add('translate-y-full');
             overlay.classList.add('hidden');
-            if (tombolLainnya) {
-                tombolLainnya.setAttribute('aria-expanded', 'false');
-                tombolLainnya.classList.remove('bottom-nav-item--active');
-            }
+            if (tombolLainnya) tombolLainnya.setAttribute('aria-expanded', 'false');
         }
 
         /* ================= ANIMASI "SEOLAH KEPILIH" SAAT SCROLL SIDEBAR DI HP =================
@@ -6420,6 +6418,52 @@
             });
         })();
 
+        /* ================= ANIMASI "SEOLAH DIPILIH" SAAT MENU LAINNYA DITAHAN =================
+           Perilaku sama persis dengan setupAnimasiPickerBottomNav di atas, tapi
+           untuk daftar menu di dalam sheet "Menu Lainnya" (Koleksi Prestasi,
+           Daftar Guru, Cari Teman, Perangkat, AI Support, IT Support, dst).
+           Dipisah dari IIFE picker-scroll yang sudah ada (setupAnimasiPickerSidebar)
+           supaya keduanya tetap bisa jalan berdampingan tanpa saling mengganggu. */
+        (function setupAnimasiPickerMenuLainnya() {
+            const nav = document.getElementById('sidebar-menu');
+            if (!nav) return;
+
+            let sedangMenahan = false;
+            let itemTersorot = null;
+
+            function sorotItem(item) {
+                if (itemTersorot === item) return;
+                if (itemTersorot) itemTersorot.classList.remove('nav-btn-picking');
+                itemTersorot = item;
+                if (itemTersorot) itemTersorot.classList.add('nav-btn-picking');
+            }
+
+            function lepasSorotan() {
+                sorotItem(null);
+                sedangMenahan = false;
+            }
+
+            nav.addEventListener('pointerdown', (e) => {
+                const item = e.target.closest('.nav-btn, #btn-it-support');
+                if (!item) return;
+                sedangMenahan = true;
+                sorotItem(item);
+            });
+
+            nav.addEventListener('pointermove', (e) => {
+                if (!sedangMenahan) return;
+                const elDiBawahJari = document.elementFromPoint(e.clientX, e.clientY);
+                const item = elDiBawahJari ? elDiBawahJari.closest('.nav-btn, #btn-it-support') : null;
+                sorotItem(item && nav.contains(item) ? item : null);
+            });
+
+            nav.addEventListener('pointerup', lepasSorotan);
+            nav.addEventListener('pointercancel', lepasSorotan);
+            nav.addEventListener('pointerleave', () => {
+                if (sedangMenahan) sorotItem(null);
+            });
+        })();
+
         // Kalau layar di-resize jadi ukuran desktop, pastikan overlay & state mobile ke-reset
         window.addEventListener('resize', () => {
             if (window.innerWidth >= 768) {
@@ -6468,11 +6512,18 @@
 
             // Sinkronkan status aktif Bottom Navigation Bar (khusus HP) dengan tab
             // yang sedang dibuka. Menu di luar 5 item bottom nav (mis. Akademik,
-            // Guru, Cari Teman, dll -- diakses lewat hamburger) tidak akan
-            // menyalakan ikon manapun di bawah, itu wajar.
-            document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+            // Guru, Cari Teman, Perangkat, AI Support -- diakses lewat tombol
+            // "Lainnya") akan otomatis memindahkan warna aktif ke tombol
+            // "Lainnya" itu sendiri, persis seperti Beranda/Tugas/Quiz/
+            // Pengumuman yang nyala warnanya waktu dibuka.
+            document.querySelectorAll('.bottom-nav-item[data-bottom-tab]').forEach(btn => {
                 btn.classList.toggle('bottom-nav-item--active', btn.dataset.bottomTab === tabName);
             });
+            const tombolLainnyaBawah = document.getElementById('btn-bottom-lainnya');
+            if (tombolLainnyaBawah) {
+                const adaTombolLangsungDiBawah = !!document.querySelector(`.bottom-nav-item[data-bottom-tab="${tabName}"]`);
+                tombolLainnyaBawah.classList.toggle('bottom-nav-item--active', !adaTombolLangsungDiBawah);
+            }
         }
 
         /* ================= AI SUPPORT (chat bantuan berbasis kata kunci) =================
