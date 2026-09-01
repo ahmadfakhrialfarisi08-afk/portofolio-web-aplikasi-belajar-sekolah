@@ -2960,21 +2960,27 @@
             <section id="tab-beranda" class="tab-content space-y-6">
                 <!-- Kartu sapaan khusus HP: foto profil di kiri + sapaan waktu, nama, dan
                      kelas -- ini sekarang jadi satu-satunya tempat foto profil tampil di HP
-                     (trigger profil di pojok kanan header disembunyikan di layar kecil). -->
-                <button type="button" onclick="toggleProfileDropdown(event)" class="sm:hidden w-full flex items-center gap-3 bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm text-left" aria-label="Buka menu profil">
-                    <div class="profile-wrapper w-12 h-12 flex-shrink-0">
+                     (trigger profil di pojok kanan header disembunyikan di layar kecil).
+                     Dulu satu <button> besar (klik di mana saja -> buka dropdown profil).
+                     SEKARANG dipisah jadi 2 zona klik sendiri-sendiri:
+                     - Foto/avatar -> buka popup kecil di tengah layar yang nampilkan
+                       foto profil ukuran penuh (bukaPopupFotoProfil()).
+                     - Nama (+area teks sapaan/kelas) -> langsung pindah ke tab Profil
+                       (switchTab('profil')), bukan cuma buka dropdown lagi. -->
+                <div class="sm:hidden w-full flex items-center gap-3 bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm text-left">
+                    <button type="button" onclick="bukaPopupFotoProfil()" class="profile-wrapper w-12 h-12 flex-shrink-0" aria-label="Lihat foto profil">
                         <img id="greeting-card-avatar" src="{{ foto_profil }}" class="user-avatar" alt="Avatar">
                         <img src="../static/img/border_pemula.jpg" class="user-border" alt="Border_Pemula">
-                    </div>
-                    <div class="min-w-0">
+                    </button>
+                    <button type="button" onclick="switchTab('profil')" class="min-w-0 flex-1 text-left" aria-label="Buka halaman profil">
                         <p class="text-xs text-slate-400"><span class="teks-sapaan-waktu-efektif">Selamat Pagi</span>,</p>
                         <h3 class="flex items-center gap-1 flex-wrap min-w-0">
                             <span class="font-bold text-base truncate nama-siswa-efektif nama-siswa-efektif-gelap">{{ nama }}</span>
                             <span class="badge-dev-siswa-efektif shrink-0"></span>
                         </h3>
                         <p class="text-xs text-blue-600 font-medium">Siswa • XII TKJ 3/TAV</p>
-                    </div>
-                </button>
+                    </button>
+                </div>
 
                 <div id="banner-sapaan" class="hidden sm:block relative rounded-[16px] p-7 sm:p-8 text-white overflow-hidden">
                     <div class="max-w-xl relative z-10">
@@ -4079,6 +4085,22 @@
         </div>
         <p id="judul-zoom-foto-prestasi" class="absolute bottom-5 left-0 right-0 text-center text-white/80 text-xs font-semibold px-4 pointer-events-none"></p>
         <p class="absolute bottom-1 left-0 right-0 text-center text-white/40 text-[10px] pointer-events-none">Scroll / cubit untuk zoom &middot; geser untuk memindahkan &middot; dobel klik untuk reset</p>
+    </div>
+
+    <!-- Popup kecil foto profil: muncul di TENGAH layar saat foto profil di kartu
+         sapaan Beranda (HP) diklik. Beda dengan modal-zoom-foto-prestasi di atas
+         (yang full-layar + bisa di-zoom/geser buat foto bukti prestasi) -- ini
+         cuma kartu kecil sederhana yang menampilkan foto profil bulat versi
+         penuh, tanpa kontrol zoom, karena tujuannya cuma "intip" foto profil
+         yang lagi dipakai. -->
+    <div id="popup-foto-profil" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[110] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupPopupFotoProfil()">
+        <div class="bg-white rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-3 max-w-[80vw]">
+            <div class="profile-wrapper w-40 h-40 flex-shrink-0">
+                <img id="popup-foto-profil-avatar" src="" class="user-avatar" alt="Foto Profil">
+                <img id="popup-foto-profil-border" src="../static/img/border_pemula.jpg" class="user-border" alt="Border">
+            </div>
+            <button type="button" onclick="tutupPopupFotoProfil()" class="mt-1 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition-colors">Tutup</button>
+        </div>
     </div>
 
     <!-- Modal detail siswa di Leaderboard Journey Prestasi: kartu profil (foto+border+
@@ -12324,6 +12346,32 @@
                 });
             }
             saveStatusPrestasiTerlihat(sekarang);
+        }
+
+        /* ================= POPUP FOTO PROFIL (dari kartu sapaan Beranda) =================
+           Diklik dari foto/avatar di kartu sapaan Beranda (HP). Ambil src
+           langsung dari #greeting-card-avatar (bukan dari {{ foto_profil }}
+           statis) supaya selalu ikut foto TERBARU kalau siswa baru saja
+           ganti foto profil (elemen ini disinkronkan real-time oleh
+           prosesFotoProfilBaru()). */
+        function bukaPopupFotoProfil() {
+            const sumberFoto = document.getElementById('greeting-card-avatar');
+            const popup = document.getElementById('popup-foto-profil');
+            const popupAvatar = document.getElementById('popup-foto-profil-avatar');
+            if (!sumberFoto || !popup || !popupAvatar) return;
+
+            popupAvatar.src = sumberFoto.src;
+            popup.classList.remove('hidden');
+            popup.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function tutupPopupFotoProfil() {
+            const popup = document.getElementById('popup-foto-profil');
+            if (!popup) return;
+            popup.classList.add('hidden');
+            popup.classList.remove('flex');
+            document.body.style.overflow = '';
         }
 
         /* ================= ZOOM FOTO BUKTI PRESTASI ================= */
