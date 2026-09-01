@@ -6893,6 +6893,39 @@
         // Grid "Lencana & Pencapaian" di halaman Profil (HP) -- menampilkan
         // border/lencana yang SUDAH dimiliki siswa (pakai sistem border yang
         // sama dengan menu Koleksi Border), bukan data terpisah baru.
+        //
+        // SEMENTARA: dulu badge di sini ditampilkan pakai file gambar border
+        // asli (border.file, mis. border_admin.jpg) -- tapi file-file itu
+        // belum/tidak ke-load dengan benar di banyak perangkat, jadi badge-nya
+        // tampil sebagai kotak hitam polos. Untuk sementara diganti ikon
+        // bulat berwarna (gaya sama seperti referensi desain: lingkaran
+        // pastel + ikon + sub-label kecil), supaya badge-nya tetap kebaca
+        // rapi selagi aset gambar border yang sebenarnya belum diperbaiki.
+        // Sistem border/koleksi border di tab lain TIDAK diubah -- ini
+        // hanya khusus tampilan grid lencana di tab Profil HP ini.
+        function ikonLencanaProfilSementara(border) {
+            const PETA_IKON = {
+                starter: { icon: 'fa-seedling', bg: 'bg-slate-100', warna: 'text-slate-500' },
+                admin: { icon: 'fa-crown', bg: 'bg-amber-50', warna: 'text-amber-500' },
+                quiz: {
+                    1: { icon: 'fa-book-open', bg: 'bg-sky-50', warna: 'text-sky-500' },
+                    2: { icon: 'fa-brain', bg: 'bg-purple-50', warna: 'text-purple-500' },
+                    3: { icon: 'fa-crown', bg: 'bg-amber-50', warna: 'text-amber-500' }
+                },
+                prestasi: {
+                    1: { icon: 'fa-medal', bg: 'bg-orange-50', warna: 'text-orange-500' },
+                    2: { icon: 'fa-medal', bg: 'bg-slate-100', warna: 'text-slate-500' },
+                    3: { icon: 'fa-trophy', bg: 'bg-amber-50', warna: 'text-amber-500' },
+                    4: { icon: 'fa-crown', bg: 'bg-pink-50', warna: 'text-pink-500' }
+                }
+            };
+            const fallback = { icon: 'fa-award', bg: 'bg-slate-100', warna: 'text-slate-500' };
+            if (border.kategori === 'quiz' || border.kategori === 'prestasi') {
+                return PETA_IKON[border.kategori][border.tierRank] || fallback;
+            }
+            return PETA_IKON[border.kategori] || fallback;
+        }
+
         function renderLencanaProfilTab() {
             const grid = document.getElementById('profil-grid-lencana');
             const kosong = document.getElementById('profil-lencana-kosong');
@@ -6906,15 +6939,18 @@
             grid.classList.toggle('hidden', dimiliki.length === 0);
             if (kosong) kosong.classList.toggle('hidden', dimiliki.length > 0);
 
-            grid.innerHTML = dimiliki.map(border => `
+            grid.innerHTML = dimiliki.map(border => {
+                const gaya = ikonLencanaProfilSementara(border);
+                return `
                 <div class="flex flex-col items-center text-center gap-1" title="${border.nama} — ${border.rank}">
-                    <div class="profile-wrapper w-11 h-11 flex-shrink-0">
-                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23000'/%3E%3C/svg%3E" class="user-avatar" alt="">
-                        <img src="${border.file}" class="user-border" alt="Border_${border.nama}">
+                    <div class="w-12 h-12 rounded-full ${gaya.bg} ${gaya.warna} flex items-center justify-center text-base flex-shrink-0" aria-hidden="true">
+                        <i class="fa-solid ${gaya.icon}"></i>
                     </div>
                     <p class="text-[9px] font-bold text-slate-700 leading-tight truncate w-full">${border.nama}</p>
+                    <p class="text-[8px] text-slate-400 leading-tight truncate w-full">${border.rank}</p>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         // Cek apakah sebuah deadline tugas sudah lewat, dipakai renderTugasTerdekat
