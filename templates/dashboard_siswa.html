@@ -3641,6 +3641,94 @@
                 </div>
             </section>
 
+            <!-- Halaman "Profil" khusus HP -- diakses lewat tombol Profil di
+                 Bottom Navigation Bar (sebelumnya cuma buka dropdown kecil,
+                 sekarang jadi halaman penuh sesuai referensi). Di layar sm+
+                 halaman ini tetap disembunyikan karena profil desktop sudah
+                 tersedia lewat dropdown foto profil di header. -->
+            <section id="tab-profil" class="tab-content space-y-5 hidden sm:hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden">
+                    <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center text-base absolute top-4 right-4" aria-hidden="true">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <div class="flex items-center gap-3 pr-12">
+                        <div class="profile-wrapper w-14 h-14 flex-shrink-0">
+                            <img id="profil-tab-avatar" src="{{ foto_profil }}" class="user-avatar" alt="Avatar">
+                            <img src="../static/img/border_pemula.jpg" class="user-border" alt="Border_Pemula">
+                        </div>
+                        <div class="min-w-0">
+                            <h3 class="font-bold text-base text-slate-900 truncate nama-siswa-efektif">{{ nama }}</h3>
+                            <p class="text-xs text-blue-600 font-medium">Siswa • XII TKJ 3/TAV</p>
+                            <p class="text-xs text-slate-400 truncate">SMK Banjar Asri Cimaung</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="streak-card streak-tier-0 bento-stat-card p-3.5 rounded-[16px] flex flex-col items-center text-center" id="profil-kartu-streak" title="Streak naik tiap tugas dikumpulkan sebelum deadline berturut-turut.">
+                        <div class="streak-icon-wrap w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center text-xs mb-1.5" aria-hidden="true"><i class="fa-solid fa-fire streak-flame-icon"></i></div>
+                        <h3 class="text-lg font-bold text-slate-900"><span id="profil-streak-jumlah">0</span></h3>
+                        <p class="text-[10px] font-medium text-slate-500 leading-tight">Streak (Hari)</p>
+                    </div>
+                    <div class="bento-stat-card p-3.5 rounded-[16px] flex flex-col items-center text-center">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs mb-1.5" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></div>
+                        <h3 class="text-lg font-bold text-slate-900"><span id="profil-count-completed-tasks">0</span></h3>
+                        <p class="text-[10px] font-medium text-slate-500 leading-tight">Tugas Selesai</p>
+                    </div>
+                    <div class="bento-stat-card p-3.5 rounded-[16px] flex flex-col items-center text-center">
+                        <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center text-xs mb-1.5" aria-hidden="true"><i class="fa-solid fa-clock"></i></div>
+                        <h3 class="text-lg font-bold text-slate-900"><span id="profil-count-pending-tasks">0</span></h3>
+                        <p class="text-[10px] font-medium text-slate-500 leading-tight">Tugas Belum</p>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-sm text-slate-800">Lencana &amp; Pencapaian</h4>
+                        <span id="profil-lencana-jumlah" class="text-[11px] font-semibold text-slate-400">0/0</span>
+                    </div>
+                    <div id="profil-grid-lencana" class="grid grid-cols-4 gap-2.5"></div>
+                    <div id="profil-lencana-kosong" class="hidden p-5 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                        <i class="fa-solid fa-medal text-xl mb-1.5"></i>
+                        <p class="text-xs font-medium">Belum ada lencana yang dimiliki.</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-sm text-slate-800 mb-3">Catatan Pelanggaran</h4>
+                    <div class="p-5 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                        <i class="fa-solid fa-clipboard-check text-xl mb-1.5"></i>
+                        <p class="text-xs font-medium">Belum ada pelanggaran.</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-sm text-slate-800 mb-3">Pengaturan Akun &amp; Preferensi</h4>
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm divide-y divide-slate-100 overflow-hidden">
+                        <button type="button" onclick="toggleProfileDropdown(event)" class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50 transition-colors">
+                            <i class="fa-solid fa-user-pen text-slate-400 w-4 text-center" aria-hidden="true"></i>
+                            <span class="flex-1 text-sm font-semibold text-slate-700">Edit Profil</span>
+                            <i class="fa-solid fa-chevron-right text-[10px] text-slate-300" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" onclick="toggleBellDropdown(event)" class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50 transition-colors">
+                            <i class="fa-solid fa-bell text-slate-400 w-4 text-center" aria-hidden="true"></i>
+                            <span class="flex-1 text-sm font-semibold text-slate-700">Notifikasi</span>
+                            <i class="fa-solid fa-chevron-right text-[10px] text-slate-300" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" onclick="switchTab('ai-support')" class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50 transition-colors">
+                            <i class="fa-solid fa-circle-question text-slate-400 w-4 text-center" aria-hidden="true"></i>
+                            <span class="flex-1 text-sm font-semibold text-slate-700">Pusat Bantuan</span>
+                            <i class="fa-solid fa-chevron-right text-[10px] text-slate-300" aria-hidden="true"></i>
+                        </button>
+                        <a href="{{ url_for('logout') }}" class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-rose-50 transition-colors">
+                            <i class="fa-solid fa-right-from-bracket text-rose-500 w-4 text-center" aria-hidden="true"></i>
+                            <span class="flex-1 text-sm font-semibold text-rose-600">Keluar dari Akun</span>
+                            <i class="fa-solid fa-chevron-right text-[10px] text-rose-300" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </div>
+            </section>
+
         </main>
 
         <!-- Bottom Navigation Bar (khusus HP, sesuai foto referensi) -->
@@ -3665,7 +3753,7 @@
                 <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
                 <span>Lainnya</span>
             </button>
-            <button type="button" class="bottom-nav-item" data-bottom-tab="profil" onclick="toggleProfileDropdown(event)">
+            <button type="button" class="bottom-nav-item" data-bottom-tab="profil" onclick="switchTab('profil')">
                 <i class="fa-solid fa-user" aria-hidden="true"></i>
                 <span>Profil</span>
             </button>
@@ -6561,6 +6649,17 @@
                     console.error('Gagal memuat daftar teman:', err);
                 }
             }
+
+            // Setiap kali halaman "Profil" (HP) dibuka, refresh statistik
+            // (streak/tugas) & grid Lencana supaya datanya selalu terbaru.
+            if (tabName === 'profil') {
+                try {
+                    updateTaskCounter();
+                    renderLencanaProfilTab();
+                } catch (err) {
+                    console.error('Gagal memuat halaman Profil:', err);
+                }
+            }
         }
 
         /* ================= AI SUPPORT (chat bantuan berbasis kata kunci) =================
@@ -6655,6 +6754,13 @@
             if (elPending) elPending.innerText = String(pending);
             if (elCompleted) elCompleted.innerText = String(completed);
 
+            // Salinan angka yang sama di halaman "Profil" (HP) -- elemen ini
+            // opsional (halaman lain tidak punya id ini), makanya dicek dulu.
+            const elPendingProfil = document.getElementById('profil-count-pending-tasks');
+            const elCompletedProfil = document.getElementById('profil-count-completed-tasks');
+            if (elPendingProfil) elPendingProfil.innerText = String(pending);
+            if (elCompletedProfil) elCompletedProfil.innerText = String(completed);
+
             renderStreakTugas();
         }
 
@@ -6721,6 +6827,44 @@
 
             elJumlah.innerText = String(streak);
             elLabelBawah.innerText = info.label;
+
+            // Salinan kartu streak di halaman "Profil" (HP) -- opsional, dicek
+            // dulu supaya aman dipanggil dari halaman lain yang tidak punya ini.
+            const kartuProfil = document.getElementById('profil-kartu-streak');
+            const elJumlahProfil = document.getElementById('profil-streak-jumlah');
+            if (kartuProfil) {
+                for (let i = 0; i <= 4; i++) kartuProfil.classList.remove(`streak-tier-${i}`);
+                kartuProfil.classList.add(`streak-tier-${info.tier}`);
+                kartuProfil.title = info.sub;
+            }
+            if (elJumlahProfil) elJumlahProfil.innerText = String(streak);
+        }
+
+        // Grid "Lencana & Pencapaian" di halaman Profil (HP) -- menampilkan
+        // border/lencana yang SUDAH dimiliki siswa (pakai sistem border yang
+        // sama dengan menu Koleksi Border), bukan data terpisah baru.
+        function renderLencanaProfilTab() {
+            const grid = document.getElementById('profil-grid-lencana');
+            const kosong = document.getElementById('profil-lencana-kosong');
+            const badgeJumlah = document.getElementById('profil-lencana-jumlah');
+            if (!grid) return;
+
+            const semua = getSemuaBorder();
+            const dimiliki = semua.filter(isBorderTerbuka);
+
+            if (badgeJumlah) badgeJumlah.innerText = `${dimiliki.length}/${semua.length}`;
+            grid.classList.toggle('hidden', dimiliki.length === 0);
+            if (kosong) kosong.classList.toggle('hidden', dimiliki.length > 0);
+
+            grid.innerHTML = dimiliki.map(border => `
+                <div class="flex flex-col items-center text-center gap-1" title="${border.nama} — ${border.rank}">
+                    <div class="profile-wrapper w-11 h-11 flex-shrink-0">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23000'/%3E%3C/svg%3E" class="user-avatar" alt="">
+                        <img src="${border.file}" class="user-border" alt="Border_${border.nama}">
+                    </div>
+                    <p class="text-[9px] font-bold text-slate-700 leading-tight truncate w-full">${border.nama}</p>
+                </div>
+            `).join('');
         }
 
         // Cek apakah sebuah deadline tugas sudah lewat, dipakai renderTugasTerdekat
