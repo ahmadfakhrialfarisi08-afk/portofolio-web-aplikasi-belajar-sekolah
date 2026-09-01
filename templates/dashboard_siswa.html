@@ -6947,8 +6947,8 @@
                 if (border.kategori === 'admin') {
                     return `
                     <div class="flex flex-col items-center text-center gap-1" title="${border.nama} — ${border.rank}">
-                        <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-amber-50">
-                            <img src="../static/img/achivement_admin.jpg" class="w-full h-full object-cover" alt="Lencana ${border.nama}">
+                        <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-amber-50 flex items-center justify-center text-base text-amber-500">
+                            <img src="../static/img/achivement_admin.jpg" class="w-full h-full object-cover" alt="Lencana ${border.nama}" onerror="this.replaceWith(Object.assign(document.createElement('i'), {className: 'fa-solid fa-crown'}))">
                         </div>
                         <p class="text-[9px] font-bold text-slate-700 leading-tight truncate w-full">${border.nama}</p>
                         <p class="text-[8px] text-slate-400 leading-tight truncate w-full">${border.rank}</p>
@@ -12653,6 +12653,11 @@
             return '';
         }
 
+        // Daftar semua kemungkinan class efek nama -- dipakai buat "bersih-bersih"
+        // dulu sebelum pasang yang baru, supaya ganti border/tier tidak numpuk
+        // class efek lama yang sudah tidak berlaku.
+        const KELAS_EFEK_NAMA_SEMUA = ['efek-nama-admin', 'efek-nama-pink', 'efek-nama-permata', 'efek-nama-emas', 'efek-nama-perak'];
+
         function terapkanEfekNamaHeader(border) {
             const elNama = document.getElementById('header-user-nama-efek');
             const elBadge = document.getElementById('header-user-badge-dev');
@@ -12662,6 +12667,19 @@
             // header melebar ke kanan, walau efek nama/border-nya ganti-ganti.
             if (elNama) elNama.className = `truncate max-w-full ${kelasEfek}`.trim();
             if (elBadge) elBadge.innerHTML = getBadgeDevHtml(border);
+
+            // Sinkronkan efek nama yang sama ke SEMUA elemen lain yang nampilin
+            // nama siswa (kartu sapaan HP, banner sapaan desktop, dan halaman
+            // Profil HP) -- sebelumnya cuma elemen header desktop di atas yang
+            // dapat class efeknya, jadi di HP nama selalu tampil polos walau
+            // di laptop sudah bergaya emas/perak/dst. classList dipakai (bukan
+            // timpa className) supaya class layout lain (font-bold, truncate,
+            // text-slate-900, dst) di tiap elemen tidak ikut hilang.
+            document.querySelectorAll('.nama-siswa-efektif').forEach(el => {
+                if (el.id === 'header-user-nama-efek') return; // sudah ditangani di atas
+                KELAS_EFEK_NAMA_SEMUA.forEach(kelas => el.classList.remove(kelas));
+                if (kelasEfek) el.classList.add(kelasEfek);
+            });
         }
 
         // Keterangan singkat "cara dapetin" yang ditampilkan di bawah tiap kartu border,
