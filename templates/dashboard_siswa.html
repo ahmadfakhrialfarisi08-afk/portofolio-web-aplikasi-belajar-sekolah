@@ -58,7 +58,7 @@
            JS yang diubah — semua class & id lama tetap dipertahankan.
            ============================================================ */
         :root {
-            --surface: #ffffff;
+            --surface: #fbfbfe;
             --page-bg: #f8f7fc;
             --border-subtle: #ece9f5;
             --border-strong: #ddd8ee;
@@ -76,6 +76,21 @@
             --shadow-card-hover: 0 3px 8px -3px rgba(16, 24, 40, 0.07);
             --shadow-pop: 0 8px 20px -6px rgba(16, 24, 40, 0.12), 0 3px 8px -3px rgba(16, 24, 40, 0.06);
         }
+
+        /* Redupkan sedikit warna PUTIH POLOS (bg-white) di kartu/panel Mode
+           Terang -- putih murni #ffffff kerasa terlalu terang/silau di mata
+           kalau dipakai berjam-jam, apalagi di layar HP yang cerah, jadi
+           bikin mata cepat lelah. Diturunkan sedikit ke off-white lembut
+           (bukan abu-abu terlihat, cuma sedikit diredupkan) supaya kontrasnya
+           sama teks tetap cukup tapi permukaannya tidak menyilaukan.
+           Sengaja di-override lewat 1 aturan CSS pakai !important (bukan
+           ganti satu-satu ratusan class "bg-white" di HTML) supaya konsisten
+           di SELURUH dashboard tanpa ada yang kelewatan, dan otomatis ikut
+           berlaku juga untuk elemen baru yang nanti ditambah pakai class
+           "bg-white". Class "bg-white/NN" (versi transparan, dipakai di
+           overlay tombol atas modal gelap dll) sengaja TIDAK disentuh --
+           itu bukan permukaan kartu, jadi tidak bikin silau. */
+        .bg-white { background-color: #fbfbfe !important; }
 
         /* ============================================================
            DARK MINIMALIST MODE — token warna khusus dipasang di scope
@@ -189,7 +204,7 @@
            :root di atas. */
         html:not(.dark)[data-accent-theme="putih"] {
             --page-bg: #f8f7fc;
-            --surface: #ffffff;
+            --surface: #fbfbfe;
             --surface-hover: #f1f5f9;
             --border-subtle: #ece9f5;
             --border-strong: #ddd8ee;
