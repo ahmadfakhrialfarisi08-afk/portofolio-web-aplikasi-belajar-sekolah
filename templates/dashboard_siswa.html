@@ -1406,14 +1406,20 @@
            pengganti, TAPI :active bawaan browser tidak konsisten antar-HP
            (kadang lepas sendiri, kadang enggak). Makanya feedback saat
            ditekan SEKARANG dipindah ke JS murni (lihat
-           setupFeedbackTekanMenuAkun di bagian <script>), supaya warnanya
-           konsisten TETAP nyala selama jari masih menyentuh layar -- termasuk
-           saat digeser/discroll ke atas/bawah -- dan baru lepas begitu jari
-           diangkat, persis seperti efek "seolah dipilih" di bottom nav. */
+           setupAnimasiPickerMenuAkun di bagian <script>), yang juga
+           menambahkan gestur "geser buat pilih": begitu jari nempel di
+           salah satu menu lalu digeser ke atas/bawah TANPA dilepas,
+           sorotannya ikut pindah ke menu yang ada tepat di bawah jari --
+           persis efek "seolah dipilih" di bottom nav & menu "Lainnya". */
         @media (hover: none) {
             .menu-list-touch-fix > *:hover { background-color: transparent !important; }
             .menu-list-touch-fix-rose:hover { background-color: transparent !important; }
         }
+        /* touch-action:none di sini supaya gestur tahan+geser di atas menu ini
+           TIDAK dianggap gestur scroll biasa oleh browser -- sama seperti
+           #sidebar-menu & #bottom-nav-mobile (lihat komentar masing2 di
+           bagian "ANIMASI SEOLAH DIPILIH" di atas). */
+        .menu-list-touch-fix { touch-action: none; }
         .menu-list-touch-fix > *.item-sedang-ditekan { background-color: rgb(248 250 252) !important; }
         .menu-list-touch-fix-rose.item-sedang-ditekan { background-color: rgb(255 241 242) !important; }
 
@@ -6681,31 +6687,63 @@
             });
         })();
 
-        /* ================= FEEDBACK TEKAN MENU PENGATURAN AKUN & PREFERENSI =================
-           Tombol2 di sini (Edit Profil/Notifikasi/Pusat Bantuan/Keluar dari
-           Akun) sengaja dibuat "seolah dipilih" persis seperti bottom nav &
-           menu "Lainnya" di atas: begitu jari nempel, warnanya nyala dan
-           TETAP nempel walau jari digeser/discroll ke atas atau ke bawah --
-           tidak langsung lepas cuma karena ada gerakan. Warnanya baru
-           dicabut saat jari benar2 diangkat/dibatalkan (pointerup/
-           pointercancel) atau keluar dari elemen (pointerleave). */
-        (function setupFeedbackTekanMenuAkun() {
+        /* ================= ANIMASI "SEOLAH DIPILIH" SAAT MENU PENGATURAN AKUN DITAHAN =================
+           Perilaku sama persis dengan setupAnimasiPickerBottomNav &
+           setupAnimasiPickerMenuLainnya di atas, tapi untuk daftar menu
+           "Pengaturan Akun & Preferensi" (Edit Profil/Notifikasi/Pusat
+           Bantuan/Keluar dari Akun): begitu jari nempel di salah satu menu
+           lalu digeser ke atas/bawah TANPA dilepas, sorotannya (warna latar
+           item-sedang-ditekan) ikut pindah mengikuti jari ke menu yang ada
+           tepat di bawahnya -- persis gestur geser-pilih di menu native
+           Android/iOS. Ini murni feedback visual; begitu jari dilepas, klik
+           tetap otomatis jatuh ke menu yang sedang disorot (perilaku bawaan
+           browser untuk pointerup), jadi tidak perlu memicu aksinya manual
+           dari sini. touch-action:none dipasang di CSS (.menu-list-touch-fix)
+           supaya geser jari di sini tidak dianggap gestur scroll biasa. */
+        (function setupAnimasiPickerMenuAkun() {
+            const container = document.querySelector('.menu-list-touch-fix');
+            if (!container) return;
+
             const KELAS_TEKAN = 'item-sedang-ditekan';
-            const semuaItem = document.querySelectorAll('.menu-list-touch-fix > *, .menu-list-touch-fix-rose');
+            const SELECTOR_ITEM = '.menu-list-touch-fix > *, .menu-list-touch-fix-rose';
+            let sedangMenahan = false;
+            let itemTersorot = null;
 
-            semuaItem.forEach(item => {
-                const lepasTekan = () => {
-                    item.classList.remove(KELAS_TEKAN);
-                };
+            function ambilItem(el) {
+                return el ? el.closest(SELECTOR_ITEM) : null;
+            }
 
-                item.addEventListener('pointerdown', (e) => {
-                    if (e.pointerType === 'mouse') return; // biar laptop/mouse tetap pakai :hover normal
-                    item.classList.add(KELAS_TEKAN);
-                });
+            function sorotItem(item) {
+                if (itemTersorot === item) return;
+                if (itemTersorot) itemTersorot.classList.remove(KELAS_TEKAN);
+                itemTersorot = item;
+                if (itemTersorot) itemTersorot.classList.add(KELAS_TEKAN);
+            }
 
-                item.addEventListener('pointerup', lepasTekan);
-                item.addEventListener('pointercancel', lepasTekan);
-                item.addEventListener('pointerleave', lepasTekan);
+            function lepasSorotan() {
+                sorotItem(null);
+                sedangMenahan = false;
+            }
+
+            container.addEventListener('pointerdown', (e) => {
+                if (e.pointerType === 'mouse') return; // biar laptop/mouse tetap pakai :hover normal
+                const item = ambilItem(e.target);
+                if (!item) return;
+                sedangMenahan = true;
+                sorotItem(item);
+            });
+
+            container.addEventListener('pointermove', (e) => {
+                if (!sedangMenahan) return;
+                const elDiBawahJari = document.elementFromPoint(e.clientX, e.clientY);
+                const item = ambilItem(elDiBawahJari);
+                sorotItem(item && container.contains(item) ? item : null);
+            });
+
+            container.addEventListener('pointerup', lepasSorotan);
+            container.addEventListener('pointercancel', lepasSorotan);
+            container.addEventListener('pointerleave', () => {
+                if (sedangMenahan) sorotItem(null);
             });
         })();
 
