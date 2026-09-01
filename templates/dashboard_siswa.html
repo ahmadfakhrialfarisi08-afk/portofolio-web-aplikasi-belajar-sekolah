@@ -1344,6 +1344,26 @@
         .streak-tier-4 #streak-label-bawah { color: #fff7ed !important; }
         .streak-tier-4 .streak-icon-wrap { background: rgba(255,255,255,.15) !important; color: #fed7aa !important; }
 
+        /* Warna default nama siswa KHUSUS kartu sapaan HP & tab Profil HP (dulu
+           ditulis langsung sbg class Tailwind "text-slate-900" di HTML elemen
+           itu). DIPINDAH ke sini (class baru .nama-siswa-efektif-gelap, BUKAN
+           ditaruh di .nama-siswa-efektif langsung) karena "text-slate-900" tsb
+           ternyata bentrok dgn .efek-nama-* -- keduanya sama-sama selector 1
+           class, dan stylesheet Tailwind (CDN) disuntik belakangan di <head>
+           shg SELALU menang cascade & menimpa balik warna efek nama jadi solid
+           gelap lagi begitu classList.add() menambahkan efek-nama-* tanpa
+           melepas text-slate-900 (ini yang bikin efek nama kelihatan di laptop
+           -- headernya tidak punya text-slate-900 -- tapi hilang di HP).
+           Class baru ini SENGAJA TIDAK dipasang di span nama pada banner sapaan
+           desktop (butuh warisan warna putih dari parent, bukan gelap) --
+           makanya bukan style bawaan .nama-siswa-efektif, supaya tidak ikut
+           menimpa elemen lain yang justru butuh warna warisan. Diletakkan
+           sebelum blok efek-nama-* di bawah supaya urutan cascade tetap benar:
+           siswa TANPA efek nama tetap dapat warna gelap standar dari sini,
+           sedangkan siswa DENGAN efek nama tetap ditimpa gradiennya oleh
+           .efek-nama-* karena datang belakangan di stylesheet yang sama. */
+        .nama-siswa-efektif-gelap { color: #0f172a; }
+
         /* ============================================================
            EFEK NAMA (mengikuti tier border yang sedang dipakai siswa)
            Dipakai bareng di: header profil, Quiz & Leaderboard, notif
@@ -2910,7 +2930,10 @@
                     </div>
                     <div class="min-w-0">
                         <p class="text-xs text-slate-400"><span class="teks-sapaan-waktu-efektif">Selamat Pagi</span>,</p>
-                        <h3 class="font-bold text-base text-slate-900 truncate nama-siswa-efektif">{{ nama }}</h3>
+                        <h3 class="flex items-center gap-1 flex-wrap min-w-0">
+                            <span class="font-bold text-base truncate nama-siswa-efektif nama-siswa-efektif-gelap">{{ nama }}</span>
+                            <span class="badge-dev-siswa-efektif shrink-0"></span>
+                        </h3>
                         <p class="text-xs text-blue-600 font-medium">Siswa • XII TKJ 3/TAV</p>
                     </div>
                 </button>
@@ -3700,7 +3723,10 @@
                             <img src="../static/img/border_pemula.jpg" class="user-border" alt="Border_Pemula">
                         </div>
                         <div class="min-w-0">
-                            <h3 class="font-bold text-base text-slate-900 truncate nama-siswa-efektif">{{ nama }}</h3>
+                            <h3 class="flex items-center gap-1 flex-wrap min-w-0">
+                                <span class="font-bold text-base truncate nama-siswa-efektif nama-siswa-efektif-gelap">{{ nama }}</span>
+                                <span class="badge-dev-siswa-efektif shrink-0"></span>
+                            </h3>
                             <p class="text-xs text-blue-600 font-medium">Siswa • XII TKJ 3/TAV</p>
                             <p class="text-xs text-slate-400 truncate">SMK Banjar Asri Cimaung</p>
                         </div>
@@ -12720,6 +12746,20 @@
                 if (el.id === 'header-user-nama-efek') return; // sudah ditangani di atas
                 KELAS_EFEK_NAMA_SEMUA.forEach(kelas => el.classList.remove(kelas));
                 if (kelasEfek) el.classList.add(kelasEfek);
+            });
+
+            // Sinkronkan juga badge DEV/Queen (khusus border admin & border pink)
+            // ke kartu sapaan HP & tab Profil HP -- sebelumnya badge ini CUMA ada
+            // di #header-user-badge-dev, dan elemen itu ada di dalam
+            // #profile-menu-trigger yang class-nya "hidden sm:flex" (sengaja
+            // disembunyikan total di layar HP, diganti kartu sapaan/tab Profil).
+            // Akibatnya siswa admin yang login lewat HP tidak pernah lihat badge
+            // DEV-nya sendiri sama sekali, padahal di laptop muncul normal.
+            // Elemen slot baru (.badge-dev-siswa-efektif) ditambahkan di HTML
+            // kartu sapaan HP & tab Profil HP supaya ada tempat menampungnya.
+            const htmlBadge = getBadgeDevHtml(border);
+            document.querySelectorAll('.badge-dev-siswa-efektif').forEach(el => {
+                el.innerHTML = htmlBadge;
             });
         }
 
