@@ -398,13 +398,11 @@
         html:not(.dark)[data-accent-theme="rahasia"] #header-clock-container .fa-clock {
             color: #eab308 !important;
         }
-        html:not(.dark)[data-accent-theme="rahasia"] #header-left-group #btn-toggle-sidebar,
         html:not(.dark)[data-accent-theme="rahasia"] #header-right-group button:not(#btn-rahasia-jurusan) {
             background: rgba(255, 255, 255, 0.06);
             border-color: rgba(255, 255, 255, 0.18);
             color: rgba(255, 255, 255, 0.85);
         }
-        html:not(.dark)[data-accent-theme="rahasia"] #header-left-group #btn-toggle-sidebar:hover,
         html:not(.dark)[data-accent-theme="rahasia"] #header-right-group button:not(#btn-rahasia-jurusan):hover {
             background: rgba(255, 255, 255, 0.14);
             color: #ffffff;
@@ -941,11 +939,12 @@
             transform: translateY(-1px);
         }
 
-        /* ---------- Bottom Navigation Bar (khusus HP): mengikuti tata letak
-           foto referensi -- 5 menu utama, dipasang fixed di dasar layar,
-           menggantikan peran utama tombol hamburger untuk navigasi utama.
-           Menu lain (Akademik/Border, Guru, Cari Teman, Perangkat, AI Support,
-           Bantuan) tetap bisa diakses lewat tombol hamburger di header. ---------- */
+        /* ---------- Bottom Navigation Bar (khusus HP): dipasang fixed di dasar
+           layar, sepenuhnya menggantikan sidebar/hamburger untuk navigasi.
+           5 menu utama tampil langsung (Beranda, Tugas, Quiz, Pengumuman, Profil)
+           + 1 tombol "Lainnya" yang membuka sheet berisi sisa menu (Koleksi
+           Prestasi, Daftar Guru, Cari Teman, Perangkat, AI Support, IT Support,
+           dan semua fitur lain yang dulu ada di sidebar). ---------- */
         #bottom-nav-mobile {
             position: fixed;
             left: 0;
@@ -2426,11 +2425,23 @@
         </div>
     </div>
 
-    <div id="sidebar-overlay" onclick="toggleSidebarMobile()" class="fixed inset-0 bg-slate-900/50 z-[35] hidden"></div>
+    <div id="sidebar-overlay" onclick="toggleSidebarMobile()" class="fixed inset-0 bg-slate-900/50 z-[45] hidden"></div>
 
-    <aside id="sidebar-utama" class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between fixed md:static inset-y-0 left-0 z-40 flex-shrink-0 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto overscroll-contain" aria-label="Navigasi utama">
+    <aside id="sidebar-utama" class="w-full md:w-64 bg-white md:border-r md:border-slate-200 flex flex-col justify-between fixed md:static inset-x-0 bottom-0 md:inset-y-0 md:left-0 z-50 md:z-40 flex-shrink-0 transform translate-y-full md:translate-y-0 md:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto overscroll-contain rounded-t-3xl md:rounded-none max-h-[85vh] md:max-h-none" aria-label="Menu lainnya">
         <div>
-            <div class="px-5 py-5 flex items-start gap-3 border-b border-slate-100">
+            <!-- Header khusus HP: drag handle + judul + tombol tutup. Logo SMK Banjar Asri
+                 sengaja TIDAK ditampilkan di sini (cukup di sidebar desktop di bawah). -->
+            <div class="md:hidden pt-2.5 pb-1 flex justify-center flex-shrink-0">
+                <span class="w-10 h-1.5 bg-slate-200 rounded-full"></span>
+            </div>
+            <div class="md:hidden px-5 pt-1 pb-3 flex items-center justify-between border-b border-slate-100">
+                <h2 class="font-bold text-sm text-slate-900">Menu Lainnya</h2>
+                <button type="button" onclick="toggleSidebarMobile()" class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors" aria-label="Tutup menu lainnya">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+
+            <div class="hidden md:flex px-5 py-5 items-start gap-3 border-b border-slate-100">
                 <a href="https://www.banjarasri.com/" target="_blank" rel="noopener noreferrer" class="block flex-shrink-0" aria-label="Kunjungi situs resmi SMK Banjar Asri Cimaung">
                     <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-500/25 overflow-hidden">
                         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSeyF2mMXxr-Rex9wZLBTU8eRGAelTMK_FPJ0aRJOxzUg&s" alt="Logo Sekolah" class="w-full h-full object-contain" />
@@ -2610,15 +2621,12 @@
         
         <header class="h-14 sm:h-16 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-2 sm:px-8 flex items-center justify-between sticky top-0 z-30">
             <div class="flex items-center gap-1.5 sm:gap-3 transition-all duration-500" id="header-left-group">
-                <button id="btn-toggle-sidebar" onclick="toggleSidebarMobile()" title="Buka menu" aria-label="Buka menu navigasi" class="md:hidden p-1.5 sm:p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors flex-shrink-0 text-xs sm:text-base">
-                    <i class="fa-solid fa-bars"></i>
-                </button>
                 <div class="flex flex-col items-start justify-center bg-slate-50 border border-slate-200/80 px-2 py-1 sm:px-3.5 sm:py-1.5 rounded-xl transition-all duration-300 dynamic-island-container" id="header-clock-container">
                     <div class="flex items-center gap-1.5 sm:gap-2">
                         <i class="fa-regular fa-clock text-blue-600 text-[10px] sm:text-xs" aria-hidden="true"></i>
                         <span id="header-realtime-clock" class="font-bold text-slate-800 text-xs sm:text-sm tracking-wider font-mono">00:00:00 WIB</span>
                     </div>
-                    <span id="header-realtime-date" class="hidden sm:block text-[9px] sm:text-[10px] font-semibold text-slate-400 -mt-0.5">Memuat tanggal...</span>
+                    <span id="header-realtime-date" class="block text-[8px] sm:text-[10px] font-semibold text-slate-400 -mt-0.5 whitespace-nowrap">Memuat tanggal...</span>
                 </div>
             </div>
 
@@ -3604,6 +3612,10 @@
             <button type="button" class="bottom-nav-item" data-bottom-tab="pengumuman" onclick="switchTab('pengumuman')">
                 <i class="fa-solid fa-bullhorn" aria-hidden="true"></i>
                 <span>Pengumuman</span>
+            </button>
+            <button type="button" class="bottom-nav-item relative" id="btn-bottom-lainnya" onclick="toggleSidebarMobile()" aria-haspopup="true" aria-expanded="false" aria-label="Menu lainnya">
+                <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+                <span>Lainnya</span>
             </button>
             <button type="button" class="bottom-nav-item" data-bottom-tab="profil" onclick="toggleProfileDropdown(event)">
                 <i class="fa-solid fa-user" aria-hidden="true"></i>
@@ -6247,17 +6259,28 @@
         function toggleSidebarMobile() {
             const sidebar = document.getElementById('sidebar-utama');
             const overlay = document.getElementById('sidebar-overlay');
+            const tombolLainnya = document.getElementById('btn-bottom-lainnya');
             if (!sidebar || !overlay) return;
-            sidebar.classList.toggle('-translate-x-full');
+            const sedangTerbuka = !sidebar.classList.contains('translate-y-full');
+            sidebar.classList.toggle('translate-y-full');
             overlay.classList.toggle('hidden');
+            if (tombolLainnya) {
+                tombolLainnya.setAttribute('aria-expanded', String(!sedangTerbuka));
+                tombolLainnya.classList.toggle('bottom-nav-item--active', !sedangTerbuka);
+            }
         }
 
         function closeSidebarMobile() {
             const sidebar = document.getElementById('sidebar-utama');
             const overlay = document.getElementById('sidebar-overlay');
+            const tombolLainnya = document.getElementById('btn-bottom-lainnya');
             if (!sidebar || !overlay) return;
-            sidebar.classList.add('-translate-x-full');
+            sidebar.classList.add('translate-y-full');
             overlay.classList.add('hidden');
+            if (tombolLainnya) {
+                tombolLainnya.setAttribute('aria-expanded', 'false');
+                tombolLainnya.classList.remove('bottom-nav-item--active');
+            }
         }
 
         /* ================= ANIMASI "SEOLAH KEPILIH" SAAT SCROLL SIDEBAR DI HP =================
