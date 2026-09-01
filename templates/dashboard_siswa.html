@@ -1364,6 +1364,27 @@
            .efek-nama-* karena datang belakangan di stylesheet yang sama. */
         .nama-siswa-efektif-gelap { color: #0f172a; }
 
+        /* Perbaikan "efek nyangkut" pada menu Pengaturan Akun & Preferensi di
+           HP: tombol2-nya (Edit Profil/Notifikasi/Pusat Bantuan/Keluar dari
+           Akun) cuma pakai class "hover:bg-*" (tanpa warna latar dasar), dan
+           di layar sentuh, state :hover ke-trigger begitu jari nempel lalu
+           kadang tetap "nyangkut" (nggak langsung lepas) terutama kalau jari
+           digeser/scroll sambil masih di atas tombol -- makanya kelihatan
+           kayak salah satu item "terpilih" terus. @media (hover: none)
+           mendeteksi perangkat yang memang tidak punya kemampuan hover asli
+           (HP/tablet layar sentuh, BUKAN laptop/PC ber-mouse), jadi laptop
+           tidak terpengaruh sama sekali oleh aturan di bawah ini.
+           - :hover dimatikan total di situ (biar tidak nyangkut).
+           - :active dipakai sbg gantinya utk kasih feedback singkat saat
+             ditekan, karena :active otomatis lepas pas jari diangkat dan
+             TIDAK ikut aktif cuma gara2 melintas/scroll seperti :hover. */
+        @media (hover: none) {
+            .menu-list-touch-fix > *:hover { background-color: transparent !important; }
+            .menu-list-touch-fix > *:active { background-color: rgb(248 250 252) !important; }
+            .menu-list-touch-fix-rose:hover { background-color: transparent !important; }
+            .menu-list-touch-fix-rose:active { background-color: rgb(255 241 242) !important; }
+        }
+
         /* ============================================================
            EFEK NAMA (mengikuti tier border yang sedang dipakai siswa)
            Dipakai bareng di: header profil, Quiz & Leaderboard, notif
@@ -3780,7 +3801,7 @@
 
                 <div>
                     <h4 class="font-bold text-sm text-slate-800 mb-3">Pengaturan Akun &amp; Preferensi</h4>
-                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm divide-y divide-slate-100 overflow-hidden">
+                    <div class="menu-list-touch-fix bg-white rounded-2xl border border-slate-200/80 shadow-sm divide-y divide-slate-100 overflow-hidden">
                         <button type="button" onclick="toggleProfileDropdown(event)" class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50 transition-colors">
                             <i class="fa-solid fa-user-pen text-slate-400 w-4 text-center" aria-hidden="true"></i>
                             <span class="flex-1 text-sm font-semibold text-slate-700">Edit Profil</span>
@@ -3796,7 +3817,7 @@
                             <span class="flex-1 text-sm font-semibold text-slate-700">Pusat Bantuan</span>
                             <i class="fa-solid fa-chevron-right text-[10px] text-slate-300" aria-hidden="true"></i>
                         </button>
-                        <a href="{{ url_for('logout') }}" class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-rose-50 transition-colors">
+                        <a href="{{ url_for('logout') }}" class="menu-list-touch-fix-rose w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-rose-50 transition-colors">
                             <i class="fa-solid fa-right-from-bracket text-rose-500 w-4 text-center" aria-hidden="true"></i>
                             <span class="flex-1 text-sm font-semibold text-rose-600">Keluar dari Akun</span>
                             <i class="fa-solid fa-chevron-right text-[10px] text-rose-300" aria-hidden="true"></i>
