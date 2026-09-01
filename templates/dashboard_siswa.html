@@ -2379,6 +2379,70 @@
             .bento-stat-card, .tab-content > * { animation: none !important; }
         }
 
+        /* ---- 2b. Khusus tab Profil (HP): jarak header profil -> grid statistik
+           dibikin lebih rapat dari ritme umum di atas (1.75rem/2.25rem), karena
+           di halaman ini kartu profil & grid statistik dimaksud jadi satu
+           kesatuan visual, bukan blok terpisah. Selector #tab-profil dipakai
+           (bukan menambah !important lagi) supaya menang lewat spesifisitas ID,
+           tanpa mengubah ritme tab lain. ---- */
+        #tab-profil.tab-content > * + * {
+            margin-top: 0.75rem !important;
+        }
+        #tab-profil.tab-content > *:nth-child(3n+2) {
+            margin-top: 0.75rem !important;
+        }
+
+        /* ---- 2c. Tata letak "miring" pada 3 kartu statistik di tab Profil
+           (Streak / Tugas Selesai / Tugas Belum), meniru gaya bento playful
+           di referensi desain -- tiap kartu dapat rotasi kecil yang berbeda
+           + border-radius & border warna senada ikonnya, supaya terasa
+           lebih hidup & tidak kaku sejajar lurus.
+
+           PENTING: rotasinya SENGAJA dibakukan di dalam @keyframes fade-up
+           khusus per kartu (bukan cuma properti transform biasa), karena
+           .bento-stat-card sudah punya animasi humanTouchFadeUp yang
+           frame akhirnya set transform: translateY(0) -- kalau rotate()
+           cuma ditaruh di luar animasi, begitu animasi selesai transform-nya
+           ketimpa balik ke posisi lurus dan seluruh ISI kartu (angka,
+           label, ikon) ikut tidak jadi miring. Dengan rotasi ditaruh di
+           frame "to" animasi masing-masing, isi kartu (yang mewarisi
+           transform induknya) ikut miring secara utuh & permanen. ---- */
+        @keyframes humanTouchFadeUpMiring1 {
+            from { opacity: 0; transform: translateY(6px) rotate(-3deg); }
+            to   { opacity: 1; transform: translateY(0) rotate(-3deg); }
+        }
+        @keyframes humanTouchFadeUpMiring2 {
+            from { opacity: 0; transform: translateY(6px) rotate(2.5deg); }
+            to   { opacity: 1; transform: translateY(0) rotate(2.5deg); }
+        }
+        @keyframes humanTouchFadeUpMiring3 {
+            from { opacity: 0; transform: translateY(6px) rotate(-1.5deg); }
+            to   { opacity: 1; transform: translateY(0) rotate(-1.5deg); }
+        }
+        #tab-profil .kartu-profil-stat--1 {
+            animation: humanTouchFadeUpMiring1 .5s cubic-bezier(.16,1,.3,1) .02s both;
+            border-radius: 20px !important;
+            border: 1.5px solid #fde68a;
+        }
+        #tab-profil .kartu-profil-stat--2 {
+            animation: humanTouchFadeUpMiring2 .5s cubic-bezier(.16,1,.3,1) .10s both;
+            border-radius: 14px !important;
+            border: 1.5px solid #6ee7b7;
+        }
+        #tab-profil .kartu-profil-stat--3 {
+            animation: humanTouchFadeUpMiring3 .5s cubic-bezier(.16,1,.3,1) .18s both;
+            border-radius: 22px !important;
+            border: 1.5px solid #7dd3fc;
+        }
+        #tab-profil .kartu-profil-stat--1:hover { transform: translateY(-2px) rotate(-3deg); }
+        #tab-profil .kartu-profil-stat--2:hover { transform: translateY(-2px) rotate(2.5deg); }
+        #tab-profil .kartu-profil-stat--3:hover { transform: translateY(-2px) rotate(-1.5deg); }
+        @media (prefers-reduced-motion: reduce) {
+            #tab-profil .kartu-profil-stat--1 { animation: none !important; transform: rotate(-3deg) !important; }
+            #tab-profil .kartu-profil-stat--2 { animation: none !important; transform: rotate(2.5deg) !important; }
+            #tab-profil .kartu-profil-stat--3 { animation: none !important; transform: rotate(-1.5deg) !important; }
+        }
+
         /* ---- 3. Kontras ketebalan teks (hierarki lebih hidup) ---- */
         main h3.font-bold, main h3.font-extrabold, main .font-extrabold {
             letter-spacing: -0.018em;
@@ -3665,17 +3729,17 @@
                 </div>
 
                 <div class="grid grid-cols-3 gap-3">
-                    <div class="streak-card streak-tier-0 bento-stat-card p-3.5 rounded-[16px] flex flex-col items-center text-center" id="profil-kartu-streak" title="Streak naik tiap tugas dikumpulkan sebelum deadline berturut-turut.">
+                    <div class="streak-card streak-tier-0 bento-stat-card kartu-profil-stat--1 p-3.5 rounded-[16px] flex flex-col items-center text-center" id="profil-kartu-streak" title="Streak naik tiap tugas dikumpulkan sebelum deadline berturut-turut.">
                         <div class="streak-icon-wrap w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center text-xs mb-1.5" aria-hidden="true"><i class="fa-solid fa-fire streak-flame-icon"></i></div>
                         <h3 class="text-lg font-bold text-slate-900"><span id="profil-streak-jumlah">0</span></h3>
                         <p class="text-[10px] font-medium text-slate-500 leading-tight">Streak (Hari)</p>
                     </div>
-                    <div class="bento-stat-card p-3.5 rounded-[16px] flex flex-col items-center text-center">
+                    <div class="bento-stat-card kartu-profil-stat--2 p-3.5 rounded-[16px] flex flex-col items-center text-center">
                         <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs mb-1.5" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></div>
                         <h3 class="text-lg font-bold text-slate-900"><span id="profil-count-completed-tasks">0</span></h3>
                         <p class="text-[10px] font-medium text-slate-500 leading-tight">Tugas Selesai</p>
                     </div>
-                    <div class="bento-stat-card p-3.5 rounded-[16px] flex flex-col items-center text-center">
+                    <div class="bento-stat-card kartu-profil-stat--3 p-3.5 rounded-[16px] flex flex-col items-center text-center">
                         <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center text-xs mb-1.5" aria-hidden="true"><i class="fa-solid fa-clock"></i></div>
                         <h3 class="text-lg font-bold text-slate-900"><span id="profil-count-pending-tasks">0</span></h3>
                         <p class="text-[10px] font-medium text-slate-500 leading-tight">Tugas Belum</p>
