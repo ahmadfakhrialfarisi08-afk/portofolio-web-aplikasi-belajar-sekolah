@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Belajar - Dashboard Siswa</title>
+    <title>Portal Aplikasi Sekolah - Dashboard Siswa</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- OCR (Ekstraksi Teks Otomatis) untuk verifikasi foto bukti prestasi -->
@@ -2198,6 +2198,26 @@
         }
         @media (prefers-reduced-motion: reduce) {
             .nav-btn, .nav-btn-picking { transition: none !important; transform: none !important; }
+        }
+
+        /* --- ANIMASI "SEOLAH DIPILIH" SAAT BOTTOM NAV DITAHAN + DIGESER JARI
+           (tanpa dilepas), mirip picker-wheel di sidebar tapi arahnya
+           horizontal mengikuti posisi jari di sepanjang bottom nav. Ikon yang
+           lagi "ditunjuk" jari membesar & kena tint sebagai preview sebelum
+           jari dilepas -- begitu dilepas, browser otomatis memicu klik pada
+           tombol yang ada tepat di bawah jari saat itu. */
+        #bottom-nav-mobile { touch-action: none; }
+        .bottom-nav-item {
+            transition: transform 150ms ease, background-color 150ms ease, color 150ms ease;
+        }
+        .bottom-nav-item--picking {
+            transform: scale(1.12);
+            background-color: var(--brand-tint-50, rgba(37, 99, 235, 0.08));
+            color: #2563eb;
+            border-radius: 14px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .bottom-nav-item, .bottom-nav-item--picking { transition: none !important; transform: none !important; }
         }
 
         /* ============================================================
@@ -6350,6 +6370,54 @@
             }
 
             sidebar.addEventListener('scroll', saatAdaAktivitasScroll, { passive: true });
+        })();
+
+        /* ================= ANIMASI "SEOLAH DIPILIH" SAAT BOTTOM NAV DITAHAN =================
+           Saat jari menyentuh salah satu ikon bottom nav lalu digeser ke ikon
+           lain TANPA dilepas, ikon yang ada di bawah jari langsung kena efek
+           "picking" (membesar + tint) sebagai preview -- persis pola geser-pilih
+           di menu native Android/iOS. Ini murni feedback visual; begitu jari
+           dilepas, klik tetap otomatis jatuh ke tombol yang sedang disorot
+           (perilaku bawaan browser untuk pointerup/touchend), jadi tidak perlu
+           memicu switchTab/aksi lain secara manual dari sini. */
+        (function setupAnimasiPickerBottomNav() {
+            const nav = document.getElementById('bottom-nav-mobile');
+            if (!nav) return;
+
+            let sedangMenahan = false;
+            let itemTersorot = null;
+
+            function sorotItem(item) {
+                if (itemTersorot === item) return;
+                if (itemTersorot) itemTersorot.classList.remove('bottom-nav-item--picking');
+                itemTersorot = item;
+                if (itemTersorot) itemTersorot.classList.add('bottom-nav-item--picking');
+            }
+
+            function lepasSorotan() {
+                sorotItem(null);
+                sedangMenahan = false;
+            }
+
+            nav.addEventListener('pointerdown', (e) => {
+                const item = e.target.closest('.bottom-nav-item');
+                if (!item) return;
+                sedangMenahan = true;
+                sorotItem(item);
+            });
+
+            nav.addEventListener('pointermove', (e) => {
+                if (!sedangMenahan) return;
+                const elDiBawahJari = document.elementFromPoint(e.clientX, e.clientY);
+                const item = elDiBawahJari ? elDiBawahJari.closest('.bottom-nav-item') : null;
+                sorotItem(item && nav.contains(item) ? item : null);
+            });
+
+            nav.addEventListener('pointerup', lepasSorotan);
+            nav.addEventListener('pointercancel', lepasSorotan);
+            nav.addEventListener('pointerleave', () => {
+                if (sedangMenahan) sorotItem(null);
+            });
         })();
 
         // Kalau layar di-resize jadi ukuran desktop, pastikan overlay & state mobile ke-reset
