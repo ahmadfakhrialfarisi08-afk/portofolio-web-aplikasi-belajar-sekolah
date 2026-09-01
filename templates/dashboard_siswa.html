@@ -34,6 +34,22 @@
     <link rel="stylesheet" href="../static/css/border_pink.css">
 
     <style>
+        /* Matikan highlight abu2/biru bawaan browser HP (WebKit/Chrome mobile)
+           yang muncul otomatis begitu jari nyentuh sebuah elemen -- ini efek
+           bawaan BROWSER (bukan CSS :hover/:active biasa), makanya perbaikan
+           :hover di menu Pengaturan Akun & Preferensi kemarin belum cukup:
+           highlight abu2 ini bisa tetap "nempel"/kelihatan sepanjang jari
+           masih nyentuh layar, termasuk pas discroll, di elemen APAPUN yang
+           bisa ditekan (tombol, link, dsb) di seluruh halaman -- bukan cuma
+           menu Pengaturan Akun & Preferensi. Aturan ini aman di laptop/PC
+           karena tap-highlight memang cuma berlaku di perangkat sentuh.
+           Feedback saat ditekan tetap ada lewat class hover:/active: yang
+           sudah ada di tiap elemen (dan lewat perbaikan :active khusus di
+           menu-list-touch-fix). */
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
         /* ============================================================
            DESIGN SYSTEM — REDESIGN UI/UX (Notion / Linear / Fluent / Classroom)
            Layer ini HANYA mengatur tampilan (token warna, radius, shadow,
