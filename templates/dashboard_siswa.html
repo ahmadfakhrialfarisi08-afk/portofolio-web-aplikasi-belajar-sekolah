@@ -1383,23 +1383,26 @@
         /* Perbaikan "efek nyangkut" pada menu Pengaturan Akun & Preferensi di
            HP: tombol2-nya (Edit Profil/Notifikasi/Pusat Bantuan/Keluar dari
            Akun) cuma pakai class "hover:bg-*" (tanpa warna latar dasar), dan
-           di layar sentuh, state :hover ke-trigger begitu jari nempel lalu
-           kadang tetap "nyangkut" (nggak langsung lepas) terutama kalau jari
-           digeser/scroll sambil masih di atas tombol -- makanya kelihatan
-           kayak salah satu item "terpilih" terus. @media (hover: none)
-           mendeteksi perangkat yang memang tidak punya kemampuan hover asli
-           (HP/tablet layar sentuh, BUKAN laptop/PC ber-mouse), jadi laptop
-           tidak terpengaruh sama sekali oleh aturan di bawah ini.
-           - :hover dimatikan total di situ (biar tidak nyangkut).
-           - :active dipakai sbg gantinya utk kasih feedback singkat saat
-             ditekan, karena :active otomatis lepas pas jari diangkat dan
-             TIDAK ikut aktif cuma gara2 melintas/scroll seperti :hover. */
+           di layar sentuh, state :hover ke-trigger begitu jari nempel.
+           @media (hover: none) mendeteksi perangkat yang memang tidak punya
+           kemampuan hover asli (HP/tablet layar sentuh, BUKAN laptop/PC
+           ber-mouse), jadi laptop tidak terpengaruh sama sekali.
+           CATATAN: sebelumnya di sini juga ada override ":active" sebagai
+           pengganti, TAPI itu malah bikin masalah baru -- warna :active di
+           beberapa browser HP tetap "nempel"/ngikut selama jari masih
+           menyentuh layar walau sedang digeser/discroll (:active tidak selalu
+           otomatis lepas cuma karena jari bergerak). Makanya feedback saat
+           ditekan SEKARANG dipindah ke JS murni (lihat
+           setupFeedbackTekanMenuAkun di bagian <script>), yang secara
+           eksplisit melepas warnanya begitu gerakan jari melewati ambang
+           batas -- bukan mengandalkan :active yang perilakunya tidak
+           konsisten antar-browser. */
         @media (hover: none) {
             .menu-list-touch-fix > *:hover { background-color: transparent !important; }
-            .menu-list-touch-fix > *:active { background-color: rgb(248 250 252) !important; }
             .menu-list-touch-fix-rose:hover { background-color: transparent !important; }
-            .menu-list-touch-fix-rose:active { background-color: rgb(255 241 242) !important; }
         }
+        .menu-list-touch-fix > *.item-sedang-ditekan { background-color: rgb(248 250 252) !important; }
+        .menu-list-touch-fix-rose.item-sedang-ditekan { background-color: rgb(255 241 242) !important; }
 
         /* ============================================================
            EFEK NAMA (mengikuti tier border yang sedang dipakai siswa)
@@ -6640,6 +6643,50 @@
             nav.addEventListener('pointercancel', lepasSorotan);
             nav.addEventListener('pointerleave', () => {
                 if (sedangMenahan) sorotItem(null);
+            });
+        })();
+
+        /* ================= FEEDBACK TEKAN MENU PENGATURAN AKUN & PREFERENSI =================
+           Dulu tombol2 di sini (Edit Profil/Notifikasi/Pusat Bantuan/Keluar
+           dari Akun) mengandalkan CSS :active buat kasih warna pas ditekan --
+           tapi :active di beberapa browser HP TIDAK otomatis lepas cuma
+           karena jari bergerak/discroll, jadi warnanya kelihatan "nempel"/
+           ngikut selama jari masih di layar. Beda dengan bottom nav di atas
+           (yang MEMANG sengaja didesain supaya warna berpindah ngikut jari
+           antar-ikon), di sini warnanya HARUS langsung lepas begitu jari
+           mulai digeser -- makanya dipantau jaraknya lewat pointermove, dan
+           class item-sedang-ditekan dicabut paksa saat sudah kelewat ambang
+           batas, tidak nunggu jari diangkat. */
+        (function setupFeedbackTekanMenuAkun() {
+            const KELAS_TEKAN = 'item-sedang-ditekan';
+            const AMBANG_GESER_PX = 8;
+            const semuaItem = document.querySelectorAll('.menu-list-touch-fix > *, .menu-list-touch-fix-rose');
+
+            semuaItem.forEach(item => {
+                let posMulaiX = 0, posMulaiY = 0, sedangDitekan = false;
+
+                const lepasTekan = () => {
+                    sedangDitekan = false;
+                    item.classList.remove(KELAS_TEKAN);
+                };
+
+                item.addEventListener('pointerdown', (e) => {
+                    if (e.pointerType === 'mouse') return; // biar laptop/mouse tetap pakai :hover normal
+                    posMulaiX = e.clientX;
+                    posMulaiY = e.clientY;
+                    sedangDitekan = true;
+                    item.classList.add(KELAS_TEKAN);
+                });
+
+                item.addEventListener('pointermove', (e) => {
+                    if (!sedangDitekan) return;
+                    const jarak = Math.hypot(e.clientX - posMulaiX, e.clientY - posMulaiY);
+                    if (jarak > AMBANG_GESER_PX) lepasTekan(); // jari mulai digeser/discroll -> lepas SEKARANG, jangan nunggu diangkat
+                });
+
+                item.addEventListener('pointerup', lepasTekan);
+                item.addEventListener('pointercancel', lepasTekan);
+                item.addEventListener('pointerleave', lepasTekan);
             });
         })();
 
