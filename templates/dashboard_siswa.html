@@ -407,6 +407,30 @@
             background: rgba(255, 255, 255, 0.14);
             color: #ffffff;
         }
+        /* PERBAIKAN: menu "Lainnya" khusus HP (isinya tombol Rahasia &
+           Warna Aksen) duduk di atas kartu TERANG (bg-white), bukan di
+           atas header navy -- jadi jangan ikut kena style tombol putih
+           transparan di atas (itu memang cuma buat ikon toolbar di
+           header). Tanpa ini, tulisannya jadi putih di atas putih,
+           nyaris tak kelihatan. Sama juga buat tombol tutup (X) di
+           panel Warna Aksen, yang duduk di kartu terang serupa. */
+        html:not(.dark)[data-accent-theme="rahasia"] #dropdown-more-header button {
+            background: transparent !important;
+            border-color: transparent !important;
+            color: #475569 !important;
+        }
+        html:not(.dark)[data-accent-theme="rahasia"] #dropdown-more-header button:hover {
+            background: #f8fafc !important;
+            color: #1d4ed8 !important;
+        }
+        html:not(.dark)[data-accent-theme="rahasia"] #panel-aksen-tema > div > button {
+            background: transparent !important;
+            border-color: transparent !important;
+            color: #94a3b8 !important;
+        }
+        html:not(.dark)[data-accent-theme="rahasia"] #panel-aksen-tema > div > button:hover {
+            color: #475569 !important;
+        }
         /* Kartu profil di header (foto, cincin border, nama, kelas) --
            sebelumnya warna teks default (gelap) jadi nyaris tak kelihatan
            di atas navy. Sekarang dibedakan: cincin foto jadi emas supaya
@@ -6495,27 +6519,17 @@
                 targetBtn.setAttribute('aria-current', 'page');
             }
 
-            if (tabName === 'tugas') {
-                const tasks = getTasksSiswa();
-                tasks.forEach(t => t.isViewedByStudent = true);
-                saveTasksSiswa(tasks);
-                checkTaskBadgeStatus();
-                renderLiveTaskContent();
-            }
-
-            // Setiap kali tab "Cari Teman" dibuka, refresh daftar teman yang
-            // sudah saling add (biar update terbaru -- mis. abis nerima
-            // permintaan pertemanan di sesi/tab lain -- langsung kelihatan).
-            if (tabName === 'cari-teman') {
-                renderDaftarTeman();
-            }
-
             // Sinkronkan status aktif Bottom Navigation Bar (khusus HP) dengan tab
             // yang sedang dibuka. Menu di luar 5 item bottom nav (mis. Akademik,
             // Guru, Cari Teman, Perangkat, AI Support -- diakses lewat tombol
             // "Lainnya") akan otomatis memindahkan warna aktif ke tombol
             // "Lainnya" itu sendiri, persis seperti Beranda/Tugas/Quiz/
             // Pengumuman yang nyala warnanya waktu dibuka.
+            // PERBAIKAN: bagian ini sengaja diletakkan DI SINI (sebelum kode
+            // khusus per-tab di bawah, bukan di paling akhir fungsi) -- supaya
+            // kalau salah satu kode khusus per-tab di bawah sempat error,
+            // status warna "Lainnya" tetap sudah terlanjur disinkronkan duluan
+            // dan tidak ikut gagal ke-set.
             document.querySelectorAll('.bottom-nav-item[data-bottom-tab]').forEach(btn => {
                 btn.classList.toggle('bottom-nav-item--active', btn.dataset.bottomTab === tabName);
             });
@@ -6523,6 +6537,29 @@
             if (tombolLainnyaBawah) {
                 const adaTombolLangsungDiBawah = !!document.querySelector(`.bottom-nav-item[data-bottom-tab="${tabName}"]`);
                 tombolLainnyaBawah.classList.toggle('bottom-nav-item--active', !adaTombolLangsungDiBawah);
+            }
+
+            if (tabName === 'tugas') {
+                try {
+                    const tasks = getTasksSiswa();
+                    tasks.forEach(t => t.isViewedByStudent = true);
+                    saveTasksSiswa(tasks);
+                    checkTaskBadgeStatus();
+                    renderLiveTaskContent();
+                } catch (err) {
+                    console.error('Gagal memuat konten tab Tugas:', err);
+                }
+            }
+
+            // Setiap kali tab "Cari Teman" dibuka, refresh daftar teman yang
+            // sudah saling add (biar update terbaru -- mis. abis nerima
+            // permintaan pertemanan di sesi/tab lain -- langsung kelihatan).
+            if (tabName === 'cari-teman') {
+                try {
+                    renderDaftarTeman();
+                } catch (err) {
+                    console.error('Gagal memuat daftar teman:', err);
+                }
             }
         }
 
