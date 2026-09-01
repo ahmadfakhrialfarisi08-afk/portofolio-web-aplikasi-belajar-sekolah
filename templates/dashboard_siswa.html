@@ -6940,6 +6940,21 @@
             if (kosong) kosong.classList.toggle('hidden', dimiliki.length > 0);
 
             grid.innerHTML = dimiliki.map(border => {
+                // Badge Admin sudah punya aset gambar asli (achivement_admin.jpg),
+                // jadi khusus kategori ini pakai gambar itu -- bukan lagi ikon
+                // sementara. Kategori lain (starter/quiz/prestasi) masih pakai
+                // ikon sementara sampai aset gambarnya masing-masing tersedia.
+                if (border.kategori === 'admin') {
+                    return `
+                    <div class="flex flex-col items-center text-center gap-1" title="${border.nama} — ${border.rank}">
+                        <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-amber-50">
+                            <img src="../static/img/achivement_admin.jpg" class="w-full h-full object-cover" alt="Lencana ${border.nama}">
+                        </div>
+                        <p class="text-[9px] font-bold text-slate-700 leading-tight truncate w-full">${border.nama}</p>
+                        <p class="text-[8px] text-slate-400 leading-tight truncate w-full">${border.rank}</p>
+                    </div>
+                `;
+                }
                 const gaya = ikonLencanaProfilSementara(border);
                 return `
                 <div class="flex flex-col items-center text-center gap-1" title="${border.nama} — ${border.rank}">
