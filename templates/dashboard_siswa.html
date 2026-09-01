@@ -1388,15 +1388,13 @@
            kemampuan hover asli (HP/tablet layar sentuh, BUKAN laptop/PC
            ber-mouse), jadi laptop tidak terpengaruh sama sekali.
            CATATAN: sebelumnya di sini juga ada override ":active" sebagai
-           pengganti, TAPI itu malah bikin masalah baru -- warna :active di
-           beberapa browser HP tetap "nempel"/ngikut selama jari masih
-           menyentuh layar walau sedang digeser/discroll (:active tidak selalu
-           otomatis lepas cuma karena jari bergerak). Makanya feedback saat
+           pengganti, TAPI :active bawaan browser tidak konsisten antar-HP
+           (kadang lepas sendiri, kadang enggak). Makanya feedback saat
            ditekan SEKARANG dipindah ke JS murni (lihat
-           setupFeedbackTekanMenuAkun di bagian <script>), yang secara
-           eksplisit melepas warnanya begitu gerakan jari melewati ambang
-           batas -- bukan mengandalkan :active yang perilakunya tidak
-           konsisten antar-browser. */
+           setupFeedbackTekanMenuAkun di bagian <script>), supaya warnanya
+           konsisten TETAP nyala selama jari masih menyentuh layar -- termasuk
+           saat digeser/discroll ke atas/bawah -- dan baru lepas begitu jari
+           diangkat, persis seperti efek "seolah dipilih" di bottom nav. */
         @media (hover: none) {
             .menu-list-touch-fix > *:hover { background-color: transparent !important; }
             .menu-list-touch-fix-rose:hover { background-color: transparent !important; }
@@ -6647,41 +6645,25 @@
         })();
 
         /* ================= FEEDBACK TEKAN MENU PENGATURAN AKUN & PREFERENSI =================
-           Dulu tombol2 di sini (Edit Profil/Notifikasi/Pusat Bantuan/Keluar
-           dari Akun) mengandalkan CSS :active buat kasih warna pas ditekan --
-           tapi :active di beberapa browser HP TIDAK otomatis lepas cuma
-           karena jari bergerak/discroll, jadi warnanya kelihatan "nempel"/
-           ngikut selama jari masih di layar. Beda dengan bottom nav di atas
-           (yang MEMANG sengaja didesain supaya warna berpindah ngikut jari
-           antar-ikon), di sini warnanya HARUS langsung lepas begitu jari
-           mulai digeser -- makanya dipantau jaraknya lewat pointermove, dan
-           class item-sedang-ditekan dicabut paksa saat sudah kelewat ambang
-           batas, tidak nunggu jari diangkat. */
+           Tombol2 di sini (Edit Profil/Notifikasi/Pusat Bantuan/Keluar dari
+           Akun) sengaja dibuat "seolah dipilih" persis seperti bottom nav &
+           menu "Lainnya" di atas: begitu jari nempel, warnanya nyala dan
+           TETAP nempel walau jari digeser/discroll ke atas atau ke bawah --
+           tidak langsung lepas cuma karena ada gerakan. Warnanya baru
+           dicabut saat jari benar2 diangkat/dibatalkan (pointerup/
+           pointercancel) atau keluar dari elemen (pointerleave). */
         (function setupFeedbackTekanMenuAkun() {
             const KELAS_TEKAN = 'item-sedang-ditekan';
-            const AMBANG_GESER_PX = 8;
             const semuaItem = document.querySelectorAll('.menu-list-touch-fix > *, .menu-list-touch-fix-rose');
 
             semuaItem.forEach(item => {
-                let posMulaiX = 0, posMulaiY = 0, sedangDitekan = false;
-
                 const lepasTekan = () => {
-                    sedangDitekan = false;
                     item.classList.remove(KELAS_TEKAN);
                 };
 
                 item.addEventListener('pointerdown', (e) => {
                     if (e.pointerType === 'mouse') return; // biar laptop/mouse tetap pakai :hover normal
-                    posMulaiX = e.clientX;
-                    posMulaiY = e.clientY;
-                    sedangDitekan = true;
                     item.classList.add(KELAS_TEKAN);
-                });
-
-                item.addEventListener('pointermove', (e) => {
-                    if (!sedangDitekan) return;
-                    const jarak = Math.hypot(e.clientX - posMulaiX, e.clientY - posMulaiY);
-                    if (jarak > AMBANG_GESER_PX) lepasTekan(); // jari mulai digeser/discroll -> lepas SEKARANG, jangan nunggu diangkat
                 });
 
                 item.addEventListener('pointerup', lepasTekan);
