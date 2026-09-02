@@ -1375,16 +1375,13 @@
         .title-badge-perak   { background: linear-gradient(90deg, #e2e8f0, #f8fafc); color: #475569; border: 1px solid #cbd5e1; }
         .title-badge-admin   { background: linear-gradient(90deg, #fde68a, #fefce8); color: #92400e; border: 1px solid #fcd34d; }
         .title-badge-default { background: linear-gradient(90deg, #f1f5f9, #ffffff); color: #64748b; border: 1px solid #e2e8f0; }
-        /* Badge title "IMO" (border Kristal Imortal) — background gradien ikut
-           bergeser pelan (bukan diam kayak title-badge lain) supaya kesan
-           "kaca pecah warna-warni" dari border_imortal.jpg tetap kerasa
-           walau di badge kecil. Warna teks ungu tua senada efek-nama-imortal. */
+        /* Badge title "IMO" (border Kristal Imortal) — DISAMAKAN dgn gaya
+           title-badge-admin (emas/kuning polos, statis tanpa animasi
+           bergeser), bukan lagi gradien warna-warni seperti sebelumnya. */
         .title-badge-imortal {
-            background: linear-gradient(90deg, #ede9fe, #fce7f3, #fef3c7, #cffafe, #ede9fe);
-            background-size: 300% auto;
-            color: #6d28d9;
-            border: 1px solid #ddd6fe;
-            animation: shimmerNama 5s linear infinite alternate;
+            background: linear-gradient(90deg, #fde68a, #fefce8);
+            color: #92400e;
+            border: 1px solid #fcd34d;
         }
 
         /* ============================================================
@@ -1519,18 +1516,16 @@
             -webkit-background-clip: text; background-clip: text; color: transparent;
             animation: shimmerNama 3.5s ease-in-out infinite reverse; font-weight: 800;
         }
-        /* Efek nama khusus border "Kristal Imortal" (border_imortal.jpg) — pecahan
-           kaca ungu-emas-pink-cyan yang berkilau saat kena cahaya. Gradiennya
-           dibuat 4 warna (bukan 3 kayak efek nama lain) supaya kilau kristalnya
-           lebih "hidup"/pelangi, plus drop-shadow ungu tipis biar ada kesan
-           glow kristal, bukan cuma teks gradien datar. */
+        /* Efek nama khusus border "Kristal Imortal" (border_imortal.jpg) —
+           DISAMAKAN dgn gaya efek-nama-admin (emas/kuning, animasi shimmer
+           terus-menerus arah reverse), bukan lagi gradien pelangi ungu-pink-
+           cyan seperti sebelumnya. */
         .efek-nama-imortal {
-            background: linear-gradient(90deg, #7c3aed, #f9a8d4, #fbbf24, #67e8f9, #7c3aed);
-            background-size: 300% auto;
+            background: linear-gradient(90deg, #f59e0b, #fef08a, #facc15, #fef08a, #f59e0b);
+            background-size: 200% auto;
             -webkit-background-clip: text; background-clip: text; color: transparent;
-            animation: shimmerNama 4s linear 2 forwards;
+            animation: shimmerNama 3.5s ease-in-out infinite reverse;
             font-weight: 800;
-            filter: drop-shadow(0 0 5px rgba(167, 139, 250, .45));
         }
 
         /* Hormati pengaturan "Reduce Motion" di OS/browser (banyak dipakai jg di
@@ -2481,6 +2476,26 @@
            belum ada asetnya, dsb), jangan sampai teks "alt" numpuk kelihatan di
            atas frame border seperti sebelumnya — cukup disembunyikan saja. */
         .user-border, .user-avatar { color: transparent; font-size: 0; }
+
+        /* --- FIX UKURAN/PROPORSI FOTO PROFIL (avatar) ---
+           Sebelumnya foto profil siswa (class .user-avatar, dipakai di kartu
+           sapaan, header, dropdown profil, popup, ID Card, leaderboard, dst)
+           tidak diberi object-fit di CSS eksternal (border_polos.css /
+           border_pink.css). Akibatnya kalau foto asli yang diupload siswa
+           TIDAK persis persegi (kebanyakan memang tidak), browser otomatis
+           MEREGANGKAN (stretch) foto supaya pas ke kotak avatar -- foto jadi
+           kelihatan gepeng/melar/tidak proporsional. Ini bukan soal ukuran
+           layar (jadi tetap salah di laptop MAUPUN di HP), murni soal cara
+           foto di-crop.
+           object-fit: cover membuat foto di-crop dari tengah secara
+           proporsional (tanpa distorsi) supaya selalu mengisi penuh kotak
+           avatar -- persis seperti yang sebelumnya SUDAH dipasang manual
+           khusus di foto dropdown profil (#dropdown-user-avatar), sekarang
+           berlaku otomatis untuk SEMUA foto profil di seluruh halaman. */
+        .user-avatar {
+            object-fit: cover !important;
+            object-position: center !important;
+        }
 
         /* --- 11. ANIMASI "SEOLAH KEPILIH" SAAT SIDEBAR DISCROLL DI HP.
            Efek picker-wheel: menu yang posisinya paling dekat ke tengah area
