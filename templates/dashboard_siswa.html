@@ -1375,6 +1375,17 @@
         .title-badge-perak   { background: linear-gradient(90deg, #e2e8f0, #f8fafc); color: #475569; border: 1px solid #cbd5e1; }
         .title-badge-admin   { background: linear-gradient(90deg, #fde68a, #fefce8); color: #92400e; border: 1px solid #fcd34d; }
         .title-badge-default { background: linear-gradient(90deg, #f1f5f9, #ffffff); color: #64748b; border: 1px solid #e2e8f0; }
+        /* Badge title "IMO" (border Kristal Imortal) — background gradien ikut
+           bergeser pelan (bukan diam kayak title-badge lain) supaya kesan
+           "kaca pecah warna-warni" dari border_imortal.jpg tetap kerasa
+           walau di badge kecil. Warna teks ungu tua senada efek-nama-imortal. */
+        .title-badge-imortal {
+            background: linear-gradient(90deg, #ede9fe, #fce7f3, #fef3c7, #cffafe, #ede9fe);
+            background-size: 300% auto;
+            color: #6d28d9;
+            border: 1px solid #ddd6fe;
+            animation: shimmerNama 5s linear infinite alternate;
+        }
 
         /* ============================================================
            STREAK TUGAS (menggantikan kartu "Kehadiran Bulan Ini")
@@ -1508,12 +1519,25 @@
             -webkit-background-clip: text; background-clip: text; color: transparent;
             animation: shimmerNama 3.5s ease-in-out infinite reverse; font-weight: 800;
         }
+        /* Efek nama khusus border "Kristal Imortal" (border_imortal.jpg) — pecahan
+           kaca ungu-emas-pink-cyan yang berkilau saat kena cahaya. Gradiennya
+           dibuat 4 warna (bukan 3 kayak efek nama lain) supaya kilau kristalnya
+           lebih "hidup"/pelangi, plus drop-shadow ungu tipis biar ada kesan
+           glow kristal, bukan cuma teks gradien datar. */
+        .efek-nama-imortal {
+            background: linear-gradient(90deg, #7c3aed, #f9a8d4, #fbbf24, #67e8f9, #7c3aed);
+            background-size: 300% auto;
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            animation: shimmerNama 4s linear 2 forwards;
+            font-weight: 800;
+            filter: drop-shadow(0 0 5px rgba(167, 139, 250, .45));
+        }
 
         /* Hormati pengaturan "Reduce Motion" di OS/browser (banyak dipakai jg di
            HP/laptop hemat baterai) -- matikan semua animasi terus-menerus. */
         @media (prefers-reduced-motion: reduce) {
             .efek-nama-perak, .efek-nama-emas, .gold-name, .efek-nama-permata,
-            .efek-nama-pink, .efek-nama-admin,
+            .efek-nama-pink, .efek-nama-admin, .efek-nama-imortal, .title-badge-imortal,
             .streak-flame-icon, .lightning-border-yellow, .badge-dev::after {
                 animation: none !important;
             }
@@ -7565,7 +7589,8 @@
                     2: { icon: 'fa-medal', bg: 'bg-slate-100', warna: 'text-slate-500' },
                     3: { icon: 'fa-trophy', bg: 'bg-amber-50', warna: 'text-amber-500' },
                     4: { icon: 'fa-crown', bg: 'bg-pink-50', warna: 'text-pink-500' }
-                }
+                },
+                khusus: { icon: 'fa-gem', bg: 'bg-violet-50', warna: 'text-violet-500' }
             };
             const fallback = { icon: 'fa-award', bg: 'bg-slate-100', warna: 'text-slate-500' };
             if (border.kategori === 'quiz' || border.kategori === 'prestasi') {
@@ -11881,6 +11906,23 @@
             { id: 'admin_dev', kategori: 'admin', nama: 'Admin', file: '../static/img/border_admin.jpg', tierRank: 99, rank: '👑 Developer Sistem' }
         ];
 
+        // Border khusus "Kristal Imortal" (border_imortal.jpg): bukan lewat jalur
+        // poin quiz maupun poin prestasi (sertifikat/piala) seperti border lain --
+        // syaratnya "akun harus sudah pernah ikut IMO", yang sifatnya verifikasi
+        // manual/khusus, bukan sesuatu yang bisa dihitung otomatis dari poin.
+        // SEMENTARA cuma di-hardcode terbuka untuk 1 akun (Ahmad Fakhri Al Farisi
+        // -- username 'siswa', sama seperti akunIniAdminDev(), lihat
+        // isBorderTerbuka()); akun lain manapun (siswa biasa/dummy) selalu
+        // terkunci sampai nanti ada mekanisme verifikasi/penandaan akun IMO yang
+        // sesungguhnya di backend. tierRank dibuat di atas semua tier
+        // prestasi/quiz (4) tapi di bawah admin (99), supaya kalau akun ini juga
+        // punya border prestasi lain, border Kristal Imortal yang otomatis jadi
+        // default dipakai.
+        const DAFTAR_BORDER_KHUSUS = [
+            { id: 'border_imortal', kategori: 'khusus', nama: 'Kristal Imortal', file: '../static/img/border_imortal.jpg', tierRank: 10, rank: '💎 IMO' }
+        ];
+
+
         // Border dari jalur Prestasi (upload sertifikat/piala + konfirmasi admin/guru)
         const DAFTAR_BORDER_PRESTASI = [
             { id: 'prestasi_perunggu', kategori: 'prestasi', nama: 'Perunggu Prestasi', file: '../static/img/border_bronze.jpg', minPoin: 50,  tierRank: 1, rank: '🥉 Berprestasi' },
@@ -13252,7 +13294,7 @@
 
         function klaimBorder(borderId) {
             const border = getSemuaBorder().find(b => b.id === borderId);
-            if (!border || border.kategori === 'admin') return;
+            if (!border || border.kategori === 'admin' || border.kategori === 'khusus') return;
             if (!poinCukupUntukBorder(border) || sudahKlaimBorder(borderId)) return;
 
             const daftar = getBorderDiklaim();
@@ -13343,6 +13385,11 @@
             // localStorage (mis. dari akun dev yang pernah login di browser
             // yang sama).
             if (border.kategori === 'admin') return akunIniAdminDev();
+            // Border "khusus" (mis. Kristal Imortal/IMO) sama sekali tidak lewat
+            // jalur poin -- untuk sementara cuma terbuka utk akun dev asli
+            // (Ahmad Fakhri Al Farisi) sampai ada mekanisme verifikasi IMO yang
+            // sesungguhnya. Lihat komentar di DAFTAR_BORDER_KHUSUS.
+            if (border.kategori === 'khusus') return akunIniAdminDev();
             // Border starter (minPoin 0, "Pemula") itu bawaan semua siswa sejak
             // awal — bukan pencapaian yang perlu diklaim, jadi tetap auto. Ini
             // SEKARANG cuma satu border (lihat DAFTAR_BORDER_STARTER), bukan
@@ -13355,7 +13402,7 @@
         }
 
         function getSemuaBorder() {
-            return [...DAFTAR_BORDER_ADMIN, ...DAFTAR_BORDER_STARTER, ...DAFTAR_BORDER_QUIZ, ...DAFTAR_BORDER_PRESTASI];
+            return [...DAFTAR_BORDER_ADMIN, ...DAFTAR_BORDER_KHUSUS, ...DAFTAR_BORDER_STARTER, ...DAFTAR_BORDER_QUIZ, ...DAFTAR_BORDER_PRESTASI];
         }
 
         function getBorderTertinggiTerbuka() {
@@ -13467,6 +13514,7 @@
         function getEfekNamaClass(border) {
             if (!border) return '';
             if (border.kategori === 'admin') return 'efek-nama-admin';
+            if (border.id === 'border_imortal') return 'efek-nama-imortal';
             if (border.id === 'prestasi_pink') return 'efek-nama-pink';
             if (border.tierRank >= 3) return 'efek-nama-permata';
             if (border.tierRank === 2) return 'efek-nama-emas';
@@ -13480,6 +13528,8 @@
         // di atas, supaya title & border/nama-nya selalu senada.
         function getTitleBadgeClass(efekNamaClass) {
             switch (efekNamaClass) {
+                case 'efek-nama-imortal':
+                    return 'title-badge-imortal';
                 case 'efek-nama-pink':
                     return 'title-badge-pink';
                 case 'efek-nama-permata':
@@ -13560,6 +13610,9 @@
             if (border.kategori === 'admin') {
                 return `<i class="fa-solid fa-crown mr-1"></i>Khusus Admin/Developer`;
             }
+            if (border.kategori === 'khusus') {
+                return `<i class="fa-solid fa-gem mr-1"></i>Khusus &middot; akun harus sudah pernah ikut IMO`;
+            }
             if (border.kategori === 'starter') {
                 return `<i class="fa-solid fa-seedling mr-1"></i>Bawaan semua siswa sejak pertama kali masuk`;
             }
@@ -13580,15 +13633,21 @@
             // Begitu poin sudah cukup tapi belum diklaim, kartu tampil dalam mode
             // "siap klaim" — bukan lagi mode "kurang poin". Berlaku utk prestasi
             // MAUPUN quiz (admin & border tier dasar minPoin 0 selalu auto terbuka).
-            const poinCukup = border.kategori !== 'admin' ? poinCukupUntukBorder(border) : false;
-            const siapDiklaim = border.kategori !== 'admin' && !terbuka && poinCukup;
+            const poinCukup = (border.kategori !== 'admin' && border.kategori !== 'khusus') ? poinCukupUntukBorder(border) : false;
+            const siapDiklaim = border.kategori !== 'admin' && border.kategori !== 'khusus' && !terbuka && poinCukup;
 
             let labelKurang = '';
             if (!terbuka && !siapDiklaim) {
-                const sisa = Math.max(0, border.minPoin - getPoinAcuanBorder(border));
-                labelKurang = sumberPoinBorder(border) === 'prestasi'
-                    ? `Butuh ${sisa} poin lagi (sertifikat/piala beragam)`
-                    : `Butuh ${sisa} poin lagi`;
+                if (border.kategori === 'khusus') {
+                    // Bukan syarat poin -- teks tetap sekilas tanpa membongkar detail
+                    // verifikasinya (lihat komentar di DAFTAR_BORDER_KHUSUS).
+                    labelKurang = 'Khusus akun yang sudah pernah ikut IMO';
+                } else {
+                    const sisa = Math.max(0, border.minPoin - getPoinAcuanBorder(border));
+                    labelKurang = sumberPoinBorder(border) === 'prestasi'
+                        ? `Butuh ${sisa} poin lagi (sertifikat/piala beragam)`
+                        : `Butuh ${sisa} poin lagi`;
+                }
             }
 
             // Ceklis kecil syarat border (poin, & khusus prestasi: sertifikat) —
