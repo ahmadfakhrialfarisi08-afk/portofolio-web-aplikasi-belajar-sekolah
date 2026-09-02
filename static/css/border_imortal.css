@@ -1,0 +1,61 @@
+/* ============================================================
+   border_imortal.css
+   ------------------------------------------------------------
+   Override KHUSUS untuk border "Kristal Imortal" (border_imortal.jpg).
+
+   Kenapa dipisah dari border_polos.css / border_pink.css:
+   - border_imortal.jpg proporsinya beda dari border biasa (border_pemula,
+     border_pink, dst), jadi kalau dipaksa pakai style .user-border yang
+     sama persis, framenya jadi NUTUPIN foto, bukan ngelingkar di LUAR foto.
+   - Dengan file terpisah ini, perubahan cuma nyasar ke <img> yang src-nya
+     mengandung "border_imortal" -- border lain sama sekali tidak disentuh.
+
+   Cara pakai:
+   - Taruh file ini di folder yang sama dengan border_polos.css
+     (biasanya: static/css/border_imortal.css)
+   - Tambahkan satu baris <link> di <head> dashboard_siswa.html,
+     DI BAWAH baris border_pink.css, supaya urutan override-nya benar:
+
+     <link rel="stylesheet" href="../static/css/border_pink.css">
+     <link rel="stylesheet" href="../static/css/border_imortal.css">  <-- baris baru
+
+   Catatan penting:
+   - Selector di bawah ini pakai :has(), didukung Chrome/Edge/Safari
+     versi baru & Firefox 121+. Kalau target browser masih lama,
+     kasih tau saya, nanti diganti pendekatan lain (mis. lewat JS
+     nambah class ke wrapper).
+   - Angka 140% di bawah itu titik awal/tebakan supaya frame keliatan
+     melebar ke luar kotak foto. Kalau masih kurang pas (kegedean/
+     kekecilan/geser), tinggal ubah angka width/height & transform-nya,
+     atau kirim saya screenshot hasilnya + file border_imortal.jpg biar
+     saya hitungkan angka yang presisi.
+   ============================================================ */
+
+/* Wrapper yang isinya border Kristal Imortal: matikan clipping supaya
+   frame boleh "meluber" keluar dari kotak asli avatar */
+.profile-wrapper:has(img.user-border[src*="border_imortal"]) {
+    overflow: visible !important;
+}
+
+/* Foto profil: taruh di lapisan bawah, ukurannya tetap mengikuti kotak asli */
+.profile-wrapper:has(img.user-border[src*="border_imortal"]) img.user-avatar {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    object-fit: cover;
+    object-position: center;
+}
+
+/* Border Kristal Imortal: dibesarkan & ditengahkan supaya framenya
+   melingkar DI LUAR sisi foto, bukan numpuk menutupi foto */
+.profile-wrapper img.user-border[src*="border_imortal"] {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 140%;
+    height: 140%;
+    transform: translate(-50%, -50%);
+    object-fit: contain;
+    pointer-events: none;
+    z-index: 2;
+}
