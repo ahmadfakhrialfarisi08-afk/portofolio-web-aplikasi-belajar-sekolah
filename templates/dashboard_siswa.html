@@ -3488,7 +3488,7 @@
                     <h3 id="pilih-mapel-judul" class="font-bold text-xl text-slate-900 mb-1">Pilih Mapel</h3>
                     <p id="pilih-mapel-subjudul" class="text-xs text-slate-400 mb-4">Mapel seperti biasa di SMK.</p>
 
-                    <div id="pilih-mapel-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                    <div id="pilih-mapel-list" class="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4"></div>
                 </div>
 
                 <!-- ============ VIEW 1a: TINGKAT KESULITAN - PILIHAN GANDA ============ -->
@@ -10087,14 +10087,14 @@
                 const warnaIkon = m.warna || aksenKategori;
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = `text-left bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-${aksenKategori}-200 transition-shadow p-4 sm:p-5 flex flex-col`;
+                btn.className = `text-left bg-white rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-${aksenKategori}-200 transition-shadow p-2.5 sm:p-5 flex flex-col`;
                 btn.onclick = () => pilihMapelQuiz(m.id);
                 btn.innerHTML = `
-                    <div class="w-11 h-11 rounded-xl bg-${warnaIkon}-50 text-${warnaIkon}-600 flex items-center justify-center text-lg mb-3 overflow-hidden">${m.gambar ? `<img loading="lazy" decoding="async" src="${m.gambar}" alt="${m.nama}" class="w-6 h-6 object-contain">` : `<i class="fa-solid ${m.icon || 'fa-book'}"></i>`}</div>
-                    <h3 class="font-bold text-sm text-slate-900">${m.kode ? `${m.kode} · ` : ''}${m.nama}</h3>
-                    <p class="text-xs text-slate-400 mt-1 mb-3 flex-1">${m.deskripsi || ''}</p>
-                    <span class="w-full py-2 bg-${aksenKategori}-600 text-white rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center justify-center gap-2">
-                        Pilih Tingkat Kesulitan <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                    <div class="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-${warnaIkon}-50 text-${warnaIkon}-600 flex items-center justify-center text-xs sm:text-lg mb-2 sm:mb-3 overflow-hidden">${m.gambar ? `<img loading="lazy" decoding="async" src="${m.gambar}" alt="${m.nama}" class="w-5 h-5 sm:w-6 sm:h-6 object-contain">` : `<i class="fa-solid ${m.icon || 'fa-book'}"></i>`}</div>
+                    <h3 class="font-bold text-xs sm:text-sm text-slate-900 leading-tight">${m.kode ? `${m.kode} · ` : ''}${m.nama}</h3>
+                    <p class="text-[10px] sm:text-xs text-slate-400 mt-1 mb-2 sm:mb-3 flex-1 leading-snug">${m.deskripsi || ''}</p>
+                    <span class="w-full py-1.5 sm:py-2 bg-${aksenKategori}-600 text-white rounded-lg text-[9px] sm:text-[11px] font-bold shadow-sm transition-all flex items-center justify-center gap-1 sm:gap-2 text-center">
+                        Pilih Tingkat Kesulitan <i class="fa-solid fa-arrow-right text-[8px] sm:text-[9px]"></i>
                     </span>`;
                 container.appendChild(btn);
             });
