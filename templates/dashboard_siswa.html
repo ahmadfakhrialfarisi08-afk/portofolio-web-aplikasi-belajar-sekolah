@@ -4144,7 +4144,7 @@
                             <span class="flex-1 text-sm font-semibold text-slate-700">Notifikasi</span>
                             <i class="fa-solid fa-chevron-right text-[10px] text-slate-300" aria-hidden="true"></i>
                         </button>
-                        <button type="button" onclick="switchTab('ai-support')" class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50 transition-colors">
+                        <button type="button" onclick="konfirmasiPusatBantuanWA()" class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50 transition-colors">
                             <i class="fa-solid fa-circle-question text-slate-400 w-4 text-center" aria-hidden="true"></i>
                             <span class="flex-1 text-sm font-semibold text-slate-700">Pusat Bantuan</span>
                             <i class="fa-solid fa-chevron-right text-[10px] text-slate-300" aria-hidden="true"></i>
@@ -7169,6 +7169,17 @@
         // (bukan pushState) supaya tekanan back pertama dari Beranda langsung
         // lanjut ke perilaku back bawaan, bukan nyangkut di entry kosong.
         history.replaceState({ appNav: true, type: 'tab', tab: 'beranda' }, '', location.href);
+
+        /* ================= PUSAT BANTUAN (Halaman Profil, khusus HP) =================
+           Tombol "Pusat Bantuan" mengarah ke WhatsApp Admin/IT Support, tapi
+           dikasih konfirmasi dulu (window.confirm) sebelum benar-benar pindah
+           ke WA -- supaya siswa tidak "kepencet" langsung keluar dari aplikasi
+           kalau sebenarnya cuma mau lihat-lihat menu. */
+        function konfirmasiPusatBantuanWA() {
+            const mauLanjut = window.confirm('Kamu akan diarahkan ke WhatsApp Admin/IT Support untuk bantuan. Lanjutkan?');
+            if (!mauLanjut) return;
+            window.open('https://wa.me/6283181977131?text=Halo%20Admin%2C%20saya%20butuh%20bantuan%20terkait%20aplikasi%20Sekolah.', '_blank', 'noopener,noreferrer');
+        }
 
         function switchTab(tabName) {
             closeSidebarMobile(); // otomatis tutup sidebar mobile setelah pilih menu
