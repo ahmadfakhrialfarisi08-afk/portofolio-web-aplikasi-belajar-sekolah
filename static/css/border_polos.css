@@ -26,6 +26,20 @@
   object-fit: cover;
   border-radius: 6px;   /* Sudut melengkung halus */
   position: absolute;
+  /* FIX ALIGNMENT: sebelumnya foto cuma "position: absolute" tanpa
+     top/left, jadi posisinya mengandalkan flex-centering otomatis dari
+     .profile-wrapper -- ini yang bikin foto bisa geser dari tengah
+     (terutama kalau browser tidak konsisten menerapkan align-items ke
+     elemen absolute di dalam flex container), padahal .user-border di
+     bawah SUDAH presisi top:0/left:0/100% mengisi wrapper. Hasilnya:
+     border kelihatan simetris tapi foto di dalamnya tidak center,
+     jadi jarak border-ke-foto jadi timpang di salah satu sisi.
+     top:50%/left:50%/translate(-50%,-50%) mengunci foto TEPAT di
+     tengah wrapper, sama seperti border, jadi keduanya selalu sejajar
+     dan jarak ke tiap sisi border sama rata. */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 1;
 }
 

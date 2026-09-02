@@ -37,10 +37,19 @@
     overflow: visible !important;
 }
 
-/* Foto profil: taruh di lapisan bawah, ukurannya tetap mengikuti kotak asli */
+/* Foto profil: taruh di lapisan bawah, ukurannya tetap mengikuti kotak asli.
+   FIX ALIGNMENT: sebelumnya pakai "inset: 0" dibarengi width/height:72%
+   warisan dari border_polos.css -- kombinasi left+right+width yang
+   sama-sama fixed itu over-constrained, jadi browser mengabaikan 'right'
+   dan foto malah nempel ke pojok kiri-atas, bukan di tengah kristal
+   imortal. top:50%/left:50%/translate(-50%,-50%) mengunci foto tepat di
+   tengah wrapper (senada dengan border_polos.css) supaya presisi center
+   terhadap frame kristal, ukuran foto tidak berubah. */
 .profile-wrapper:has(img.user-border[src*="border_imortal"]) img.user-avatar {
     position: absolute;
-    inset: 0;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     z-index: 1;
     object-fit: cover;
     object-position: center;
