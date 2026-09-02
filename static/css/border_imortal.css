@@ -1,61 +1,138 @@
 /* ============================================================
-   border_imortal.css
-   ------------------------------------------------------------
-   Override KHUSUS untuk border "Kristal Imortal" (border_imortal.jpg).
-
-   Kenapa dipisah dari border_polos.css / border_pink.css:
-   - border_imortal.jpg proporsinya beda dari border biasa (border_pemula,
-     border_pink, dst), jadi kalau dipaksa pakai style .user-border yang
-     sama persis, framenya jadi NUTUPIN foto, bukan ngelingkar di LUAR foto.
-   - Dengan file terpisah ini, perubahan cuma nyasar ke <img> yang src-nya
-     mengandung "border_imortal" -- border lain sama sekali tidak disentuh.
-
-   Cara pakai:
-   - Taruh file ini di folder yang sama dengan border_polos.css
-     (biasanya: static/css/border_imortal.css)
-   - Tambahkan satu baris <link> di <head> dashboard_siswa.html,
-     DI BAWAH baris border_pink.css, supaya urutan override-nya benar:
-
-     <link rel="stylesheet" href="../static/css/border_pink.css">
-     <link rel="stylesheet" href="../static/css/border_imortal.css">  <-- baris baru
-
-   Catatan penting:
-   - Selector di bawah ini pakai :has(), didukung Chrome/Edge/Safari
-     versi baru & Firefox 121+. Kalau target browser masih lama,
-     kasih tau saya, nanti diganti pendekatan lain (mis. lewat JS
-     nambah class ke wrapper).
-   - Angka 140% di bawah itu titik awal/tebakan supaya frame keliatan
-     melebar ke luar kotak foto. Kalau masih kurang pas (kegedean/
-     kekecilan/geser), tinggal ubah angka width/height & transform-nya,
-     atau kirim saya screenshot hasilnya + file border_imortal.jpg biar
-     saya hitungkan angka yang presisi.
+   EFEK BORDER & NAMA KELAS "IMO" MEWAH (LUXURY GOLD & CRYSTAL)
    ============================================================ */
 
-/* Wrapper yang isinya border Kristal Imortal: matikan clipping supaya
-   frame boleh "meluber" keluar dari kotak asli avatar */
-.profile-wrapper:has(img.user-border[src*="border_imortal"]) {
-    overflow: visible !important;
+/* Container Utama Kartu Profil / Badge */
+.imo-luxury-card {
+    position: relative;
+    padding: 24px;
+    border-radius: 16px;
+    background: #0f172a; /* Latar belakang gelap elegan (Navy/Hitam arang) */
+    color: #ffffff;
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    max-width: 350px;
+    margin: 20px auto;
 }
 
-/* Foto profil: taruh di lapisan bawah, ukurannya tetap mengikuti kotak asli */
-.profile-wrapper:has(img.user-border[src*="border_imortal"]) img.user-avatar {
+/* --- EFEK BORDER MEWAH (GRADIENT + SHINE) --- */
+.imo-luxury-card::before {
+    content: '';
     position: absolute;
     inset: 0;
-    z-index: 1;
-    object-fit: cover;
-    object-position: center;
+    border-radius: 16px;
+    padding: 2px; /* Ketebalan border */
+    background: linear-gradient(135deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    animation: borderShine 4s linear infinite;
+    background-size: 300% 300%;
 }
 
-/* Border Kristal Imortal: dibesarkan & ditengahkan supaya framenya
-   melingkar DI LUAR sisi foto, bukan numpuk menutupi foto */
-.profile-wrapper img.user-border[src*="border_imortal"] {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 140%;
-    height: 140%;
-    transform: translate(-50%, -50%);
-    object-fit: contain;
-    pointer-events: none;
-    z-index: 2;
+@keyframes borderShine {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
+
+/* Efek Glow / Cahaya di luar border */
+.imo-luxury-card::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #bf953f, transparent, #b38728);
+    z-index: -1;
+    filter: blur(8px);
+    opacity: 0.6;
+}
+
+/* --- EFEK NAMA (SHIMMER EMAS MAHAL) --- */
+.imo-nama-efek {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #bf953f, #fcf6ba, #fff, #fcf6ba, #bf953f);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textShimmer 3s linear infinite;
+}
+
+@keyframes textShimmer {
+    to { background-position: 200% center; }
+}
+
+/* --- TITLE IMO (BADGE ELEGANT) --- */
+.imo-title-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, rgba(191, 149, 63, 0.2), rgba(252, 246, 186, 0.1));
+    border: 1px solid rgba(252, 246, 186, 0.5);
+    color: #fef08a;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    box-shadow: 0 0 10px rgba(191, 149, 63, 0.3);
+}
+
+/* Avatar dengan Border Emas Melingkar */
+.imo-avatar-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    padding: 3px;
+    background: linear-gradient(135deg, #bf953f, #fcf6ba, #aa771c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.imo-avatar-container img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+```[cite: 2]
+
+---
+
+### 2. Kode HTML Penggunaan
+
+```html
+<div class="imo-luxury-card">
+    <!-- Bagian Avatar -->
+    <div class="imo-avatar-container">
+        <!-- Ganti src dengan foto profil siswa -->
+        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" alt="Avatar Siswa">
+    </div>
+
+    <!-- Informasi Nama & Title IMO -->
+    <div class="flex flex-col items-start gap-1">
+        <!-- Title IMO -->
+        <span class="imo-title-badge">
+            <i class="fa-solid fa-award text-yellow-300"></i> IMO Gold Medalist
+        </span>
+        
+        <!-- Nama dengan Efek Mahal -->
+        <h3 class="imo-nama-efek">Alexandria Vianka</h3>
+        
+        <p class="text-xs text-slate-400 mt-1">Delegasi International Mathematical Olympiad</p>
+    </div>
+</div>
+```[cite: 2]
+
+### Penjelasan Detail Efek:
+1. **Dynamic Gradient Border (`::before`)**: Menggunakan kombinasi warna emas (`#bf953f`, `#fcf6ba`, `#b38728`) yang bergeser terus-menerus (`animation: borderShine`), menciptakan ilusi border logam mulia yang berkilau di bawah cahaya.
+2. **Ambient Glow (`::after`)**: Memberikan efek pendaran cahaya lembut di belakang kartu agar tampak melayang dan menonjol (memberikan kesan mahal / *high-end*).
+3. **Text Shimmering (`imo-nama-efek`)**: Warna teks nama memantulkan kilau cahaya emas yang berjalan secara periodik selaras dengan border di luarnya.
