@@ -2368,6 +2368,50 @@
         @media (prefers-reduced-motion: reduce) {
             .nav-btn, .nav-btn-picking { transition: none !important; transform: none !important; }
         }
+
+        /* ---------- Hover (kursor) & tekan (tap) menu sidebar ikut warna aksen ----------
+           Sebelumnya hover menu (Koleksi Prestasi, Tugas & Catatan, dst) pakai
+           warna kuning/amber yang HARDCODED di HTML (hover:bg-amber-500/20
+           hover:text-amber-700) dan ditulis ulang sama di JS switchTab().
+           Efeknya: walau user ganti tema jadi Pink/Biru/dst, begitu menu
+           di-hover pakai kursor (atau ditekan TANPA digeser di HP) warnanya
+           tetap kuning -- nyeleneh, beda sendiri dari warna tema yang dipilih.
+           Menu yang lagi AKTIF sudah solid var(--brand) (lihat override
+           .bg-blue-600 di atas), dan gestur tahan+geser (.nav-btn-picking)
+           sudah pakai var(--brand-tint-50/100). Di sini hover & :active
+           disamakan ke keluarga warna yang sama (var(--brand)) tapi dibikin
+           transparan (bukan solid) supaya menu yang BELUM aktif tetap
+           kelihatan beda dari menu yang sedang aktif -- identitas warna
+           pilihan user tetap kebawa, cuma "dipertipis". */
+        html:not(.dark) #sidebar-menu .nav-btn.hover\:bg-amber-500\/20:hover,
+        html:not(.dark) #sidebar-menu .nav-btn.hover\:bg-blue-500\/20:hover {
+            background-color: color-mix(in srgb, var(--brand) 16%, transparent) !important;
+        }
+        html:not(.dark) #sidebar-menu .nav-btn.hover\:text-amber-700:hover,
+        html:not(.dark) #sidebar-menu .nav-btn.hover\:text-blue-700:hover {
+            color: var(--brand-dark) !important;
+        }
+        html:not(.dark) #sidebar-menu .nav-btn:not([aria-current="page"]):active {
+            background-color: color-mix(in srgb, var(--brand) 24%, transparent) !important;
+            color: var(--brand-dark) !important;
+        }
+        /* Mode gelap: brand-nya sudah terkunci ke Cyan Neon (lihat blok
+           "html.dark" di awal file), jadi hover/tekan otomatis ikut cyan --
+           cukup dibikin transparan senada, teks dibuat putih bersih supaya
+           tetap kebaca di atas tint cyan yang tipis. */
+        html.dark #sidebar-menu .nav-btn.hover\:bg-amber-500\/20:hover,
+        html.dark #sidebar-menu .nav-btn.hover\:bg-blue-500\/20:hover {
+            background-color: color-mix(in srgb, var(--brand) 20%, transparent) !important;
+        }
+        html.dark #sidebar-menu .nav-btn.hover\:text-amber-700:hover,
+        html.dark #sidebar-menu .nav-btn.hover\:text-blue-700:hover {
+            color: #f8fafc !important;
+        }
+        html.dark #sidebar-menu .nav-btn:not([aria-current="page"]):active {
+            background-color: color-mix(in srgb, var(--brand) 28%, transparent) !important;
+            color: #f8fafc !important;
+        }
+
         /* Gestur tahan+geser (lihat setupAnimasiPickerMenuLainnya) butuh touch-action
            none di area menu ini supaya browser tidak buru-buru menganggapnya
            gestur scroll biasa. */
