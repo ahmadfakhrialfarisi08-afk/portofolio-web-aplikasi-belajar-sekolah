@@ -6906,6 +6906,71 @@
             if (header) header.classList.remove('header--sub-halaman-mobile');
         }
 
+        /* ================= TOMBOL "BACK" HP / BROWSER MENGIKUTI URUTAN KLIK =================
+           Setiap kali user pindah tab utama (switchTab) ATAU pindah tahap alur Quiz
+           (tampilkanViewQuiz), state-nya didorong ke history browser lewat
+           history.pushState(). Saat tombol back HP/browser ditekan, event 'popstate'
+           menangkapnya dan mengembalikan tampilan PERSIS sesuai urutan klik
+           sebelumnya -- bukan cuma satu langkah tetap, tapi urutan asli yang user
+           klik, sampai akhirnya mentok di Beranda (state paling awal). Begitu di
+           Beranda & back ditekan sekali lagi, tidak ada lagi state app yang
+           tersisa di stack -- browser otomatis lanjut ke perilaku back bawaan
+           (keluar aplikasi / balik ke halaman sebelumnya), sesuai yang diminta.
+
+           CATATAN CAKUPAN: sistem ini menangani navigasi tab utama & alur pilih
+           jenis/kategori/mapel/tingkat kesulitan Quiz. Tahap SEDANG MENGERJAKAN
+           quiz ('play') & halaman hasil ('result') SENGAJA tidak didorong ke
+           history -- supaya tombol back HP tidak sengaja memutus soal yang lagi
+           dikerjakan siswa atau menampilkan ulang hasil yang sudah lewat. Modal
+           (mis. Kelola Guru, Crop Foto, dsb) juga belum tercakup di sistem ini. */
+        let sedangMemprosesPopStateApp = false; // true selagi lagi replay dari tombol back (anti-loop)
+        let stateTampilanTerakhirApp = { type: 'tab', tab: 'beranda' };
+
+        function dorongHistoryTampilan(state) {
+            if (sedangMemprosesPopStateApp) return; // lagi replay dari back -> jangan didorong lagi
+            if (JSON.stringify(state) === JSON.stringify(stateTampilanTerakhirApp)) return; // state identik, jangan dobel
+            stateTampilanTerakhirApp = state;
+            try {
+                history.pushState(Object.assign({ appNav: true }, state), '', location.href);
+            } catch (err) {
+                console.error('Gagal mendorong history tampilan:', err);
+            }
+        }
+
+        function terapkanStateHistoryTampilan(state) {
+            if (!state || !state.appNav) return; // bukan state dari sistem navigasi app ini
+            sedangMemprosesPopStateApp = true;
+            stateTampilanTerakhirApp = state;
+            try {
+                if (state.type === 'tab') {
+                    switchTab(state.tab);
+                } else if (state.type === 'quizView') {
+                    switchTab('quiz'); // pastikan tab utama Quiz aktif dulu (bisa saja user sempat pindah tab lain)
+                    if (state.jenis) {
+                        quizJenisDipilih = state.jenis;
+                        const label = document.getElementById('quiz-kategori-jenis-badge');
+                        if (label) label.innerText = state.jenis === 'essay' ? 'Essay' : 'Pilihan Ganda';
+                    }
+                    if (state.view === 'pilih-mapel' && state.kategori) {
+                        quizMapelState.kategori = state.kategori;
+                        renderDaftarPilihMapelQuiz(state.kategori);
+                    }
+                    tampilkanViewQuiz(state.view);
+                }
+            } finally {
+                sedangMemprosesPopStateApp = false;
+            }
+        }
+
+        window.addEventListener('popstate', (event) => {
+            terapkanStateHistoryTampilan(event.state);
+        });
+
+        // State awal (root): Beranda dianggap dasar tumpukan -- pakai replaceState
+        // (bukan pushState) supaya tekanan back pertama dari Beranda langsung
+        // lanjut ke perilaku back bawaan, bukan nyangkut di entry kosong.
+        history.replaceState({ appNav: true, type: 'tab', tab: 'beranda' }, '', location.href);
+
         function switchTab(tabName) {
             closeSidebarMobile(); // otomatis tutup sidebar mobile setelah pilih menu
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -6990,6 +7055,8 @@
                     console.error('Gagal memuat halaman Profil:', err);
                 }
             }
+
+            dorongHistoryTampilan({ type: 'tab', tab: tabName });
         }
 
         /* ================= AI SUPPORT (chat bantuan berbasis kata kunci) =================
@@ -10086,6 +10153,18 @@
                 if (el) el.classList.add('hidden');
             });
             document.getElementById(`quiz-view-${view}`).classList.remove('hidden');
+
+            // Dorong ke history navigasi HP/browser -- KECUALI tahap 'play' (lagi
+            // mengerjakan quiz) & 'result' (halaman hasil), lihat catatan cakupan
+            // di atas fungsi switchTab.
+            if (view !== 'play' && view !== 'result') {
+                dorongHistoryTampilan({
+                    type: 'quizView',
+                    view,
+                    kategori: quizMapelState.kategori,
+                    jenis: quizJenisDipilih
+                });
+            }
         }
 
         // Kartu "Pilihan Ganda" / "Essay" di menu awal Quiz -> lanjut ke pemilihan
