@@ -1558,6 +1558,17 @@
         html.dark header { background-color: rgba(24, 34, 56, 0.85) !important; border-color: var(--dark-border) !important; backdrop-filter: blur(8px); }
 
         html.dark .bg-white { background-color: var(--dark-surface) !important; }
+        /* "sm:bg-white" (dipakai di kartu "Border yang Belum Dimiliki" yang cuma
+           tampil sbg kartu penuh mulai layar sm+) itu nama class TERSENDIRI,
+           BUKAN otomatis ke-cover oleh aturan ".bg-white" di atas -- jadi tanpa
+           baris ini kartunya tetap putih polos di mode gelap (teks jadi nyaris
+           tak kebaca krn warna teksnya sudah ikut diputihkan lewat override lain).
+           Dibungkus media query yg sama dgn breakpoint "sm:" Tailwind (640px)
+           supaya perilakunya konsisten -- di HP kartu ini memang tanpa kartu/background
+           (transparan), jadi tidak perlu disentuh di situ. */
+        @media (min-width: 640px) {
+            html.dark .sm\:bg-white { background-color: var(--dark-surface) !important; }
+        }
         html.dark .bg-slate-50 { background-color: var(--dark-bg) !important; }
         html.dark .bg-slate-100 { background-color: var(--dark-surface-hover) !important; }
         html.dark .bg-slate-200 { background-color: #2a3a5c !important; }
@@ -1598,6 +1609,23 @@
         html.dark .bg-purple-50 { background-color: rgba(139, 92, 246, 0.14) !important; }
         html.dark .border-purple-200 { border-color: rgba(139, 92, 246, 0.4) !important; }
         html.dark .text-purple-600 { color: var(--accent-violet-soft) !important; }
+
+        /* ---------- Kartu "Border yang Sudah Dimiliki": border sedang dipakai
+           & border yang siap diklaim ----------
+           Kartu border "sedang dipakai" pakai bg-amber-50/50 dan kartu "siap
+           diklaim" pakai bg-emerald-50/40 -- keduanya krem/hijau pucat nyaris
+           putih di mode terang. Nama class dgn "/40" atau "/50" itu class
+           TERSENDIRI (beda dari "bg-amber-50" atau "bg-emerald-50" polos di
+           atas), jadi belum ke-cover -- makanya di mode gelap kartunya tetap
+           pucat/abu-abu, bentrok & rendah kontras di atas latar gelap. Border
+           amber/emerald-nya juga digelapkan sedikit (dari solid terang jadi
+           semi-transparan) supaya tetap kelihatan sbg aksen, bukan garis
+           neon yang menyilaukan di mode gelap. */
+        html.dark .bg-amber-50\/50 { background-color: rgba(245, 158, 11, 0.16) !important; }
+        html.dark .bg-emerald-50\/40 { background-color: rgba(16, 185, 129, 0.14) !important; }
+        html.dark .border-amber-400 { border-color: rgba(251, 191, 36, 0.55) !important; }
+        html.dark .border-emerald-300 { border-color: rgba(110, 231, 183, 0.5) !important; }
+
 
         html.dark input, html.dark textarea { background-color: var(--dark-bg) !important; color: #e2e8f0 !important; border-color: var(--dark-border) !important; }
         html.dark input:focus, html.dark textarea:focus { border-color: var(--brand) !important; box-shadow: 0 0 0 3px var(--brand-tint-50) !important; }
