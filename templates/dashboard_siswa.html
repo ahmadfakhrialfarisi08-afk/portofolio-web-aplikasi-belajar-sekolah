@@ -1170,6 +1170,25 @@
             outline-color: #d97706;
             outline-offset: 1px;
         }
+        /* Mode gelap: hover pil "Kelas 10/11/12" sebelumnya masih pakai warna
+           hover mode terang apa adanya (bg-amber-500/10 nyaris tak kelihatan
+           di atas latar gelap, border-amber-300 & text-amber-700 kontrasnya
+           jadi aneh/pudar) -- hasilnya cuma kelihatan kotak bergaris tipis
+           kosong, bukan efek "hampir kepilih" yang enak dipandang. Disamakan
+           konsepnya dengan pil yang statusnya aktif (solid amber) tapi dibikin
+           transparan supaya beda dari yang benar-benar aktif. */
+        html.dark .tab-journey-kelas.hover\:bg-amber-500\/10:hover {
+            background-color: rgba(245, 158, 11, 0.22) !important;
+        }
+        html.dark .tab-journey-kelas.hover\:text-amber-700:hover {
+            color: #fde68a !important;
+        }
+        html.dark .tab-journey-kelas.hover\:border-amber-300:hover {
+            border-color: rgba(245, 158, 11, 0.6) !important;
+        }
+        html.dark .tab-journey-kelas:focus-visible {
+            outline-color: #fbbf24;
+        }
         .skip-link {
             position: absolute; left: 1rem; top: -3rem; z-index: 100;
             background: var(--brand); color: #fff; padding: .6rem 1rem;
