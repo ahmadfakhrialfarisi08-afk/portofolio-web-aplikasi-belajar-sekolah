@@ -7951,16 +7951,16 @@
         //   teks/kelas secara langsung tanpa membangun ulang DOM. Render penuh tetap
         //   terjadi otomatis saat: buka tab Tugas, ada tugas baru/ditarik guru
         //   (event 'storage' & sinkronisasi berkala), atau tugas berhasil dikirim.
-        // ===== Sapaan banner beranda ("Selamat Pagi/Siang/Malam") ngikutin jam
-        // realtime (getAccurateNow(), sumber jam yang sama dgn jam header) — jadi
-        // otomatis ganti teks pas jam device lewat batas pagi->siang->malam,
-        // tanpa perlu refresh halaman. Cuma 3 kategori sesuai permintaan (tidak
-        // ada "Selamat Sore" terpisah): 00:00-10:59 Pagi, 11:00-17:59 Siang,
-        // 18:00-23:59 Malam.
+        // ===== Sapaan banner beranda ("Selamat Pagi/Siang/Sore/Malam") ngikutin
+        // jam realtime (getAccurateNow(), sumber jam yang sama dgn jam header) —
+        // jadi otomatis ganti teks pas jam device lewat batas antar sapaan,
+        // tanpa perlu refresh halaman. 4 kategori: 00:00-10:59 Pagi,
+        // 11:00-14:59 Siang, 15:00-17:59 Sore, 18:00-23:59 Malam.
         function dapatkanSapaanWaktu(now) {
             const jam = now.getHours();
             if (jam < 11) return 'Selamat Pagi';
-            if (jam < 18) return 'Selamat Siang';
+            if (jam < 15) return 'Selamat Siang';
+            if (jam < 18) return 'Selamat Sore';
             return 'Selamat Malam';
         }
 
