@@ -3493,50 +3493,82 @@
 
                 <!-- ============ VIEW 1a: TINGKAT KESULITAN - PILIHAN GANDA ============ -->
                 <div id="quiz-view-tingkat-pg" class="hidden">
-                    <button type="button" onclick="kembaliKePilihMapelQuiz()" class="mb-4 inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors">
+                    <!-- Header khusus HP: tombol kembali + judul "Pilih Tingkat" + nama mapel + lonceng.
+                         Di layar sm+ disembunyikan, dan versi lama (link teks + badge + judul besar)
+                         di bawahnya yang tetap tampil seperti sebelumnya. -->
+                    <div class="flex sm:hidden items-center gap-3 mb-4">
+                        <button type="button" onclick="kembaliKePilihMapelQuiz()" aria-label="Kembali" class="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border border-slate-200 text-slate-600">
+                            <i class="fa-solid fa-arrow-left text-xs"></i>
+                        </button>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-bold text-base text-slate-900 leading-tight">Pilih Tingkat</h3>
+                            <p class="quiz-mapel-badge-pg text-[11px] text-slate-400 truncate">Mapel</p>
+                        </div>
+                        <button type="button" onclick="toggleBellDropdown(event)" aria-label="Notifikasi" class="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border border-slate-200 text-slate-600">
+                            <i class="fa-regular fa-bell text-xs"></i>
+                        </button>
+                    </div>
+
+                    <button type="button" onclick="kembaliKePilihMapelQuiz()" class="hidden sm:inline-flex mb-4 items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors">
                         <i class="fa-solid fa-arrow-left text-[10px]"></i> Kembali pilih mapel
                     </button>
-                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    <div class="hidden sm:flex items-center gap-2 mb-1 flex-wrap">
                         <span class="px-2.5 py-1 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-md uppercase tracking-wide"><i class="fa-solid fa-list-check mr-1"></i>Pilihan Ganda</span>
                         <span class="quiz-mapel-badge-pg px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md uppercase tracking-wide"><i class="fa-solid fa-book mr-1"></i>Mapel</span>
                     </div>
-                    <h3 class="font-bold text-xl text-slate-900 mb-4">Pilih Tingkat Kesulitan</h3>
+                    <h3 class="hidden sm:block font-bold text-xl text-slate-900 mb-4">Pilih Tingkat Kesulitan</h3>
+                    <p class="sm:hidden text-xs text-slate-400 mb-4">Pilih tingkat kesulitan yang sesuai kemampuanmu.</p>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
                         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 flex flex-col">
-                            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-seedling"></i></div>
-                            <div class="flex items-center gap-2">
-                                <h3 class="font-bold text-lg text-slate-900">Easy</h3>
-                                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-md">10 Poin/Soal</span>
+                            <div class="flex items-start justify-between gap-2 mb-3">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg sm:text-xl flex-shrink-0"><i class="fa-solid fa-seedling"></i></div>
+                                    <div class="min-w-0">
+                                        <h3 class="font-bold text-base sm:text-lg text-slate-900 leading-tight">Easy</h3>
+                                        <span class="inline-block mt-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-md">10 Poin/Soal</span>
+                                    </div>
+                                </div>
+                                <span id="quiz-jumlah-soal-easy" class="flex-shrink-0 px-2.5 py-1 border border-emerald-200 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full">5 Soal</span>
                             </div>
-                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Pemanasan santai, 5 soal umum & dasar TI. Waktu 20 detik/soal.</p>
-                            <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-easy" class="font-bold text-slate-800">0</span></p>
+                            <p class="text-xs text-slate-400 mb-4 flex-1">Pemanasan santai, 5 soal umum & dasar TI. Waktu 20 detik/soal.</p>
+                            <p class="text-[11px] text-slate-500 mb-3 flex items-center gap-1.5"><i class="fa-solid fa-medal text-amber-400"></i> Skor terbaik: <span id="quiz-best-easy" class="font-bold text-slate-800">0</span></p>
                             <button onclick="startQuiz('pg', 'easy')" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
                             </button>
                         </div>
 
                         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 flex flex-col">
-                            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-fire"></i></div>
-                            <div class="flex items-center gap-2">
-                                <h3 class="font-bold text-lg text-slate-900">Medium</h3>
-                                <span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md">20 Poin/Soal</span>
+                            <div class="flex items-start justify-between gap-2 mb-3">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg sm:text-xl flex-shrink-0"><i class="fa-solid fa-fire"></i></div>
+                                    <div class="min-w-0">
+                                        <h3 class="font-bold text-base sm:text-lg text-slate-900 leading-tight">Medium</h3>
+                                        <span class="inline-block mt-1 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md">20 Poin/Soal</span>
+                                    </div>
+                                </div>
+                                <span id="quiz-jumlah-soal-medium" class="flex-shrink-0 px-2.5 py-1 border border-amber-200 bg-amber-50 text-amber-600 text-[10px] font-bold rounded-full">5 Soal</span>
                             </div>
-                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Level menengah seputar jaringan & komputer. Waktu 15 detik/soal.</p>
-                            <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-medium" class="font-bold text-slate-800">0</span></p>
+                            <p class="text-xs text-slate-400 mb-4 flex-1">Level menengah seputar jaringan & komputer. Waktu 15 detik/soal.</p>
+                            <p class="text-[11px] text-slate-500 mb-3 flex items-center gap-1.5"><i class="fa-solid fa-medal text-amber-400"></i> Skor terbaik: <span id="quiz-best-medium" class="font-bold text-slate-800">0</span></p>
                             <button onclick="startQuiz('pg', 'medium')" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
                             </button>
                         </div>
 
                         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 flex flex-col">
-                            <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-skull"></i></div>
-                            <div class="flex items-center gap-2">
-                                <h3 class="font-bold text-lg text-slate-900">Hard</h3>
-                                <span class="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-bold rounded-md">35 Poin/Soal</span>
+                            <div class="flex items-start justify-between gap-2 mb-3">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-lg sm:text-xl flex-shrink-0"><i class="fa-solid fa-bolt"></i></div>
+                                    <div class="min-w-0">
+                                        <h3 class="font-bold text-base sm:text-lg text-slate-900 leading-tight">Hard</h3>
+                                        <span class="inline-block mt-1 px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-bold rounded-md">35 Poin/Soal</span>
+                                    </div>
+                                </div>
+                                <span id="quiz-jumlah-soal-hard" class="flex-shrink-0 px-2.5 py-1 border border-rose-200 bg-rose-50 text-rose-600 text-[10px] font-bold rounded-full">5 Soal</span>
                             </div>
-                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Level sulit, materi jaringan lanjutan. Waktu cuma 10 detik/soal!</p>
-                            <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-hard" class="font-bold text-slate-800">0</span></p>
+                            <p class="text-xs text-slate-400 mb-4 flex-1">Level sulit, materi jaringan lanjutan. Waktu cuma 10 detik/soal!</p>
+                            <p class="text-[11px] text-slate-500 mb-3 flex items-center gap-1.5"><i class="fa-solid fa-medal text-amber-400"></i> Skor terbaik: <span id="quiz-best-hard" class="font-bold text-slate-800">0</span></p>
                             <button onclick="startQuiz('pg', 'hard')" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
                             </button>
@@ -3566,53 +3598,79 @@
 
                 <!-- ============ VIEW 1b: TINGKAT KESULITAN - ESSAY ============ -->
                 <div id="quiz-view-tingkat-essay" class="hidden">
-                    <button type="button" onclick="kembaliKePilihMapelQuiz()" class="mb-4 inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors">
+                    <div class="flex sm:hidden items-center gap-3 mb-4">
+                        <button type="button" onclick="kembaliKePilihMapelQuiz()" aria-label="Kembali" class="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border border-slate-200 text-slate-600">
+                            <i class="fa-solid fa-arrow-left text-xs"></i>
+                        </button>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-bold text-base text-slate-900 leading-tight">Pilih Tingkat</h3>
+                            <p class="quiz-mapel-badge-essay text-[11px] text-slate-400 truncate">Mapel</p>
+                        </div>
+                        <button type="button" onclick="toggleBellDropdown(event)" aria-label="Notifikasi" class="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border border-slate-200 text-slate-600">
+                            <i class="fa-regular fa-bell text-xs"></i>
+                        </button>
+                    </div>
+
+                    <button type="button" onclick="kembaliKePilihMapelQuiz()" class="hidden sm:inline-flex mb-4 items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors">
                         <i class="fa-solid fa-arrow-left text-[10px]"></i> Kembali pilih mapel
                     </button>
-                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    <div class="hidden sm:flex items-center gap-2 mb-1 flex-wrap">
                         <span class="px-2.5 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded-md uppercase tracking-wide"><i class="fa-solid fa-pen-to-square mr-1"></i>Essay</span>
                         <span class="quiz-mapel-badge-essay px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md uppercase tracking-wide"><i class="fa-solid fa-book mr-1"></i>Mapel</span>
                     </div>
-                    <div class="flex items-center gap-2 mb-1">
-                        <span class="px-2.5 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded-md uppercase tracking-wide"><i class="fa-solid fa-pen-to-square mr-1"></i>Essay</span>
-                    </div>
-                    <h3 class="font-bold text-xl text-slate-900 mb-4">Pilih Tingkat Kesulitan</h3>
+                    <h3 class="hidden sm:block font-bold text-xl text-slate-900 mb-4">Pilih Tingkat Kesulitan</h3>
+                    <p class="sm:hidden text-xs text-slate-400 mb-4">Pilih tingkat kesulitan yang sesuai kemampuanmu.</p>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
                         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 flex flex-col">
-                            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-seedling"></i></div>
-                            <div class="flex items-center gap-2">
-                                <h3 class="font-bold text-lg text-slate-900">Easy</h3>
-                                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-md">15 Poin/Soal</span>
+                            <div class="flex items-start justify-between gap-2 mb-3">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg sm:text-xl flex-shrink-0"><i class="fa-solid fa-seedling"></i></div>
+                                    <div class="min-w-0">
+                                        <h3 class="font-bold text-base sm:text-lg text-slate-900 leading-tight">Easy</h3>
+                                        <span class="inline-block mt-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-md">15 Poin/Soal</span>
+                                    </div>
+                                </div>
+                                <span id="quiz-jumlah-soal-essay-easy" class="flex-shrink-0 px-2.5 py-1 border border-emerald-200 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full">5 Soal</span>
                             </div>
-                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Pemanasan santai, 5 soal isian singkat dasar TI. Waktu 40 detik/soal.</p>
-                            <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-essay-easy" class="font-bold text-slate-800">0</span></p>
+                            <p class="text-xs text-slate-400 mb-4 flex-1">Pemanasan santai, 5 soal isian singkat dasar TI. Waktu 40 detik/soal.</p>
+                            <p class="text-[11px] text-slate-500 mb-3 flex items-center gap-1.5"><i class="fa-solid fa-medal text-amber-400"></i> Skor terbaik: <span id="quiz-best-essay-easy" class="font-bold text-slate-800">0</span></p>
                             <button onclick="startQuiz('essay', 'easy')" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
                             </button>
                         </div>
 
                         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 flex flex-col">
-                            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-fire"></i></div>
-                            <div class="flex items-center gap-2">
-                                <h3 class="font-bold text-lg text-slate-900">Medium</h3>
-                                <span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md">25 Poin/Soal</span>
+                            <div class="flex items-start justify-between gap-2 mb-3">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg sm:text-xl flex-shrink-0"><i class="fa-solid fa-fire"></i></div>
+                                    <div class="min-w-0">
+                                        <h3 class="font-bold text-base sm:text-lg text-slate-900 leading-tight">Medium</h3>
+                                        <span class="inline-block mt-1 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md">25 Poin/Soal</span>
+                                    </div>
+                                </div>
+                                <span id="quiz-jumlah-soal-essay-medium" class="flex-shrink-0 px-2.5 py-1 border border-amber-200 bg-amber-50 text-amber-600 text-[10px] font-bold rounded-full">5 Soal</span>
                             </div>
-                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Level menengah, isian singkat seputar jaringan & komputer. Waktu 30 detik/soal.</p>
-                            <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-essay-medium" class="font-bold text-slate-800">0</span></p>
+                            <p class="text-xs text-slate-400 mb-4 flex-1">Level menengah, isian singkat seputar jaringan & komputer. Waktu 30 detik/soal.</p>
+                            <p class="text-[11px] text-slate-500 mb-3 flex items-center gap-1.5"><i class="fa-solid fa-medal text-amber-400"></i> Skor terbaik: <span id="quiz-best-essay-medium" class="font-bold text-slate-800">0</span></p>
                             <button onclick="startQuiz('essay', 'medium')" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
                             </button>
                         </div>
 
                         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 flex flex-col">
-                            <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-skull"></i></div>
-                            <div class="flex items-center gap-2">
-                                <h3 class="font-bold text-lg text-slate-900">Hard</h3>
-                                <span class="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-bold rounded-md">40 Poin/Soal</span>
+                            <div class="flex items-start justify-between gap-2 mb-3">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-lg sm:text-xl flex-shrink-0"><i class="fa-solid fa-bolt"></i></div>
+                                    <div class="min-w-0">
+                                        <h3 class="font-bold text-base sm:text-lg text-slate-900 leading-tight">Hard</h3>
+                                        <span class="inline-block mt-1 px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-bold rounded-md">40 Poin/Soal</span>
+                                    </div>
+                                </div>
+                                <span id="quiz-jumlah-soal-essay-hard" class="flex-shrink-0 px-2.5 py-1 border border-rose-200 bg-rose-50 text-rose-600 text-[10px] font-bold rounded-full">5 Soal</span>
                             </div>
-                            <p class="text-xs text-slate-400 mt-1 mb-4 flex-1">Level sulit, isian singkat materi jaringan lanjutan. Waktu cuma 25 detik/soal!</p>
-                            <p class="text-[11px] text-slate-500 mb-3">Skor terbaik: <span id="quiz-best-essay-hard" class="font-bold text-slate-800">0</span></p>
+                            <p class="text-xs text-slate-400 mb-4 flex-1">Level sulit, isian singkat materi jaringan lanjutan. Waktu cuma 25 detik/soal!</p>
+                            <p class="text-[11px] text-slate-500 mb-3 flex items-center gap-1.5"><i class="fa-solid fa-medal text-amber-400"></i> Skor terbaik: <span id="quiz-best-essay-hard" class="font-bold text-slate-800">0</span></p>
                             <button onclick="startQuiz('essay', 'hard')" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-play text-[10px]"></i> Mulai Quiz
                             </button>
@@ -10128,6 +10186,14 @@
             document.getElementById('quiz-best-essay-easy').innerText = String(best.easy || 0);
             document.getElementById('quiz-best-essay-medium').innerText = String(best.medium || 0);
             document.getElementById('quiz-best-essay-hard').innerText = String(best.hard || 0);
+
+            // Sama seperti renderMenuQuiz() versi Pilihan Ganda: badge "X Soal" pakai
+            // jumlah soal ASLI di bank Essay mapel ini, bukan angka tetap.
+            const bankMapelEssay = QUIZ_BANK_ESSAY_BY_MAPEL[quizMapelState.mapelId] || {};
+            ['easy', 'medium', 'hard'].forEach(level => {
+                const el = document.getElementById(`quiz-jumlah-soal-essay-${level}`);
+                if (el) el.innerText = `${Math.min(5, (bankMapelEssay[level] || []).length)} Soal`;
+            });
         }
 
         function startQuiz(jenis, level) {
@@ -10522,6 +10588,15 @@
             document.getElementById('quiz-best-easy').innerText = String(best.easy || 0);
             document.getElementById('quiz-best-medium').innerText = String(best.medium || 0);
             document.getElementById('quiz-best-hard').innerText = String(best.hard || 0);
+
+            // Badge "X Soal" per level -- diambil dari jumlah soal ASLI yang tersedia
+            // di bank mapel ini (bukan angka tetap "5"), karena startQuiz() memakai
+            // Math.min(5, bank.length) -- kalau bank cuma 4 soal, ya cuma 4 yang main.
+            const bankMapelPg = QUIZ_BANK_PG_BY_MAPEL[quizMapelState.mapelId] || {};
+            ['easy', 'medium', 'hard'].forEach(level => {
+                const el = document.getElementById(`quiz-jumlah-soal-${level}`);
+                if (el) el.innerText = `${Math.min(5, (bankMapelPg[level] || []).length)} Soal`;
+            });
         }
 
         function updateBerandaPoinQuiz() {
