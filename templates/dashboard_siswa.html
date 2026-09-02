@@ -10145,17 +10145,103 @@
                 const warnaIkon = m.warna || aksenKategori;
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = `text-left bg-white rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-${aksenKategori}-200 transition-shadow p-2.5 sm:p-5 flex flex-col`;
-                btn.onclick = () => pilihMapelQuiz(m.id);
-                btn.innerHTML = `
+                btn.className = `text-left bg-white rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-${aksenKategori}-200 transition-shadow p-2.5 sm:p-5 flex flex-col relative overflow-hidden`;
+
+                const isiKartuMapel = `
                     <div class="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-${warnaIkon}-50 text-${warnaIkon}-600 flex items-center justify-center text-xs sm:text-lg mb-2 sm:mb-3 overflow-hidden">${m.gambar ? `<img loading="lazy" decoding="async" src="${m.gambar}" alt="${m.nama}" class="w-5 h-5 sm:w-6 sm:h-6 object-contain">` : `<i class="fa-solid ${m.icon || 'fa-book'}"></i>`}</div>
                     <h3 class="font-bold text-xs sm:text-sm text-slate-900 leading-tight">${m.kode ? `${m.kode} · ` : ''}${m.nama}</h3>
                     <p class="text-[10px] sm:text-xs text-slate-400 mt-1 mb-2 sm:mb-3 flex-1 leading-snug">${m.deskripsi || ''}</p>
                     <span class="w-full py-1.5 sm:py-2 bg-${aksenKategori}-600 text-white rounded-lg text-[9px] sm:text-[11px] font-bold shadow-sm transition-all flex items-center justify-center gap-1 sm:gap-2 text-center">
                         Pilih Tingkat Kesulitan <i class="fa-solid fa-arrow-right text-[8px] sm:text-[9px]"></i>
                     </span>`;
+
+                if (m.id === 'bindo') {
+                    // Kartu "Bahasa Indonesia" khusus: dibungkus supaya kontennya bisa
+                    // diredupkan + ditumpuk overlay animasi bendera Merah Putih berkibar
+                    // saat di-long-press. Interaksi ini sengaja HANYA aktif di layar
+                    // sentuh (HP/iPad) lewat aktifkanLongPressBenderaBindo() di bawah.
+                    btn.innerHTML = `
+                        <div class="kartu-bindo-konten flex flex-col flex-1" style="transition:opacity .35s ease;">${isiKartuMapel}</div>
+                        <div class="kartu-bindo-flag-overlay absolute inset-0 bg-white flex flex-col items-center justify-center gap-1.5 sm:gap-2" style="opacity:0; transform:scale(0.94); pointer-events:none; transition:opacity .35s ease, transform .35s ease;">
+                            <svg viewBox="0 0 160 104" class="w-16 h-11 sm:w-20 sm:h-14 rounded shadow-sm" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <filter id="kartu-bindo-wave" x="-20%" y="-20%" width="140%" height="140%">
+                                        <feTurbulence type="fractalNoise" numOctaves="2" seed="7" result="kartuBindoTurb">
+                                            <animate attributeName="baseFrequency" dur="2.2s" values="0.015 0.05;0.035 0.09;0.015 0.05" repeatCount="indefinite" />
+                                        </feTurbulence>
+                                        <feDisplacementMap in="SourceGraphic" in2="kartuBindoTurb" scale="10" xChannelSelector="R" yChannelSelector="G" />
+                                    </filter>
+                                </defs>
+                                <g filter="url(#kartu-bindo-wave)">
+                                    <rect x="0" y="0" width="160" height="52" fill="#dc2626"></rect>
+                                    <rect x="0" y="52" width="160" height="52" fill="#ffffff"></rect>
+                                </g>
+                            </svg>
+                            <span class="text-[9px] sm:text-[11px] font-bold text-slate-700">Bahasa Indonesia</span>
+                        </div>`;
+                    btn.onclick = () => {
+                        if (btn.dataset.longPressTriggered === '1') { btn.dataset.longPressTriggered = ''; return; }
+                        pilihMapelQuiz(m.id);
+                    };
+                    aktifkanLongPressBenderaBindo(btn);
+                } else {
+                    btn.innerHTML = isiKartuMapel;
+                    btn.onclick = () => pilihMapelQuiz(m.id);
+                }
+
                 container.appendChild(btn);
             });
+        }
+
+        // Long-press (>300ms) KHUSUS kartu mapel "Bahasa Indonesia" & KHUSUS layar
+        // sentuh (HP/iPad, dideteksi via matchMedia 'pointer: coarse' supaya tidak
+        // mengganggu interaksi mouse di desktop). Saat ditekan-tahan: konten kartu
+        // meredup sedikit lalu bertransisi halus (morphing) memunculkan animasi
+        // bendera Merah Putih berkibar (SVG + feTurbulence/feDisplacementMap,
+        // dinamis & halus, jadi fokus visual utama). Saat jari dilepas: bendera
+        // fade out cepat, kartu balik ke idle & siap ditap normal untuk lanjut ke
+        // pemilihan tingkat kesulitan.
+        function aktifkanLongPressBenderaBindo(btn) {
+            if (!window.matchMedia('(pointer: coarse)').matches) return;
+
+            const konten = btn.querySelector('.kartu-bindo-konten');
+            const overlay = btn.querySelector('.kartu-bindo-flag-overlay');
+            if (!konten || !overlay) return;
+
+            let timerLongPress = null;
+            let longPressAktif = false;
+
+            const mulaiTekan = () => {
+                longPressAktif = false;
+                btn.dataset.longPressTriggered = '';
+                clearTimeout(timerLongPress);
+                timerLongPress = setTimeout(() => {
+                    longPressAktif = true;
+                    btn.dataset.longPressTriggered = '1';
+                    overlay.style.transitionDuration = '.35s, .35s';
+                    konten.style.transitionDuration = '.35s';
+                    konten.style.opacity = '0.15';
+                    overlay.style.opacity = '1';
+                    overlay.style.transform = 'scale(1)';
+                }, 300);
+            };
+
+            const lepasTekan = () => {
+                clearTimeout(timerLongPress);
+                if (longPressAktif) {
+                    overlay.style.transitionDuration = '.15s, .15s';
+                    konten.style.transitionDuration = '.15s';
+                    overlay.style.opacity = '0';
+                    overlay.style.transform = 'scale(0.94)';
+                    konten.style.opacity = '1';
+                }
+                longPressAktif = false;
+            };
+
+            btn.addEventListener('touchstart', mulaiTekan, { passive: true });
+            btn.addEventListener('touchend', lepasTekan);
+            btn.addEventListener('touchcancel', lepasTekan);
+            btn.addEventListener('contextmenu', (e) => { if (longPressAktif || timerLongPress) e.preventDefault(); });
         }
 
         // Kartu mapel dipilih -> lanjut ke halaman tingkat kesulitan sesuai jenis
