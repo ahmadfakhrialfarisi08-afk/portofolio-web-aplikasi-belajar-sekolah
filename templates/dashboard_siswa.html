@@ -1635,6 +1635,53 @@
         html.dark .border-amber-200 { border-color: rgba(245, 158, 11, 0.35) !important; }
         html.dark .border-rose-200 { border-color: rgba(244, 63, 94, 0.35) !important; }
 
+        /* ---------- FIX MODE GELAP: kartu "Total Poin Quiz" & "Streak Tugas" ----------
+           Dua kartu ini (.bento-stat-card--accent dan .streak-tier-0/1/2/3) pakai
+           background krem/putih yang HARDCODED di CSS-nya (bukan var(--surface)
+           yang otomatis ikut gelap seperti kartu bento lain). Akibatnya di mode
+           gelap kartunya tetap terang sementara teks di dalamnya sudah ikut
+           diputihkan (lihat override .text-amber-700/800 & .text-slate-900 di
+           atas) -- hasilnya teks kuning pucat di atas krem, nyaris tak kebaca,
+           baik di HP maupun laptop. Di sini background-nya digelapkan jadi
+           nuansa kuning-keemasan redup (bukan gelap datar polos) supaya kartu
+           masih terasa "kartu istimewa" seperti di mode terang, tapi kontras
+           teksnya balik nyaman dibaca. */
+        html.dark .bento-stat-card--accent {
+            background: linear-gradient(160deg, rgba(245, 158, 11, 0.18), rgba(120, 53, 15, 0.32) 130%);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+        }
+        html.dark .bento-stat-card--accent:hover {
+            border-color: rgba(251, 191, 36, 0.55);
+            box-shadow: 0 6px 16px -6px rgba(245, 158, 11, 0.35);
+        }
+        /* Lingkaran ikon trofi di kartu ini pakai bg-white/70 -- di mode terang
+           jadi lingkaran putih lembut di atas krem, tapi kalau dibiarkan di mode
+           gelap jadi tempelan putih terang yang mencolok. Diredupkan khusus di
+           dalam kartu ini saja (tidak menyentuh bg-white/70 di tempat lain). */
+        html.dark .bento-stat-card--accent .bg-white\/70 { background-color: rgba(255, 255, 255, 0.12) !important; }
+        /* "Total Poin Quiz" pakai text-amber-800/70 (varian opacity Tailwind)
+           yang belum ada override dark-nya sama sekali sebelum ini. */
+        html.dark .text-amber-800\/70 { color: rgba(253, 230, 138, 0.85) !important; }
+
+        html.dark .streak-tier-0 { background: var(--dark-surface); }
+        html.dark .streak-tier-1 {
+            background: linear-gradient(135deg, var(--dark-surface), rgba(245, 158, 11, 0.16));
+            border-color: rgba(253, 230, 138, 0.35) !important;
+        }
+        html.dark .streak-tier-2 {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(249, 115, 22, 0.18));
+            border-color: rgba(253, 186, 116, 0.4) !important;
+        }
+        html.dark .streak-tier-3 {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(248, 113, 113, 0.16));
+            border-color: rgba(252, 165, 165, 0.45) !important;
+            box-shadow: 0 0 0 1px rgba(249, 115, 22, .2);
+        }
+        /* streak-tier-4 sengaja tidak disentuh: gradiennya sudah gelap (coklat
+           kemerahan tua) + teks dipaksa putih lewat #streak-label-atas dkk di
+           atas, jadi sudah kontras & nyaman baik di mode terang maupun gelap. */
+
         /* --- Tombol Mode Gelap: animasi "matahari & bulan naik-turun" saat
            diklik. Kedua ikon sama-sama ada di DOM (bukan display:none/block
            instan lagi) dan digeser vertikal + rotate lewat transition CSS,
