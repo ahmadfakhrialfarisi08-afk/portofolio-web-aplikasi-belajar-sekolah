@@ -1645,6 +1645,67 @@
         html.dark .border-amber-400 { border-color: rgba(251, 191, 36, 0.55) !important; }
         html.dark .border-emerald-300 { border-color: rgba(110, 231, 183, 0.5) !important; }
 
+        /* ============================================================
+           MODE GELAP: SEMUA status hover (kursor)/tekan berwarna lain
+           di seluruh dashboard -- bukan cuma menu sidebar & Journey
+           Prestasi yang sempat dilaporkan. Akar masalahnya sama persis
+           di semua tempat ini: class "hover:bg-amber-100" itu class
+           TERSENDIRI, beda dari "bg-amber-100" polos -- jadi walau
+           warna DIAM (rest state)-nya sudah ditangani utk mode gelap,
+           begitu di-hover balik ke versi mode terang asli (pucat/nyaris
+           putih, atau utk teks malah jadi gelap & ketelen sama latar).
+           Dikumpulkan di sini SEMUA varian hover berwarna yang dipakai
+           di file ini: tombol Terima/Tolak Teman, Setujui/Tolak
+           Perangkat, Hapus, kartu kategori Quiz, baris leaderboard,
+           tombol "kembali", tombol tutup (X) modal/notifikasi, dst --
+           supaya konsisten satu formula: identitas warnanya tetap
+           kebawa, cuma ditipiskan/diserasikan ke mode gelap. */
+
+        /* --- Latar (bg) netral abu-abu: dipakai tombol tutup, kartu, baris list --- */
+        html.dark .hover\:bg-slate-50:hover,
+        html.dark .hover\:bg-slate-100:hover { background-color: var(--dark-surface-hover) !important; }
+        html.dark .hover\:bg-slate-200:hover { background-color: #2a3a5c !important; }
+
+        /* --- Teks abu-abu: di mode terang hover bikin teks LEBIH GELAP (kontras
+           makin jelas di atas putih); di mode gelap arahnya harus dibalik jadi
+           LEBIH TERANG, kalau tidak teksnya malah "ketelen" nyaris tak kelihatan
+           begitu di-hover (mis. tombol tutup/X, tombol "kembali"). --- */
+        html.dark .hover\:text-slate-500:hover { color: #cbd5e1 !important; }
+        html.dark .hover\:text-slate-600:hover { color: #e2e8f0 !important; }
+        html.dark .hover\:text-slate-800:hover,
+        html.dark .hover\:text-slate-900:hover { color: #f8fafc !important; }
+
+        /* --- Biru (disamakan ke cyan neon, senada tema gelap) --- */
+        html.dark .hover\:bg-blue-50:hover,
+        html.dark .hover\:bg-blue-50\/40:hover { background-color: rgba(6, 182, 212, 0.14) !important; }
+        html.dark .hover\:bg-blue-100:hover { background-color: rgba(6, 182, 212, 0.2) !important; }
+        html.dark .hover\:border-blue-200:hover,
+        html.dark .hover\:border-blue-300:hover,
+        html.dark .hover\:border-sky-200:hover { border-color: rgba(6, 182, 212, 0.5) !important; }
+
+        /* --- Amber/kuning (di luar menu sidebar & Journey Prestasi yang sudah
+           dibereskan sebelumnya) --- */
+        html.dark .hover\:bg-amber-50:hover { background-color: rgba(245, 158, 11, 0.14) !important; }
+        html.dark .hover\:bg-amber-100:hover { background-color: rgba(245, 158, 11, 0.2) !important; }
+
+        /* --- Hijau emerald (Terima Teman, Setujui Perangkat, dst) --- */
+        html.dark .hover\:bg-emerald-50:hover { background-color: rgba(16, 185, 129, 0.14) !important; }
+        html.dark .hover\:bg-emerald-200:hover { background-color: rgba(16, 185, 129, 0.3) !important; }
+
+        /* --- Merah muda rose & merah polos (Tolak Teman, Tolak Perangkat, Hapus) --- */
+        html.dark .hover\:bg-rose-50:hover { background-color: rgba(244, 63, 94, 0.14) !important; }
+        html.dark .hover\:bg-rose-100:hover { background-color: rgba(244, 63, 94, 0.2) !important; }
+        html.dark .hover\:bg-rose-200:hover { background-color: rgba(244, 63, 94, 0.3) !important; }
+        html.dark .hover\:text-rose-500:hover { color: #fda4af !important; }
+        html.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.12) !important; }
+        html.dark .hover\:bg-red-100:hover { background-color: rgba(239, 68, 68, 0.22) !important; }
+        html.dark .text-red-600 { color: #fca5a5 !important; }
+
+        /* --- Ungu (akun dummy, opsi jawaban quiz) --- */
+        html.dark .hover\:bg-purple-50:hover { background-color: rgba(139, 92, 246, 0.14) !important; }
+        html.dark .hover\:border-purple-400:hover { border-color: rgba(139, 92, 246, 0.55) !important; }
+        html.dark .hover\:text-purple-800:hover { color: #ddd6fe !important; }
+
 
         html.dark input, html.dark textarea { background-color: var(--dark-bg) !important; color: #e2e8f0 !important; border-color: var(--dark-border) !important; }
         html.dark input:focus, html.dark textarea:focus { border-color: var(--brand) !important; box-shadow: 0 0 0 3px var(--brand-tint-50) !important; }
