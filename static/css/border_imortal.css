@@ -25,6 +25,15 @@
    translate -50%,-50%) sama seperti border_polos.css, TIDAK PERLU
    lagi angka offset aneh (54.2%/48.7%) dari revisi sebelumnya.
 
+   UPDATE UKURAN: 140% sebelumnya kegedean (frame meluber jauh keluar
+   kotak foto). Dihitung ulang dengan bandingkan rasio bounding-box
+   vs kanvas antara border_imortal.jpg dan border_admin.jpg -- admin
+   menempati ~85-86% dari kanvasnya sendiri, sementara imortal (versi
+   crop baru) menempati ~92-96% dari kanvasnya. Supaya footprint
+   visual imortal sepadan dengan admin, width/height diturunkan ke
+   90% (bukan 140%). Sudah dicek render side-by-side, hasilnya
+   sepadan ukurannya dengan border_admin.
+
    Cara pakai: sama seperti sebelumnya, taruh di static/css/,
    link di bawah border_pink.css:
      <link rel="stylesheet" href="../static/css/border_imortal.css">
@@ -49,8 +58,8 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 140%;
-    height: 140%;
+    width: 90%;
+    height: 90%;
     transform: translate(-50%, -50%);
     object-fit: contain;
     pointer-events: none;
