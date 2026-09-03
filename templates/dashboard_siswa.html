@@ -1375,23 +1375,19 @@
         .title-badge-permata { background: linear-gradient(90deg, #cffafe, #f5f3ff); color: #6d28d9; border: 1px solid #ddd6fe; }
         .title-badge-emas    { background: linear-gradient(90deg, #fef3c7, #fffbeb); color: #b45309; border: 1px solid #fde68a; }
         .title-badge-perak   { background: linear-gradient(90deg, #e2e8f0, #f8fafc); color: #475569; border: 1px solid #cbd5e1; }
-        .title-badge-admin   { background: linear-gradient(90deg, #fde68a, #fefce8); color: #92400e; border: 1px solid #fcd34d; }
+        .title-badge-admin   { background: linear-gradient(90deg, #f59e0b, #fef08a, #facc15, #fef08a, #f59e0b); color: #78350f; border: 1px solid #eab308; }
 
-        /* Efek "cahaya miring lewat" (shine sweep) khusus border Admin --
-           supaya nama & title badge Admin ikut hidup/berkilau, senada
-           dengan badge DEV yang sudah pakai efek ini (.badge-dev::after,
-           lihat @keyframes shine-dev). Ditempel di efek nama & title
-           badge Admin (bukan cuma badge DEV) biar levelnya sama semarak
-           dengan tema Kristal Imortal. display:inline-block + overflow:
-           hidden WAJIB di sini supaya sapuan cahayanya ke-crop rapi di
-           dalam kotak teks/badge, bukan meluber ke luar. */
-        .efek-nama-admin,
+        /* Efek "cahaya miring lewat" (shine sweep) khusus TITLE BADGE Admin
+           saja (bukan efek nama) -- senada dengan badge DEV yang sudah
+           pakai efek ini (.badge-dev::after, lihat @keyframes shine-dev).
+           display:inline-block + overflow:hidden WAJIB di sini supaya
+           sapuan cahayanya ke-crop rapi di dalam kotak badge, bukan
+           meluber ke luar. */
         .title-badge-admin {
             position: relative;
             overflow: hidden;
             display: inline-block;
         }
-        .efek-nama-admin::after,
         .title-badge-admin::after {
             content: "";
             position: absolute;
@@ -1604,7 +1600,7 @@
         @media (prefers-reduced-motion: reduce) {
             .efek-nama-perak, .efek-nama-emas, .gold-name, .efek-nama-permata,
             .efek-nama-pink, .efek-nama-admin, .efek-nama-imortal, .title-badge-imortal,
-            .efek-nama-admin::after, .title-badge-admin::after,
+            .title-badge-admin::after,
             .streak-flame-icon, .lightning-border-yellow, .badge-dev::after {
                 animation: none !important;
             }
