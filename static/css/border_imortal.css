@@ -97,7 +97,20 @@
        boleh kelewat ke-override rule lain manapun (lihat catatan
        v12 di atas kenapa ini kemungkinan besar akar masalahnya). */
     position: relative !important;
-    overflow: visible !important;
+    /* FIX v14 (SEKARANG - "foto keluar dari border"): overflow
+       sebelumnya "visible" (peninggalan versi lama waktu border
+       sengaja dibikin lebih besar dari wrapper). Sekarang border
+       sudah dikunci pas 100% (lihat FIX v13), jadi "visible" gak
+       perlu lagi -- malah berbahaya karena kalau ADA rule lain
+       manapun (mis. dari border_polos.css atau elemen lain) yang
+       berhasil bikin img.user-avatar lebih besar dari wrapper
+       (kalah cascade / ke-override), fotonya bakal keliatan
+       nongol/meluber keluar kotak border tanpa ke-potong sama
+       sekali. "hidden" di sini jadi jaring pengaman keras: apapun
+       yang terjadi ke ukuran avatar, dia TIDAK PERNAH bisa
+       tampil melewati kotak .profile-wrapper -- otomatis selalu
+       "tertutup" oleh tepi border, bukan menutupi/keluar dari border. */
+    overflow: hidden !important;
     /* frame kristal kotak, jadi wrapper-nya juga wajib kotak biar
        sudut frame gak ke-mask ikut bentuk bulat avatar default. */
     border-radius: 0 !important;
