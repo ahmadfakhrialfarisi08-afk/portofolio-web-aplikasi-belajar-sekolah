@@ -15,6 +15,15 @@
    70.3% & 72.9%) supaya foto pas ngisi lubang, ring bronze-nya
    kelihatan utuh melingkupi foto.
    ------------------------------------------------------------
+   CATATAN v3 (SEKARANG): 71% x 71% rata masih nyisain garis putih
+   tipis di atas/bawah foto -- karena lubangnya sendiri TIDAK persegi
+   pas (lebar 69.5% vs tinggi 72.7% dari pengukuran ulang piksel
+   asli), sedangkan avatar dikunci rata 71% x 71%, jadi di sisi
+   tinggi ada kekurangan ~1.7% yang nongol sebagai celah. Dinaikkan
+   ke 72% x 75% (sedikit LEBIH BESAR dari lubang asli, bukan pas-pas
+   amat) supaya foto benar2 nutup penuh sampai ring bronze-nya tanpa
+   celah sama sekali -- selisih dikit itu ketutup ring yang cukup
+   tebal, jadi tidak kelihatan motong ukiran ring.
    ------------------------------------------------------------
    KENAPA FILE INI PERLU ADA:
    Sebelumnya border_pemula.jpg TIDAK punya CSS sendiri sama sekali --
@@ -47,8 +56,8 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 71%;
-    height: 71%;
+    width: 72%;
+    height: 75%;
     transform: translate(-50%, -50%);
     z-index: 1;
     object-fit: cover;

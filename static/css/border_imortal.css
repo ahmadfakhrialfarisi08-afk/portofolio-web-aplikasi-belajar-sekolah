@@ -77,11 +77,18 @@
        sini spy selalu ngisi wrapper persis berapa pun ukurannya
        (angka 64%, bukan 100% -- lihat catatan v6 di atas file
        kenapa segini). */
-    /* v10: skala border naik ke 137% (lihat catatan di img.user-border
-       di bawah), jadi avatar ikut naik proporsional: bukaan asli
-       300x319 dari kanvas 500x500 dikali skala 137% = 82% x 87%. */
-    width: 82%;
-    height: 87%;
+    /* v11: diukur ULANG langsung dari piksel border_imortal.png yang
+       sekarang (bukan estimasi visual lagi). Bounding box lubang
+       transparan asli cuma ~285x310 dari kanvas 500x500 (bukan
+       300x319 seperti dugaan v10) -- dan supaya foto PASTI tidak
+       meluber keluar batas kristal di titik manapun (termasuk sisi
+       yang agak "digigit" ukiran emas), dipakai bounding box PALING
+       SEMPIT hasil scan banyak baris/kolom di sekitar tengah:
+       282x301. 282/500 x 301/500 dikali skala border 137% = 77.3% x
+       82.5%, dibulatkan turun tipis jadi 76% x 81% supaya ada sedikit
+       margin aman -- foto pas ngisi kristal, tidak nutupin ukirannya. */
+    width: 76%;
+    height: 81%;
     transform: translate(-50%, -50%);
     z-index: 1;
     object-fit: cover;
