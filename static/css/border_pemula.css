@@ -1,5 +1,20 @@
 /* ============================================================
-   border_pemula.css (v1 - baru dibuat)
+   border_pemula.css (v2 - foto avatar disamain ke bukaan frame)
+   ------------------------------------------------------------
+   CATATAN v2 (SEKARANG): img.user-avatar di v1 dikunci 100% x 100%,
+   sama kayak wrapper -- padahal border_pemula.png sendiri tampil di
+   100% wrapper juga (object-fit:contain), dan lubang transparan di
+   TENGAH gambar border itu cuma ~70-73% dari kanvasnya (sisanya
+   dimakan ring bronze di 4 sisi). Hasilnya foto 100% "nutupin" ring
+   bronze-nya alih-alih pas ngisi lubang persegi di dalamnya -- persis
+   pola bug yang sama yang sudah dibenerin di border_admin.css (avatar
+   72%) & border_imortal.css (avatar 64%).
+   Dihitung dari bounding-box lubang border_pemula.png (~70.3% lebar,
+   ~72.9% tinggi) dikali skala tampil border ini sendiri (100%) =
+   avatar diturunkan dari 100% -> 71% (dibulatkan, tengah2 antara
+   70.3% & 72.9%) supaya foto pas ngisi lubang, ring bronze-nya
+   kelihatan utuh melingkupi foto.
+   ------------------------------------------------------------
    ------------------------------------------------------------
    KENAPA FILE INI PERLU ADA:
    Sebelumnya border_pemula.jpg TIDAK punya CSS sendiri sama sekali --
@@ -32,8 +47,8 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 100%;
-    height: 100%;
+    width: 71%;
+    height: 71%;
     transform: translate(-50%, -50%);
     z-index: 1;
     object-fit: cover;
