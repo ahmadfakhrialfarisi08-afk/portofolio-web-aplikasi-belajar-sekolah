@@ -128,4 +128,15 @@
    navbar avatar & card "Kristal Imortal" di halaman achievement).
    Kalau suatu saat mau dipasang lagi, tinggal kembalikan blok
    ::before + @keyframes imortalAuraPulse dari riwayat v7 di atas.
-   ============================================================ */
+
+   PENTING: position:relative di bawah ini TETAP DIPERTAHANKAN
+   walau ::before-nya sudah dihapus -- ini BUKAN bagian dekoratif
+   si glow, tapi acuan posisi wajib buat img.user-avatar & img.user
+   -border yang di-position:absolute (top/left/transform) di atas.
+   v8 sempat KEHAPUS ikut kena hapus bareng blok glow -> avatar &
+   border jadi nempel ke parent/ancestor lain yang jauh lebih besar
+   (mis. satu baris leaderboard), makanya foto avatar keliatan
+   melar/raksasa nutupin satu baris penuh. Jangan dihapus lagi. */
+.profile-wrapper:has(img.user-border[src*="border_imortal"]) {
+    position: relative;
+}
