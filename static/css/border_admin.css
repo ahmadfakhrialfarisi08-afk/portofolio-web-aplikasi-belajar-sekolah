@@ -23,6 +23,11 @@
    yang berisiko bentrok/menimpa baliknya.
    ============================================================ */
 
+.profile-wrapper:has(img.user-border[src*="border_admin"]) {
+    position: relative;
+    overflow: hidden;
+}
+
 .profile-wrapper:has(img.user-border[src*="border_admin"]) img.user-avatar {
     width: 72%;
     height: 72%;
@@ -38,6 +43,7 @@
 .profile-wrapper:has(img.user-border[src*="border_admin"]) img.user-border[src*="border_admin"] {
     width: 100%;
     height: 100%;
+    object-fit: contain;
     position: absolute;
     top: 0;
     left: 0;
