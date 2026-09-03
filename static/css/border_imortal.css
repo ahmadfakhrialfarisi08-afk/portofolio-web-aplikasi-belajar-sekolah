@@ -58,3 +58,47 @@
     pointer-events: none;
     z-index: 2;
 }
+
+/* ============================================================
+   AMBIENT GLOW (khusus border Kristal Imortal)
+   ------------------------------------------------------------
+   Sebelumnya frame kristalnya "pecah/tajam" tapi kartu di
+   belakangnya polos -- gak ada pendaran cahaya sama sekali, jadi
+   kesannya flat walau framenya sendiri udah detail. ::before ini
+   nambahin cahaya emas lembut yang MELEBAR ke belakang avatar+
+   border (radial-gradient, di-blur, z-index PALING BAWAH supaya
+   foto & frame tetap di depannya) dan berdenyut pelan (bukan kedip
+   cepat/ramai) biar kesannya "hidup" tanpa ganggu.
+   position:relative dipastikan eksplisit di sini (bukan cuma
+   mengandalkan .profile-wrapper dasar) supaya ::before ini pasti
+   punya acuan posisi yang benar di mana pun wrapper ini dipakai. */
+.profile-wrapper:has(img.user-border[src*="border_imortal"]) {
+    position: relative;
+}
+
+.profile-wrapper:has(img.user-border[src*="border_imortal"])::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 190%;
+    height: 190%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(250, 204, 21, 0.5) 0%, rgba(251, 191, 36, 0.22) 45%, rgba(250, 204, 21, 0) 72%);
+    filter: blur(5px);
+    z-index: 0;
+    pointer-events: none;
+    animation: imortalAuraPulse 3.2s ease-in-out infinite;
+}
+
+@keyframes imortalAuraPulse {
+    0%, 100% { opacity: .55; transform: translate(-50%, -50%) scale(1); }
+    50%      { opacity: 1;   transform: translate(-50%, -50%) scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .profile-wrapper:has(img.user-border[src*="border_imortal"])::before {
+        animation: none;
+        opacity: .8;
+    }
+}

@@ -1376,13 +1376,15 @@
         .title-badge-perak   { background: linear-gradient(90deg, #e2e8f0, #f8fafc); color: #475569; border: 1px solid #cbd5e1; }
         .title-badge-admin   { background: linear-gradient(90deg, #fde68a, #fefce8); color: #92400e; border: 1px solid #fcd34d; }
         .title-badge-default { background: linear-gradient(90deg, #f1f5f9, #ffffff); color: #64748b; border: 1px solid #e2e8f0; }
-        /* Badge title "IMO" (border Kristal Imortal) — dipetakan ke palet
-           kristal asli gambarnya (ungu-pink-cyan berpadu), bukan emas polos
-           ala border admin. */
+        /* Badge title "IMO" (border Kristal Imortal) — REVISI: sebelumnya
+           pastel ungu-pink-cyan (senada efek nama lama yg kesannya neon).
+           Diselaraskan ke gold-luxury yg sama dgn .efek-nama-imortal di atas
+           supaya nama + badge + border kelihatan satu keluarga warna, bukan
+           beda arah. */
         .title-badge-imortal {
-            background: linear-gradient(90deg, #ede9fe, #fce7f3, #cffafe);
-            color: #7c3aed;
-            border: 1px solid #ddd6fe;
+            background: linear-gradient(90deg, #fde68a, #fffbeb, #fbbf24);
+            color: #78350f;
+            border: 1px solid #f59e0b;
         }
 
         /* ============================================================
@@ -1518,14 +1520,31 @@
             animation: shimmerNama 3.5s ease-in-out infinite reverse; font-weight: 800;
         }
         /* Efek nama khusus border "Kristal Imortal" (border_imortal.jpg) —
-           dipetakan ke palet kristal asli gambarnya (ungu-pink-cyan/teal-emas
-           berpadu, kesan opal/holografik), BUKAN emas polos ala border admin. */
+           REVISI: sebelumnya dominan ungu-pink-cyan, kelihatan kayak neon
+           synthwave/cyberpunk, bukan "luxury gold" khas rank tertinggi.
+           Sekarang basisnya emas tua->emas terang->champagne (senada
+           .efek-nama-emas tapi lebih kaya highlight-nya), cuma disisipin
+           SATU aksen putih-krem pudar (bukan ungu/cyan jenuh) buat kesan
+           kilau kristal tanpa balik jadi neon. Ditambah filter drop-shadow
+           tipis sebagai "glow" di sekitar hurufnya sendiri (lihat juga
+           ambient glow di belakang kartu, di border_imortal.css). */
         .efek-nama-imortal {
-            background: linear-gradient(90deg, #7c3aed, #f472b6, #22d3ee, #fbbf24, #a78bfa, #f9a8d4, #7c3aed);
+            background: linear-gradient(90deg, #78350f, #fbbf24, #fffbeb, #fde047, #f59e0b, #fef3c7, #92400e);
             background-size: 200% auto;
             -webkit-background-clip: text; background-clip: text; color: transparent;
             animation: shimmerNama 3.5s ease-in-out infinite reverse;
             font-weight: 800;
+            filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.55));
+        }
+        /* Teks keterangan di bawah nama (mis. "Siswa • XII TKJ 3/TAV") KHUSUS
+           saat border Kristal Imortal aktif -- sebelumnya ikut warna default
+           abu-abu mati (.text-slate-400) tanpa sentuhan apa pun. Dipisah jadi
+           class sendiri (bukan menimpa .text-slate-400 secara global) supaya
+           border lain tetap pakai abu-abu polos seperti biasa. */
+        .efek-subtitle-imortal {
+            color: #b8860b;
+            text-shadow: 0 0 5px rgba(250, 204, 21, 0.4);
+            font-weight: 600;
         }
 
         /* Hormati pengaturan "Reduce Motion" di OS/browser (banyak dipakai jg di
@@ -13589,6 +13608,15 @@
             // header melebar ke kanan, walau efek nama/border-nya ganti-ganti.
             if (elNama) elNama.className = `truncate max-w-full ${kelasEfek}`.trim();
             if (elBadge) elBadge.innerHTML = getBadgeDevHtml(border);
+
+            // Teks keterangan kelas ("Siswa • XII TKJ 3/TAV") di header desktop:
+            // dikasih sentuhan gold khusus SAAT border Kristal Imortal yang
+            // aktif, biar gak polos abu-abu mati lagi. Border lain tidak
+            // disentuh (classList.toggle dgn kondisi, bukan className penuh,
+            // supaya class layout aslinya -- hidden sm:block text-xs
+            // text-slate-400 -- tidak ikut hilang).
+            const elKelas = document.getElementById('header-user-kelas');
+            if (elKelas) elKelas.classList.toggle('efek-subtitle-imortal', border && border.id === 'border_imortal');
 
             // Sinkronkan efek nama yang sama ke SEMUA elemen lain yang nampilin
             // nama siswa (kartu sapaan HP, banner sapaan desktop, dan halaman
