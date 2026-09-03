@@ -1,32 +1,59 @@
 /* ============================================================
-   border_imortal.css (v6 - foto avatar disamain ke bukaan frame)
+   border_imortal.css (v12 - border dikunci ke containing block +
+   ukuran border ditarik dari variabel avatar, bukan angka lepas)
    ------------------------------------------------------------
-   CATATAN v6 (SEKARANG): border_imortal.png yang baru sudah di-crop
-   presisi & margin-nya disimetriskan (lihat riwayat v5), TAPI ternyata
-   img.user-avatar di sini masih dikunci 100% x 100% -- persis bug yang
-   sama seperti border_admin.jpg SEBELUM file itu di-scope ulang (foto
-   lebih gede dari bukaan frame, jadi "meluber" nutupin sebagian
-   kristalnya, bukan pas ngisi lubangnya).
-   Dihitung dari bounding-box lubang transparan di border_imortal.png
-   (~70% dari kanvas gambar) dikali skala tampil border-nya sendiri
-   (90%, lihat img.user-border di bawah) = ~63-64% dari wrapper.
-   Avatar diturunkan dari 100% -> 64% supaya foto pas ngisi bukaan
-   kristal, senada dengan cara border_admin.css sudah benar (avatar
-   72% mengikuti bukaan frame admin, bukan 100%).
-   ------------------------------------------------------------
-   CATATAN v5 (SEKARANG): dicek ulang pakai bounding-box non-transparan
-   yang sebenarnya di file border_imortal.jpg yang sedang aktif, dan
-   ternyata margin-nya masih asimetris persis seperti bug lama yang
-   didokumentasikan di v1/v2 di bawah (atas 56px vs bawah 79px,
-   selisih 23px) -- kiri/kanan sendiri sudah pas (78px/78px). Artinya
-   file gambar yang kepasang belakangan ini BUKAN versi yang sudah
-   di-crop-presisi seperti diklaim catatan v4, jadi bug-nya balik lagi
-   walau CSS-nya sendiri tidak berubah. File border_imortal.jpg sudah
-   di-crop presisi ke bounding box lalu di-center ulang di kanvas
-   500x500 yang sama (margin baru: kiri 78px/kanan 79px, atas 68px/
-   bawah 69px -- beda 1px murni pembulatan). CSS di bawah TIDAK perlu
-   diubah, cukup timpa file gambarnya dengan yang baru.
+   CATATAN v12 (SEKARANG - fix bug "border kegedean lepas dari
+   card" yang muncul di modal Detail Siswa, lihat screenshot report):
 
+   ROOT CAUSE: img.user-avatar & img.user-border sama-sama
+   position:absolute, jadi ukuran %-nya dihitung relatif ke
+   containing block-nya -- yaitu ancestor terdekat yang position-nya
+   BUKAN static. Itu seharusnya .profile-wrapper sendiri (sudah
+   dikasih position:relative di bawah). TAPI kalau di context
+   tertentu (mis. modal) ada CSS lain yang override position
+   .profile-wrapper balik ke static -- entah karena urutan file CSS
+   ke-load belakangan atau specificity lebih tinggi -- containing
+   block avatar & border "loncat" ke ancestor yang JAUH lebih besar
+   (mis. body modal). Ini PERSIS pola bug yang sudah pernah
+   didokumentasikan sendiri di v8 (waktu itu position:relative ikut
+   kehapus bareng blok glow, avatar/border jadi nempel ke satu baris
+   leaderboard). Jadi kemungkinan besar bukan angka 76%/81%/137%
+   yang salah (angka2 itu udah relatif & otomatis nyesuain ukuran
+   wrapper berapa pun -- ASAL containing block-nya bener
+   .profile-wrapper), tapi position:relative-nya yang kalah cascade
+   di context modal.
+
+   FIX #1: position:relative dikasih !important supaya gak bisa
+   ke-override rule lain manapun, di context apapun dia dipakai
+   (navbar, modal, card achievement, dll) -- containing block avatar
+   & border dijamin selalu .profile-wrapper sendiri.
+
+   FIX #2 (biar border "mengikat" ke avatar, bukan angka independen
+   lagi): ukuran img.user-border sekarang DIHITUNG dari variabel
+   yang sama dengan img.user-avatar (--imortal-avatar-w/h) pakai
+   calc(), bukan angka 137% yang berdiri sendiri kayak riwayat
+   v9/v10 di bawah. Kalau suatu saat bukaan avatar (76%/81%) perlu
+   diubah lagi (misal ganti gambar border baru), CUKUP UBAH DUA
+   VARIABEL itu di satu tempat -- border ikut nyesuain otomatis,
+   gak perlu itung ulang manual & gonta-ganti angka lagi kayak
+   riwayat v9/v10/v11.
+   Hasil hitungan: 76% * 1.773 ~= 134.7% dan 81% * 1.661 ~= 134.5%
+   -- sangat dekat sama 137% lama (beda cuma pembulatan), jadi
+   ukuran visual kristal PRAKTIS SAMA seperti sebelumnya, cuma
+   sekarang keitung otomatis dari sumber yang sama, gak bisa drift
+   sendiri-sendiri lagi.
+
+   FIX #3: border-radius:inherit !important ditambah di avatar &
+   border (nilainya kehitung 0, sama kayak sebelumnya, karena
+   wrapper udah dipaksa 0 !important) -- biar kalau border-radius
+   wrapper berubah suatu saat, dua-duanya otomatis ngikut tanpa
+   perlu disentuh manual satu-satu lagi.
+
+   TIDAK DIUBAH: ukuran avatar (tetap 76%/81%, sama persis kayak
+   v11), posisi/transform avatar, object-fit, z-index, HTML
+   structure, animasi, warna, atau komponen lain manapun.
+
+   ------------------------------------------------------------
    RIWAYAT SEBELUMNYA:
    - v1/v2: gambar lama asimetris (margin atas 56px vs bawah 79px)
      -> berbagai trik offset CSS gagal karena masalahnya ada di
@@ -35,120 +62,83 @@
      center ulang -> simetris, tapi width/height sempat 140%
      (kegedean, meluber jauh keluar kotak foto) sebelum diturunkan
      ke 90% biar sepadan footprint-nya dgn border_admin.jpg.
-   - v4 (SEKARANG): gambar border_imortal.jpg DIGANTI TOTAL ke
-     desain baru yang lebih detail (permata + ukiran emas +
-     kilau/sparkle bawaan gambar). Diproses dengan cara yang sama
-     persis seperti v3: crop presisi ke bounding box non-transparan,
-     lalu ditaruh ulang di kanvas persegi baru dengan margin sama
-     rata di 4 sisi (hasil akhir: margin kiri/kanan beda cuma 1px,
-     atas/bawah beda 1px -- itu murni pembulatan, praktis simetris
-     sempurna).
-   - Rasio bounding-box gambar baru vs kanvasnya (~94.5%) mirip
-     dengan gambar lama, jadi angka width/height:90% (dihitung
-     supaya footprint sepadan dgn border_admin ~85-86%) MASIH PAS
-     dipakai untuk gambar baru ini -- sudah dicek render
-     side-by-side, ukurannya sepadan.
-
-   CSS di bawah TIDAK PERLU diubah sama sekali dari v3 -- cukup
-   ganti file gambarnya saja (border_imortal.jpg lama ditimpa yang
-   baru), style ini otomatis menyesuaikan karena keduanya sama-sama
-   sudah di-crop simetris presisi.
+   - v4: gambar border_imortal diganti total ke desain baru (permata
+     + ukiran emas + kilau bawaan gambar), diproses crop presisi +
+     center ulang sama seperti v3.
+   - v5: ditemukan file gambar yang kepasang belakangan BUKAN versi
+     crop-presisi yang diklaim v4 -- margin asimetris balik lagi
+     walau CSS tidak berubah. Perlu ganti file gambar, bukan CSS.
+   - v6: img.user-avatar masih terkunci 100%x100% padahal bukaan
+     frame cuma ~70% dari kanvas -- foto "meluber" nutupin kristal.
+     Avatar diturunkan ke ~64%.
+   - v7: ambient glow (::before + @keyframes imortalAuraPulse)
+     ditambahkan lalu...
+   - v8: ...glow dihapus lagi karena bikin navbar/card keliatan
+     nyala kuning. position:relative pada wrapper WAJIB tetap ada
+     walau glow-nya dihapus (bukan bagian dekoratif si glow, tapi
+     acuan containing block wajib buat avatar & border yang
+     position:absolute) -- pernah kehapus ikut bareng glow dan
+     avatar/border jadi melar nutupin satu baris leaderboard.
+   - v9/v10: width/height img.user-border dinaikkan bertahap ke
+     137% karena border_imortal.png punya padding transparan tebal
+     (~15.6% tiap sisi) yang bikin kristal keliatan kekecilan kalau
+     disamain 100% kayak border_admin.
+   - v11: bounding box lubang transparan diukur ulang presisi
+     langsung dari piksel (282x301 dari kanvas 500x500, bukan
+     estimasi visual) -> avatar diset 76%/81% (dengan sedikit margin
+     aman dari hasil hitungan 77.3%/82.5%).
 
    Cara pakai: taruh di static/css/, link di bawah border_pink.css:
      <link rel="stylesheet" href="../static/css/border_imortal.css">
-   Dan GANTI file border_imortal.jpg dengan yang baru.
    ============================================================ */
 
 .profile-wrapper:has(img.user-border[src*="border_imortal"]) {
+    /* !important = FIX #1: containing block avatar & border gak
+       boleh kelewat ke-override rule lain manapun (lihat catatan
+       v12 di atas kenapa ini kemungkinan besar akar masalahnya). */
+    position: relative !important;
     overflow: visible !important;
+    /* frame kristal kotak, jadi wrapper-nya juga wajib kotak biar
+       sudut frame gak ke-mask ikut bentuk bulat avatar default. */
+    border-radius: 0 !important;
+
+    /* FIX #2: satu sumber angka buat avatar & border, biar dua2nya
+       gak bisa drift sendiri2 lagi kayak riwayat v9-v11 di atas. */
+    --imortal-avatar-w: 76%;
+    --imortal-avatar-h: 81%;
+    /* rasio kanvas:bukaan-transparan hasil pengukuran piksel v11
+       (500/282 dan 500/301). */
+    --imortal-canvas-ratio-w: 1.773;
+    --imortal-canvas-ratio-h: 1.661;
 }
 
 .profile-wrapper:has(img.user-border[src*="border_imortal"]) img.user-avatar {
     position: absolute;
     top: 50%;
     left: 50%;
-    /* width/height WAJIB diisi eksplisit di sini -- sebelumnya cuma
-       position/top/left/transform yang di-set, jadi lebar/tinggi foto
-       ikut aturan .user-avatar default (border_polos.css). Begitu
-       wrapper-nya dipakai di konteks yang beda (mis. modal Detail
-       Siswa), foto jadi tampil di UKURAN ASLI file-nya (bisa ratusan
-       px) alih-alih ngisi penuh wrapper -- kelihatan kayak "foto
-       gede, border kecil kepisah di pojok". Dikunci eksplisit di
-       sini spy selalu ngisi wrapper persis berapa pun ukurannya
-       (angka 64%, bukan 100% -- lihat catatan v6 di atas file
-       kenapa segini). */
-    /* v11: diukur ULANG langsung dari piksel border_imortal.png yang
-       sekarang (bukan estimasi visual lagi). Bounding box lubang
-       transparan asli cuma ~285x310 dari kanvas 500x500 (bukan
-       300x319 seperti dugaan v10) -- dan supaya foto PASTI tidak
-       meluber keluar batas kristal di titik manapun (termasuk sisi
-       yang agak "digigit" ukiran emas), dipakai bounding box PALING
-       SEMPIT hasil scan banyak baris/kolom di sekitar tengah:
-       282x301. 282/500 x 301/500 dikali skala border 137% = 77.3% x
-       82.5%, dibulatkan turun tipis jadi 76% x 81% supaya ada sedikit
-       margin aman -- foto pas ngisi kristal, tidak nutupin ukirannya. */
-    width: 76%;
-    height: 81%;
+    width: var(--imortal-avatar-w);
+    height: var(--imortal-avatar-h);
     transform: translate(-50%, -50%);
     z-index: 1;
     object-fit: cover;
     object-position: center;
-    /* Avatar situs ini defaultnya BULAT (border-radius:50% dari
-       border_polos.css) -- itu bikin foto kelihatan bulat "ngambang"
-       di dalam frame kristal yang bentuknya persegi, jadi ada celah
-       aneh di 4 sudutnya. Border Imortal butuh foto KOTAK, bukan
-       bulat, biar pas ngisi bukaan persegi si frame. !important
-       supaya menang lawan border-radius bulat bawaan. */
-    border-radius: 0 !important;
-}
-
-/* Wrapper-nya sendiri juga perlu dikotakin (bukan cuma foto di
-   dalamnya) -- kalau .profile-wrapper dasarnya bulat (border-radius:
-   50%), sudut2 frame kristal yang kotak bisa ke-crop/ke-mask ikut
-   bentuk bulat itu walau overflow sudah visible. */
-.profile-wrapper:has(img.user-border[src*="border_imortal"]) {
-    border-radius: 0 !important;
+    /* FIX #3: ngikut border-radius wrapper (kehitung 0) daripada
+       angka 0 keras yang harus disamain manual di dua tempat. */
+    border-radius: inherit !important;
 }
 
 .profile-wrapper img.user-border[src*="border_imortal"] {
-    /* v10: 100% -> 137%. Ternyata walau angkanya disamain 100% kayak
-       admin, kristalnya sendiri tetep keliatan lebih kecil karena
-       border_imortal.png punya padding transparan tebal (~78px dari
-       kanvas 500px = ~15.6% tiap sisi) yang ikut kehitung dalam
-       100% itu -- beda sama border_admin.jpg yang bounding box-nya
-       nyaris mepet ke tepi kanvas (nyaris 0 padding). 137% dihitung
-       supaya sisi kristal yang paling nempel ke tepi kanvas (bbox
-       344x365 dari 500x500) itu nyampe pas ke tepi wrapper -- setara
-       visual footprint sama admin. Wrapper udah overflow:visible
-       jadi aman lebih dari 100%. */
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 137%;
-    height: 137%;
+    /* FIX #2: bukan angka lepas (dulu 137%) -- sekarang dihitung
+       dari variabel avatar yang sama, jadi border "mengikat" ke
+       ukuran avatar, bukan berdiri sendiri. */
+    width: calc(var(--imortal-avatar-w) * var(--imortal-canvas-ratio-w));
+    height: calc(var(--imortal-avatar-h) * var(--imortal-canvas-ratio-h));
     transform: translate(-50%, -50%);
     object-fit: contain;
     pointer-events: none;
     z-index: 2;
-}
-
-/* ============================================================
-   v8: AMBIENT GLOW dihapus atas permintaan -- pendaran emas di
-   belakang avatar+border (radial-gradient ::before + animasi
-   imortalAuraPulse) bikin kotak/card yang makai border ini
-   keliatan ada warna kuning nyala di belakangnya (kelihatan di
-   navbar avatar & card "Kristal Imortal" di halaman achievement).
-   Kalau suatu saat mau dipasang lagi, tinggal kembalikan blok
-   ::before + @keyframes imortalAuraPulse dari riwayat v7 di atas.
-
-   PENTING: position:relative di bawah ini TETAP DIPERTAHANKAN
-   walau ::before-nya sudah dihapus -- ini BUKAN bagian dekoratif
-   si glow, tapi acuan posisi wajib buat img.user-avatar & img.user
-   -border yang di-position:absolute (top/left/transform) di atas.
-   v8 sempat KEHAPUS ikut kena hapus bareng blok glow -> avatar &
-   border jadi nempel ke parent/ancestor lain yang jauh lebih besar
-   (mis. satu baris leaderboard), makanya foto avatar keliatan
-   melar/raksasa nutupin satu baris penuh. Jangan dihapus lagi. */
-.profile-wrapper:has(img.user-border[src*="border_imortal"]) {
-    position: relative;
+    border-radius: inherit !important;
 }
