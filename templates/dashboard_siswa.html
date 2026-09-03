@@ -1376,15 +1376,15 @@
         .title-badge-perak   { background: linear-gradient(90deg, #e2e8f0, #f8fafc); color: #475569; border: 1px solid #cbd5e1; }
         .title-badge-admin   { background: linear-gradient(90deg, #fde68a, #fefce8); color: #92400e; border: 1px solid #fcd34d; }
         .title-badge-default { background: linear-gradient(90deg, #f1f5f9, #ffffff); color: #64748b; border: 1px solid #e2e8f0; }
-        /* Badge title "IMO" (border Kristal Imortal) — REVISI: sebelumnya
-           pastel ungu-pink-cyan (senada efek nama lama yg kesannya neon).
-           Diselaraskan ke gold-luxury yg sama dgn .efek-nama-imortal di atas
-           supaya nama + badge + border kelihatan satu keluarga warna, bukan
-           beda arah. */
+        /* Badge title "IMO" (border Kristal Imortal) — disamakan ke palet
+           hasil sampling border_imortal.jpg yang sama dgn .efek-nama-imortal
+           di atas (gold dominan + jejak violet), supaya nama + badge +
+           border beneran satu keluarga warna yang sama-sama "ngikutin"
+           border yang lagi dipakai. */
         .title-badge-imortal {
-            background: linear-gradient(90deg, #fde68a, #fffbeb, #fbbf24);
-            color: #78350f;
-            border: 1px solid #f59e0b;
+            background: linear-gradient(90deg, #fde68a, #eab308, #a78bfa);
+            color: #4c1d95;
+            border: 1px solid #eab308;
         }
 
         /* ============================================================
@@ -1520,21 +1520,30 @@
             animation: shimmerNama 3.5s ease-in-out infinite reverse; font-weight: 800;
         }
         /* Efek nama khusus border "Kristal Imortal" (border_imortal.jpg) —
-           REVISI: sebelumnya dominan ungu-pink-cyan, kelihatan kayak neon
-           synthwave/cyberpunk, bukan "luxury gold" khas rank tertinggi.
-           Sekarang basisnya emas tua->emas terang->champagne (senada
-           .efek-nama-emas tapi lebih kaya highlight-nya), cuma disisipin
-           SATU aksen putih-krem pudar (bukan ungu/cyan jenuh) buat kesan
-           kilau kristal tanpa balik jadi neon. Ditambah filter drop-shadow
-           tipis sebagai "glow" di sekitar hurufnya sendiri (lihat juga
-           ambient glow di belakang kartu, di border_imortal.css). */
+           REVISI KE-2: revisi sebelumnya (full gold, disamain kayak
+           .efek-nama-emas) SALAH ARAH -- border ini bukan cuma emas polos,
+           gambarnya sendiri punya permata ungu & teal yang jelas kelihatan
+           di framenya. Jadi bikin nama full gold malah bikin nama & border
+           kerasa "ga nyambung" satu sama lain.
+           Palet di bawah ini BUKAN tebakan/estetika bebas -- diambil dari
+           sampling piksel asli border_imortal.jpg (filter ke piksel paling
+           jenuh warnanya, exclude piksel transparan/anti-alias): hasilnya
+           dominan emas/perunggu (#8a6938, #83583d, #6a4f42) + aksen permata
+           ungu (#3f2e6e) + aksen permata teal (#6e998b). Warna-warna itu
+           dipakai di sini APA ADANYA arah huenya (cuma dicerahkan sedikit
+           dari versi mentahnya biar kebaca sbg teks, bukan diganti hue lain
+           spt revisi cyberpunk paling awal) -- jadi gradiennya beneran
+           "ngikutin" warna border yang lagi dipakai, mayoritas emas dgn
+           kilatan ungu & teal singkat sebagai aksen permata, BUKAN gradasi
+           ungu-cyan merata ala neon (revisi awal) ataupun emas polos tanpa
+           aksen sama sekali (revisi kemarin). */
         .efek-nama-imortal {
-            background: linear-gradient(90deg, #78350f, #fbbf24, #fffbeb, #fde047, #f59e0b, #fef3c7, #92400e);
+            background: linear-gradient(90deg, #78350f, #eab308, #fde68a, #a78bfa, #fbbf24, #5eead4, #fef3c7, #78350f);
             background-size: 200% auto;
             -webkit-background-clip: text; background-clip: text; color: transparent;
             animation: shimmerNama 3.5s ease-in-out infinite reverse;
             font-weight: 800;
-            filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.55));
+            filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.5));
         }
         /* Teks keterangan di bawah nama (mis. "Siswa • XII TKJ 3/TAV") KHUSUS
            saat border Kristal Imortal aktif -- sebelumnya ikut warna default
