@@ -3384,9 +3384,11 @@
                      - Nama (+area teks sapaan/kelas) -> langsung pindah ke tab Profil
                        (switchTab('profil')), bukan cuma buka dropdown lagi. -->
                 <div class="sm:hidden w-full flex items-center gap-3 bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm text-left">
-                    <button type="button" onclick="bukaPopupFotoProfil()" class="profile-wrapper w-12 h-12 flex-shrink-0" aria-label="Lihat foto profil">
-                        <img id="greeting-card-avatar" src="{{ foto_profil }}" class="user-avatar" alt="Avatar">
-                        <img src="../static/img/border_pemula.jpg" class="user-border" alt="Border_Pemula">
+                    <button type="button" onclick="bukaPopupFotoProfil()" class="w-12 h-12 flex-shrink-0 p-0 border-0 bg-transparent appearance-none" aria-label="Lihat foto profil">
+                        <div class="profile-wrapper w-12 h-12">
+                            <img id="greeting-card-avatar" src="{{ foto_profil }}" class="user-avatar" alt="Avatar">
+                            <img src="../static/img/border_pemula.jpg" class="user-border" alt="Border_Pemula">
+                        </div>
                     </button>
                     <button type="button" onclick="switchTab('profil')" class="min-w-0 flex-1 text-left" aria-label="Buka halaman profil">
                         <p class="text-xs text-slate-400"><span class="teks-sapaan-waktu-efektif">Selamat Pagi</span>,</p>
