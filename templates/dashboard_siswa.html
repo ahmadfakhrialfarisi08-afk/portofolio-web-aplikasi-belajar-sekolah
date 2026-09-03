@@ -1549,9 +1549,16 @@
            saat border Kristal Imortal aktif -- sebelumnya ikut warna default
            abu-abu mati (.text-slate-400) tanpa sentuhan apa pun. Dipisah jadi
            class sendiri (bukan menimpa .text-slate-400 secara global) supaya
-           border lain tetap pakai abu-abu polos seperti biasa. */
+           border lain tetap pakai abu-abu polos seperti biasa.
+           !important WAJIB di sini -- elemen ini tetap membawa class
+           "text-slate-400" bawaan Tailwind bersamaan dengan class ini
+           (classList.toggle cuma NAMBAH, bukan mencopot text-slate-400).
+           Tailwind (CDN) disuntik belakangan di <head> shg tanpa !important
+           selalu menang cascade walau sama-sama selector 1 class -- persis
+           bug yang sama yang sudah pernah kejadian di .nama-siswa-efektif-gelap
+           (lihat komentarnya di atas). */
         .efek-subtitle-imortal {
-            color: #b8860b;
+            color: #b8860b !important;
             text-shadow: 0 0 5px rgba(250, 204, 21, 0.4);
             font-weight: 600;
         }
@@ -3312,7 +3319,7 @@
                                 <span id="header-user-nama-efek" class="nama-siswa-efektif truncate max-w-full">{{ nama }}</span>
                                 <span id="header-user-badge-dev"></span>
                             </h4>
-                            <p id="header-user-kelas" class="hidden sm:block text-xs text-slate-400">Siswa • XII TKJ 3/TAV</p>
+                            <p id="header-user-kelas" class="hidden sm:block text-xs text-slate-400 kelas-siswa-efektif">Siswa • XII TKJ 3/TAV</p>
                         </div>
                     </div>
 
@@ -3387,7 +3394,7 @@
                             <span class="font-bold text-base truncate nama-siswa-efektif nama-siswa-efektif-gelap">{{ nama }}</span>
                             <span class="badge-dev-siswa-efektif shrink-0"></span>
                         </h3>
-                        <p class="text-xs text-blue-600 font-medium">Siswa • XII TKJ 3/TAV</p>
+                        <p class="text-xs text-blue-600 font-medium kelas-siswa-efektif">Siswa • XII TKJ 3/TAV</p>
                     </button>
                 </div>
 
@@ -4238,7 +4245,7 @@
                                 <span class="font-bold text-base truncate nama-siswa-efektif nama-siswa-efektif-gelap">{{ nama }}</span>
                                 <span class="badge-dev-siswa-efektif shrink-0"></span>
                             </h3>
-                            <p class="text-xs text-blue-600 font-medium">Siswa • XII TKJ 3/TAV</p>
+                            <p class="text-xs text-blue-600 font-medium kelas-siswa-efektif">Siswa • XII TKJ 3/TAV</p>
                             <p class="text-xs text-slate-400 truncate">SMK Banjar Asri Cimaung</p>
                         </div>
                     </div>
@@ -13600,6 +13607,15 @@
             if (border && border.id === 'prestasi_pink') {
                 return `<span class="badge-dev badge-queen px-1 py-0.5 sm:px-2 text-[8px] sm:text-[10px] font-bold rounded-md shadow-sm whitespace-nowrap flex-shrink-0"><i class="fa-solid fa-crown text-[7px] sm:text-[8px] mr-0.5"></i>Queen</span>`;
             }
+            // Border khusus "Kristal Imortal" -- SEBELUMNYA belum ditangani sama
+            // sekali di fungsi ini, jadi slot badge (header-user-badge-dev, plus
+            // semua .badge-dev-siswa-efektif yang disinkronkan dari slot ini)
+            // selalu kosong walau border-nya lagi aktif dipakai. Dipakein class
+            // title-badge-imortal yang sama dgn badge title di ID card, biar
+            // satu keluarga warna dgn efek nama & badge title lainnya.
+            if (border && border.id === 'border_imortal') {
+                return `<span class="badge-dev px-1 py-0.5 sm:px-2 text-[8px] sm:text-[10px] font-bold rounded-md shadow-sm whitespace-nowrap flex-shrink-0 title-badge-imortal"><i class="fa-solid fa-gem text-[7px] sm:text-[8px] mr-0.5"></i>IMMORTAL</span>`;
+            }
             return '';
         }
 
@@ -13624,8 +13640,14 @@
             // disentuh (classList.toggle dgn kondisi, bukan className penuh,
             // supaya class layout aslinya -- hidden sm:block text-xs
             // text-slate-400 -- tidak ikut hilang).
-            const elKelas = document.getElementById('header-user-kelas');
-            if (elKelas) elKelas.classList.toggle('efek-subtitle-imortal', border && border.id === 'border_imortal');
+            // Sebelumnya cuma nyasar ke #header-user-kelas (versi desktop) --
+            // dua versi lain ("Siswa • XII TKJ 3/TAV" di kartu sapaan HP & tab
+            // Profil HP) belum kesentuh sama sekali. Sekarang ketiganya sudah
+            // ditandai class bareng "kelas-siswa-efektif" di HTML, jadi cukup
+            // satu querySelectorAll supaya efeknya sinkron ke HP juga.
+            document.querySelectorAll('.kelas-siswa-efektif').forEach(el => {
+                el.classList.toggle('efek-subtitle-imortal', border && border.id === 'border_imortal');
+            });
 
             // Sinkronkan efek nama yang sama ke SEMUA elemen lain yang nampilin
             // nama siswa (kartu sapaan HP, banner sapaan desktop, dan halaman
