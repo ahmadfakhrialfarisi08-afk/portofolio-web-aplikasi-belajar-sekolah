@@ -2919,27 +2919,33 @@
                tersentuh & tetap presisi #FBFBFE seperti sebelumnya. */
             html:not(.dark) body.bg-slate-50 { background-color: var(--page-bg) !important; }
 
-            /* --- Nav/state aktif tetap biru murni, BUKAN ikut jadi ungu ---
-                   Desain lama sengaja mengalihkan seluruh keluarga "blue-600"
-                   ke var(--brand)/ungu (lihat komentar "PALET BRAND BARU" di
-                   atas) -- di HP ini dikembalikan ke biru asli sesuai sistem
-                   warna baru. */
-            .bg-blue-600, .from-blue-600, .via-blue-600 { background-color: #2563EB !important; }
-            .text-blue-600, .text-blue-700 { color: #2563EB !important; }
-            .border-blue-600, .border-blue-500 { border-color: #2563EB !important; }
-            .shadow-blue-500 { --tw-shadow-color: #2563EB !important; }
-            .shadow-blue-500\/25 { --tw-shadow-color: rgba(37, 99, 235, .25) !important; }
-            .bg-blue-50, .file\:bg-blue-50, .hover\:bg-blue-50:hover { background-color: #EFF6FF !important; }
-            .bg-blue-100, .hover\:file\:bg-blue-100:hover { background-color: #DBEAFE !important; }
+            /* --- Nav/state aktif ikut warna aksen yang dipilih user ---
+                   Sebelumnya keluarga "blue-600" sengaja dikunci ke biru murni
+                   khusus HP (terpisah dari var(--brand)), jadi item sidebar
+                   aktif (mis. "Quiz & Leaderboard" di menu "Lainnya") & tombol-
+                   tombol lain yang pakai bg-blue-600 tetap biru walau user
+                   sudah ganti Warna Aksen ke pink/kuning/hijau/dll. Sekarang
+                   disamakan dengan aturan desktop (var(--brand)) supaya ikut
+                   berubah juga di HP. */
+            .bg-blue-600, .from-blue-600, .via-blue-600 { background-color: var(--brand) !important; }
+            .text-blue-600, .text-blue-700 { color: var(--brand) !important; }
+            .border-blue-600, .border-blue-500 { border-color: var(--brand) !important; }
+            .shadow-blue-500 { --tw-shadow-color: var(--brand) !important; }
+            .shadow-blue-500\/25 { --tw-shadow-color: color-mix(in srgb, var(--brand) 25%, transparent) !important; }
+            .bg-blue-50, .file\:bg-blue-50, .hover\:bg-blue-50:hover { background-color: var(--brand-tint-50) !important; }
+            .bg-blue-100, .hover\:file\:bg-blue-100:hover { background-color: var(--brand-tint-100) !important; }
 
-            /* --- Secondary/link ungu untuk keluarga purple/violet/fuchsia yang
-                   di desain lama tidak ikut var(--brand) (kelas indigo dan blue
-                   sudah otomatis lewat token di atas). --- */
+            /* --- Keluarga purple/violet/fuchsia (dipakai a.l. tombol filter
+                   "Poin Saya" di tab Quiz & Leaderboard) ikut warna aksen ---
+                   Sebelumnya dikunci ke satu ungu tetap (#635BDB) khusus HP,
+                   jadi tombolnya tidak ikut berubah walau user ganti Warna
+                   Aksen. Sekarang ikut var(--brand) sama seperti kelas indigo
+                   & blue di atas. --- */
             .text-purple-600, .text-purple-500, .text-purple-700, .text-purple-800,
-            .text-violet-600, .text-fuchsia-600 { color: #635BDB; }
-            .bg-purple-600, .bg-purple-700, .bg-violet-600 { background-color: #635BDB; }
-            .bg-purple-50, .bg-purple-100 { background-color: #F1EFFC; }
-            .border-purple-500, .border-purple-600 { border-color: #635BDB; }
+            .text-violet-600, .text-fuchsia-600 { color: var(--brand); }
+            .bg-purple-600, .bg-purple-700, .bg-violet-600 { background-color: var(--brand); }
+            .bg-purple-50, .bg-purple-100 { background-color: var(--brand-tint-50); }
+            .border-purple-500, .border-purple-600 { border-color: var(--brand); }
 
             /* --- Streak tidak aktif (tier 0), termasuk icon api, jadi abu-abu --- */
             .streak-tier-0 .streak-icon-wrap {
