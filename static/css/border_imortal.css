@@ -1,7 +1,20 @@
 /* ============================================================
-   border_imortal.css (v4 - ganti gambar border ke versi baru)
+   border_imortal.css (v5 - fix presisi gambar border_imortal.jpg)
    ------------------------------------------------------------
-   RIWAYAT SINGKAT:
+   CATATAN v5 (SEKARANG): dicek ulang pakai bounding-box non-transparan
+   yang sebenarnya di file border_imortal.jpg yang sedang aktif, dan
+   ternyata margin-nya masih asimetris persis seperti bug lama yang
+   didokumentasikan di v1/v2 di bawah (atas 56px vs bawah 79px,
+   selisih 23px) -- kiri/kanan sendiri sudah pas (78px/78px). Artinya
+   file gambar yang kepasang belakangan ini BUKAN versi yang sudah
+   di-crop-presisi seperti diklaim catatan v4, jadi bug-nya balik lagi
+   walau CSS-nya sendiri tidak berubah. File border_imortal.jpg sudah
+   di-crop presisi ke bounding box lalu di-center ulang di kanvas
+   500x500 yang sama (margin baru: kiri 78px/kanan 79px, atas 68px/
+   bawah 69px -- beda 1px murni pembulatan). CSS di bawah TIDAK perlu
+   diubah, cukup timpa file gambarnya dengan yang baru.
+
+   RIWAYAT SEBELUMNYA:
    - v1/v2: gambar lama asimetris (margin atas 56px vs bawah 79px)
      -> berbagai trik offset CSS gagal karena masalahnya ada di
      gambar, bukan CSS.
