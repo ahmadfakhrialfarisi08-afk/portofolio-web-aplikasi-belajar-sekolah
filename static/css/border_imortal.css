@@ -106,10 +106,6 @@
        gak bisa drift sendiri2 lagi kayak riwayat v9-v11 di atas. */
     --imortal-avatar-w: 76%;
     --imortal-avatar-h: 81%;
-    /* rasio kanvas:bukaan-transparan hasil pengukuran piksel v11
-       (500/282 dan 500/301). */
-    --imortal-canvas-ratio-w: 1.773;
-    --imortal-canvas-ratio-h: 1.661;
 }
 
 .profile-wrapper:has(img.user-border[src*="border_imortal"]) img.user-avatar {
@@ -128,15 +124,22 @@
 }
 
 .profile-wrapper img.user-border[src*="border_imortal"] {
+    /* FIX v13 (SEKARANG): border sebelumnya sengaja diperbesar lewat
+       calc(...) sampai ~134-135% dari wrapper supaya lubang transparan
+       di gambar kelihatan pas menutup avatar -- tapi efeknya border
+       jadi LEBIH BESAR dari container-nya sendiri dan bisa "keluar
+       jalur" (meluber melewati tepi foto) begitu wrapper dipakai di
+       konteks yang lebih ketat/mepet (mis. daftar/leaderboard rapat).
+       Sekarang border DIKUNCI 100% sama persis dengan wrapper (inset:0,
+       tanpa width/height/transform lepas) supaya perimeter border tidak
+       pernah melebihi kotak foto, mengikuti border-radius wrapper
+       secara responsif. Ukuran avatar (--imortal-avatar-w/h) TIDAK
+       diubah -- kristal akan terlihat sedikit lebih kecil menempel pas
+       di tepi foto, bukan lagi melebar ke luar. */
     position: absolute;
-    top: 50%;
-    left: 50%;
-    /* FIX #2: bukan angka lepas (dulu 137%) -- sekarang dihitung
-       dari variabel avatar yang sama, jadi border "mengikat" ke
-       ukuran avatar, bukan berdiri sendiri. */
-    width: calc(var(--imortal-avatar-w) * var(--imortal-canvas-ratio-w));
-    height: calc(var(--imortal-avatar-h) * var(--imortal-canvas-ratio-h));
-    transform: translate(-50%, -50%);
+    inset: 0;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
     pointer-events: none;
     z-index: 2;
