@@ -77,17 +77,11 @@
        sini spy selalu ngisi wrapper persis berapa pun ukurannya
        (angka 64%, bukan 100% -- lihat catatan v6 di atas file
        kenapa segini). */
-    /* v9: border disamain footprint-nya ke 100% persis kayak
-       border_admin.css (sebelumnya 90%), biar ukurannya keliatan
-       segede admin, nggak keliatan lebih kecil. Avatar TIDAK ikut
-       disamain ke 72% milik admin -- itu angka punya admin yang
-       dihitung dari bukaan frame admin sendiri. Bukaan asli frame
-       imortal cuma 300x319 dari kanvas 500x500 (60% x 63.8%), jadi
-       di skala tampil border 100% avatar-nya jadi 60% x 64% biar
-       pas ngisi bukaan tanpa nutupin kristal lagi (kalau dipaksa
-       72% kayak admin, foto bakal meluber nutupin kristal). */
-    width: 60%;
-    height: 64%;
+    /* v10: skala border naik ke 137% (lihat catatan di img.user-border
+       di bawah), jadi avatar ikut naik proporsional: bukaan asli
+       300x319 dari kanvas 500x500 dikali skala 137% = 82% x 87%. */
+    width: 82%;
+    height: 87%;
     transform: translate(-50%, -50%);
     z-index: 1;
     object-fit: cover;
@@ -110,18 +104,21 @@
 }
 
 .profile-wrapper img.user-border[src*="border_imortal"] {
-    /* v9: 90% -> 100%, disamain ke border_admin.css supaya footprint
-       framenya nggak keliatan lebih kecil dibanding admin. Karena
-       gambar imortal masih ada padding transparan ~78px per sisi
-       dari kanvas 500x500, kristalnya sendiri tetep nggak nyampe
-       benar2 ke tepi wrapper walau di-set 100% -- itu wajar/sama
-       kayak sebelumnya, cuma sekarang keseluruhan framenya lebih
-       gede & sepadan sama admin. */
+    /* v10: 100% -> 137%. Ternyata walau angkanya disamain 100% kayak
+       admin, kristalnya sendiri tetep keliatan lebih kecil karena
+       border_imortal.png punya padding transparan tebal (~78px dari
+       kanvas 500px = ~15.6% tiap sisi) yang ikut kehitung dalam
+       100% itu -- beda sama border_admin.jpg yang bounding box-nya
+       nyaris mepet ke tepi kanvas (nyaris 0 padding). 137% dihitung
+       supaya sisi kristal yang paling nempel ke tepi kanvas (bbox
+       344x365 dari 500x500) itu nyampe pas ke tepi wrapper -- setara
+       visual footprint sama admin. Wrapper udah overflow:visible
+       jadi aman lebih dari 100%. */
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 100%;
-    height: 100%;
+    width: 137%;
+    height: 137%;
     transform: translate(-50%, -50%);
     object-fit: contain;
     pointer-events: none;
