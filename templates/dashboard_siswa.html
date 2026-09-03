@@ -1408,7 +1408,7 @@
         }
         .title-badge-default { background: linear-gradient(90deg, #f1f5f9, #ffffff); color: #64748b; border: 1px solid #e2e8f0; }
         /* Badge title "IMO" (border Kristal Imortal) — disamakan ke palet
-           hasil sampling border_imortal.jpg yang sama dgn .efek-nama-imortal
+           hasil sampling border_imortal.png yang sama dgn .efek-nama-imortal
            di atas (gold dominan + jejak violet), supaya nama + badge +
            border beneran satu keluarga warna yang sama-sama "ngikutin"
            border yang lagi dipakai. */
@@ -1552,14 +1552,14 @@
             -webkit-background-clip: text; background-clip: text; color: transparent;
             animation: shimmerNama 3.5s ease-in-out infinite reverse; font-weight: 800;
         }
-        /* Efek nama khusus border "Kristal Imortal" (border_imortal.jpg) —
+        /* Efek nama khusus border "Kristal Imortal" (border_imortal.png) —
            REVISI KE-2: revisi sebelumnya (full gold, disamain kayak
            .efek-nama-emas) SALAH ARAH -- border ini bukan cuma emas polos,
            gambarnya sendiri punya permata ungu & teal yang jelas kelihatan
            di framenya. Jadi bikin nama full gold malah bikin nama & border
            kerasa "ga nyambung" satu sama lain.
            Palet di bawah ini BUKAN tebakan/estetika bebas -- diambil dari
-           sampling piksel asli border_imortal.jpg (filter ke piksel paling
+           sampling piksel asli border_imortal.png (filter ke piksel paling
            jenuh warnanya, exclude piksel transparan/anti-alias): hasilnya
            dominan emas/perunggu (#8a6938, #83583d, #6a4f42) + aksen permata
            ungu (#3f2e6e) + aksen permata teal (#6e998b). Warna-warna itu
@@ -3242,7 +3242,7 @@
             <div id="dynamic-notification-island" class="items-center gap-1.5 sm:gap-2 bg-amber-300 text-slate-900 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-2xl border-2 border-amber-500 lightning-border-yellow shadow-lg">
                 <div class="profile-wrapper w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0">
                     <img id="island-user-avatar" src="{{ foto_profil }}" class="user-avatar" alt="Avatar">
-                    <img src="../static/img/border_pemula.jpg" class="user-border" alt="Border_Pemula">
+                    <img src="../static/img/border_pemula.png" class="user-border" alt="Border_Pemula">
                 </div>
                 <span id="island-notification-text" class="text-[10px] sm:text-[11px] font-extrabold text-slate-900 tracking-wide truncate">Notifikasi Aktif</span>
             </div>
@@ -3354,7 +3354,7 @@
                     <div id="profile-menu-trigger" onclick="toggleProfileDropdown(event)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleProfileDropdown(event);}" aria-label="Buka menu profil" class="hidden sm:flex items-center gap-1.5 sm:gap-3 pl-1.5 sm:pl-3 border-l border-slate-200 cursor-pointer select-none py-1">
                         <div class="profile-wrapper w-8 h-8 sm:w-11 sm:h-11 flex-shrink-0">
                             <img id="header-user-avatar" src="{{ foto_profil }}" class="user-avatar" alt="Avatar">
-                            <img src="../static/img/border_pemula.jpg" class="user-border" alt="Border_Pemula">
+                            <img src="../static/img/border_pemula.png" class="user-border" alt="Border_Pemula">
                         </div>
 
                         <div class="block text-left min-w-0 max-w-[92px] sm:max-w-[200px] lg:max-w-[280px]">
@@ -3430,7 +3430,7 @@
                     <button type="button" onclick="bukaPopupFotoProfil()" class="w-12 h-12 flex-shrink-0 p-0 border-0 bg-transparent appearance-none" aria-label="Lihat foto profil">
                         <div class="profile-wrapper w-12 h-12">
                             <img id="greeting-card-avatar" src="{{ foto_profil }}" class="user-avatar" alt="Avatar">
-                            <img src="../static/img/border_pemula.jpg" class="user-border" alt="Border_Pemula">
+                            <img src="../static/img/border_pemula.png" class="user-border" alt="Border_Pemula">
                         </div>
                     </button>
                     <button type="button" onclick="switchTab('profil')" class="min-w-0 flex-1 text-left" aria-label="Buka halaman profil">
@@ -4283,7 +4283,7 @@
                     <div class="flex items-center gap-3 pr-12">
                         <div class="profile-wrapper w-14 h-14 flex-shrink-0">
                             <img id="profil-tab-avatar" src="{{ foto_profil }}" class="user-avatar" alt="Avatar">
-                            <img src="../static/img/border_pemula.jpg" class="user-border" alt="Border_Pemula">
+                            <img src="../static/img/border_pemula.png" class="user-border" alt="Border_Pemula">
                         </div>
                         <div class="min-w-0">
                             <h3 class="flex items-center gap-1 flex-wrap min-w-0">
@@ -4616,7 +4616,7 @@
         <div class="bg-white rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-3 max-w-[80vw]">
             <div class="profile-wrapper w-40 h-40 flex-shrink-0">
                 <img id="popup-foto-profil-avatar" src="" class="user-avatar" alt="Foto Profil">
-                <img id="popup-foto-profil-border" src="../static/img/border_pemula.jpg" class="user-border" alt="Border">
+                <img id="popup-foto-profil-border" src="../static/img/border_pemula.png" class="user-border" alt="Border">
             </div>
             <button type="button" onclick="tutupPopupFotoProfil()" class="mt-1 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition-colors">Tutup</button>
         </div>
@@ -11340,7 +11340,7 @@
                 const fotoEntri = iniSayaSendiri
                     ? getFotoProfilAktifQuiz()
                     : (entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120`);
-                const borderEntri = iniSayaSendiri ? borderLiveSaya.file : (entri.border || '../static/img/border_pemula.jpg');
+                const borderEntri = iniSayaSendiri ? borderLiveSaya.file : (entri.border || '../static/img/border_pemula.png');
                 const titleEntri = iniSayaSendiri ? borderLiveSaya.rank : (entri.borderTitle || '🔰 Pemula');
                 const kelasEntri = iniSayaSendiri ? getKelasAktifQuiz() : (entri.kelas || '-');
                 const efekNamaEntri = iniSayaSendiri ? getEfekNamaClass(borderLiveSaya) : (entri.efekNama || '');
@@ -11481,7 +11481,7 @@
                 const fotoEntri = iniSayaSendiri
                     ? getFotoProfilAktifQuiz()
                     : (entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120`);
-                const borderEntri = iniSayaSendiri ? borderLiveSaya.file : (entri.border || '../static/img/border_pemula.jpg');
+                const borderEntri = iniSayaSendiri ? borderLiveSaya.file : (entri.border || '../static/img/border_pemula.png');
                 const titleEntri = iniSayaSendiri ? borderLiveSaya.rank : (entri.borderTitle || '🔰 Pemula');
                 const kelasEntri = iniSayaSendiri ? getKelasAktifQuiz() : (entri.kelas || '-');
                 const efekNamaEntri = iniSayaSendiri ? getEfekNamaClass(borderLiveSaya) : (entri.efekNama || '');
@@ -11591,7 +11591,7 @@
             const idToast = `ditikung-essay-${entri.id}`;
 
             const fotoPenikung = entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120`;
-            const borderPenikung = entri.border || '../static/img/border_pemula.jpg';
+            const borderPenikung = entri.border || '../static/img/border_pemula.png';
             const titlePenikung = entri.borderTitle || '🔰 Pemula';
             const efekNamaPenikung = entri.efekNama || '';
             const titleBadgeClassPenikung = getTitleBadgeClass(efekNamaPenikung);
@@ -11705,7 +11705,7 @@
                 nama,
                 kelas,
                 foto: `https://ui-avatars.com/api/?name=${encodeURIComponent(nama)}&background=e0e7ff&color=3730a3&size=120`,
-                border: '../static/img/border_pemula.jpg',
+                border: '../static/img/border_pemula.png',
                 borderTitle: '🔰 Pemula',
                 efekNama: '',
                 badgeDev: '',
@@ -11863,7 +11863,7 @@
             // Foto + border penikung disinkronkan dari data leaderboard-nya sendiri
             // (snapshot foto profil & border yang sedang dia pakai saat main quiz).
             const fotoPenikung = entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(entri.nama)}&background=e0e7ff&color=3730a3&size=120`;
-            const borderPenikung = entri.border || '../static/img/border_pemula.jpg';
+            const borderPenikung = entri.border || '../static/img/border_pemula.png';
             const titlePenikung = entri.borderTitle || '🔰 Pemula';
             const efekNamaPenikung = entri.efekNama || '';
             const titleBadgeClassPenikung = getTitleBadgeClass(efekNamaPenikung);
@@ -11965,7 +11965,7 @@
         // Syam) — bukan pencapaian, jadi tidak perlu diklaim & tidak terikat
         // level quiz manapun.
         const DAFTAR_BORDER_STARTER = [
-            { id: 'starter_pemula', kategori: 'starter', nama: 'Pemula', file: '../static/img/border_pemula.jpg', minPoin: 0, tierRank: 0, rank: '🔰 Pemula' }
+            { id: 'starter_pemula', kategori: 'starter', nama: 'Pemula', file: '../static/img/border_pemula.png', minPoin: 0, tierRank: 0, rank: '🔰 Pemula' }
         ];
 
         // Bangun daftar border quiz: 3 tier (perak/emas/permata) x 3 level =
@@ -12001,7 +12001,7 @@
             { id: 'admin_dev', kategori: 'admin', nama: 'Admin', file: '../static/img/border_admin.jpg', tierRank: 99, rank: '👑 Developer Sistem' }
         ];
 
-        // Border khusus "Kristal Imortal" (border_imortal.jpg): bukan lewat jalur
+        // Border khusus "Kristal Imortal" (border_imortal.png): bukan lewat jalur
         // poin quiz maupun poin prestasi (sertifikat/piala) seperti border lain --
         // syaratnya "akun harus sudah pernah ikut IMO", yang sifatnya verifikasi
         // manual/khusus, bukan sesuatu yang bisa dihitung otomatis dari poin.
@@ -12014,7 +12014,7 @@
         // punya border prestasi lain, border Kristal Imortal yang otomatis jadi
         // default dipakai.
         const DAFTAR_BORDER_KHUSUS = [
-            { id: 'border_imortal', kategori: 'khusus', nama: 'Kristal Imortal', file: '../static/img/border_imortal.jpg', tierRank: 10, rank: '💎 IMO' }
+            { id: 'border_imortal', kategori: 'khusus', nama: 'Kristal Imortal', file: '../static/img/border_imortal.png', tierRank: 10, rank: '💎 IMO' }
         ];
 
 
