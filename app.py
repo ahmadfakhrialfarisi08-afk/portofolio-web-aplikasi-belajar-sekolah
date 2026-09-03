@@ -130,6 +130,17 @@ users = {
         'border_aktif': 'starter_pemula',
         'foto_profil': FOTO_PROFIL_DEFAULT
     },
+    'dapeng': {
+        'username': 'dafa',
+        'password': 'dafa123',
+        'role': 'siswa',
+        'email': 'dafa@sekolah.sch.id',
+        'fullname': 'DAFA ALFIANSYAH',
+        'identity_number': '0059999999',
+        'kelas': 'XI RPL',
+        'border_aktif': 'starter_pemula',
+        'foto_profil': FOTO_PROFIL_DEFAULT
+    },
     'waldi': {
         'username': 'waldi',
         'password': 'waldi123',
