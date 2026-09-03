@@ -1,5 +1,18 @@
 /* ============================================================
-   border_imortal.css (v5 - fix presisi gambar border_imortal.jpg)
+   border_imortal.css (v6 - foto avatar disamain ke bukaan frame)
+   ------------------------------------------------------------
+   CATATAN v6 (SEKARANG): border_imortal.png yang baru sudah di-crop
+   presisi & margin-nya disimetriskan (lihat riwayat v5), TAPI ternyata
+   img.user-avatar di sini masih dikunci 100% x 100% -- persis bug yang
+   sama seperti border_admin.jpg SEBELUM file itu di-scope ulang (foto
+   lebih gede dari bukaan frame, jadi "meluber" nutupin sebagian
+   kristalnya, bukan pas ngisi lubangnya).
+   Dihitung dari bounding-box lubang transparan di border_imortal.png
+   (~70% dari kanvas gambar) dikali skala tampil border-nya sendiri
+   (90%, lihat img.user-border di bawah) = ~63-64% dari wrapper.
+   Avatar diturunkan dari 100% -> 64% supaya foto pas ngisi bukaan
+   kristal, senada dengan cara border_admin.css sudah benar (avatar
+   72% mengikuti bukaan frame admin, bukan 100%).
    ------------------------------------------------------------
    CATATAN v5 (SEKARANG): dicek ulang pakai bounding-box non-transparan
    yang sebenarnya di file border_imortal.jpg yang sedang aktif, dan
@@ -60,10 +73,12 @@
        wrapper-nya dipakai di konteks yang beda (mis. modal Detail
        Siswa), foto jadi tampil di UKURAN ASLI file-nya (bisa ratusan
        px) alih-alih ngisi penuh wrapper -- kelihatan kayak "foto
-       gede, border kecil kepisah di pojok". Dikunci 100% x 100% di
-       sini spy selalu ngisi wrapper persis berapa pun ukurannya. */
-    width: 100%;
-    height: 100%;
+       gede, border kecil kepisah di pojok". Dikunci eksplisit di
+       sini spy selalu ngisi wrapper persis berapa pun ukurannya
+       (angka 64%, bukan 100% -- lihat catatan v6 di atas file
+       kenapa segini). */
+    width: 64%;
+    height: 64%;
     transform: translate(-50%, -50%);
     z-index: 1;
     object-fit: cover;
