@@ -45,6 +45,21 @@
     z-index: 1;
     object-fit: cover;
     object-position: center;
+    /* Avatar situs ini defaultnya BULAT (border-radius:50% dari
+       border_polos.css) -- itu bikin foto kelihatan bulat "ngambang"
+       di dalam frame kristal yang bentuknya persegi, jadi ada celah
+       aneh di 4 sudutnya. Border Imortal butuh foto KOTAK, bukan
+       bulat, biar pas ngisi bukaan persegi si frame. !important
+       supaya menang lawan border-radius bulat bawaan. */
+    border-radius: 0 !important;
+}
+
+/* Wrapper-nya sendiri juga perlu dikotakin (bukan cuma foto di
+   dalamnya) -- kalau .profile-wrapper dasarnya bulat (border-radius:
+   50%), sudut2 frame kristal yang kotak bisa ke-crop/ke-mask ikut
+   bentuk bulat itu walau overflow sudah visible. */
+.profile-wrapper:has(img.user-border[src*="border_imortal"]) {
+    border-radius: 0 !important;
 }
 
 .profile-wrapper img.user-border[src*="border_imortal"] {
