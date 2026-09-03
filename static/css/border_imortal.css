@@ -56,11 +56,20 @@
 }
 
 /* Border Kristal Imortal: dibesarkan & ditengahkan supaya framenya
-   melingkar DI LUAR sisi foto, bukan numpuk menutupi foto */
+   melingkar DI LUAR sisi foto, bukan numpuk menutupi foto.
+   FIX SIMETRI (hasil ukur langsung border_imortal.jpg 500x500px):
+   kristal di dalam gambar itu sendiri TIDAK persis di tengah kanvasnya --
+   pusatnya ada di sekitar 49.8% horizontal / 47.6% vertikal (bukan
+   50%/50%), alias geser ke ATAS sekitar 2.4% dari tengah kanvas.
+   Kalau dibiarkan top:50%/left:50%, pergeseran itu ikut kebawa &
+   dikali skala 140%, jadi kelihatan lebih parah -- kristal jadi padat
+   di atas, nyaris hilang di bawah, persis kayak di screenshot Anda.
+   top:53.4%/left:50.3% di bawah ini mengoreksi pergeseran itu supaya
+   kristal jatuh presisi di tengah wrapper, sama rata ke 4 sisi. */
 .profile-wrapper img.user-border[src*="border_imortal"] {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 53.4%;
+    left: 50.3%;
     width: 140%;
     height: 140%;
     transform: translate(-50%, -50%);
