@@ -77,8 +77,16 @@
        sini spy selalu ngisi wrapper persis berapa pun ukurannya
        (angka 64%, bukan 100% -- lihat catatan v6 di atas file
        kenapa segini). */
-    width: 64%;
-    height: 64%;
+    /* v7: diukur ulang dari border_imortal.png yang SUDAH di-crop
+       presisi & di-center simetris (margin kiri78/kanan79,
+       atas68/bawah69). Lubang transparan hasil ukur = 300x319px
+       dari kanvas 500x500 (60% x 63.8%), dikali skala tampil
+       border 90% (lihat img.user-border di bawah) = ~54% x 57%.
+       Angka lama (64%/64%) berasal dari asumsi bounding box 70%
+       yang ternyata meleset -- itu yang bikin foto mepet/nutupin
+       kristal walau file gambarnya sendiri sudah simetris. */
+    width: 54%;
+    height: 57%;
     transform: translate(-50%, -50%);
     z-index: 1;
     object-fit: cover;
