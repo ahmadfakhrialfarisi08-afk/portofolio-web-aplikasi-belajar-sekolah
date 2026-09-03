@@ -1376,6 +1376,39 @@
         .title-badge-emas    { background: linear-gradient(90deg, #fef3c7, #fffbeb); color: #b45309; border: 1px solid #fde68a; }
         .title-badge-perak   { background: linear-gradient(90deg, #e2e8f0, #f8fafc); color: #475569; border: 1px solid #cbd5e1; }
         .title-badge-admin   { background: linear-gradient(90deg, #fde68a, #fefce8); color: #92400e; border: 1px solid #fcd34d; }
+
+        /* Efek "cahaya miring lewat" (shine sweep) khusus border Admin --
+           supaya nama & title badge Admin ikut hidup/berkilau, senada
+           dengan badge DEV yang sudah pakai efek ini (.badge-dev::after,
+           lihat @keyframes shine-dev). Ditempel di efek nama & title
+           badge Admin (bukan cuma badge DEV) biar levelnya sama semarak
+           dengan tema Kristal Imortal. display:inline-block + overflow:
+           hidden WAJIB di sini supaya sapuan cahayanya ke-crop rapi di
+           dalam kotak teks/badge, bukan meluber ke luar. */
+        .efek-nama-admin,
+        .title-badge-admin {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .efek-nama-admin::after,
+        .title-badge-admin::after {
+            content: "";
+            position: absolute;
+            top: -50px;
+            left: -75px;
+            width: 40px;
+            height: 100px;
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.85) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            animation: shine-dev 3.5s ease-in-out infinite;
+            transform: rotate(-30deg);
+            pointer-events: none;
+        }
         .title-badge-default { background: linear-gradient(90deg, #f1f5f9, #ffffff); color: #64748b; border: 1px solid #e2e8f0; }
         /* Badge title "IMO" (border Kristal Imortal) — disamakan ke palet
            hasil sampling border_imortal.jpg yang sama dgn .efek-nama-imortal
@@ -1571,6 +1604,7 @@
         @media (prefers-reduced-motion: reduce) {
             .efek-nama-perak, .efek-nama-emas, .gold-name, .efek-nama-permata,
             .efek-nama-pink, .efek-nama-admin, .efek-nama-imortal, .title-badge-imortal,
+            .efek-nama-admin::after, .title-badge-admin::after,
             .streak-flame-icon, .lightning-border-yellow, .badge-dev::after {
                 animation: none !important;
             }
