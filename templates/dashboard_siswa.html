@@ -2907,6 +2907,18 @@
                tidak 100% presisi). */
             html:not(.dark) .bg-slate-50 { background-color: #FBFBFE !important; }
 
+            /* FIX: <body> kebetulan juga memakai class "bg-slate-50" (dipakai
+               sebagai latar BELAKANG SELURUH HALAMAN, lihat <body class="bg-slate-50
+               ...">), padahal class itu di aturan tepat di atas sengaja dikunci ke
+               #FBFBFE khusus untuk kotak/card kecil. Akibatnya latar halaman ikut
+               "nyangkut" di satu warna terus dan tidak ikut berubah saat ganti Warna
+               Aksen, walau kotak-kotak lain (yang pakai token --brand dst) tetap
+               berubah normal. Selector "body.bg-slate-50" (elemen + class) di sini
+               spesifisitasnya lebih tinggi dari ".bg-slate-50" saja di atas, jadi
+               MENANG untuk elemen body-nya secara khusus -- card kecil lain tidak
+               tersentuh & tetap presisi #FBFBFE seperti sebelumnya. */
+            html:not(.dark) body.bg-slate-50 { background-color: var(--page-bg) !important; }
+
             /* --- Nav/state aktif tetap biru murni, BUKAN ikut jadi ungu ---
                    Desain lama sengaja mengalihkan seluruh keluarga "blue-600"
                    ke var(--brand)/ungu (lihat komentar "PALET BRAND BARU" di
