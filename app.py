@@ -136,7 +136,7 @@ users = {
         'role': 'siswa',
         'email': 'dafa@sekolah.sch.id',
         'fullname': 'DAFA ALFIANSYAH',
-        'identity_number': '0059999999',
+        'identity_number': '0059658999',
         'kelas': 'XI RPL',
         'border_aktif': 'starter_pemula',
         'foto_profil': FOTO_PROFIL_DEFAULT
