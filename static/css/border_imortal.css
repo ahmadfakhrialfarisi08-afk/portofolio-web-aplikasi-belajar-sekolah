@@ -1,50 +1,40 @@
 /* ============================================================
-   border_imortal.css
+   border_imortal.css (FIXED v3 - simetris presisi)
    ------------------------------------------------------------
-   Override KHUSUS untuk border "Kristal Imortal" (border_imortal.jpg).
+   PENTING: file border_imortal.jpg JUGA DIGANTI (lihat file baru
+   yang dikirim bareng CSS ini). Akar masalah asimetri SEBELUMNYA
+   bukan di CSS, tapi di gambar sumbernya sendiri: motif kristal di
+   dalam kanvas 500x500 itu tidak center -- margin atas cuma 56px
+   sedangkan margin bawah 79px (beda 23px), sementara kiri/kanan
+   sudah nyaris pas (77px vs 78px). Makanya berapa pun trik CSS
+   (termasuk pendekatan "centroid" di revisi sebelumnya) tidak akan
+   pernah simetris sempurna -- yang digeser cuma boxnya, bukan
+   motifnya di dalam gambar.
 
-   Kenapa dipisah dari border_polos.css / border_pink.css:
-   - border_imortal.jpg proporsinya beda dari border biasa (border_pemula,
-     border_pink, dst), jadi kalau dipaksa pakai style .user-border yang
-     sama persis, framenya jadi NUTUPIN foto, bukan ngelingkar di LUAR foto.
-   - Dengan file terpisah ini, perubahan cuma nyasar ke <img> yang src-nya
-     mengandung "border_imortal" -- border lain sama sekali tidak disentuh.
+   Perbaikan: gambar di-crop presis ke bounding box kristal (area
+   yang tidak transparan), lalu ditaruh ulang di kanvas persegi baru
+   dengan margin SAMA RATA di 4 sisi (dihitung dari piksel, bukan
+   estimasi). Hasil: margin kiri=kanan=17px, atas=bawah=7px pada
+   kanvas 379x379. Karena bentuk kristalnya sendiri sedikit lebih
+   tinggi daripada lebar (347x365), margin vertikal memang akan
+   sedikit lebih kecil dari margin horizontal -- itu wajar dan tetap
+   simetris kiri-kanan & atas-bawah masing-masing.
 
-   Cara pakai:
-   - Taruh file ini di folder yang sama dengan border_polos.css
-     (biasanya: static/css/border_imortal.css)
-   - Tambahkan satu baris <link> di <head> dashboard_siswa.html,
-     DI BAWAH baris border_pink.css, supaya urutan override-nya benar:
+   Karena gambar sumbernya sekarang sudah center sempurna, CSS di
+   bawah ini disederhanakan: cukup center standar (top:50%/left:50%/
+   translate -50%,-50%) sama seperti border_polos.css, TIDAK PERLU
+   lagi angka offset aneh (54.2%/48.7%) dari revisi sebelumnya.
 
-     <link rel="stylesheet" href="../static/css/border_pink.css">
-     <link rel="stylesheet" href="../static/css/border_imortal.css">  <-- baris baru
-
-   Catatan penting:
-   - Selector di bawah ini pakai :has(), didukung Chrome/Edge/Safari
-     versi baru & Firefox 121+. Kalau target browser masih lama,
-     kasih tau saya, nanti diganti pendekatan lain (mis. lewat JS
-     nambah class ke wrapper).
-   - Angka 140% di bawah itu titik awal/tebakan supaya frame keliatan
-     melebar ke luar kotak foto. Kalau masih kurang pas (kegedean/
-     kekecilan/geser), tinggal ubah angka width/height & transform-nya,
-     atau kirim saya screenshot hasilnya + file border_imortal.jpg biar
-     saya hitungkan angka yang presisi.
+   Cara pakai: sama seperti sebelumnya, taruh di static/css/,
+   link di bawah border_pink.css:
+     <link rel="stylesheet" href="../static/css/border_imortal.css">
+   Dan GANTI file border_imortal.jpg yang lama dengan yang baru.
    ============================================================ */
 
-/* Wrapper yang isinya border Kristal Imortal: matikan clipping supaya
-   frame boleh "meluber" keluar dari kotak asli avatar */
 .profile-wrapper:has(img.user-border[src*="border_imortal"]) {
     overflow: visible !important;
 }
 
-/* Foto profil: taruh di lapisan bawah, ukurannya tetap mengikuti kotak asli.
-   FIX ALIGNMENT: sebelumnya pakai "inset: 0" dibarengi width/height:72%
-   warisan dari border_polos.css -- kombinasi left+right+width yang
-   sama-sama fixed itu over-constrained, jadi browser mengabaikan 'right'
-   dan foto malah nempel ke pojok kiri-atas, bukan di tengah kristal
-   imortal. top:50%/left:50%/translate(-50%,-50%) mengunci foto tepat di
-   tengah wrapper (senada dengan border_polos.css) supaya presisi center
-   terhadap frame kristal, ukuran foto tidak berubah. */
 .profile-wrapper:has(img.user-border[src*="border_imortal"]) img.user-avatar {
     position: absolute;
     top: 50%;
@@ -55,27 +45,10 @@
     object-position: center;
 }
 
-/* Border Kristal Imortal: dibesarkan & ditengahkan supaya framenya
-   melingkar DI LUAR sisi foto, bukan numpuk menutupi foto.
-   FIX SIMETRI v2 -- revisi dari sebelumnya:
-   Ukuran bounding-box mentah (titik piksel opaque paling kiri/kanan/
-   atas/bawah) ternyata MENYESATKAN untuk motif kristal yang bentuknya
-   tidak beraturan begini -- satu pecahan kristal yang runcing menjorok
-   ke satu arah bisa bikin bounding-box "kelihatan" condong ke arah
-   yang salah, padahal massa/bobot visual utamanya ada di arah
-   sebaliknya. Makanya dipakai titik pusat massa (centroid, dihitung
-   dari rata-rata posisi semua piksel kristal yang tidak transparan) --
-   ini jauh lebih mewakili "pusat visual" yang mata manusia tangkap.
-   Centroid kristal: x=50.9%, y=47.0% dari kanvas (bukan 49.8%/47.6%
-   dari bounding-box mentah yang dipakai di revisi pertama -- itu
-   sebabnya revisi pertama malah bikin sisi KANAN jadi kelihatan lebih
-   tipis, kebalikan dari yang diharapkan).
-   top:54.2%/left:48.7% di bawah ini dihitung dari centroid tsb supaya
-   kristal jatuh presisi di tengah wrapper, sama rata ke 4 sisi. */
 .profile-wrapper img.user-border[src*="border_imortal"] {
     position: absolute;
-    top: 54.2%;
-    left: 48.7%;
+    top: 50%;
+    left: 50%;
     width: 140%;
     height: 140%;
     transform: translate(-50%, -50%);
