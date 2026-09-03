@@ -77,16 +77,17 @@
        sini spy selalu ngisi wrapper persis berapa pun ukurannya
        (angka 64%, bukan 100% -- lihat catatan v6 di atas file
        kenapa segini). */
-    /* v7: diukur ulang dari border_imortal.png yang SUDAH di-crop
-       presisi & di-center simetris (margin kiri78/kanan79,
-       atas68/bawah69). Lubang transparan hasil ukur = 300x319px
-       dari kanvas 500x500 (60% x 63.8%), dikali skala tampil
-       border 90% (lihat img.user-border di bawah) = ~54% x 57%.
-       Angka lama (64%/64%) berasal dari asumsi bounding box 70%
-       yang ternyata meleset -- itu yang bikin foto mepet/nutupin
-       kristal walau file gambarnya sendiri sudah simetris. */
-    width: 54%;
-    height: 57%;
+    /* v9: border disamain footprint-nya ke 100% persis kayak
+       border_admin.css (sebelumnya 90%), biar ukurannya keliatan
+       segede admin, nggak keliatan lebih kecil. Avatar TIDAK ikut
+       disamain ke 72% milik admin -- itu angka punya admin yang
+       dihitung dari bukaan frame admin sendiri. Bukaan asli frame
+       imortal cuma 300x319 dari kanvas 500x500 (60% x 63.8%), jadi
+       di skala tampil border 100% avatar-nya jadi 60% x 64% biar
+       pas ngisi bukaan tanpa nutupin kristal lagi (kalau dipaksa
+       72% kayak admin, foto bakal meluber nutupin kristal). */
+    width: 60%;
+    height: 64%;
     transform: translate(-50%, -50%);
     z-index: 1;
     object-fit: cover;
@@ -109,11 +110,18 @@
 }
 
 .profile-wrapper img.user-border[src*="border_imortal"] {
+    /* v9: 90% -> 100%, disamain ke border_admin.css supaya footprint
+       framenya nggak keliatan lebih kecil dibanding admin. Karena
+       gambar imortal masih ada padding transparan ~78px per sisi
+       dari kanvas 500x500, kristalnya sendiri tetep nggak nyampe
+       benar2 ke tepi wrapper walau di-set 100% -- itu wajar/sama
+       kayak sebelumnya, cuma sekarang keseluruhan framenya lebih
+       gede & sepadan sama admin. */
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 90%;
-    height: 90%;
+    width: 100%;
+    height: 100%;
     transform: translate(-50%, -50%);
     object-fit: contain;
     pointer-events: none;
