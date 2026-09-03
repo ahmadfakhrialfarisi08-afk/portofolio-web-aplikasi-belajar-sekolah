@@ -1,43 +1,36 @@
 /* ============================================================
-   border_imortal.css (FIXED v3 - simetris presisi)
+   border_imortal.css (v4 - ganti gambar border ke versi baru)
    ------------------------------------------------------------
-   PENTING: file border_imortal.jpg JUGA DIGANTI (lihat file baru
-   yang dikirim bareng CSS ini). Akar masalah asimetri SEBELUMNYA
-   bukan di CSS, tapi di gambar sumbernya sendiri: motif kristal di
-   dalam kanvas 500x500 itu tidak center -- margin atas cuma 56px
-   sedangkan margin bawah 79px (beda 23px), sementara kiri/kanan
-   sudah nyaris pas (77px vs 78px). Makanya berapa pun trik CSS
-   (termasuk pendekatan "centroid" di revisi sebelumnya) tidak akan
-   pernah simetris sempurna -- yang digeser cuma boxnya, bukan
-   motifnya di dalam gambar.
+   RIWAYAT SINGKAT:
+   - v1/v2: gambar lama asimetris (margin atas 56px vs bawah 79px)
+     -> berbagai trik offset CSS gagal karena masalahnya ada di
+     gambar, bukan CSS.
+   - v3: gambar lama di-crop presisi ke bounding box lalu di-
+     center ulang -> simetris, tapi width/height sempat 140%
+     (kegedean, meluber jauh keluar kotak foto) sebelum diturunkan
+     ke 90% biar sepadan footprint-nya dgn border_admin.jpg.
+   - v4 (SEKARANG): gambar border_imortal.jpg DIGANTI TOTAL ke
+     desain baru yang lebih detail (permata + ukiran emas +
+     kilau/sparkle bawaan gambar). Diproses dengan cara yang sama
+     persis seperti v3: crop presisi ke bounding box non-transparan,
+     lalu ditaruh ulang di kanvas persegi baru dengan margin sama
+     rata di 4 sisi (hasil akhir: margin kiri/kanan beda cuma 1px,
+     atas/bawah beda 1px -- itu murni pembulatan, praktis simetris
+     sempurna).
+   - Rasio bounding-box gambar baru vs kanvasnya (~94.5%) mirip
+     dengan gambar lama, jadi angka width/height:90% (dihitung
+     supaya footprint sepadan dgn border_admin ~85-86%) MASIH PAS
+     dipakai untuk gambar baru ini -- sudah dicek render
+     side-by-side, ukurannya sepadan.
 
-   Perbaikan: gambar di-crop presis ke bounding box kristal (area
-   yang tidak transparan), lalu ditaruh ulang di kanvas persegi baru
-   dengan margin SAMA RATA di 4 sisi (dihitung dari piksel, bukan
-   estimasi). Hasil: margin kiri=kanan=17px, atas=bawah=7px pada
-   kanvas 379x379. Karena bentuk kristalnya sendiri sedikit lebih
-   tinggi daripada lebar (347x365), margin vertikal memang akan
-   sedikit lebih kecil dari margin horizontal -- itu wajar dan tetap
-   simetris kiri-kanan & atas-bawah masing-masing.
+   CSS di bawah TIDAK PERLU diubah sama sekali dari v3 -- cukup
+   ganti file gambarnya saja (border_imortal.jpg lama ditimpa yang
+   baru), style ini otomatis menyesuaikan karena keduanya sama-sama
+   sudah di-crop simetris presisi.
 
-   Karena gambar sumbernya sekarang sudah center sempurna, CSS di
-   bawah ini disederhanakan: cukup center standar (top:50%/left:50%/
-   translate -50%,-50%) sama seperti border_polos.css, TIDAK PERLU
-   lagi angka offset aneh (54.2%/48.7%) dari revisi sebelumnya.
-
-   UPDATE UKURAN: 140% sebelumnya kegedean (frame meluber jauh keluar
-   kotak foto). Dihitung ulang dengan bandingkan rasio bounding-box
-   vs kanvas antara border_imortal.jpg dan border_admin.jpg -- admin
-   menempati ~85-86% dari kanvasnya sendiri, sementara imortal (versi
-   crop baru) menempati ~92-96% dari kanvasnya. Supaya footprint
-   visual imortal sepadan dengan admin, width/height diturunkan ke
-   90% (bukan 140%). Sudah dicek render side-by-side, hasilnya
-   sepadan ukurannya dengan border_admin.
-
-   Cara pakai: sama seperti sebelumnya, taruh di static/css/,
-   link di bawah border_pink.css:
+   Cara pakai: taruh di static/css/, link di bawah border_pink.css:
      <link rel="stylesheet" href="../static/css/border_imortal.css">
-   Dan GANTI file border_imortal.jpg yang lama dengan yang baru.
+   Dan GANTI file border_imortal.jpg dengan yang baru.
    ============================================================ */
 
 .profile-wrapper:has(img.user-border[src*="border_imortal"]) {
