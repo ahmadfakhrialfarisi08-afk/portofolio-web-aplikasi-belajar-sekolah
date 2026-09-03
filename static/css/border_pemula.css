@@ -1,0 +1,53 @@
+/* ============================================================
+   border_pemula.css (v1 - baru dibuat)
+   ------------------------------------------------------------
+   KENAPA FILE INI PERLU ADA:
+   Sebelumnya border_pemula.jpg TIDAK punya CSS sendiri sama sekali --
+   cuma numpang aturan umum di border_polos.css. Selama wrapper-nya
+   simpel (avatar & border sama-sama ngisi 100% wrapper) itu kelihatan
+   aman. Tapi begitu dipakai di wrapper yang lebih spesifik (mis. modal
+   "Detail Siswa"), foto profil (.user-avatar) ternyata tampil di UKURAN
+   ASLI file fotonya alih-alih ngisi penuh wrapper, sedangkan border
+   tetap kecil sesuai ukuran wrapper -- hasilnya foto gede "lepas",
+   border kecil kepisah di pojok, gak nempel di foto sama sekali.
+
+   PERBAIKAN: file ini SENGAJA menuliskan ulang semua properti yang
+   dibutuhkan (position, top, left, width, height, transform, z-index,
+   object-fit) secara eksplisit & lengkap untuk foto MAUPUN border saat
+   border_pemula sedang dipakai, jadi hasilnya tidak lagi bisa
+   "kepotong" gara-gara aturan umum di border_polos.css tidak lengkap.
+   Sama seperti border_imortal.css, tapi tanpa efek glow/aura (Pemula
+   itu border dasar/starter, polos).
+
+   Cara pakai: taruh di static/css/, link SETELAH border_pink.css dan
+   SEBELUM border_imortal.css:
+     <link rel="stylesheet" href="../static/css/border_pemula.css">
+   ============================================================ */
+
+.profile-wrapper:has(img.user-border[src*="border_pemula"]) {
+    position: relative;
+}
+
+.profile-wrapper:has(img.user-border[src*="border_pemula"]) img.user-avatar {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    object-fit: cover;
+    object-position: center;
+}
+
+.profile-wrapper img.user-border[src*="border_pemula"] {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    object-fit: contain;
+    pointer-events: none;
+    z-index: 2;
+}
