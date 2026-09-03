@@ -1650,6 +1650,12 @@
         html.dark .border-slate-200,
         html.dark .border-slate-200\/80,
         html.dark .border-slate-100 { border-color: var(--dark-border) !important; }
+        /* "divide-slate-100" (dipakai di daftar menu "Pengaturan Akun &
+           Preferensi" dkk) menghasilkan selector CSS berbeda dari
+           ".border-slate-100" biasa (":not([hidden]) ~ :not([hidden])"),
+           jadi TIDAK ikut ke-cover override di atas -- garisnya tetap warna
+           terang bawaan Tailwind di Mode Gelap kalau tidak ditambah baris ini. */
+        html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: var(--dark-border) !important; }
 
         html.dark .text-slate-900 { color: #f1f5f9 !important; }
         html.dark .text-slate-800 { color: #e2e8f0 !important; }
@@ -2914,8 +2920,11 @@
             .bg-amber-500, .bg-amber-600 { background-color: #D99A00; }
             .border-amber-200, .border-amber-300 { border-color: #D99A00; }
 
-            /* --- Border tambahan yang tidak lewat token (divider list HP) --- */
-            .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #E8E8EF; }
+            /* --- Border tambahan yang tidak lewat token (divider list HP).
+                   Khusus Mode Terang saja -- Mode Gelap sudah ditangani
+                   tersendiri lewat "html.dark .divide-slate-100 ..." di atas
+                   supaya garisnya tidak putih terang di atas latar gelap. --- */
+            html:not(.dark) .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #E8E8EF; }
         }
     </style>
 </head>
