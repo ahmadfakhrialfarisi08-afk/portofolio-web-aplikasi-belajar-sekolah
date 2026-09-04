@@ -1068,6 +1068,12 @@
                 </div>
                 <div>
                     <h4 class="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-pen text-blue-500"></i> Sedang Dikerjakan
+                    </h4>
+                    <div id="idcard-list-sedang" class="space-y-2"></div>
+                </div>
+                <div>
+                    <h4 class="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                         <i class="fa-solid fa-circle-xmark text-rose-500"></i> Tugas Belum Dikerjakan
                     </h4>
                     <div id="idcard-list-belum" class="space-y-2"></div>
@@ -2117,10 +2123,15 @@
             let nilaiTerbaru = null;
             let fotoTerbaru = [];
             let penandaTerbaru = -Infinity;
+            // Kalau ada minimal 1 tugas aktif yang sudah DIBUKA siswa (isViewedByStudent)
+            // tapi belum dikirim, berarti tugas itu berstatus "Sedang Dikerjakan" --
+            // dipakai renderPenilaianTugas()/bukaIDCardSiswa() untuk status 3-tahap.
+            let adaYangSedangDikerjakan = false;
 
             daftarSeluruhKelasDummy.forEach(k => {
                 const tasks = getTasksKelas(k.nama);
                 tasks.forEach(t => {
+                    if (t.isViewedByStudent && !t.studentSubmitted) adaYangSedangDikerjakan = true;
                     if (!t.studentSubmitted) return;
                     const penanda = t.waktuKirimGuru || 0;
                     if (penanda >= penandaTerbaru) {
@@ -2143,6 +2154,11 @@
             m.waktuKirim = ketemu ? waktuKirimTerbaru : null;
             m.nilai = ketemu ? nilaiTerbaru : null;
             m.fotoTugasList = ketemu ? fotoTerbaru : [];
+            // Status 3-tahap: 'selesai' kalau sudah pernah mengumpulkan salah satu
+            // tugas aktif, 'sedang' kalau belum pernah kumpul tapi setidaknya 1 tugas
+            // aktif sudah dibuka siswa, selain itu 'belum' (dikirim guru tapi belum
+            // pernah dibuka sama sekali oleh siswa).
+            m.statusPengerjaan = ketemu ? 'selesai' : (adaYangSedangDikerjakan ? 'sedang' : 'belum');
         }
 
         function renderPenilaianTugas() {
@@ -2150,11 +2166,26 @@
             const tbody = document.getElementById('tabel-penilaian-body');
             if(!tbody) return;
             tbody.innerHTML = "";
+            // Status 3-tahap: Belum Dikerjakan (belum pernah dibuka siswa) ->
+            // Sedang Dikerjakan (sudah dibuka tapi belum dikirim) -> Sudah Dikerjakan
+            // (sudah dikirim, jam kirimnya kebaca di kolom "Waktu Kirim").
+            const PETA_BADGE_STATUS_TUGAS = {
+                selesai: `<span class="px-3 py-1 bg-emerald-100 text-emerald-700 font-bold text-xs rounded-xl"><i class="fa-solid fa-check mr-1"></i> Sudah Dikerjakan</span>`,
+                sedang: `<span class="px-3 py-1 bg-blue-100 text-blue-700 font-bold text-xs rounded-xl"><i class="fa-solid fa-pen mr-1"></i> Sedang Dikerjakan</span>`,
+                belum: `<span class="px-3 py-1 bg-slate-100 text-slate-500 font-medium text-xs rounded-xl">Belum Dikerjakan</span>`
+            };
+            const PETA_AKSI_STATUS_TUGAS = {
+                sedang: `<span class="text-xs text-blue-500 italic">Sedang dikerjakan siswa...</span>`,
+                belum: `<span class="text-xs text-slate-400 italic">Belum dikerjakan</span>`
+            };
+
             sampleMurid30.forEach(m => {
-                let statusBadge = m.sudahMengumpulkan 
-                    ? `<span class="px-3 py-1 bg-emerald-100 text-emerald-700 font-bold text-xs rounded-xl"><i class="fa-solid fa-check mr-1"></i> Terkumpul</span>` 
-                    : `<span class="px-3 py-1 bg-slate-100 text-slate-500 font-medium text-xs rounded-xl">Belum Mengumpulkan</span>`;
-                
+                // Murid selain ID#1 cuma dummy (tidak tersambung ke Dashboard Siswa
+                // sungguhan), jadi statusPengerjaan mereka disimpulkan dari
+                // sudahMengumpulkan saja (tidak ada data "sedang dikerjakan" untuk dummy).
+                const status = m.statusPengerjaan || (m.sudahMengumpulkan ? 'selesai' : 'belum');
+                const statusBadge = PETA_BADGE_STATUS_TUGAS[status] || PETA_BADGE_STATUS_TUGAS.belum;
+
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition-colors">
                         <td class="py-3 px-6">
@@ -2167,7 +2198,7 @@
                         <td class="py-3 px-6 text-right">
                             ${m.sudahMengumpulkan 
                                 ? `<button onclick="periksaSiswa(${m.id})" class="px-3 py-1 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white font-bold text-xs rounded-lg transition-all">Buka / Beri Nilai</button>` 
-                                : `<span class="text-xs text-slate-400 italic">Belum dikerjakan</span>`}
+                                : (PETA_AKSI_STATUS_TUGAS[status] || PETA_AKSI_STATUS_TUGAS.belum)}
                         </td>
                     </tr>
                 `;
@@ -2737,8 +2768,10 @@
             document.getElementById('idcard-idnumber').innerText = `MURID-${m.id}`;
 
             const listSudah = document.getElementById('idcard-list-sudah');
+            const listSedang = document.getElementById('idcard-list-sedang');
             const listBelum = document.getElementById('idcard-list-belum');
             listSudah.innerHTML = '';
+            listSedang.innerHTML = '';
             listBelum.innerHTML = '';
 
             daftarSeluruhKelasDummy.forEach(k => {
@@ -2748,20 +2781,32 @@
                 // Setiap tugas aktif di kelas ini ditampilkan sebagai baris terpisah
                 // (bukan cuma tugas terakhir), supaya semua tugas tetap tercatat.
                 tasksKelasIni.forEach(data => {
-                    let sudahKerja = m.sudahMengumpulkan;
+                    // Status 3-tahap per tugas: 'selesai' (sudah dikirim), 'sedang'
+                    // (sudah dibuka siswa tapi belum dikirim), 'belum' (belum pernah
+                    // dibuka). Untuk murid selain ID#1 (dummy, tidak tersambung ke
+                    // Dashboard Siswa sungguhan) dipakai fallback biner seperti semula.
+                    let status = m.sudahMengumpulkan ? 'selesai' : 'belum';
                     let nilai = m.nilai;
                     if (m.id === 1) {
-                        sudahKerja = !!data.studentSubmitted;
+                        status = data.studentSubmitted ? 'selesai' : (data.isViewedByStudent ? 'sedang' : 'belum');
                         nilai = data.grade || null;
                     }
 
                     const judulTugas = data.judul || (data.teks ? (data.teks.length > 40 ? data.teks.slice(0, 40) + '...' : data.teks) : 'Tugas');
+                    const jamKirim = data.waktuKirim || data.studentTime || null;
 
-                    if (sudahKerja) {
+                    if (status === 'selesai') {
                         listSudah.innerHTML += `
                             <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
                                 <p class="text-xs font-bold text-slate-900">${k.nama} <span class="text-slate-400 font-normal">&middot; ${k.mapel}</span></p>
                                 <p class="text-[11px] text-emerald-700 font-semibold mt-0.5">${judulTugas} ${nilai ? '&middot; Nilai: ' + nilai : ''}</p>
+                                ${jamKirim ? `<p class="text-[10px] text-emerald-600 mt-0.5"><i class="fa-solid fa-clock mr-1"></i> Dikirim: ${jamKirim}</p>` : ''}
+                            </div>`;
+                    } else if (status === 'sedang') {
+                        listSedang.innerHTML += `
+                            <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                                <p class="text-xs font-bold text-slate-900">${k.nama} <span class="text-slate-400 font-normal">&middot; ${k.mapel}</span></p>
+                                <p class="text-[11px] text-blue-600 font-semibold mt-0.5">${judulTugas} &middot; Sedang dikerjakan</p>
                             </div>`;
                     } else {
                         listBelum.innerHTML += `
@@ -2774,6 +2819,7 @@
             });
 
             if (!listSudah.innerHTML) listSudah.innerHTML = `<p class="text-xs text-slate-400 italic">Belum ada tugas yang dikerjakan.</p>`;
+            if (!listSedang.innerHTML) listSedang.innerHTML = `<p class="text-xs text-slate-400 italic">Tidak ada tugas yang sedang dikerjakan.</p>`;
             if (!listBelum.innerHTML) listBelum.innerHTML = `<p class="text-xs text-slate-400 italic">Tidak ada tugas yang tertunda saat ini.</p>`;
 
             document.getElementById('modal-id-card').classList.remove('hidden');

@@ -73,6 +73,26 @@
         }
 
         /* ============================================================
+           IKON BULAT TUGAS (>2 tugas dalam satu kategori) & modal detailnya
+           Dipakai renderBarisBulatTugas()/bukaBulatTugas()/tutupBulatTugas()
+           di bagian script Tugas & Catatan. Kartu modal defaultnya diciutkan
+           & transparan, baru "pop-in" begitu class --tampil ditambahkan lewat
+           requestAnimationFrame (supaya transisinya benar-benar kepakai,
+           bukan langsung loncat ke state akhir).
+           ============================================================ */
+        #modal-bulat-tugas .modal-bulat-tugas-kartu-inner {
+            opacity: 0;
+            transform: translateY(28px) scale(0.94);
+            transition: opacity .22s ease, transform .28s cubic-bezier(.34,1.56,.64,1);
+        }
+        #modal-bulat-tugas.modal-bulat-tugas--tampil .modal-bulat-tugas-kartu-inner {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+        .tugas-bulat-scroll::-webkit-scrollbar { height: 5px; }
+        .tugas-bulat-scroll::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+
+        /* ============================================================
            DESIGN SYSTEM — REDESIGN UI/UX (Notion / Linear / Fluent / Classroom)
            Layer ini HANYA mengatur tampilan (token warna, radius, shadow,
            tipografi, spacing-rhythm, fokus aksesibilitas). Tidak ada logo,
@@ -3773,6 +3793,25 @@
                         <button type="button" onclick="lihatSemuaTugasSubTab()" id="btn-lihat-semua-tugas" class="px-4 py-2 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline">
                             Lihat Semua <span id="label-sisa-tugas"></span>
                         </button>
+                    </div>
+
+                    <!-- Modal Detail Tugas -- muncul saat siswa tap salah satu ikon bulat
+                         tugas (dipakai kalau tugas dalam 1 kategori lebih dari 2, lihat
+                         renderBarisBulatTugas()). Sengaja diletakkan SEKALI di sini (statis,
+                         di luar container-live-tugas yang isinya dirender ulang tiap ganti
+                         status) supaya animasi pop-in tidak "kepotong" tiap kali daftar
+                         tugas di-refresh. -->
+                    <div id="modal-bulat-tugas" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4" onclick="tutupBulatTugas(event)">
+                        <div class="modal-bulat-tugas-kartu-inner w-full sm:max-w-lg max-h-[85vh] overflow-y-auto" onclick="event.stopPropagation()">
+                            <div class="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl p-1">
+                                <div class="flex justify-end px-3 pt-3 sm:px-1 sm:pt-1">
+                                    <button type="button" onclick="tutupBulatTugas()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                                <div id="modal-bulat-tugas-isi" class="px-3 pb-4 sm:px-2"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -7883,10 +7922,16 @@
 
             if (tabName === 'tugas') {
                 try {
-                    const tasks = getTasksSiswa();
-                    tasks.forEach(t => t.isViewedByStudent = true);
-                    saveTasksSiswa(tasks);
-                    checkTaskBadgeStatus();
+                    // CATATAN PERUBAHAN: dulu SEMUA tugas otomatis ditandai
+                    // isViewedByStudent = true begitu tab ini dibuka (blanket mark),
+                    // jadi status di Dashboard Guru langsung loncat ke "Sedang
+                    // Dikerjakan" walau siswa belum benar-benar buka tugasnya
+                    // satu-satu. Sekarang penandaan dipindah ke level PER-TUGAS lewat
+                    // tandaiTugasDibukaJikaPerlu() yang dipanggil dari dalam
+                    // renderKartuTugas() -- jadi cuma tugas yang KONTENnya benar-benar
+                    // ditampilkan (kartu langsung kalau <=2 tugas, atau modal ikon
+                    // bulat kalau >2 tugas) yang berubah status; sisanya tetap
+                    // "Belum Dikerjakan" sampai benar-benar dibuka siswa.
                     renderLiveTaskContent();
                 } catch (err) {
                     console.error('Gagal memuat konten tab Tugas:', err);
@@ -8456,7 +8501,19 @@
             const sudahDiperluas = !!window._tugasPaginasiExpanded[kategori];
             const daftarTampil = sudahDiperluas ? daftar : daftar.slice(0, BATAS_TUGAS_PER_HALAMAN);
 
-            container.innerHTML = daftarTampil.map(data => renderKartuTugas(data)).join('');
+            // Kalau tugas dalam kategori yang lagi aktif ini lebih dari 2, jangan
+            // ditumpuk sebagai kartu panjang ke bawah (kesannya kayak "tabel") --
+            // tampilkan sebagai baris ikon bulat kecil ke samping (bisa digeser),
+            // 1 ikon = 1 tugas. Tap salah satu ikon baru kartu detailnya muncul di
+            // modal dengan animasi pop-in (lihat renderBarisBulatTugas()).
+            // Kalau cuma 1-2 tugas, tetap ditampilkan langsung sebagai kartu penuh
+            // seperti sebelumnya -- tidak perlu diciutkan.
+            window._tugasKategoriTerakhirDirender = kategori;
+            if (daftarTampil.length > 2) {
+                container.innerHTML = renderBarisBulatTugas(daftarTampil, kategori);
+            } else {
+                container.innerHTML = daftarTampil.map(data => renderKartuTugas(data)).join('');
+            }
 
             const sisa = daftar.length - daftarTampil.length;
             const wrapBtn = document.getElementById('wrap-tombol-lihat-semua-tugas');
@@ -8468,6 +8525,111 @@
                 } else {
                     wrapBtn.classList.add('hidden');
                 }
+            }
+        }
+
+        // Warna & ikon bulat tugas berdasarkan status pengerjaannya saat ini --
+        // dipakai renderBarisBulatTugas() supaya siswa langsung kebaca progressnya
+        // dari warna tanpa perlu buka satu-satu (amber = belum dibuka sama sekali,
+        // biru = sudah dibuka tapi belum dikirim, hijau = sudah dikirim).
+        function gayaBulatTugas(data) {
+            if (data.studentSubmitted || data.sudahMengumpulkan) {
+                return { bg: 'bg-emerald-500', ring: 'ring-emerald-100', icon: 'fa-check' };
+            }
+            if (data.isViewedByStudent) {
+                return { bg: 'bg-blue-500', ring: 'ring-blue-100', icon: 'fa-pen' };
+            }
+            return { bg: 'bg-amber-500', ring: 'ring-amber-100', icon: 'fa-book-open' };
+        }
+
+        // Baris ikon bulat (dipakai kalau tugas dalam 1 kategori > 2) menggantikan
+        // tumpukan kartu panjang ke bawah. Titik merah kecil di pojok ikon menandakan
+        // tugas itu belum pernah dibuka sama sekali oleh siswa.
+        function renderBarisBulatTugas(list, kategori) {
+            const bubbles = list.map((data, i) => {
+                const gaya = gayaBulatTugas(data);
+                const judul = String(data.judul || data.tipe || 'Tugas');
+                const belumPernahDibuka = !(data.studentSubmitted || data.sudahMengumpulkan) && !data.isViewedByStudent;
+                return `
+                    <button type="button"
+                        onclick="bukaBulatTugas('${kategori}', ${i})"
+                        class="relative flex-shrink-0 w-16 flex flex-col items-center gap-1.5 focus:outline-none group">
+                        <span class="w-14 h-14 rounded-full ${gaya.bg} text-white flex items-center justify-center text-lg shadow-sm ring-4 ${gaya.ring} transition-transform group-active:scale-90 group-hover:-translate-y-0.5">
+                            <i class="fa-solid ${gaya.icon}"></i>
+                        </span>
+                        ${belumPernahDibuka ? `<span class="absolute top-0 right-1.5 w-3 h-3 rounded-full bg-rose-500 border-2 border-white"></span>` : ''}
+                        <span class="text-[10px] font-semibold text-slate-600 leading-tight text-center line-clamp-2 w-full">${judul}</span>
+                    </button>`;
+            }).join('');
+
+            return `
+                <div class="flex items-center gap-1.5 mb-1 text-[11px] text-slate-400">
+                    <i class="fa-solid fa-hand-pointer"></i> Ketuk salah satu untuk buka detail tugasnya
+                </div>
+                <div class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 tugas-bulat-scroll">${bubbles}</div>`;
+        }
+
+        // Dipanggil saat siswa tap salah satu ikon bulat tugas. Kartu detailnya
+        // ditaruh di modal statis #modal-bulat-tugas (di luar container-live-tugas)
+        // supaya animasi pop-in-nya tidak keganggu kalau daftar ikon bulat
+        // dirender ulang di belakang layar.
+        function bukaBulatTugas(kategori, index) {
+            const kelompok = window._kelompokTugasTerkini || { belum: [], draft: [], selesai: [] };
+            const daftar = kelompok[kategori] || [];
+            const data = daftar[index];
+            const overlay = document.getElementById('modal-bulat-tugas');
+            const isi = document.getElementById('modal-bulat-tugas-isi');
+            if (!data || !overlay || !isi) return;
+
+            // renderKartuTugas() di dalamnya juga memanggil tandaiTugasDibukaJikaPerlu()
+            // -- jadi tepat saat kartu ini ditampilkan, status tugas di Dashboard Guru
+            // otomatis berubah dari "Belum Dikerjakan" -> "Sedang Dikerjakan" (kalau
+            // belum pernah dibuka & belum dikirim sebelumnya).
+            isi.innerHTML = renderKartuTugas(data);
+
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('modal-bulat-tugas--tampil')));
+
+            // Refresh baris ikon bulat di belakang modal supaya warna/titik indikator
+            // langsung ikut update begitu status tugas ini berubah -- aman dipanggil
+            // ulang karena modalnya sudah dipisah dari container-live-tugas.
+            if (window._subTabTugasAktif === kategori) renderSubTabTugasAktif();
+        }
+
+        function tutupBulatTugas(e) {
+            if (e && e.target !== e.currentTarget) return;
+            const overlay = document.getElementById('modal-bulat-tugas');
+            if (!overlay) return;
+            overlay.classList.remove('modal-bulat-tugas--tampil');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+                const isi = document.getElementById('modal-bulat-tugas-isi');
+                if (isi) isi.innerHTML = '';
+            }, 220);
+        }
+
+        // Tandai sebuah tugas sebagai "sudah dibuka siswa" TEPAT SAAT konten
+        // lengkapnya benar-benar ditampilkan (dipanggil dari dalam renderKartuTugas()) --
+        // bukan lagi cuma karena tab "Tugas & Catatan" dibuka. Efeknya status tugas
+        // ini di Dashboard Guru berubah dari "Belum Dikerjakan" -> "Sedang Dikerjakan"
+        // persis pas siswa benar-benar melihat instruksinya, baik lewat kartu
+        // langsung (kalau <=2 tugas) maupun lewat modal ikon bulat (kalau >2 tugas).
+        function tandaiTugasDibukaJikaPerlu(data) {
+            if (!data || !data.id) return;
+            if (data.studentSubmitted || data.sudahMengumpulkan) return; // sudah selesai, tak perlu diubah
+            if (data.isViewedByStudent) return; // sudah pernah ditandai terbuka sebelumnya
+            try {
+                const tasks = getTasksSiswa();
+                const idx = tasks.findIndex(t => t.id === data.id);
+                if (idx === -1) return;
+                tasks[idx].isViewedByStudent = true;
+                data.isViewedByStudent = true; // supaya objek yang lagi dipegang render ikut sinkron
+                saveTasksSiswa(tasks);
+                if (typeof checkTaskBadgeStatus === 'function') checkTaskBadgeStatus();
+            } catch (e) {
+                console.error('Gagal menandai tugas sebagai dibuka:', e);
             }
         }
 
@@ -8691,6 +8853,12 @@
         }
 
         function renderKartuTugas(data) {
+            // Kartu ini adalah tempat KONTEN LENGKAP tugas benar-benar ditampilkan ke
+            // siswa (baik dirender langsung kalau <=2 tugas, atau di dalam modal ikon
+            // bulat kalau >2 tugas) -- jadi di sinilah titik yang tepat untuk menandai
+            // tugas sebagai "sudah dibuka" (lihat tandaiTugasDibukaJikaPerlu()).
+            tandaiTugasDibukaJikaPerlu(data);
+
             const deskripsiTugas = data.teks || data.deskripsi || 'Tidak ada instruksi.';
             const batasWaktuTugas = data.deadline || data.deadlineDate || '16:51';
             const tipeKonten = data.tipe || '📌 Tugas Utama';
