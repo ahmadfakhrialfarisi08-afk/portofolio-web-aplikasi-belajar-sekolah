@@ -5565,6 +5565,33 @@
             }).join('');
         }
 
+        // ============================================================
+        // Reveal panel Kotak Saran didaftarkan lewat listener DOMContentLoaded
+        // TERPISAH dari listener /* ================= INIT ================= */
+        // yang besar di bawah (tempat Panel Akun Dummy & Panel Dummy
+        // Leaderboard di-reveal). SENGAJA dipisah + dibungkus try/catch:
+        // browser tetap memanggil SEMUA listener 'DOMContentLoaded' yang
+        // terdaftar sekalipun salah satunya lempar error di tengah jalan --
+        // tapi baris-baris SETELAH baris yang error di listener yang SAMA
+        // tidak akan pernah jalan. Berarti kalau ada error tak terduga di
+        // suatu tempat SEBELUM baris reveal panel ini di listener utama,
+        // panel Kotak Saran (yang taruhannya di akhir urutan) ikut gak
+        // pernah kebuka -- padahal error itu sama sekali bukan salah kode
+        // panel ini. Listener sendiri begini bikin reveal-nya kebal dari
+        // masalah di bagian lain script.
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                if (typeof USERNAME_SISWA_ASLI !== 'undefined' && USERNAME_SISWA_ASLI === 'siswa') {
+                    const wrapperKotakSaran = document.getElementById('wrapper-panel-kotak-saran');
+                    if (wrapperKotakSaran) wrapperKotakSaran.classList.remove('hidden');
+                    sinkronkanSaranDenganServer();
+                }
+            } catch (e) {
+                console.error('Gagal memunculkan panel Kotak Saran:', e);
+            }
+        });
+
         function toggleProfileDropdown(event) {
             event.stopPropagation();
             const dropdown = document.getElementById('profile-dropdown');
@@ -10373,14 +10400,8 @@
             if (USERNAME_SISWA_ASLI === 'siswa') {
                 const wrapperAkunDummy = document.getElementById('wrapper-panel-akun-dummy-profil');
                 const wrapperDummyLeaderboard = document.getElementById('wrapper-panel-dummy-leaderboard');
-                const wrapperKotakSaran = document.getElementById('wrapper-panel-kotak-saran');
                 if (wrapperAkunDummy) wrapperAkunDummy.classList.remove('hidden');
                 if (wrapperDummyLeaderboard) wrapperDummyLeaderboard.classList.remove('hidden');
-                if (wrapperKotakSaran) wrapperKotakSaran.classList.remove('hidden');
-                // Tarik daftar saran dari server begitu dashboard dibuka, supaya
-                // badge/daftar sudah siap begitu panel Kotak Saran dibuka manual
-                // (bukan baru fetch pas diklik pertama kali).
-                sinkronkanSaranDenganServer();
             }
             backfillRiwayatJikaPerlu();
             sinkronkanRiwayatDenganTugasAktif();
