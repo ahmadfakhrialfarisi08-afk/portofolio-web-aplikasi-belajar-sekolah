@@ -631,6 +631,15 @@
             from { transform: translateX(0); }
             to { transform: translateX(-25%); }
         }
+        /* Latar merah-putih untuk kartu mapel "Bahasa Indonesia" -- dipakai
+           SEBAGAI ISI dari container .kain-bendera-rahasia yang SAMA PERSIS
+           (class & keyframes animasi berkibarnya di-reuse apa adanya, cuma
+           warna latarnya diganti) supaya efek "kain berkibar" konsisten
+           dengan yang dipakai di overlay reveal logo jurusan -- tanpa bikin
+           animasi baru dari nol. Lihat aktifkanLongPressBenderaBindo(). */
+        .bindo-flag-latar {
+            background: linear-gradient(180deg, #dc2626 0%, #dc2626 50%, #ffffff 50%, #ffffff 100%);
+        }
         .rahasia-konten-anim {
             opacity: 0;
             transform: scale(0.65) translateY(16px);
@@ -10863,25 +10872,22 @@
                     // saat di-long-press. Interaksi ini sengaja HANYA aktif di layar
                     // sentuh (HP/iPad) lewat aktifkanLongPressBenderaBindo() di bawah.
                     //
-                    // CATATAN PERFORMA: bendera berkibar SENGAJA dibuat pakai CSS
-                    // transform (strip-strip yang di-rotateY bergantian), BUKAN filter
-                    // SVG feTurbulence/feDisplacementMap. Filter SVG yang dianimasikan
-                    // dikenal berat di mesin Safari/WebKit (dipakai semua browser iOS,
-                    // termasuk "Chrome" di iPhone), bahkan bisa bikin lag/crash di
-                    // perangkat seperti iPhone XR. CSS transform murni jauh lebih ringan
-                    // karena cuma diproses compositor GPU, aman di HP low-end sampai
-                    // iPhone lawas.
-                    pastikanStyleBenderaBindo();
-                    const jumlahStripBendera = 8;
-                    let stripBenderaHtml = '';
-                    for (let i = 0; i < jumlahStripBendera; i++) {
-                        stripBenderaHtml += `<div class="kartu-bindo-flag-strip" style="animation-delay:${(i * 0.09).toFixed(2)}s"></div>`;
-                    }
+                    // Animasi "kain berkibar"-nya BUKAN bikin baru -- ini REUSE
+                    // apa adanya dari container .kain-bendera-rahasia +
+                    // .lipatan-cahaya-bendera yang sudah dipakai di overlay reveal
+                    // logo jurusan (lihat #overlay-logo-rahasia), cuma isi latarnya
+                    // diganti gradient merah-putih (.bindo-flag-latar) -- animasi
+                    // goyangan 3D (rotateY/rotateZ/skewX) & sapuan cahayanya sama
+                    // persis, sudah terbukti ringan di HP (murni CSS transform,
+                    // bukan filter SVG feTurbulence yang berat).
                     btn.innerHTML = `
                         <div class="kartu-bindo-konten flex flex-col flex-1" style="transition:opacity .35s ease;">${isiKartuMapel}</div>
-                        <div class="kartu-bindo-flag-overlay absolute inset-0 bg-white flex flex-col items-center justify-center gap-1.5 sm:gap-2" style="opacity:0; transform:scale(0.94); pointer-events:none; transition:opacity .35s ease, transform .35s ease;">
-                            <div class="kartu-bindo-flag-frame w-16 h-11 sm:w-20 sm:h-14 rounded shadow-sm overflow-hidden flex" style="perspective:300px;">${stripBenderaHtml}</div>
-                            <span class="text-[9px] sm:text-[11px] font-bold text-slate-700">Bahasa Indonesia</span>
+                        <div class="kartu-bindo-flag-overlay absolute inset-0 overflow-hidden flex flex-col items-center justify-center gap-1.5 sm:gap-2" style="opacity:0; transform:scale(0.94); pointer-events:none; transition:opacity .35s ease, transform .35s ease;">
+                            <div class="kain-bendera-rahasia" aria-hidden="true">
+                                <div class="bindo-flag-latar absolute inset-0"></div>
+                                <div class="lipatan-cahaya-bendera absolute inset-0"></div>
+                            </div>
+                            <span class="relative text-[9px] sm:text-[11px] font-bold text-white drop-shadow-md">Bahasa Indonesia</span>
                         </div>`;
                     btn.onclick = () => {
                         if (btn.dataset.longPressTriggered === '1') { btn.dataset.longPressTriggered = ''; return; }
@@ -10897,38 +10903,15 @@
             });
         }
 
-        // Inject sekali saja: CSS untuk strip-strip bendera Merah Putih yang
-        // "melambai" bergantian (transform-only, tanpa filter SVG) supaya ringan
-        // dijalankan di semua HP/iPad -- termasuk perangkat lama seperti iPhone XR.
-        function pastikanStyleBenderaBindo() {
-            if (document.getElementById('style-kartu-bindo-wave')) return;
-            const style = document.createElement('style');
-            style.id = 'style-kartu-bindo-wave';
-            style.textContent = `
-                .kartu-bindo-flag-frame { transform-style: preserve-3d; }
-                .kartu-bindo-flag-strip {
-                    flex: 1 0 auto;
-                    background: linear-gradient(to bottom, #dc2626 50%, #ffffff 50%);
-                    animation: kartuBindoFlagWave 1.6s ease-in-out infinite;
-                    transform-origin: center;
-                    will-change: transform;
-                }
-                @keyframes kartuBindoFlagWave {
-                    0%, 100% { transform: rotateY(0deg); }
-                    50% { transform: rotateY(22deg); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-
         // Long-press (>300ms) KHUSUS kartu mapel "Bahasa Indonesia" & KHUSUS layar
         // sentuh (HP/iPad, dideteksi via matchMedia 'pointer: coarse' supaya tidak
         // mengganggu interaksi mouse di desktop). Saat ditekan-tahan: konten kartu
         // meredup sedikit lalu bertransisi halus (morphing) memunculkan animasi
-        // bendera Merah Putih berkibar (SVG + feTurbulence/feDisplacementMap,
-        // dinamis & halus, jadi fokus visual utama). Saat jari dilepas: bendera
-        // fade out cepat, kartu balik ke idle & siap ditap normal untuk lanjut ke
-        // pemilihan tingkat kesulitan.
+        // bendera Merah Putih berkibar (reuse .kain-bendera-rahasia + goyangan 3D
+        // CSS transform yang sama dengan overlay reveal logo jurusan, bukan filter
+        // SVG feTurbulence yang berat). Saat jari dilepas: bendera fade out cepat,
+        // kartu balik ke idle & siap ditap normal untuk lanjut ke pemilihan tingkat
+        // kesulitan.
         function aktifkanLongPressBenderaBindo(btn) {
             if (!window.matchMedia('(pointer: coarse)').matches) return;
 
