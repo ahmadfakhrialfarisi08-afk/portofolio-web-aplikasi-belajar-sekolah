@@ -3156,6 +3156,15 @@
                     <span id="badge-perangkat-pending-nav" class="w-2 h-2 bg-rose-600 rounded-full hidden shadow-sm shadow-rose-500/50" aria-label="Ada perangkat baru menunggu persetujuan"></span>
                 </button>
 
+                <!-- Menu "Kotak Saran" tampil untuk SEMUA siswa (bukan cuma admin) --
+                     lihat tab-kotak-saran untuk isi halamannya & catatan gating
+                     bagian "Saran Masuk" yang khusus admin. -->
+                <button onclick="switchTab('kotak-saran')" id="btn-kotak-saran" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate-500 hover:bg-amber-500/20 hover:text-amber-700 font-medium text-sm transition-colors duration-150">
+                    <div class="flex items-center gap-3 nav-btn-label">
+                        <i class="fa-solid fa-comment-dots w-4 text-center text-[13px]"></i> Kotak Saran
+                    </div>
+                </button>
+
                 <div class="pt-3 mt-2 border-t border-slate-100 space-y-0.5">
                     <p class="px-3.5 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wide">Bantuan</p>
 
@@ -3255,73 +3264,6 @@
                     </form>
                     <div id="list-dummy-leaderboard" class="space-y-1.5 max-h-48 overflow-y-auto"></div>
                     <p class="text-[9px] text-slate-400 text-center leading-relaxed">Akun dummy cuma tersimpan di browser ini (localStorage) &mdash; tidak terkirim ke siapapun.</p>
-                </div>
-            </div>
-
-            <!-- ============================================================
-                 PANEL KOTAK SARAN
-                 Kotak "Kirim Saran" (textarea + tombol) TAMPIL UNTUK SEMUA
-                 SISWA -- wrapper ini SENGAJA TIDAK diberi class "hidden",
-                 beda dari Panel Akun Dummy/Dummy Leaderboard di atas yang
-                 memang khusus akun dev. Karena <aside id="sidebar-utama">
-                 ini dipakai sebagai sidebar tetap di laptop (md+) DAN
-                 sebagai bottom-sheet menu "Lainnya" di HP (lihat CSS
-                 translate-y-full md:translate-y-0 di #sidebar-utama), kotak
-                 ini otomatis muncul di KEDUA tempat itu tanpa perlu markup
-                 terpisah.
-
-                 Sub-bagian "Saran Masuk" (daftar SEMUA saran yang pernah
-                 dikirim siswa) dibungkus wrapper terpisah
-                 (#wrapper-daftar-saran-admin) yang default "hidden" & HANYA
-                 di-reveal lewat JS buat akun login ASLI 'siswa' (AHMAD
-                 FAKHRI AL FARISI) -- lihat DOMContentLoaded. Ini supaya
-                 CUMA admin yang bisa BACA saran siswa lain; siswa biasa
-                 cuma bisa MENGIRIM. Pembatasannya bukan cuma sembunyi di
-                 tampilan: endpoint /api/saran/list (lihat
-                 sinkronkanSaranDenganServer & toggleKotakSaranPanel) HANYA
-                 dipanggil kalau bagian admin ini memang ter-reveal, jadi
-                 daftar saran siswa lain tidak pernah ikut ditarik/tersimpan
-                 di localStorage perangkat siswa biasa sama sekali.
-
-                 Data saran didorong & ditarik dari server (/api/saran/kirim
-                 & /api/saran/list, lihat simpanSaranKeServer &
-                 sinkronkanSaranDenganServer) supaya daftar saran yang masuk
-                 SAMA persis kelihatannya baik dibuka dari HP maupun laptop
-                 milik admin, bukan cuma nyangkut di 1 browser doang.
-                 ============================================================ -->
-            <div id="wrapper-panel-kotak-saran" class="bg-slate-50 border border-slate-200/80 rounded-xl overflow-hidden">
-                <button onclick="toggleKotakSaranPanel()" class="w-full flex items-center justify-between px-3 py-2.5 text-left" aria-expanded="false" aria-controls="panel-kotak-saran">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-comment-dots text-blue-600 text-xs"></i>
-                        <h4 class="text-xs font-bold text-slate-900">Kotak Saran</h4>
-                    </div>
-                    <i id="icon-toggle-kotak-saran-panel" class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform"></i>
-                </button>
-                <div id="panel-kotak-saran" class="hidden px-3.5 pb-3.5 space-y-3">
-                    <div>
-                        <label for="input-saran-siswa" class="sr-only">Tulis saran atau masukan</label>
-                        <textarea id="input-saran-siswa" rows="2" placeholder="Tuliskan saran atau masukan tentang aplikasi..." class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white resize-none"></textarea>
-                        <label class="flex items-center gap-2 mt-2 text-[11px] text-slate-600 font-semibold cursor-pointer select-none">
-                            <input type="checkbox" id="checkbox-anonim-saran-siswa" class="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0">
-                            <i class="fa-solid fa-user-secret text-slate-400"></i> Sembunyikan nama saya (kirim anonim)
-                        </label>
-                        <button onclick="kirimSaranSiswa()" class="w-full mt-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm transition-colors flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-paper-plane text-[10px]"></i> Kirim Saran
-                        </button>
-                        <p class="text-[9px] text-slate-400 text-center leading-relaxed mt-1.5">Saran kamu akan dibaca langsung oleh admin aplikasi.</p>
-                    </div>
-
-                    <!-- Khusus akun admin -- lihat catatan gating di atas -->
-                    <div id="wrapper-daftar-saran-admin" class="hidden pt-2.5 border-t border-slate-200/80">
-                        <div class="flex items-center justify-between mb-1.5">
-                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Saran Masuk</p>
-                            <button onclick="sinkronkanSaranDenganServer()" title="Muat ulang" aria-label="Muat ulang daftar saran" class="text-slate-400 hover:text-blue-600 transition-colors">
-                                <i class="fa-solid fa-arrows-rotate text-[10px]"></i>
-                            </button>
-                        </div>
-                        <div id="list-kotak-saran-admin" class="space-y-1.5 max-h-56 overflow-y-auto"></div>
-                        <p id="kotak-saran-admin-kosong" class="hidden text-[10px] text-slate-400 text-center py-4">Belum ada saran yang masuk.</p>
-                    </div>
                 </div>
             </div>
 
@@ -4356,6 +4298,68 @@
                         <i class="fa-solid fa-mobile-screen-button text-2xl mb-2"></i>
                         <p class="text-xs font-medium">Belum ada data perangkat.</p>
                     </div>
+                </div>
+            </section>
+
+            <!-- ============================================================
+                 TAB KOTAK SARAN
+                 Form "Kirim Saran" TAMPIL UNTUK SEMUA SISWA. Bagian "Saran
+                 Masuk" di bawahnya (#wrapper-daftar-saran-admin) default
+                 "hidden" & HANYA di-reveal lewat JS buat akun login ASLI
+                 'siswa' (AHMAD FAKHRI AL FARISI) -- lihat DOMContentLoaded.
+                 Jadi CUMA admin yang bisa BACA saran siswa lain; siswa biasa
+                 cuma bisa MENGIRIM. Endpoint /api/saran/list (lihat
+                 sinkronkanSaranDenganServer) HANYA dipanggil kalau bagian
+                 admin ini memang ter-reveal, jadi daftar saran siswa lain
+                 tidak pernah ikut ditarik/tersimpan di localStorage
+                 perangkat siswa biasa sama sekali.
+
+                 Daftar "Saran Masuk" dibuat dgn PENCARIAN + PAGINASI (lihat
+                 renderDaftarSaranAdmin/gantiHalamanSaranAdmin/cariSaranAdmin)
+                 karena jumlah saran yang masuk bisa 1000+ -- render semuanya
+                 sekaligus tanpa paginasi bakal berat & susah dibaca.
+                 ============================================================ -->
+            <section id="tab-kotak-saran" class="tab-content space-y-6 hidden">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <h3 class="font-bold text-xl text-slate-900">💬 Kotak Saran</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Tuliskan saran atau masukan buat aplikasi ini. Saran kamu akan dibaca langsung oleh admin.</p>
+
+                    <div class="mt-5 max-w-xl">
+                        <label for="input-saran-siswa" class="sr-only">Tulis saran atau masukan</label>
+                        <textarea id="input-saran-siswa" rows="4" placeholder="Tuliskan saran atau masukan tentang aplikasi..." class="w-full p-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 bg-slate-50 resize-none"></textarea>
+                        <div class="flex items-center justify-between mt-2.5 flex-wrap gap-2.5">
+                            <label class="flex items-center gap-2 text-xs text-slate-600 font-semibold cursor-pointer select-none">
+                                <input type="checkbox" id="checkbox-anonim-saran-siswa" class="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0">
+                                <i class="fa-solid fa-user-secret text-slate-400"></i> Sembunyikan nama saya (kirim anonim)
+                            </label>
+                            <button onclick="kirimSaranSiswa()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm transition-colors flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-paper-plane text-[10px]"></i> Kirim Saran
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Khusus akun admin -- lihat catatan gating di atas -->
+                <div id="wrapper-daftar-saran-admin" class="hidden bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+                        <div>
+                            <h4 class="font-bold text-base text-slate-900">Saran Masuk</h4>
+                            <p id="kotak-saran-admin-jumlah" class="text-[11px] text-slate-400 mt-0.5">Memuat daftar saran...</p>
+                        </div>
+                        <button onclick="sinkronkanSaranDenganServer()" class="flex-shrink-0 px-3 py-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 text-xs font-semibold transition-colors flex items-center gap-1.5">
+                            <i class="fa-solid fa-rotate text-[10px]"></i> Muat Ulang
+                        </button>
+                    </div>
+
+                    <div class="relative mb-4">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+                        <input id="input-cari-saran-admin" type="text" oninput="cariSaranAdmin()" placeholder="Cari nama, kelas, atau isi saran..." class="w-full pl-9 pr-3 py-2.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 bg-slate-50">
+                    </div>
+
+                    <div id="list-kotak-saran-admin" class="space-y-2"></div>
+                    <p id="kotak-saran-admin-kosong" class="hidden text-xs text-slate-400 text-center py-10">Belum ada saran yang masuk.</p>
+
+                    <div id="pagination-kotak-saran-admin" class="hidden flex items-center justify-center gap-2 mt-5"></div>
                 </div>
             </section>
 
@@ -5409,6 +5413,16 @@
 
         const KEY_SARAN_SISWA = 'student_suggestions';
 
+        // Cache di memori (bukan cuma localStorage) buat daftar saran versi
+        // admin -- dipakai renderDaftarSaranAdmin()/cariSaranAdmin()/
+        // gantiHalamanSaranAdmin() supaya bisa saring (search) & paginasi
+        // TANPA fetch ulang ke server tiap kali siswa admin ketik di kolom
+        // pencarian atau pindah halaman. Perlu ada paginasi krn saran yang
+        // masuk bisa 1000+ -- render semuanya sekaligus ke DOM bakal berat.
+        let _saranAdminDataCache = [];
+        let _saranAdminHalamanSekarang = 1;
+        const SARAN_ADMIN_PER_HALAMAN = 20;
+
         function getSaranSiswaLokal() {
             try {
                 const raw = localStorage.getItem(KEY_SARAN_SISWA);
@@ -5418,27 +5432,7 @@
             }
         }
 
-        // Buka/tutup panel Kotak Saran -- untuk akun ADMIN, tiap kali dibuka
-        // langsung tarik ulang daftar saran dari server supaya yang kelihatan
-        // selalu yang terbaru (mis. ada saran baru masuk dari perangkat lain
-        // sejak halaman ini pertama dibuka). Untuk siswa BIASA, bagian
-        // "Saran Masuk" (#wrapper-daftar-saran-admin) tetap "hidden" (tidak
-        // pernah di-reveal, lihat DOMContentLoaded), jadi endpoint
-        // /api/saran/list SENGAJA tidak pernah dipanggil buat mereka --
-        // siswa biasa cuma lihat form kirimnya saja.
-        function toggleKotakSaranPanel() {
-            const panel = document.getElementById('panel-kotak-saran');
-            const icon = document.getElementById('icon-toggle-kotak-saran-panel');
-            if (!panel) return;
-            const akanTampil = panel.classList.contains('hidden');
-            panel.classList.toggle('hidden');
-            if (icon) icon.classList.toggle('rotate-180', akanTampil);
-            const tombolToggle = panel.previousElementSibling;
-            if (tombolToggle) tombolToggle.setAttribute('aria-expanded', String(akanTampil));
-            const wrapperDaftarSaran = document.getElementById('wrapper-daftar-saran-admin');
-            const adminBisaLihatDaftar = wrapperDaftarSaran && !wrapperDaftarSaran.classList.contains('hidden');
-            if (akanTampil && adminBisaLihatDaftar) sinkronkanSaranDenganServer();
-        }
+
 
         function kirimSaranSiswa() {
             const inputSaran = document.getElementById('input-saran-siswa');
@@ -5554,39 +5548,112 @@
             }
         }
 
-        function renderDaftarSaranAdmin(daftarSaran) {
+        // Render daftar "Saran Masuk" (khusus admin) dengan pencarian +
+        // paginasi -- dipanggil dengan ARGUMEN (array data baru dari server/
+        // lokal) setiap kali ada data baru masuk (lewat sinkronkanSaranDenganServer,
+        // kirimSaranSiswa, atau callback simpanSaranKeServer), dan TANPA
+        // ARGUMEN (pakai _saranAdminDataCache yang sudah ada) setiap kali
+        // cuma ganti halaman atau ganti kata kunci pencarian, supaya tidak
+        // perlu fetch ulang ke server berkali-kali.
+        function renderDaftarSaranAdmin(daftarSaranBaru) {
+            if (Array.isArray(daftarSaranBaru)) {
+                _saranAdminDataCache = daftarSaranBaru;
+            }
+
             const listEl = document.getElementById('list-kotak-saran-admin');
             const elKosong = document.getElementById('kotak-saran-admin-kosong');
+            const elJumlah = document.getElementById('kotak-saran-admin-jumlah');
+            const elPaginasi = document.getElementById('pagination-kotak-saran-admin');
             if (!listEl) return;
+
+            const kataKunci = (document.getElementById('input-cari-saran-admin')?.value || '').trim().toLowerCase();
 
             // Terbaru di atas -- diurutkan dari timestamp yang disisipkan di
             // id tiap saran (saran_<ts>), sama seperti pola id di prestasi.
-            const terurut = [...daftarSaran].sort((a, b) => {
+            let terurut = [..._saranAdminDataCache].sort((a, b) => {
                 const idA = Number(String(a.id || '').split('_')[1]) || 0;
                 const idB = Number(String(b.id || '').split('_')[1]) || 0;
                 return idB - idA;
             });
 
+            if (kataKunci) {
+                terurut = terurut.filter(item => {
+                    const nama = (item.anonim ? 'anonim' : (item.nama || 'anonim')).toLowerCase();
+                    const kelas = String(item.kelas || '').toLowerCase();
+                    const isi = String(item.saran || '').toLowerCase();
+                    return nama.includes(kataKunci) || kelas.includes(kataKunci) || isi.includes(kataKunci);
+                });
+            }
+
+            if (elJumlah) {
+                elJumlah.textContent = kataKunci
+                    ? `${terurut.length} saran cocok dari total ${_saranAdminDataCache.length} saran masuk`
+                    : `${_saranAdminDataCache.length} saran masuk`;
+            }
+
             if (terurut.length === 0) {
                 listEl.innerHTML = '';
-                if (elKosong) elKosong.classList.remove('hidden');
+                if (elKosong) {
+                    elKosong.textContent = kataKunci ? 'Tidak ada saran yang cocok dengan pencarian.' : 'Belum ada saran yang masuk.';
+                    elKosong.classList.remove('hidden');
+                }
+                if (elPaginasi) { elPaginasi.classList.add('hidden'); elPaginasi.innerHTML = ''; }
                 return;
             }
             if (elKosong) elKosong.classList.add('hidden');
 
-            listEl.innerHTML = terurut.map(item => {
+            // ---- Paginasi: jumlah saran bisa 1000+, jadi TIDAK dirender
+            // sekaligus semua -- cuma SARAN_ADMIN_PER_HALAMAN item per halaman.
+            const totalHalaman = Math.max(1, Math.ceil(terurut.length / SARAN_ADMIN_PER_HALAMAN));
+            if (_saranAdminHalamanSekarang > totalHalaman) _saranAdminHalamanSekarang = totalHalaman;
+            if (_saranAdminHalamanSekarang < 1) _saranAdminHalamanSekarang = 1;
+            const mulai = (_saranAdminHalamanSekarang - 1) * SARAN_ADMIN_PER_HALAMAN;
+            const halamanIni = terurut.slice(mulai, mulai + SARAN_ADMIN_PER_HALAMAN);
+
+            listEl.innerHTML = halamanIni.map(item => {
                 const namaTampil = item.anonim ? 'Anonim' : (item.nama || 'Anonim');
                 const kelasTampil = (!item.anonim && item.kelas) ? ` • ${item.kelas}` : '';
                 return `
-                    <div class="bg-white border border-slate-200 rounded-lg p-2">
-                        <div class="flex items-center justify-between mb-0.5 gap-2">
-                            <span class="text-[10px] font-bold text-slate-700 truncate">${namaTampil}${kelasTampil}</span>
-                            <span class="text-[9px] text-slate-400 flex-shrink-0">${item.waktu || ''}</span>
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                        <div class="flex items-center justify-between mb-1 gap-2">
+                            <span class="text-xs font-bold text-slate-700 truncate">${namaTampil}${kelasTampil}</span>
+                            <span class="text-[10px] text-slate-400 flex-shrink-0">${item.waktu || ''}</span>
                         </div>
-                        <p class="text-[11px] text-slate-600 leading-snug break-words">${item.saran || ''}</p>
+                        <p class="text-xs text-slate-600 leading-relaxed break-words">${item.saran || ''}</p>
                     </div>
                 `;
             }).join('');
+
+            if (elPaginasi) {
+                if (totalHalaman <= 1) {
+                    elPaginasi.classList.add('hidden');
+                    elPaginasi.innerHTML = '';
+                } else {
+                    elPaginasi.classList.remove('hidden');
+                    elPaginasi.innerHTML = `
+                        <button onclick="gantiHalamanSaranAdmin(-1)" ${_saranAdminHalamanSekarang <= 1 ? 'disabled' : ''} aria-label="Halaman sebelumnya" class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                            <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                        </button>
+                        <span class="text-xs text-slate-500 font-medium px-2">Halaman ${_saranAdminHalamanSekarang} dari ${totalHalaman}</span>
+                        <button onclick="gantiHalamanSaranAdmin(1)" ${_saranAdminHalamanSekarang >= totalHalaman ? 'disabled' : ''} aria-label="Halaman berikutnya" class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                            <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                        </button>
+                    `;
+                }
+            }
+        }
+
+        // Dipanggil dari kolom pencarian (oninput) -- ganti kata kunci selalu
+        // balik ke halaman 1 dulu, supaya tidak nyangkut di halaman kosong
+        // kalau hasil pencarian sebelumnya lebih sedikit halamannya.
+        function cariSaranAdmin() {
+            _saranAdminHalamanSekarang = 1;
+            renderDaftarSaranAdmin();
+        }
+
+        function gantiHalamanSaranAdmin(delta) {
+            _saranAdminHalamanSekarang += delta;
+            renderDaftarSaranAdmin();
         }
 
         // ============================================================
@@ -7798,6 +7865,22 @@
                     renderLiveTaskContent();
                 } catch (err) {
                     console.error('Gagal memuat konten tab Tugas:', err);
+                }
+            }
+
+            // Setiap kali tab "Kotak Saran" dibuka DAN akun ini admin (bagian
+            // #wrapper-daftar-saran-admin sudah di-reveal, lihat
+            // DOMContentLoaded), tarik ulang daftar saran terbaru dari server
+            // -- siswa biasa tidak kena baris ini sama sekali karena
+            // wrapper-nya tetap "hidden" buat mereka.
+            if (tabName === 'kotak-saran') {
+                try {
+                    const wrapperDaftarSaran = document.getElementById('wrapper-daftar-saran-admin');
+                    if (wrapperDaftarSaran && !wrapperDaftarSaran.classList.contains('hidden')) {
+                        sinkronkanSaranDenganServer();
+                    }
+                } catch (err) {
+                    console.error('Gagal memuat daftar Saran Masuk:', err);
                 }
             }
 
