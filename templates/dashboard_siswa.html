@@ -3735,7 +3735,7 @@
 
             <section id="tab-tugas" class="tab-content space-y-6 hidden">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center justify-between mb-5 flex-wrap gap-2">
                         <div>
                             <h3 class="font-bold text-xl text-slate-900">📚 Semua Tugas & Catatan Belajar</h3>
                             <p class="text-xs text-slate-400 mt-0.5">Daftar tugas resmi yang dikirim langsung oleh guru mata pelajaran.</p>
@@ -3743,11 +3743,36 @@
                         <span class="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-lg">Live Sync</span>
                     </div>
 
+                    <!-- Pemisahan Tab Utama (Tabs / Segmented Control): pisahkan tugas
+                         berdasarkan status supaya layar utama cuma nampilin tugas yang
+                         benar-benar butuh aksi mendesak (Belum Selesai), bukan numpuk
+                         semua status (draft & yang udah tuntas) jadi satu daftar panjang. -->
+                    <div class="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl mb-5 overflow-x-auto" role="tablist" aria-label="Filter status tugas">
+                        <button type="button" onclick="switchSubTabTugas('belum')" id="subtab-btn-belum" class="subtab-btn-tugas flex-1 whitespace-nowrap px-3 py-2 rounded-lg text-xs font-bold transition-all">
+                            Belum Selesai <span id="badge-subtab-belum" class="ml-1 px-1.5 py-0.5 rounded-full bg-white/70 text-[10px]">0</span>
+                        </button>
+                        <button type="button" onclick="switchSubTabTugas('draft')" id="subtab-btn-draft" class="subtab-btn-tugas flex-1 whitespace-nowrap px-3 py-2 rounded-lg text-xs font-bold transition-all">
+                            Sedang Dikerjakan <span id="badge-subtab-draft" class="ml-1 px-1.5 py-0.5 rounded-full bg-white/70 text-[10px]">0</span>
+                        </button>
+                        <button type="button" onclick="switchSubTabTugas('selesai')" id="subtab-btn-selesai" class="subtab-btn-tugas flex-1 whitespace-nowrap px-3 py-2 rounded-lg text-xs font-bold transition-all">
+                            Riwayat/Selesai <span id="badge-subtab-selesai" class="ml-1 px-1.5 py-0.5 rounded-full bg-white/70 text-[10px]">0</span>
+                        </button>
+                    </div>
+
                     <div id="container-live-tugas" class="space-y-4">
                         <div class="p-5 sm:p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
                             <i class="fa-solid fa-inbox text-3xl mb-2"></i>
                             <p class="text-xs font-medium">Belum ada tugas/catatan baru dikirimkan oleh guru.</p>
                         </div>
+                    </div>
+
+                    <!-- Batasan Tampilan (Load More): daftar utama dibatasi maksimal
+                         BATAS_TUGAS_PER_HALAMAN tugas terdekat deadline-nya. Tombol ini
+                         cuma muncul kalau memang masih ada sisa tugas yang belum tampil. -->
+                    <div class="mt-4 text-center hidden" id="wrap-tombol-lihat-semua-tugas">
+                        <button type="button" onclick="lihatSemuaTugasSubTab()" id="btn-lihat-semua-tugas" class="px-4 py-2 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline">
+                            Lihat Semua <span id="label-sisa-tugas"></span>
+                        </button>
                     </div>
                 </div>
 
@@ -8282,6 +8307,170 @@
             }
         }
 
+        // ================= KATEGORI STATUS TUGAS (Tabs / Segmented Control) =================
+        // Satu tugas dikelompokkan ke salah satu dari 3 kategori supaya siswa nggak perlu
+        // menyisir satu daftar panjang buat nemuin tugas yang beneran butuh aksi hari ini:
+        //   - 'belum'   : belum dikumpulkan, belum ada draft foto yang diunggah, & belum lewat deadline.
+        //   - 'draft'   : belum dikumpulkan TAPI sudah ada foto yang dipilih/diunggah di form
+        //                 (belum ditekan tombol "Kirim Tugas Sekarang").
+        //   - 'selesai' : sudah dikumpulkan, ATAU sudah dinilai guru (field `grade` terisi --
+        //                 field ini sama dengan yang dipakai updateTaskCounter() di atas),
+        //                 ATAU sudah lewat deadline & terkunci. Ketiganya digabung jadi satu
+        //                 kategori "Riwayat/Selesai" (diarsipkan) supaya tugas lama yang sudah
+        //                 tuntas/kadaluwarsa tidak numpuk lagi di layar utama harian.
+        function kategoriStatusTugas(data, now) {
+            const sudahDikumpulkan = !!(data.studentSubmitted || data.sudahMengumpulkan);
+            const sudahDinilaiGuru = data.grade !== null && data.grade !== undefined;
+            const batasWaktu = data.deadline || data.deadlineDate || '';
+            const sudahLewatDeadline = cekTugasSudahKedaluwarsa(batasWaktu, now);
+
+            if (sudahDikumpulkan || sudahDinilaiGuru || sudahLewatDeadline) return 'selesai';
+
+            const adaDraftFoto = window._fotoTugasSementara && Array.isArray(window._fotoTugasSementara[data.id]) && window._fotoTugasSementara[data.id].length > 0;
+            if (adaDraftFoto) return 'draft';
+
+            return 'belum';
+        }
+
+        // Ambil timestamp deadline (ms) khusus buat keperluan SORTING "deadline terdekat
+        // duluan" -- sengaja dipisah dari cekTugasSudahKedaluwarsa() (yang cuma butuh
+        // jawaban true/false) supaya logika kedaluwarsa yang sudah ada & sudah teruji
+        // tidak perlu ikut disentuh/diubah sama sekali.
+        function timestampDeadlineTugas(batasWaktu, now) {
+            if (!batasWaktu) return Infinity;
+            const cleanDeadline = batasWaktu.trim();
+            if (cleanDeadline.includes("Pukul")) {
+                const parts = cleanDeadline.split("Pukul");
+                const datePart = parts[0].trim();
+                const timePart = parts[1].replace("WIB", "").trim();
+                const targetDateTime = new Date(`${datePart}T${timePart}:00`);
+                return isNaN(targetDateTime.getTime()) ? Infinity : targetDateTime.getTime();
+            } else if (cleanDeadline.length <= 5 && cleanDeadline.includes(":")) {
+                // Cuma format jam "HH:MM" (deadline hari ini) -- pakai tanggal hari ini.
+                const [h, m] = cleanDeadline.split(':').map(Number);
+                const target = new Date(now.getTime());
+                target.setHours(h || 0, m || 0, 0, 0);
+                return target.getTime();
+            }
+            const t = new Date(cleanDeadline).getTime();
+            return isNaN(t) ? Infinity : t;
+        }
+
+        // Status tab aktif & status "sudah diperluas" (klik "Lihat Semua") per kategori --
+        // disimpan di window supaya tidak reset tiap kali renderLiveTaskContent() dipanggil
+        // ulang (mis. tiap ada tugas baru masuk / status berubah).
+        window._subTabTugasAktif = window._subTabTugasAktif || 'belum';
+        window._tugasPaginasiExpanded = window._tugasPaginasiExpanded || { belum: false, draft: false, selesai: false };
+        const BATAS_TUGAS_PER_HALAMAN = 6; // Indikator Batasan Tampilan: 5-7 tugas terdekat
+
+        function hitungKelompokTugas() {
+            const tasks = getTasksSiswa();
+            const now = getAccurateNow();
+            const kelompok = { belum: [], draft: [], selesai: [] };
+            tasks.forEach(data => kelompok[kategoriStatusTugas(data, now)].push(data));
+
+            // Indikator Urutan Berdasarkan Prioritas (Sorting):
+            // - 'belum' & 'draft': deadline TERDEKAT di posisi paling atas (ascending),
+            //   jadi tugas yang harus dikerjakan hari ini selalu di atas tugas minggu depan.
+            // - 'selesai': yang paling BARU diproses (dikirim/kedaluwarsa) di atas, supaya
+            //   riwayat kebaca kronologis seperti biasa.
+            const urutkanDeadlineTerdekat = (a, b) => timestampDeadlineTugas(a.deadline || a.deadlineDate || '', now) - timestampDeadlineTugas(b.deadline || b.deadlineDate || '', now);
+            kelompok.belum.sort(urutkanDeadlineTerdekat);
+            kelompok.draft.sort(urutkanDeadlineTerdekat);
+            kelompok.selesai.sort((a, b) => (b.waktuKirimGuru || 0) - (a.waktuKirimGuru || 0));
+
+            return kelompok;
+        }
+
+        function renderBadgeSubTabTugas(kelompok) {
+            const petaBadge = { belum: 'badge-subtab-belum', draft: 'badge-subtab-draft', selesai: 'badge-subtab-selesai' };
+            Object.entries(petaBadge).forEach(([kategori, id]) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = String(kelompok[kategori].length);
+            });
+        }
+
+        // Dipanggil dari tambahFotoTugasSiswa()/hapusFotoTugasSementara() -- CUMA
+        // memperbarui angka badge di segmented control (mis. badge "Sedang Dikerjakan"
+        // naik begitu siswa mulai unggah foto). Kartu yang lagi aktif diisi siswa
+        // SENGAJA tidak langsung dipindah/dirender ulang di sini, supaya form yang
+        // sedang diisi (input file, preview foto) tidak tiba-tiba hilang dari layar
+        // di tengah proses upload -- perpindahan tab baru kejadian pas ganti tab
+        // atau setelah tugas benar-benar dikirim (lihat simpanDataTugasFinal()).
+        function perbaruiBadgeTugasSaja() {
+            const kelompok = hitungKelompokTugas();
+            window._kelompokTugasTerkini = kelompok;
+            renderBadgeSubTabTugas(kelompok);
+        }
+
+        function switchSubTabTugas(kategori) {
+            window._subTabTugasAktif = kategori;
+            renderSubTabTugasAktif();
+        }
+
+        function sembunyikanTombolLihatSemuaTugas() {
+            const wrapBtn = document.getElementById('wrap-tombol-lihat-semua-tugas');
+            if (wrapBtn) wrapBtn.classList.add('hidden');
+        }
+
+        function lihatSemuaTugasSubTab() {
+            const kategori = window._subTabTugasAktif || 'belum';
+            window._tugasPaginasiExpanded[kategori] = true;
+            renderSubTabTugasAktif();
+        }
+
+        function renderSubTabTugasAktif() {
+            const kategori = window._subTabTugasAktif || 'belum';
+            const container = document.getElementById('container-live-tugas');
+            if (!container) return;
+
+            ['belum', 'draft', 'selesai'].forEach(k => {
+                const btn = document.getElementById(`subtab-btn-${k}`);
+                if (!btn) return;
+                btn.className = 'subtab-btn-tugas flex-1 whitespace-nowrap px-3 py-2 rounded-lg text-xs font-bold transition-all ' +
+                    (k === kategori ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700');
+            });
+
+            const kelompok = window._kelompokTugasTerkini || { belum: [], draft: [], selesai: [] };
+            const daftar = kelompok[kategori] || [];
+
+            if (daftar.length === 0) {
+                const pesanKosong = {
+                    belum: 'Belum ada tugas terdekat. Semua aman!',
+                    draft: 'Belum ada tugas yang sedang kamu kerjakan (foto belum diunggah).',
+                    selesai: 'Belum ada tugas yang selesai/diarsipkan.'
+                };
+                container.innerHTML = `
+                    <div class="p-5 sm:p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                        <i class="fa-solid fa-inbox text-3xl mb-2"></i>
+                        <p class="text-xs font-medium">${pesanKosong[kategori]}</p>
+                    </div>`;
+                sembunyikanTombolLihatSemuaTugas();
+                return;
+            }
+
+            // Batasan Tampilan (Pagination / Load More): tampilkan maksimal
+            // BATAS_TUGAS_PER_HALAMAN tugas dulu; sisanya baru dimuat kalau siswa
+            // menekan "Lihat Semua". Status "sudah diperluas" dijaga per kategori
+            // supaya pindah-pindah tab tidak reset paginasi tab lain.
+            const sudahDiperluas = !!window._tugasPaginasiExpanded[kategori];
+            const daftarTampil = sudahDiperluas ? daftar : daftar.slice(0, BATAS_TUGAS_PER_HALAMAN);
+
+            container.innerHTML = daftarTampil.map(data => renderKartuTugas(data)).join('');
+
+            const sisa = daftar.length - daftarTampil.length;
+            const wrapBtn = document.getElementById('wrap-tombol-lihat-semua-tugas');
+            const labelSisa = document.getElementById('label-sisa-tugas');
+            if (wrapBtn) {
+                if (sisa > 0) {
+                    wrapBtn.classList.remove('hidden');
+                    if (labelSisa) labelSisa.innerText = `(${sisa} tugas lagi)`;
+                } else {
+                    wrapBtn.classList.add('hidden');
+                }
+            }
+        }
+
         function renderTugasTerdekat() {
             const container = document.getElementById('container-tugas-terdekat');
             if (!container) return;
@@ -8478,15 +8667,25 @@
                         <i class="fa-solid fa-inbox text-3xl mb-2"></i>
                         <p class="text-xs font-medium">Belum ada tugas/catatan baru dikirimkan oleh guru.</p>
                     </div>`;
+                window._kelompokTugasTerkini = { belum: [], draft: [], selesai: [] };
+                renderBadgeSubTabTugas(window._kelompokTugasTerkini);
+                sembunyikanTombolLihatSemuaTugas();
                 updateTaskCounter();
                 renderTugasTerdekat();
                 return;
             }
 
-            // Semua tugas aktif ditampilkan sebagai kartu terpisah, tugas terbaru di
-            // atas — tugas baru MENAMBAH kartu, bukan menimpa/menghilangkan tugas lama.
-            const urutanTugas = [...tasks].sort((a, b) => (b.waktuKirimGuru || 0) - (a.waktuKirimGuru || 0));
-            container.innerHTML = urutanTugas.map(data => renderKartuTugas(data)).join('');
+            // Tugas dipecah jadi 3 kategori (Belum Selesai / Sedang Dikerjakan (Draft) /
+            // Riwayat & Selesai) lewat segmented control di atas -- lihat
+            // hitungKelompokTugas() & kategoriStatusTugas() untuk logika pengelompokan,
+            // pengurutan berdasar deadline terdekat, dan arsip otomatis-nya. Tugas baru
+            // dari guru tetap MENAMBAH ke daftar (bukan menimpa), cuma sekarang
+            // ditempatkan di kategori yang sesuai statusnya.
+            const kelompok = hitungKelompokTugas();
+            window._kelompokTugasTerkini = kelompok;
+            renderBadgeSubTabTugas(kelompok);
+            renderSubTabTugasAktif();
+
             updateTaskCounter();
             renderTugasTerdekat();
         }
@@ -8771,6 +8970,7 @@
             if (btnKirim) btnKirim.disabled = false;
             if (window._fotoTugasSementara[taskId].length > 0) sembunyikanPeringatanFotoKosong(taskId);
             renderPreviewFotoTugasSiswa(taskId);
+            perbaruiBadgeTugasSaja(); // badge "Sedang Dikerjakan (Draft)" ikut naik tanpa ganggu form yang sedang diisi
         }
 
         function renderPreviewFotoTugasSiswa(taskId) {
@@ -8801,6 +9001,7 @@
             if (!window._fotoTugasSementara[taskId]) return;
             window._fotoTugasSementara[taskId].splice(index, 1);
             renderPreviewFotoTugasSiswa(taskId);
+            perbaruiBadgeTugasSaja(); // badge "Sedang Dikerjakan (Draft)" ikut turun kalau foto draft dihapus semua
         }
 
         function simpanDataTugasFinal(taskId, imagesArray, nowObj) {
