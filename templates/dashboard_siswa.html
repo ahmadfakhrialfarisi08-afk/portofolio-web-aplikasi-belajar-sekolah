@@ -87,10 +87,10 @@
             --text-primary: #1e1b2e;
             --text-secondary: #6b6580;
             --text-tertiary: #9891ab;
-            --brand: #5b4fe9; /* indigo-violet hangat, pengganti biru korporat #2563eb */
-            --brand-dark: #4338ca;
-            --brand-tint-50: #f0eeff;
-            --brand-tint-100: #e3defe;
+            --brand: #0670b6; /* biru khas sekolah (samain dgn warna kain seragam/logo jurusan TKJ #0670b6), gantikan indigo-violet #5b4fe9 sebelumnya -- ini WARNA DASAR (fallback) sebelum tema aksen data-accent-theme aktif, jadi otomatis kepakai di semua elemen yang pakai var(--brand): nav bawah HP (.bottom-nav-item--active), tombol, link, dst -- tanpa perlu ubah satu-satu di HTML */
+            --brand-dark: #05548a;
+            --brand-tint-50: #e8f4fc;
+            --brand-tint-100: #cfe8f8;
             --surface-hover: #f1f5f9;
             --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif; /* dulu font serif dekoratif (Fraunces), diganti sans yang konsisten dgn body */
             --radius-card: 1rem;
@@ -220,20 +220,21 @@
             --brand-tint-50: #cffafe;
             --brand-tint-100: #a5f3fc;
         }
-        /* Tema "Putih" — reset penuh ke tampilan asli/netral (brand indigo-violet
-           + permukaan putih), supaya pengguna bisa "balik lagi" kapan saja setelah
-           mencoba warna aksen lain. Nilainya sengaja sama persis dengan default
-           :root di atas. */
+        /* Tema "Putih" — reset penuh ke tampilan asli/netral (brand biru khas
+           sekolah + permukaan putih), supaya pengguna bisa "balik lagi" kapan
+           saja setelah mencoba warna aksen lain. Nilainya sengaja disamakan
+           persis dengan default :root di atas (biru #0670b6, bukan lagi
+           indigo-violet lama). */
         html:not(.dark)[data-accent-theme="putih"] {
             --page-bg: #f8f7fc;
             --surface: #fbfbfe;
             --surface-hover: #f1f5f9;
             --border-subtle: #ece9f5;
             --border-strong: #ddd8ee;
-            --brand: #5b4fe9;
-            --brand-dark: #4338ca;
-            --brand-tint-50: #f0eeff;
-            --brand-tint-100: #e3defe;
+            --brand: #0670b6;
+            --brand-dark: #05548a;
+            --brand-tint-50: #e8f4fc;
+            --brand-tint-100: #cfe8f8;
         }
         /* Tema "Jurusan (TKJ)" — kombinasi biru + kuning diambil langsung dari
            logo resmi Teknik Komputer dan Jaringan SMK Banjar Asri Cimaung
