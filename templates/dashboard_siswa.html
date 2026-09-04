@@ -1467,6 +1467,31 @@
         .streak-tier-4 #streak-label-bawah { color: #fff7ed !important; }
         .streak-tier-4 .streak-icon-wrap { background: rgba(255,255,255,.15) !important; color: #fed7aa !important; }
 
+        /* ============================================================
+           STREAK LOGIN HARIAN (kartu "Streak (Hari)" di tab Profil)
+           BEDA dari "Streak Tugas" di atas -- ini menghitung berapa HARI
+           KALENDER BERTURUT-TURUT siswa membuka/masuk akunnya, naik
+           otomatis sekali tiap ganti hari, dan RESET ke 1 kalau ada
+           satu hari saja yang kelewat tanpa dibuka sama sekali. Warna
+           api sengaja dibuat "berjalan" makin jauh makin lama dijaga --
+           kuning -> merah -> biru -> ungu -- biar progresnya kerasa
+           beda dari streak tugas yang tetap satu warna (ambar/oranye).
+           ============================================================ */
+        .login-streak-tier-0 .streak-icon-wrap { background: #f1f5f9 !important; color: #94a3b8 !important; }
+        .login-streak-tier-0 .streak-flame-icon { animation: none; opacity: .45; filter: none; }
+
+        .login-streak-tier-1 .streak-icon-wrap { background: #fef9c3 !important; color: #ca8a04 !important; }
+        .login-streak-tier-1 .streak-flame-icon { animation: flameFlicker 2.2s ease-in-out infinite; filter: drop-shadow(0 0 5px rgba(202,138,4,.55)); }
+
+        .login-streak-tier-2 .streak-icon-wrap { background: #fee2e2 !important; color: #dc2626 !important; }
+        .login-streak-tier-2 .streak-flame-icon { animation: flameFlicker 1.5s ease-in-out infinite; filter: drop-shadow(0 0 7px rgba(220,38,38,.6)); }
+
+        .login-streak-tier-3 .streak-icon-wrap { background: #dbeafe !important; color: #2563eb !important; }
+        .login-streak-tier-3 .streak-flame-icon { animation: flameFlicker 1s ease-in-out infinite; filter: drop-shadow(0 0 9px rgba(37,99,235,.65)); }
+
+        .login-streak-tier-4 .streak-icon-wrap { background: #ede9fe !important; color: #7c3aed !important; }
+        .login-streak-tier-4 .streak-flame-icon { animation: flameFlicker .65s ease-in-out infinite; filter: drop-shadow(0 0 12px rgba(124,58,237,.75)); }
+
         /* Warna default nama siswa KHUSUS kartu sapaan HP & tab Profil HP (dulu
            ditulis langsung sbg class Tailwind "text-slate-900" di HTML elemen
            itu). DIPINDAH ke sini (class baru .nama-siswa-efektif-gelap, BUKAN
@@ -4341,7 +4366,7 @@
                 </div>
 
                 <div class="grid grid-cols-3 gap-2.5">
-                    <div class="streak-card streak-tier-0 bento-stat-card kartu-profil-stat--1 p-3 rounded-[16px] flex flex-col justify-center" id="profil-kartu-streak" title="Streak naik tiap tugas dikumpulkan sebelum deadline berturut-turut.">
+                    <div class="streak-card streak-tier-0 bento-stat-card kartu-profil-stat--1 p-3 rounded-[16px] flex flex-col justify-center" id="profil-kartu-streak" title="Streak naik tiap hari kamu login/buka akun berturut-turut, dan reset kalau ada satu hari yang kelewat tanpa login.">
                         <div class="flex items-center justify-between gap-1">
                             <div class="streak-icon-wrap w-7 h-7 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center text-[11px] flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-fire streak-flame-icon"></i></div>
                             <h3 class="text-lg font-bold text-slate-900 truncate"><span id="profil-streak-jumlah">0</span></h3>
@@ -7742,16 +7767,95 @@
             elJumlah.innerText = String(streak);
             elLabelBawah.innerText = info.label;
 
-            // Salinan kartu streak di halaman "Profil" (HP) -- opsional, dicek
-            // dulu supaya aman dipanggil dari halaman lain yang tidak punya ini.
-            const kartuProfil = document.getElementById('profil-kartu-streak');
-            const elJumlahProfil = document.getElementById('profil-streak-jumlah');
-            if (kartuProfil) {
-                for (let i = 0; i <= 4; i++) kartuProfil.classList.remove(`streak-tier-${i}`);
-                kartuProfil.classList.add(`streak-tier-${info.tier}`);
-                kartuProfil.title = info.sub;
+            // CATATAN: kartu "Streak (Hari)" di tab Profil (profil-kartu-streak)
+            // DULU ikut disamakan dengan streak tugas di sini. Sekarang dipisah
+            // -- kartu itu representasi STREAK LOGIN HARIAN (lihat
+            // renderStreakLoginHarian() di bawah), bukan streak tugas, jadi
+            // TIDAK lagi disentuh dari sini supaya dua streak yang beda konsep
+            // tidak saling menimpa angkanya.
+        }
+
+        /* ================= STREAK LOGIN HARIAN (kartu "Streak (Hari)" di tab Profil) =================
+           Beda dari streak tugas di atas: ini menghitung berapa HARI KALENDER
+           BERTURUT-TURUT siswa membuka/masuk akunnya -- bukan soal tugas sama
+           sekali. Naik otomatis sekali tiap kali siswa pertama kali membuka
+           dashboard di hari kalender yang baru, dan RESET total ke 1 kalau ada
+           satu hari saja yang kelewat tanpa dibuka. Datanya disimpan per akun
+           (namespace ID_SISWA_AKTIF, sama seperti data pribadi siswa lainnya)
+           supaya tidak ketuker kalau ada beberapa akun dipakai gantian di
+           browser yang sama. */
+        const KEY_STREAK_LOGIN_HARIAN = `streak_login_harian_${ID_SISWA_AKTIF}`;
+
+        // Format tanggal ke "YYYY-MM-DD" (dibulatkan ke hari kalender, bukan
+        // jam/menit) -- dipakai supaya perbandingan "sudah ganti hari belum"
+        // tidak kepengaruh jam berapa siswa buka dashboardnya.
+        function formatTanggalYMD(tanggal) {
+            const y = tanggal.getFullYear();
+            const m = String(tanggal.getMonth() + 1).padStart(2, '0');
+            const d = String(tanggal.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        // Dipanggil SEKALI tiap dashboard dibuka. Membaca catatan login
+        // terakhir, lalu:
+        // - kalau hari ini SAMA dgn tanggal login terakhir -> tidak ngapa2in
+        //   (dashboard dibuka berkali-kali di hari yang sama tidak dobel nambah)
+        // - kalau hari ini PERSIS 1 hari setelah login terakhir -> streak +1
+        //   (siswa login berturut-turut tanpa putus)
+        // - selain itu (lompat lebih dari 1 hari, atau jam perangkat mundur)
+        //   -> streak di-reset ke 1, dianggap "lupa login" minimal sehari.
+        function perbaruiStreakLoginHarian() {
+            const hariIni = formatTanggalYMD(getAccurateNow());
+            let data = null;
+            try {
+                data = JSON.parse(localStorage.getItem(KEY_STREAK_LOGIN_HARIAN) || 'null');
+            } catch (e) {
+                data = null;
             }
-            if (elJumlahProfil) elJumlahProfil.innerText = String(streak);
+
+            if (!data || !data.tanggalTerakhir || !data.jumlah) {
+                data = { jumlah: 1, tanggalTerakhir: hariIni };
+            } else if (data.tanggalTerakhir === hariIni) {
+                // sudah kehitung hari ini, biarkan apa adanya
+            } else {
+                const tglTerakhir = new Date(data.tanggalTerakhir + 'T00:00:00');
+                const tglSekarang = new Date(hariIni + 'T00:00:00');
+                const selisihHari = Math.round((tglSekarang - tglTerakhir) / 86400000);
+                data.jumlah = (selisihHari === 1) ? (data.jumlah + 1) : 1;
+                data.tanggalTerakhir = hariIni;
+            }
+
+            localStorage.setItem(KEY_STREAK_LOGIN_HARIAN, JSON.stringify(data));
+            return data.jumlah;
+        }
+
+        // Tier warna api streak login: sengaja BEDA dari streak tugas (yang
+        // tetap satu keluarga warna ambar/oranye) -- di sini warnanya beneran
+        // "berjalan" makin lama makin dijaga: kuning -> merah -> biru -> ungu.
+        function getTierStreakLoginHarian(jumlahHari) {
+            if (jumlahHari <= 0) return { tier: 0, sub: 'Buka & login tiap hari biar streak-mu mulai jalan!' };
+            if (jumlahHari <= 19) return { tier: 1, sub: '🟡 Kuning — baru mulai, terus login tiap hari ya!' };
+            if (jumlahHari <= 39) return { tier: 2, sub: '🔴 Merah — makin panas, jangan sampai lupa login!' };
+            if (jumlahHari <= 59) return { tier: 3, sub: '🔵 Biru — keren, konsistensimu makin terjaga!' };
+            return { tier: 4, sub: '🟣 Ungu — legend! Streak login-mu luar biasa panjang 🔥' };
+        }
+
+        function renderStreakLoginHarian() {
+            const kartu = document.getElementById('profil-kartu-streak');
+            const elJumlah = document.getElementById('profil-streak-jumlah');
+            if (!kartu || !elJumlah) return;
+
+            const jumlahHari = perbaruiStreakLoginHarian();
+            const info = getTierStreakLoginHarian(jumlahHari);
+
+            // Bersihkan sisa class streak-tier-* lama (peninggalan sebelum
+            // dipisah dari streak tugas) supaya tidak numpuk/bentrok dgn
+            // login-streak-tier-* yang baru.
+            for (let i = 0; i <= 4; i++) kartu.classList.remove(`streak-tier-${i}`, `login-streak-tier-${i}`);
+            kartu.classList.add(`login-streak-tier-${info.tier}`);
+            kartu.title = info.sub;
+
+            elJumlah.innerText = String(jumlahHari);
         }
 
         // Grid "Lencana & Pencapaian" di halaman Profil (HP) -- menampilkan
@@ -8492,6 +8596,7 @@
             loadSavedProfilePhoto();
             updateHeaderClock();
             updateTaskCounter();
+            renderStreakLoginHarian();
             renderTugasTerdekat();
             checkTaskBadgeStatus();
             setInterval(updateHeaderClock, 1000);
