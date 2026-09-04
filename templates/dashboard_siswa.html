@@ -244,8 +244,9 @@
            dua warna logo terasa di SELURUH bagian dashboard tanpa bikin teks
            jadi susah dibaca (kuning solid FFF100 cuma dipakai tipis-tipis
            lewat border-strong sebagai aksen pop, bukan jadi warna teks/isi).
-           Ini juga tema yang otomatis aktif begitu layar loading masuk
-           dashboard selesai (lihat sembunyikanLayarMasuk()). */
+           Ini juga tema default dashboard (TEMA_AKSEN_DEFAULT), dipakai
+           begitu saja tanpa animasi apa pun saat dashboard pertama dibuka
+           kalau siswa belum pernah pilih warna lain (lihat loadAksenTemaPreference()). */
         html:not(.dark)[data-accent-theme="jurusan"] {
             --page-bg: #fff6c8;
             --surface: #fffdf2;
@@ -3412,7 +3413,7 @@
                             <button type="button" class="swatch-aksen-tema" data-aksen="cyan" style="background:#06b6d4; --swatch-glow:#06b6d4;" onclick="pilihAksenTema('cyan')" title="Cyan" aria-label="Pilih warna aksen Cyan">
                                 <i class="fa-solid fa-check cek-aktif text-white text-xs" aria-hidden="true"></i>
                             </button>
-                            <button type="button" class="swatch-aksen-tema" data-aksen="putih" style="background:#f1f5f9; border-color:#e2e8f0; --swatch-glow:#5b4fe9;" onclick="pilihAksenTema('putih')" title="Putih (Default)" aria-label="Pilih warna Putih, reset ke tampilan asli">
+                            <button type="button" class="swatch-aksen-tema" data-aksen="putih" style="background:#f1f5f9; border-color:#e2e8f0; --swatch-glow:#0670b6;" onclick="pilihAksenTema('putih')" title="Putih (Default)" aria-label="Pilih warna Putih, reset ke tampilan asli">
                                 <i class="fa-solid fa-check cek-aktif text-slate-700 text-xs" aria-hidden="true"></i>
                             </button>
                         </div>
@@ -9005,7 +9006,7 @@
         const PALET_AKSEN_HEX = {
             pink: '#ec4899', yellow: '#eab308', blue: '#3b82f6',
             green: '#22c55e', purple: '#a855f7', cyan: '#06b6d4',
-            putih: '#5b4fe9', rahasia: '#123a5c', jurusan: '#0670b6'
+            putih: '#0670b6', rahasia: '#123a5c', jurusan: '#0670b6'
         };
 
         // Tema default dashboard: kombinasi biru + kuning sesuai logo Jurusan TKJ.
@@ -14568,23 +14569,28 @@
         (function () {
             var layarMasuk = document.getElementById('layar-masuk-dashboard');
             if (!layarMasuk) return;
+            // Guard supaya fungsi ini cuma benar-benar jalan SEKALI. Sebelumnya
+            // tidak ada penjagaan ini -- kalau event "load" sempat lambat/telat
+            // dikit saja, timer fallback 3000ms di bawah TETAP jalan juga,
+            // jadi sembunyikanLayarMasuk() (dan animasi di dalamnya) kepanggil
+            // DUA KALI beruntun. Ini yang bikin animasinya kelihatan "muncul 2x"
+            // tiap kali login/buka dashboard.
+            var sudahDijalankan = false;
             function sembunyikanLayarMasuk() {
-                // Begitu layar loading mulai memudar, langsung mainkan efek
-                // "gelombang sapuan warna" (sama seperti saat pengguna manual
-                // ganti warna aksen lewat panel palet) supaya dashboard yang
-                // terungkap di baliknya kelihatan benar-benar "bertransisi"
-                // masuk ke skema warna final (biru + kuning khas logo Jurusan
-                // TKJ), bukan cuma tiba-tiba muncul begitu saja. Pakai tema
-                // yang memang sudah aktif (localStorage / default) supaya
-                // warnanya konsisten dengan apa yang sudah di-set
-                // loadAksenTemaPreference() sebelumnya -- fungsi ini cuma
-                // menambahkan "reveal" visualnya, bukan mengubah pilihan tema.
-                if (typeof pilihAksenTema === 'function' && !document.documentElement.classList.contains('dark')) {
-                    var temaAktif = (typeof TEMA_AKSEN_DEFAULT !== 'undefined')
-                        ? (localStorage.getItem('ui_accent_theme') || TEMA_AKSEN_DEFAULT)
-                        : (localStorage.getItem('ui_accent_theme') || 'jurusan');
-                    pilihAksenTema(temaAktif);
-                }
+                if (sudahDijalankan) return;
+                sudahDijalankan = true;
+
+                // CATATAN: efek "gelombang sapuan warna" (gelombang + garis tepi +
+                // kupu-kupu) DULU otomatis dimainkan di sini setiap kali dashboard
+                // dibuka/login, memakai tema yang sudah aktif dari localStorage.
+                // Sekarang efek itu SENGAJA TIDAK dipanggil lagi di sini -- animasi
+                // sapuan warna ini sekarang HANYA boleh main saat siswa BENAR-BENAR
+                // memilih warna baru lewat panel "Warna Aksen" (klik salah satu
+                // swatch, lihat pilihAksenTema di bawah), bukan otomatis tiap login.
+                // Warna tema tetap diterapkan seperti biasa tanpa animasi lewat
+                // loadAksenTemaPreference() (dipanggil terpisah di DOMContentLoaded
+                // lain), jadi dashboard tetap langsung tampil dengan warna yang
+                // benar -- cuma tanpa efek "reveal" sapuannya lagi.
                 layarMasuk.classList.add('selesai');
                 setTimeout(function () { layarMasuk.style.display = 'none'; }, 650);
             }
