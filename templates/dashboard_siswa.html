@@ -5025,7 +5025,12 @@
                          via reflow trick supaya animasinya replay setiap klik, bukan
                          cuma sekali). -->
                     <div id="detail-guru-foto-wrap" class="w-full h-56 sm:h-full sm:min-h-[360px]">
-                        <img id="detail-guru-foto" src="" alt="" class="w-full h-full object-cover">
+                        <!-- object-top: prioritaskan bagian ATAS foto (di mana wajah
+                             biasanya berada di foto potret) supaya tidak ikut kepotong
+                             saat object-cover memangkas gambar buat memenuhi kotak
+                             h-56 di HP -- crop jadi lebih banyak makan bagian BAWAH
+                             foto (dada/bahu), bukan memotong tengah/muka. -->
+                        <img id="detail-guru-foto" src="" alt="" class="w-full h-full object-cover object-top">
                     </div>
                 </div>
                 <div id="detail-guru-info-wrap" class="flex-1 min-w-0 p-5 sm:p-7 space-y-4">
