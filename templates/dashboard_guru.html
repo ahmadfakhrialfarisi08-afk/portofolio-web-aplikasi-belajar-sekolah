@@ -663,6 +663,8 @@
                                 <th class="py-3.5 px-6">Judul Tugas</th>
                                 <th class="py-3.5 px-6">Isi Instruksi Tugas</th>
                                 <th class="py-3.5 px-6">Batas Waktu (Deadline)</th>
+                                <th class="py-3.5 px-6">Status Tugas</th>
+                                <th class="py-3.5 px-6">Pengumpulan Siswa</th>
                                 <th class="py-3.5 px-6 text-right">Aksi</th>
                             </tr>
                         </thead>
@@ -1999,6 +2001,25 @@
             localStorage.setItem(key, JSON.stringify(daftarNotif.slice(0, 30)));
         }
 
+        // Tugas yang deadline-nya sudah lewat TIDAK dihapus dari sistem -- baris di
+        // rekap ini tetap ada, cuma "Status Tugas"-nya otomatis bergeser jadi
+        // "Kedaluwarsa" (merah). Dipakai bareng kolom "Pengumpulan Siswa" di bawah
+        // supaya guru punya rekam jejak jelas siapa yang gagal mengumpulkan tepat waktu.
+        function cekStatusTugasKedaluwarsaGuru(data) {
+            if (data.deadlineTimestamp) return Date.now() > data.deadlineTimestamp;
+            if (!data.deadline) return false;
+            const cleanDeadline = String(data.deadline).trim();
+            if (cleanDeadline.includes("Pukul")) {
+                const parts = cleanDeadline.split("Pukul");
+                const datePart = parts[0].trim();
+                const timePart = parts[1].replace("WIB", "").trim();
+                const targetDateTime = new Date(`${datePart}T${timePart}:00`);
+                return !isNaN(targetDateTime.getTime()) && Date.now() > targetDateTime.getTime();
+            }
+            const t = new Date(cleanDeadline).getTime();
+            return !isNaN(t) && Date.now() > t;
+        }
+
         function renderRekapSemuaTugas() {
             const tbody = document.getElementById('tabel-rekap-tugas-body');
             if(!tbody) return;
@@ -2011,6 +2032,23 @@
                 const tasksKelasIni = getTasksKelas(k.nama);
                 tasksKelasIni.forEach(data => {
                     totalTugasAktif++;
+
+                    const kedaluwarsa = cekStatusTugasKedaluwarsaGuru(data);
+                    const sudahDikumpulkan = !!data.studentSubmitted;
+
+                    const badgeStatusTugas = kedaluwarsa
+                        ? `<span class="px-2.5 py-1 bg-rose-50 text-rose-600 border border-rose-200 font-bold text-[11px] rounded-lg"><i class="fa-solid fa-hourglass-end mr-1"></i>Kedaluwarsa</span>`
+                        : `<span class="px-2.5 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 font-bold text-[11px] rounded-lg"><i class="fa-solid fa-circle-dot mr-1"></i>Aktif</span>`;
+
+                    let badgePengumpulan;
+                    if (sudahDikumpulkan) {
+                        badgePengumpulan = `<span class="px-2.5 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 font-bold text-[11px] rounded-lg"><i class="fa-solid fa-check mr-1"></i>Terkumpul</span>`;
+                    } else if (kedaluwarsa) {
+                        badgePengumpulan = `<span class="px-2.5 py-1 bg-rose-100 text-rose-700 border border-rose-300 font-bold text-[11px] rounded-lg" title="Tercatat sebagai rekam jejak kedisiplinan"><i class="fa-solid fa-xmark mr-1"></i>Tidak Dikumpulkan (Lewat Waktu)</span>`;
+                    } else {
+                        badgePengumpulan = `<span class="px-2.5 py-1 bg-slate-100 text-slate-500 font-medium text-[11px] rounded-lg">Menunggu</span>`;
+                    }
+
                     tbody.innerHTML += `
                         <tr class="hover:bg-slate-50 transition-colors">
                             <td class="py-3.5 px-6 font-extrabold text-blue-600">${k.nama}</td>
@@ -2018,6 +2056,8 @@
                             <td class="py-3.5 px-6 font-bold text-slate-900">${data.judul || '-'}</td>
                             <td class="py-3.5 px-6 text-slate-600">${data.teks}</td>
                             <td class="py-3.5 px-6 font-mono text-xs text-amber-600 font-bold">${data.deadline}</td>
+                            <td class="py-3.5 px-6">${badgeStatusTugas}</td>
+                            <td class="py-3.5 px-6">${badgePengumpulan}</td>
                             <td class="py-3.5 px-6 text-right">
                                 <button onclick="bukaModalEditTugas('${k.nama}', '${data.id}')" class="px-3 py-1 bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-bold transition-all mr-1">Atur</button>
                                 <button onclick="hapusTugasByID('${k.nama}', '${data.id}')" class="px-3 py-1 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg text-xs font-bold transition-all">Hapus</button>
@@ -2028,7 +2068,7 @@
             });
 
             if (totalTugasAktif === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 italic">Belum ada tugas atau catatan yang dikirimkan ke kelas manapun.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400 italic">Belum ada tugas atau catatan yang dikirimkan ke kelas manapun.</td></tr>`;
             }
         }
 
