@@ -3148,8 +3148,18 @@
                  prestasi SENDIRI-SENDIRI (localStorage dinamespace per ID
                  profil, lihat ID_SISWA_AKTIF). Akun asli (login Flask) tidak
                  pernah ikut berubah — cuma tampilan & localStorage browser.
-                 ============================================================ -->
-            <div class="bg-indigo-50/70 border border-indigo-200/70 rounded-xl overflow-hidden">
+
+                 KHUSUS AKUN DEV: panel ini alat testing internal, jadi
+                 default-nya "hidden" di HTML & cuma dimunculkan lewat JS di
+                 init (lihat DOMContentLoaded) buat akun login ASLI 'siswa'
+                 (AHMAD FAKHRI AL FARISI) -- dicek dari USERNAME_SISWA_ASLI
+                 LANGSUNG (BUKAN lewat akunIniAdminDev()), supaya panel ini
+                 TETAP kelihatan buat dia walau lagi "coba sebagai akun
+                 dummy", karena akun 'siswa' ini memang dipakai dobel:
+                 sebagai akun dev SEKALIGUS akun biasa sehari-hari. Siswa
+                 lain (login asli selain 'siswa') tidak akan pernah melihat
+                 panel ini. -->
+            <div id="wrapper-panel-akun-dummy-profil" class="hidden bg-indigo-50/70 border border-indigo-200/70 rounded-xl overflow-hidden">
                 <button onclick="toggleAkunDummyPanel()" class="w-full flex items-center justify-between px-3 py-2.5 text-left" aria-expanded="false" aria-controls="panel-akun-dummy-profil">
                     <div class="flex items-center gap-2">
                         <i class="fa-solid fa-users text-indigo-600 text-xs"></i>
@@ -3176,8 +3186,14 @@
                  (localStorage, key sama dgn KEY_QUIZ_DATA) tapi diberi flag
                  dummy:true supaya bisa dibedakan & dikelola (tambah/hapus)
                  lewat panel ini tanpa ikut memicu notif "ditikung".
+
+                 KHUSUS AKUN DEV: sama seperti panel Akun Dummy di atas --
+                 default "hidden" di HTML, cuma dimunculkan lewat JS di init
+                 buat akun login ASLI 'siswa' (lihat DOMContentLoaded),
+                 TIDAK bergantung status AKUN_DUMMY_AKTIF (lihat catatan
+                 lengkap di panel Akun Dummy di atas).
                  ============================================================ -->
-            <div class="bg-purple-50/70 border border-purple-200/70 rounded-xl overflow-hidden">
+            <div id="wrapper-panel-dummy-leaderboard" class="hidden bg-purple-50/70 border border-purple-200/70 rounded-xl overflow-hidden">
                 <button onclick="toggleDummyPanel()" class="w-full flex items-center justify-between px-3 py-2.5 text-left" aria-expanded="false" aria-controls="panel-dummy-leaderboard">
                     <div class="flex items-center gap-2">
                         <i class="fa-solid fa-user-astronaut text-purple-600 text-xs"></i>
@@ -10018,6 +10034,21 @@
             // tidak akan pernah bisa memakainya walau tombolnya dipaksa dimunculkan).
             const btnKelolaGuru = document.getElementById('btn-buka-kelola-guru');
             if (btnKelolaGuru && akunIniAdminDev()) btnKelolaGuru.classList.remove('hidden');
+            // Sama seperti tombol "+ Kelola Guru" di atas, kedua panel testing
+            // ini (Akun Dummy Profil Login & Panel Dummy Leaderboard) cuma
+            // boleh kelihatan buat akun 'siswa' (AHMAD FAKHRI AL FARISI) --
+            // BEDA dari akunIniAdminDev() (dipakai buat border Admin): di sini
+            // SENGAJA tidak dicek AKUN_DUMMY_AKTIF, karena akun 'siswa' ini
+            // dipakai dobel sebagai akun dev SEKALIGUS akun biasa sehari-hari
+            // -- jadi panelnya harus TETAP kelihatan buat dia walau lagi
+            // "coba sebagai akun dummy" buat keperluan testing, bukan cuma
+            // pas di akun aslinya doang.
+            if (USERNAME_SISWA_ASLI === 'siswa') {
+                const wrapperAkunDummy = document.getElementById('wrapper-panel-akun-dummy-profil');
+                const wrapperDummyLeaderboard = document.getElementById('wrapper-panel-dummy-leaderboard');
+                if (wrapperAkunDummy) wrapperAkunDummy.classList.remove('hidden');
+                if (wrapperDummyLeaderboard) wrapperDummyLeaderboard.classList.remove('hidden');
+            }
             backfillRiwayatJikaPerlu();
             sinkronkanRiwayatDenganTugasAktif();
             renderRiwayatPengumpulan();
