@@ -5009,14 +5009,22 @@
                  skor total gabungan (rata-rata SEMUA bintang di semua aspek),
                  rincian per-aspek, dan jumlah siswa yang menilai -- semua
                  ditumpuk vertikal di kolom kanan. -->
-            <div class="flex flex-1 min-h-0 overflow-y-auto">
-                <div class="w-[38%] flex-shrink-0 border-r border-slate-200 bg-cyan-50 overflow-hidden">
+            <div class="flex flex-col sm:flex-row flex-1 min-h-0 overflow-y-auto">
+                <!-- Di HP (di bawah breakpoint sm), kolom foto & info DITUMPUK VERTIKAL
+                     (foto penuh di atas, info penuh di bawah) -- bukan dibelah 38%/62%
+                     seperti di laptop. Kolom sempit 62% di layar sempit itu penyebab
+                     baris bintang & teks "Belum ada nilai" pecah ke baris baru (tidak
+                     rapi/asimetris dibanding laptop). Dengan foto & info sama-sama
+                     selebar penuh kartu di HP, ruang kolom info jadi lega -- rapi &
+                     sejajar persis seperti pola di laptop, cuma arah tumpukannya beda.
+                     Di sm+ (tablet/laptop) tetap side-by-side 38%/62% seperti semula. -->
+                <div class="w-full sm:w-[38%] flex-shrink-0 border-b sm:border-b-0 sm:border-r border-slate-200 bg-cyan-50 overflow-hidden">
                     <!-- detail-guru-foto-wrap: pembungkus animasi. Foto guru "meluncur"
                          masuk dari KANAN ke KIRI tiap kali modal ini dibuka (class
                          .foto-guru-masuk ditambahkan ulang di bukaModalDetailGuru()
                          via reflow trick supaya animasinya replay setiap klik, bukan
                          cuma sekali). -->
-                    <div id="detail-guru-foto-wrap" class="w-full h-full min-h-[280px] sm:min-h-[360px]">
+                    <div id="detail-guru-foto-wrap" class="w-full h-56 sm:h-full sm:min-h-[360px]">
                         <img id="detail-guru-foto" src="" alt="" class="w-full h-full object-cover">
                     </div>
                 </div>
@@ -5026,16 +5034,16 @@
                          paling kerasa di layar HP yang sempit, kolom kanan
                          ini jadi lumayan kecil karena kolom foto sudah makan
                          38% lebar kartu. -->
-                    <div class="pr-8">
+                    <div class="sm:pr-8">
                         <h3 id="detail-guru-nama" class="font-extrabold text-xl leading-tight text-slate-900">-</h3>
                         <p id="detail-guru-mapel" class="text-sm text-slate-500 mt-1">-</p>
                     </div>
 
                     <div>
                         <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Skor Total</p>
-                        <div class="flex items-center gap-2 mt-1.5">
-                            <span id="detail-guru-total-bintang" class="text-amber-400 text-lg tracking-tight">-</span>
-                            <span id="detail-guru-skor-total" class="text-base font-extrabold text-slate-900">-</span>
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
+                            <span id="detail-guru-total-bintang" class="text-amber-400 text-lg tracking-tight whitespace-nowrap">-</span>
+                            <span id="detail-guru-skor-total" class="text-base font-extrabold text-slate-900 whitespace-nowrap">-</span>
                         </div>
                         <p id="detail-guru-jumlah-siswa" class="text-xs text-slate-500 mt-1">-</p>
                     </div>
@@ -9330,9 +9338,9 @@
             if (elAspek) {
                 elAspek.innerHTML = aspekList.map(a => `
                     <div class="flex items-center justify-between gap-3">
-                        <span class="text-sm font-semibold text-slate-600">${a.label}</span>
-                        <div class="flex items-center gap-2">
-                            <span class="text-amber-400 text-base tracking-tight">${renderBintangTampilan(a.nilai)}</span>
+                        <span class="text-sm font-semibold text-slate-600 whitespace-nowrap">${a.label}</span>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="text-amber-400 text-base tracking-tight whitespace-nowrap">${renderBintangTampilan(a.nilai)}</span>
                             <span class="text-sm font-bold text-slate-900 w-8 text-right">${a.nilai !== null ? a.nilai.toFixed(1) : '-'}</span>
                         </div>
                     </div>
