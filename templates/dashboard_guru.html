@@ -1596,9 +1596,15 @@
                 if (k.jurusan === 'TKR') badgeJurusanColor = "bg-amber-50 text-amber-700 border border-amber-200";
                 if (k.jurusan === 'TAV') badgeJurusanColor = "bg-purple-50 text-purple-600";
 
+                // Tugas yang sudah lewat deadline dianggap usai (lihat catatan yang
+                // sama di bukaDetailKelas()) -- supaya badge "Tugas Aktif" di kartu
+                // kelas ini juga tidak nyangkut terus walau tugasnya sudah lama lewat
+                // tenggat & tidak ada yang baru dikirim guru.
+                const cekWaktuKelasIni = new Date().getTime();
+                const tugasAktifKelasIni = tasksKelasIni.filter(t => !t.deadlineTimestamp || cekWaktuKelasIni < t.deadlineTimestamp || t.studentSubmitted);
                 let statusBadgeTugas = `<span class="text-xs text-amber-500 font-semibold italic">Belum Ada Tugas Aktif</span>`;
-                if (tasksKelasIni.length > 0) {
-                    statusBadgeTugas = `<span class="text-xs text-emerald-600 font-bold"><i class="fa-solid fa-check mr-1"></i> ${tasksKelasIni.length} Tugas/Catatan Aktif</span>`;
+                if (tugasAktifKelasIni.length > 0) {
+                    statusBadgeTugas = `<span class="text-xs text-emerald-600 font-bold"><i class="fa-solid fa-check mr-1"></i> ${tugasAktifKelasIni.length} Tugas/Catatan Aktif</span>`;
                 }
 
                 container.innerHTML += `
@@ -2383,24 +2389,45 @@
             const tasksKelasIni = getTasksKelas(namaKelas);
             let deadlineText = "Belum Ditentukan";
             let deadlineTimestamp = null;
-            let hasActiveTask = tasksKelasIni.length > 0;
             let statusSiswa1 = false;
             let waktuSiswa1 = null;
             let nilaiSiswa1 = null;
             let fotoSiswa1 = [];
 
-            if (hasActiveTask) {
-                deadlineText = tasksKelasIni.length > 1
-                    ? `${tasksKelasIni.length} tugas aktif`
-                    : (tasksKelasIni[0].deadline || "Belum Ditentukan");
-                // Pakai deadline TERDEKAT di antara semua tugas aktif kelas ini untuk cek keterlambatan.
-                const timestamps = tasksKelasIni.map(t => t.deadlineTimestamp).filter(Boolean);
-                if (timestamps.length) deadlineTimestamp = Math.min(...timestamps);
+            // Tugas yang sudah LEWAT deadline & TIDAK dikumpulkan dianggap "usai/hangus"
+            // buat penentuan status di Denah Kelas ini -- riwayatnya tetap tercatat
+            // "Tidak Dikerjakan" di Riwayat Pengumpulan Dashboard Siswa, tapi begitu
+            // deadline-nya lewat, tugas itu TIDAK lagi dihitung sebagai "tugas aktif"
+            // di sini. Efeknya: begitu deadline lewat tanpa dikumpulkan, status siswa
+            // otomatis balik jadi "Belum Ada Tugas" (bukan nyangkut selamanya di status
+            // "Terlambat") -- kecuali memang masih ada tugas LAIN (dari guru yang sama
+            // atau guru lain) yang belum expired, statusnya ikut tugas itu.
+            // Tugas yang SUDAH dikumpulkan tetap dihitung relevan apapun waktunya,
+            // supaya nilai/waktu kirimnya tetap kebaca guru.
+            const cekMasihExpiredSaatIni = new Date().getTime();
+            const tugasRelevan = tasksKelasIni.filter(t => {
+                if (t.studentSubmitted) return true;
+                if (!t.deadlineTimestamp) return true;
+                return cekMasihExpiredSaatIni < t.deadlineTimestamp;
+            });
+            let hasActiveTask = tugasRelevan.length > 0;
 
-                // "Sudah" hanya kalau SEMUA tugas aktif di kelas ini sudah dikumpulkan.
-                const belum = tasksKelasIni.filter(t => !t.studentSubmitted);
+            if (hasActiveTask) {
+                deadlineText = tugasRelevan.length > 1
+                    ? `${tugasRelevan.length} tugas aktif`
+                    : (tugasRelevan[0].deadline || "Belum Ditentukan");
+
+                // Deadline buat cek keterlambatan cuma diambil dari tugas yang BELUM
+                // dikumpulkan (yang sudah dikumpulkan tidak relevan buat penentuan
+                // "masih dikerjakan/sudah expired") -- dan karena tugasRelevan di atas
+                // sudah menyaring tugas expired-tak-dikumpulkan, deadline di sini
+                // dipastikan selalu masih berlaku (belum lewat).
+                const belum = tugasRelevan.filter(t => !t.studentSubmitted);
+                const timestampsBelum = belum.map(t => t.deadlineTimestamp).filter(Boolean);
+                if (timestampsBelum.length) deadlineTimestamp = Math.min(...timestampsBelum);
+
                 statusSiswa1 = belum.length === 0;
-                const sudahList = tasksKelasIni.filter(t => t.studentSubmitted);
+                const sudahList = tugasRelevan.filter(t => t.studentSubmitted);
                 if (sudahList.length) {
                     const terakhir = sudahList[sudahList.length - 1];
                     waktuSiswa1 = terakhir.studentTime || "08:15 WIB";
