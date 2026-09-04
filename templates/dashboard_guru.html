@@ -1432,6 +1432,13 @@
                 if (typeof kelasAktifDipilih !== 'undefined' && kelasAktifDipilih === 'XII TKJ 3' && typeof bukaanganUlangDetailKelas === 'function') {
                     bukaanganUlangDetailKelas();
                 }
+                // Kalau jendela "Rekap Pengumpulan per Tugas" kebetulan lagi kebuka
+                // buat kelas XII TKJ 3 pas data terbaru ini datang, render ulang juga
+                // -- biar foto/border/efek/title-nya ikut ke-update tanpa guru perlu
+                // tutup-buka ulang jendelanya.
+                if (typeof taskAktifDipilihUntukRekap !== 'undefined' && taskAktifDipilihUntukRekap && taskAktifDipilihUntukRekap.namaKelas === 'XII TKJ 3') {
+                    bukaRekapPengumpulanTugas(taskAktifDipilihUntukRekap.namaKelas, taskAktifDipilihUntukRekap.taskId, true);
+                }
             } catch (e) {
                 console.error('Gagal sinkron border roster kelas:', e);
             }
@@ -2215,7 +2222,17 @@
             return `${tanggal} ${bulan} ${tahun}, Pukul ${jam}:${menit} WIB`;
         }
 
-        function bukaRekapPengumpulanTugas(namaKelas, taskId) {
+        let taskAktifDipilihUntukRekap = null;
+        function bukaRekapPengumpulanTugas(namaKelas, taskId, _dariSinkron) {
+            taskAktifDipilihUntukRekap = { namaKelas, taskId };
+
+            // Setiap kali jendela ini dibuka (bukan pas dipanggil ulang dari callback
+            // sinkron di atas), tarik dulu data foto/border/efek/title TERBARU tiap
+            // siswa dari server -- supaya kalau ada siswa yang baru saja ganti foto
+            // profil / border sebelum guru buka rekap ini, tampilannya langsung
+            // mengikuti perubahan itu, bukan data lama yang nyangkut di memori.
+            if (!_dariSinkron && namaKelas === 'XII TKJ 3') sinkronBorderRosterDariServer();
+
             const tasksKelasIni = getTasksKelas(namaKelas);
             const task = tasksKelasIni.find(t => t.id === taskId);
             if (!task) {
@@ -2293,6 +2310,10 @@
 
         function tutupRekapPengumpulanTugas() {
             document.getElementById('modal-rekap-pengumpulan-tugas').classList.add('hidden');
+            // Reset supaya fetch sinkronBorderRosterDariServer() yang masih berjalan
+            // di background (dipicu waktu jendela ini dibuka) tidak membuka ulang
+            // jendela ini begitu selesai -- sama seperti pola di tutupDetailKelas().
+            taskAktifDipilihUntukRekap = null;
         }
 
         function renderAbsensiSiswa() {
