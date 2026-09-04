@@ -10568,6 +10568,69 @@
             return daftar;
         }
 
+        // ============================================================
+        // FOTO/BORDER LIVE UNTUK ENTRI SISWA LAIN DI LEADERBOARD QUIZ
+        // ------------------------------------------------------------
+        // BUG YANG DIPERBAIKI: sebelum ini, entri leaderboard milik siswa
+        // LAIN (bukan diri sendiri) selalu pakai `entri.foto`/`entri.border`
+        // -- snapshot yang dibekukan sejak terakhir kali siswa itu
+        // menyimpan skor quiz ke server. Kalau siswa itu ganti foto profil
+        // TAPI tidak pernah main quiz lagi setelahnya (atau mekanisme
+        // sebarkanFotoTerbaruKeSnapshotLeaderboard() di device dia gagal/
+        // belum sempat jalan), leaderboard tetap nampilin foto lama --
+        // padahal fitur "Cari Teman" (lewat /api/teman/cari) sudah lebih
+        // dulu benar: dia selalu tanya ke server "foto APA yang SEDANG
+        // dipakai akun ini SEKARANG", bukan snapshot yang ikut nebeng di
+        // data quiz. Di sinilah leaderboard Quiz (PG & Essay) disamakan
+        // logikanya dengan Cari Teman: untuk tiap entri siswa lain, tanya
+        // /api/teman/cari (endpoint yang sama dipakai Cari Teman) memakai
+        // nama siswa itu, ambil foto+border yang beneran aktif sekarang,
+        // dan itu yang dipakai buat render -- bukan snapshot beku. Kalau
+        // request gagal (offline, dsb) atau nama tidak ketemu, baru fallback
+        // ke snapshot lama (entri.foto/entri.border) supaya leaderboard
+        // tidak blank/error.
+        //
+        // Dicache singkat (30 detik) per nama supaya render ulang yang
+        // beruntun (mis. ganti filter Easy -> Medium -> Hard cepat-cepat,
+        // atau leaderboard PG lalu Essay) tidak nembak /api/teman/cari
+        // berkali-kali untuk nama yang sama dalam waktu singkat.
+        // ============================================================
+        const CACHE_PROFIL_LIVE_LEADERBOARD = new Map(); // nama -> { data, waktu }
+        const TTL_CACHE_PROFIL_LIVE_LEADERBOARD = 30000;
+
+        async function ambilProfilLiveUntukNamaLeaderboard(nama) {
+            const cache = CACHE_PROFIL_LIVE_LEADERBOARD.get(nama);
+            if (cache && (Date.now() - cache.waktu) < TTL_CACHE_PROFIL_LIVE_LEADERBOARD) {
+                return cache.data;
+            }
+            let hasilCocok = null;
+            try {
+                const res = await fetch(`/api/teman/cari?q=${encodeURIComponent(nama)}`);
+                const json = await res.json();
+                if (json && json.success) {
+                    // Cocokkan NAMA PERSIS -- /api/teman/cari bisa mengembalikan
+                    // beberapa hasil untuk query parsial, jadi jangan asal ambil
+                    // hasil pertama supaya tidak salah tempel foto siswa lain
+                    // yang kebetulan namanya mirip/mengandung kata yang sama.
+                    hasilCocok = (json.hasil || []).find(it => it.nama === nama) || null;
+                }
+            } catch (e) {
+                // Biarkan null -- pemanggil akan fallback ke snapshot lama.
+            }
+            CACHE_PROFIL_LIVE_LEADERBOARD.set(nama, { data: hasilCocok, waktu: Date.now() });
+            return hasilCocok;
+        }
+
+        async function ambilPetaProfilLiveLeaderboard(daftarNama) {
+            const namaUnik = [...new Set(daftarNama)];
+            const peta = new Map();
+            await Promise.all(namaUnik.map(async (nama) => {
+                const profil = await ambilProfilLiveUntukNamaLeaderboard(nama);
+                if (profil) peta.set(nama, profil);
+            }));
+            return peta;
+        }
+
         function getRankInfoQuiz(totalPoin) {
             if (totalPoin >= 500) return { label: '👑 Legenda Sekolah', warna: 'text-amber-200' };
             if (totalPoin >= 250) return { label: '🧠 Master Quiz', warna: 'text-white' };
@@ -11340,6 +11403,15 @@
             }
             kosongState.classList.add('hidden');
 
+            // Untuk semua entri siswa LAIN (bukan diri sendiri) di halaman ini,
+            // tanya server foto+border yang BENERAN sedang aktif sekarang --
+            // logika & endpoint yang sama persis dengan "Cari Teman" -- supaya
+            // tidak lagi bergantung pada snapshot beku yang bisa basi (lihat
+            // catatan di ambilProfilLiveUntukNamaLeaderboard di atas).
+            const petaProfilLive = await ambilPetaProfilLiveLeaderboard(
+                daftar.filter(e => e.nama !== NAMA_PEMAIN_QUIZ).map(e => e.nama)
+            );
+
             daftar.forEach((entri, i) => {
                 const cfg = QUIZ_CONFIG[entri.level];
                 const namaEntri = entri.nama;
@@ -11348,22 +11420,31 @@
                 // Entri milik SAYA SENDIRI selalu ditampilkan REALTIME memakai data
                 // profil yang aktif SEKARANG (foto, kelas, border/title, efek nama,
                 // badge dev) — bukan snapshot beku dari saat quiz itu dimainkan dulu.
-                // Jadi begitu foto profil diganti (lihat updateProfilePhoto()), SEMUA
-                // entri lama milik saya di leaderboard langsung ikut berubah tanpa
-                // perlu main quiz ulang. Entri milik siswa lain tetap pakai snapshot
-                // foto/kelas/border miliknya sendiri (data terakhir yang tersinkron
-                // saat dia terakhir main), dengan fallback untuk entri lama yang
-                // belum punya field ini tersimpan di localStorage.
+                // Entri milik siswa LAIN juga sekarang REALTIME (lihat petaProfilLive
+                // di atas) -- persis pola yang sama dengan "Cari Teman": kalau siswa
+                // itu ganti foto profil, leaderboard langsung ikut berubah begitu
+                // dibuka lagi, TANPA dia perlu main quiz ulang dulu. Snapshot lama
+                // (entri.foto/entri.border/dst, tersimpan di data quiz) cuma dipakai
+                // sebagai FALLBACK kalau server lagi tidak bisa dihubungi atau nama
+                // siswa itu tidak ketemu di pencarian.
                 const borderLiveSaya = iniSayaSendiri ? getBorderTerpakai() : null;
+                const profilLiveLain = iniSayaSendiri ? null : petaProfilLive.get(namaEntri);
+                const borderLiveLain = profilLiveLain
+                    ? (getSemuaBorder().find(b => b.id === profilLiveLain.border) || DAFTAR_BORDER_STARTER[0])
+                    : null;
                 const fotoEntri = iniSayaSendiri
                     ? getFotoProfilAktifQuiz()
-                    : (entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120`);
-                const borderEntri = iniSayaSendiri ? borderLiveSaya.file : (entri.border || '../static/img/border_pemula.png');
-                const titleEntri = iniSayaSendiri ? borderLiveSaya.rank : (entri.borderTitle || '🔰 Pemula');
-                const kelasEntri = iniSayaSendiri ? getKelasAktifQuiz() : (entri.kelas || '-');
-                const efekNamaEntri = iniSayaSendiri ? getEfekNamaClass(borderLiveSaya) : (entri.efekNama || '');
+                    : (profilLiveLain?.foto || entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120`);
+                const borderEntri = iniSayaSendiri ? borderLiveSaya.file : (borderLiveLain?.file || entri.border || '../static/img/border_pemula.png');
+                const titleEntri = iniSayaSendiri ? borderLiveSaya.rank : (borderLiveLain?.rank || entri.borderTitle || '🔰 Pemula');
+                const kelasEntri = iniSayaSendiri ? getKelasAktifQuiz() : (profilLiveLain?.kelas || entri.kelas || '-');
+                const efekNamaEntri = iniSayaSendiri
+                    ? getEfekNamaClass(borderLiveSaya)
+                    : (borderLiveLain ? getEfekNamaClass(borderLiveLain) : (entri.efekNama || ''));
                 const titleBadgeClassEntri = getTitleBadgeClass(efekNamaEntri);
-                const badgeDevEntri = iniSayaSendiri ? getBadgeDevHtml(borderLiveSaya) : (entri.badgeDev || '');
+                const badgeDevEntri = iniSayaSendiri
+                    ? getBadgeDevHtml(borderLiveSaya)
+                    : (borderLiveLain ? getBadgeDevHtml(borderLiveLain) : (entri.badgeDev || ''));
                 const kelasNamaEntri = `text-xs font-bold truncate ${efekNamaEntri || 'text-slate-800'}`;
 
                 const baris = document.createElement('div');
@@ -11488,6 +11569,13 @@
             }
             kosongState.classList.add('hidden');
 
+            // Sama seperti leaderboard Pilihan Ganda: ambil foto+border yang
+            // BENERAN aktif sekarang untuk tiap siswa lain, dari endpoint yang
+            // sama dengan "Cari Teman" -- bukan snapshot beku.
+            const petaProfilLive = await ambilPetaProfilLiveLeaderboard(
+                daftar.filter(e => e.nama !== NAMA_PEMAIN_QUIZ).map(e => e.nama)
+            );
+
             daftar.forEach((entri, i) => {
                 const cfg = QUIZ_CONFIG_ESSAY[entri.level];
                 const namaEntri = entri.nama;
@@ -11495,16 +11583,26 @@
 
                 // Entri milik saya sendiri selalu realtime (foto/border/title/efek
                 // nama terbaru), persis seperti perilaku leaderboard Pilihan Ganda.
+                // Entri milik siswa lain juga realtime sekarang (lihat petaProfilLive
+                // di atas), snapshot lama cuma jadi fallback kalau lookup gagal.
                 const borderLiveSaya = iniSayaSendiri ? getBorderTerpakai() : null;
+                const profilLiveLain = iniSayaSendiri ? null : petaProfilLive.get(namaEntri);
+                const borderLiveLain = profilLiveLain
+                    ? (getSemuaBorder().find(b => b.id === profilLiveLain.border) || DAFTAR_BORDER_STARTER[0])
+                    : null;
                 const fotoEntri = iniSayaSendiri
                     ? getFotoProfilAktifQuiz()
-                    : (entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120`);
-                const borderEntri = iniSayaSendiri ? borderLiveSaya.file : (entri.border || '../static/img/border_pemula.png');
-                const titleEntri = iniSayaSendiri ? borderLiveSaya.rank : (entri.borderTitle || '🔰 Pemula');
-                const kelasEntri = iniSayaSendiri ? getKelasAktifQuiz() : (entri.kelas || '-');
-                const efekNamaEntri = iniSayaSendiri ? getEfekNamaClass(borderLiveSaya) : (entri.efekNama || '');
+                    : (profilLiveLain?.foto || entri.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(namaEntri)}&background=e0e7ff&color=3730a3&size=120`);
+                const borderEntri = iniSayaSendiri ? borderLiveSaya.file : (borderLiveLain?.file || entri.border || '../static/img/border_pemula.png');
+                const titleEntri = iniSayaSendiri ? borderLiveSaya.rank : (borderLiveLain?.rank || entri.borderTitle || '🔰 Pemula');
+                const kelasEntri = iniSayaSendiri ? getKelasAktifQuiz() : (profilLiveLain?.kelas || entri.kelas || '-');
+                const efekNamaEntri = iniSayaSendiri
+                    ? getEfekNamaClass(borderLiveSaya)
+                    : (borderLiveLain ? getEfekNamaClass(borderLiveLain) : (entri.efekNama || ''));
                 const titleBadgeClassEntri = getTitleBadgeClass(efekNamaEntri);
-                const badgeDevEntri = iniSayaSendiri ? getBadgeDevHtml(borderLiveSaya) : (entri.badgeDev || '');
+                const badgeDevEntri = iniSayaSendiri
+                    ? getBadgeDevHtml(borderLiveSaya)
+                    : (borderLiveLain ? getBadgeDevHtml(borderLiveLain) : (entri.badgeDev || ''));
                 const kelasNamaEntri = `text-xs font-bold truncate ${efekNamaEntri || 'text-slate-800'}`;
 
                 const baris = document.createElement('div');
