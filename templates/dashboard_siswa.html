@@ -7365,6 +7365,12 @@
         let sedangMemprosesPopStateApp = false; // true selagi lagi replay dari tombol back (anti-loop)
         let stateTampilanTerakhirApp = { type: 'tab', tab: 'beranda' };
 
+        // true selagi Modal "Detail Penilaian Guru" kebuka LEWAT dorongHistoryTampilan
+        // (lihat bukaModalDetailGuru) -- dicek duluan di listener 'popstate' di bawah
+        // supaya tombol back HP/browser MENUTUP MODAL INI DULU, bukan langsung
+        // memproses navigasi tab/quiz seperti biasa.
+        let modalGuruHistoryAktif = false;
+
         function dorongHistoryTampilan(state) {
             if (sedangMemprosesPopStateApp) return; // lagi replay dari back -> jangan didorong lagi
             if (JSON.stringify(state) === JSON.stringify(stateTampilanTerakhirApp)) return; // state identik, jangan dobel
@@ -7402,6 +7408,18 @@
         }
 
         window.addEventListener('popstate', (event) => {
+            // Modal "Detail Penilaian Guru" ikut ditutup otomatis kalau tombol
+            // back HP/browser (atau swipe-back) ditekan selagi modal ini masih
+            // kebuka -- konsisten dengan ekspektasi umum navigasi mobile
+            // (tombol back menutup dialog yang lagi kebuka duluan, BUKAN
+            // langsung pindah tab/keluar app). Begitu ditutup, langsung
+            // `return` -- TIDAK lanjut ke terapkanStateHistoryTampilan(),
+            // supaya tab yang sedang aktif di baliknya tidak ikut berubah.
+            if (modalGuruHistoryAktif) {
+                modalGuruHistoryAktif = false;
+                tutupModalDetailGuru(true);
+                return;
+            }
             terapkanStateHistoryTampilan(event.state);
         });
 
@@ -9309,6 +9327,15 @@
             modal.classList.remove('hidden');
             modal.classList.add('flex');
 
+            // Dorong 1 entry history khusus buat modal ini -- supaya tombol back
+            // HP/browser (atau gesture swipe-back) yang ditekan SELAGI modal ini
+            // kebuka akan MENUTUP MODAL INI DULU (lihat popstate & tutupModalDetailGuru
+            // di bawah), bukan malah langsung pindah tab / keluar aplikasi seperti
+            // sebelumnya (modal belum tercakup di sistem "tombol back mengikuti
+            // klik" -- lihat catatan cakupan di atas dorongHistoryTampilan()).
+            modalGuruHistoryAktif = true;
+            dorongHistoryTampilan({ type: 'modal', modal: 'detail-guru' });
+
             // Replay animasi "foto masuk dari kanan ke kiri" tiap kali modal
             // dibuka: lepas dulu class-nya, paksa reflow (baca offsetWidth),
             // baru pasang lagi -- kalau tidak, browser menganggap class-nya
@@ -9331,10 +9358,31 @@
             }
         }
 
-        function tutupModalDetailGuru() {
+        // dariTombolBack: true kalau fungsi ini dipanggil DARI handler popstate
+        // (tombol back HP/browser sudah ditekan, history sudah otomatis mundur
+        // sendiri oleh browser -- lihat listener 'popstate' di bawah). false/
+        // kosong kalau ditutup manual lewat klik tombol X atau klik area gelap
+        // di luar kartu (backdrop).
+        function tutupModalDetailGuru(dariTombolBack) {
             const modal = document.getElementById('modal-detail-guru');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
+
+            // Kalau modal ini ditutup MANUAL (klik X/backdrop) & tadi memang
+            // sempat mendorong 1 entry history (lihat bukaModalDetailGuru),
+            // buang entry itu lewat history.back() -- supaya nanti pas user
+            // BENERAN pencet tombol back, dia tidak "nyangkut" nyoba nutup
+            // modal yang sebenarnya sudah ketutup duluan (efeknya: tombol back
+            // kelihatan tidak berfungsi / harus dipencet 2x baru pindah tab).
+            // Kalau dariTombolBack true, browser sendiri yang sudah mundurkan
+            // history-nya -- jangan history.back() lagi di sini (bisa jadi
+            // mundur 2x / salah sasaran).
+            if (!dariTombolBack && modalGuruHistoryAktif) {
+                modalGuruHistoryAktif = false;
+                history.back();
+            } else {
+                modalGuruHistoryAktif = false;
+            }
         }
 
         function renderDaftarGuru() {
