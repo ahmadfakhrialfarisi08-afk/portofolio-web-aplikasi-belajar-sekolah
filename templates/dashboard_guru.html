@@ -1278,6 +1278,35 @@
         </div>
     </div>
 
+    <!-- Modal Konfirmasi Generik (pengganti confirm() bawaan browser yang kaku/tidak
+         bisa distyling). Judul, pesan, warna & aksi tombol diisi dinamis lewat
+         bukaModalKonfirmasi() -- dipakai pertama untuk konfirmasi hapus/tarik tugas,
+         tapi ditulis generik supaya bisa dipakai ulang untuk konfirmasi lain juga. -->
+    <div id="modal-konfirmasi-generik" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[80] flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h4 id="konfirmasi-generik-judul" class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <i id="konfirmasi-generik-ikon" class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                    <span>Konfirmasi</span>
+                </h4>
+                <button onclick="tutupModalKonfirmasiGenerik()" class="text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-full">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-5">
+                <p id="konfirmasi-generik-pesan" class="text-sm text-slate-600 leading-relaxed"></p>
+            </div>
+            <div class="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
+                <button onclick="tutupModalKonfirmasiGenerik()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-all">
+                    Batal
+                </button>
+                <button id="konfirmasi-generik-btn-aksi" class="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-rose-500/20 flex items-center gap-2">
+                    <i class="fa-solid fa-trash-can"></i> <span>Ya, Lanjutkan</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Riwayat Perubahan Status Prestasi (log transparan) -->
     <div id="modal-riwayat-prestasi" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[70] flex items-center justify-center p-4 hidden">
         <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
@@ -1909,6 +1938,41 @@
             }, 750);
         }
 
+        // Pengganti confirm() bawaan browser (yang tampilannya kaku, tidak bisa
+        // distyling, dan judulnya selalu nampilin domain seperti "el0fakhri.
+        // pythonanywhere.com says"). Modal ini dibuka lewat bukaModalKonfirmasiGenerik(),
+        // judul/pesan/tombol diisi dinamis, dan callback-nya baru dijalankan kalau
+        // guru benar-benar menekan tombol aksi (bukan Batal / klik luar modal).
+        let _callbackKonfirmasiGenerikAktif = null;
+
+        function bukaModalKonfirmasiGenerik({ judul = 'Konfirmasi', pesan = '', teksTombol = 'Ya, Lanjutkan', ikon = 'fa-triangle-exclamation', warnaTombol = 'rose', onKonfirmasi }) {
+            const modal = document.getElementById('modal-konfirmasi-generik');
+            if (!modal) { if (onKonfirmasi) onKonfirmasi(); return; }
+
+            document.getElementById('konfirmasi-generik-judul').querySelector('span').textContent = judul;
+            document.getElementById('konfirmasi-generik-ikon').className = `fa-solid ${ikon} text-${warnaTombol === 'rose' ? 'rose' : 'amber'}-500`;
+            document.getElementById('konfirmasi-generik-pesan').textContent = pesan;
+
+            const btnAksi = document.getElementById('konfirmasi-generik-btn-aksi');
+            btnAksi.querySelector('span').textContent = teksTombol;
+            btnAksi.className = `px-6 py-2.5 bg-${warnaTombol}-600 hover:bg-${warnaTombol}-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-${warnaTombol}-500/20 flex items-center gap-2`;
+
+            _callbackKonfirmasiGenerikAktif = onKonfirmasi || null;
+            btnAksi.onclick = function () {
+                const cb = _callbackKonfirmasiGenerikAktif;
+                tutupModalKonfirmasiGenerik();
+                if (cb) cb();
+            };
+
+            modal.classList.remove('hidden');
+        }
+
+        function tutupModalKonfirmasiGenerik() {
+            const modal = document.getElementById('modal-konfirmasi-generik');
+            if (modal) modal.classList.add('hidden');
+            _callbackKonfirmasiGenerikAktif = null;
+        }
+
         // Menampilkan toast sukses (tab kecil di pojok kanan atas) sebagai pengganti
         // alert() bawaan browser yang kaku & memblokir tampilan. Ceklis hijaunya pakai
         // SVG dengan stroke-dasharray supaya efeknya "digambar" pelan-pelan, bukan
@@ -2039,21 +2103,28 @@
         }
 
         function hapusTugasByID(namaKelas, taskId) {
-            if (confirm(`Apakah Anda yakin ingin menarik/menghapus tugas ini dari kelas ${namaKelas}?`)) {
-                let tasks = getTasksKelas(namaKelas);
-                const tugasDitarik = tasks.find(t => t.id === taskId);
-                tasks = tasks.filter(t => t.id !== taskId);
-                saveTasksKelas(namaKelas, tasks);
+            bukaModalKonfirmasiGenerik({
+                judul: 'Tarik / Hapus Tugas?',
+                pesan: `Apakah Anda yakin ingin menarik/menghapus tugas ini dari kelas ${namaKelas}?`,
+                teksTombol: 'Ya, Hapus',
+                ikon: 'fa-trash-can',
+                warnaTombol: 'rose',
+                onKonfirmasi: function () {
+                    let tasks = getTasksKelas(namaKelas);
+                    const tugasDitarik = tasks.find(t => t.id === taskId);
+                    tasks = tasks.filter(t => t.id !== taskId);
+                    saveTasksKelas(namaKelas, tasks);
 
-                if (tugasDitarik) {
-                    simpanNotifTugasDitarik(namaKelas, tugasDitarik);
+                    if (tugasDitarik) {
+                        simpanNotifTugasDitarik(namaKelas, tugasDitarik);
+                    }
+
+                    tampilkanToastSuksesKirimTugas('Tugas Ditarik', `Tugas terpilih di kelas ${namaKelas} berhasil ditarik. Tugas lain di kelas ini (jika ada) tetap aman dan tidak ikut terhapus.`);
+                    renderBerandaKelasBerurutan();
+                    renderSeluruhKelas();
+                    renderRekapSemuaTugas();
                 }
-
-                alert(`Tugas terpilih di kelas ${namaKelas} berhasil ditarik. Tugas lain di kelas ini (jika ada) tetap aman dan tidak ikut terhapus.`);
-                renderBerandaKelasBerurutan();
-                renderSeluruhKelas();
-                renderRekapSemuaTugas();
-            }
+            });
         }
 
         // Notifikasi "tugas ditarik" untuk Dashboard Siswa. Disimpan per kelas supaya
