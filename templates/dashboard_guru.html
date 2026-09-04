@@ -2127,25 +2127,23 @@
                     } else {
                         badgePengumpulan = `<span class="px-2.5 py-1 bg-slate-100 text-slate-500 font-medium text-[11px] rounded-lg">Menunggu</span>`;
                     }
-                    // Badge ini dibuat KLIK-ABLE: begitu diklik, muncul jendela mirip
-                    // Denah Kelas tapi khusus buat tugas ini -- rekap semua murid di
-                    // kelas tsb, siapa yg sudah/belum kumpul, & jam berapa kumpulnya.
-                    const badgePengumpulanKlikable = `
-                        <button onclick="bukaRekapPengumpulanTugas('${k.nama}', '${data.id}')" class="group inline-flex items-center gap-1.5 hover:opacity-80 transition-all" title="Lihat rekap pengumpulan per siswa">
-                            ${badgePengumpulan}
-                            <i class="fa-solid fa-chevron-right text-[9px] text-slate-300 group-hover:text-slate-500"></i>
-                        </button>`;
+                    // Baris ini KLIK-ABLE (klik di mana saja pada baris, bukan cuma satu
+                    // badge): begitu diklik, muncul jendela mirip Denah Kelas tapi khusus
+                    // buat tugas ini -- rekap semua murid di kelas tsb, siapa yg sudah/
+                    // belum kumpul, & jam berapa kumpulnya. Tombol Atur/Hapus & badge
+                    // status tugas sengaja stopPropagation supaya tidak ikut kebuka.
+                    const badgePengumpulanKlikable = `<span class="inline-flex items-center gap-1.5">${badgePengumpulan}<i class="fa-solid fa-chevron-right text-[9px] text-slate-300"></i></span>`;
 
                     tbody.innerHTML += `
-                        <tr class="hover:bg-slate-50 transition-colors">
+                        <tr onclick="bukaRekapPengumpulanTugas('${k.nama}', '${data.id}')" class="hover:bg-blue-50/60 cursor-pointer transition-colors" title="Klik untuk lihat rekap pengumpulan tiap siswa">
                             <td class="py-3.5 px-6 font-extrabold text-blue-600">${k.nama}</td>
                             <td class="py-3.5 px-6 font-semibold text-slate-700">${data.tipe}</td>
                             <td class="py-3.5 px-6 font-bold text-slate-900">${data.judul || '-'}</td>
                             <td class="py-3.5 px-6 text-slate-600">${data.teks}</td>
                             <td class="py-3.5 px-6 font-mono text-xs text-amber-600 font-bold">${data.deadline}</td>
-                            <td class="py-3.5 px-6">${badgeStatusTugas}</td>
+                            <td class="py-3.5 px-6" onclick="event.stopPropagation()">${badgeStatusTugas}</td>
                             <td class="py-3.5 px-6">${badgePengumpulanKlikable}</td>
-                            <td class="py-3.5 px-6 text-right">
+                            <td class="py-3.5 px-6 text-right" onclick="event.stopPropagation()">
                                 <button onclick="bukaModalEditTugas('${k.nama}', '${data.id}')" class="px-3 py-1 bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-bold transition-all mr-1">Atur</button>
                                 <button onclick="hapusTugasByID('${k.nama}', '${data.id}')" class="px-3 py-1 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg text-xs font-bold transition-all">Hapus</button>
                             </td>
