@@ -5024,19 +5024,23 @@
                          .foto-guru-masuk ditambahkan ulang di bukaModalDetailGuru()
                          via reflow trick supaya animasinya replay setiap klik, bukan
                          cuma sekali). -->
-                    <div id="detail-guru-foto-wrap" class="w-full h-56 sm:h-full sm:min-h-[360px] flex items-center justify-center bg-gradient-to-b from-cyan-50 to-slate-100">
-                        <!-- object-contain (bukan object-cover) -- setiap foto guru
-                             punya framing/posisi wajah beda-beda (ada yang wajah di
-                             atas, ada yang di tengah/bawah foto), jadi SATU
-                             object-position (top/center/dll) gak bisa cocok buat
-                             semua foto sekaligus -- pasti ada yang mukanya kepotong
-                             gantian. object-contain menampilkan foto ASLI SEUTUHNYA
-                             tanpa pernah memangkas wajah siapa pun, walau ada sedikit
-                             ruang kosong (letterbox) di kiri-kanan/atas-bawah untuk
-                             foto yang rasio-nya beda dari kotaknya -- konsisten aman
-                             untuk semua foto, bukan gambling per-foto lagi. -->
-                        <img id="detail-guru-foto" src="" alt="" class="w-full h-full object-contain">
+                    <div id="detail-guru-foto-wrap" class="relative w-full h-56 sm:h-full sm:min-h-[360px] overflow-hidden bg-slate-200">
+                        <!-- Trik "blurred backdrop": LAPISAN BELAKANG (detail-guru-foto-bg)
+                             pakai object-cover + blur + zoom sedikit, isinya foto YANG SAMA,
+                             fungsinya cuma nge-fill seluruh kotak biar kanan-kiri/atas-bawah
+                             gak ada yang kosong -- karena di-blur, bagian yang "kepotong" di
+                             lapisan ini gak masalah (cuma jadi warna latar kabur, bukan wajah
+                             yang jelas kepotong). LAPISAN DEPAN (detail-guru-foto, object-
+                             contain) tampil DI ATASNYA menampilkan foto ASLI UTUH tanpa
+                             dipangkas sama sekali, jadi wajah guru manapun (atas/tengah/
+                             bawah framing-nya) selalu kelihatan penuh. Hasilnya: kotak
+                             kepenuhan warna (gak ada ruang kosong polos) SEKALIGUS muka
+                             gak pernah kepotong. -->
+                        <img id="detail-guru-foto-bg" src="" alt="" aria-hidden="true" class="absolute inset-0 w-full h-full object-cover scale-125 blur-2xl opacity-60">
+                        <div class="absolute inset-0 bg-slate-900/10"></div>
+                        <img id="detail-guru-foto" src="" alt="" class="relative w-full h-full object-contain">
                     </div>
+
 
                 </div>
                 <div id="detail-guru-info-wrap" class="flex-1 min-w-0 p-5 sm:p-7 space-y-4">
@@ -9324,6 +9328,12 @@
 
             const elFoto = document.getElementById('detail-guru-foto');
             if (elFoto) { elFoto.src = g.foto; elFoto.alt = g.nama; }
+            // detail-guru-foto-bg: lapisan blur di belakang foto utama (lihat
+            // komentar HTML di #detail-guru-foto-wrap) -- isinya sengaja disamakan
+            // persis dengan foto utama supaya warna latarnya senada, cuma di-blur+
+            // di-zoom lewat CSS supaya ngisi penuh kotak tanpa ruang kosong.
+            const elFotoBg = document.getElementById('detail-guru-foto-bg');
+            if (elFotoBg) elFotoBg.src = g.foto;
             const elNama = document.getElementById('detail-guru-nama');
             if (elNama) elNama.innerText = g.nama;
             const elMapel = document.getElementById('detail-guru-mapel');
