@@ -69,6 +69,20 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
         }
 
+        /* Kartu siswa di "Rekap Pengumpulan per Tugas" -- kartu yang sudah
+           Kumpul (bisa diperiksa) terasa "kebangkit"/kepilih pas kursor
+           diarahkan ke sana, jadi guru sadar kartunya bisa diklik. */
+        .kartu-rekap-tugas-siswa {
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .kartu-rekap-tugas-siswa.bisa-diperiksa:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 14px 28px -10px rgba(15, 23, 42, 0.22);
+        }
+        .kartu-rekap-tugas-siswa.bisa-diperiksa:active {
+            transform: translateY(-1px) scale(0.99);
+        }
+
         /* Border Emas untuk AHMAD FAKHRI AL FARISI — dibuat mandiri (bukan bergantung file luar)
            supaya selalu tampil rapi & konsisten di mana pun file ini dibuka. */
         .border-emas-avatar {
@@ -2179,7 +2193,23 @@
         // file sungguhan per akun, jadi statusnya disimulasikan -- tapi dibuat
         // KONSISTEN (deterministik dari kombinasi id siswa + id tugas), supaya
         // tiap kali jendela ini dibuka ulang hasilnya tidak berubah-ubah acak.
+        // Kunci localStorage tempat nilai + pesan/catatan guru buat kombinasi
+        // (tugas, siswa) tertentu disimpan -- supaya begitu guru kasih nilai
+        // dari "Rekap Pengumpulan per Tugas", hasilnya tetap ada walau kartu
+        // dirender ulang / halaman dibuka lagi nanti.
+        function kunciHasilPeriksaTugas(taskId, idSiswa) {
+            return `hasilPeriksaTugas_${taskId}_${idSiswa}`;
+        }
+        function ambilHasilPeriksaTersimpan(taskId, idSiswa) {
+            try {
+                const raw = localStorage.getItem(kunciHasilPeriksaTugas(taskId, idSiswa));
+                return raw ? JSON.parse(raw) : null;
+            } catch (e) { return null; }
+        }
+
         function statusPengumpulanUntukTugas(murid, task, kedaluwarsa) {
+            const tersimpan = ambilHasilPeriksaTersimpan(task.id, murid.id);
+
             if (murid.id === 1) {
                 const submitted = !!task.studentSubmitted;
                 let fotoList = [];
@@ -2188,7 +2218,8 @@
                 return {
                     submitted,
                     waktu: submitted ? (task.studentTime || task.waktuKirim || null) : null,
-                    nilai: submitted ? (task.grade || null) : null,
+                    nilai: submitted ? (task.grade || (tersimpan ? tersimpan.nilai : null)) : null,
+                    catatan: submitted ? (tersimpan ? tersimpan.catatan : null) : null,
                     fotoTugasList: fotoList
                 };
             }
@@ -2197,12 +2228,25 @@
             const seed = `${murid.id}_${task.id}`;
             for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
             const submitted = (hash % 10) < 6; // simulasi ~60% peluang kumpul, konsisten per kombinasi
-            if (!submitted) return { submitted: false, waktu: null, nilai: null, fotoTugasList: [] };
+            if (!submitted) return { submitted: false, waktu: null, nilai: null, catatan: null, fotoTugasList: [] };
 
             const jam = 7 + (hash % 10);
             const menit = (Math.floor(hash / 7)) % 60;
             const waktu = `${String(jam).padStart(2, '0')}:${String(menit).padStart(2, '0')} WIB`;
-            return { submitted: true, waktu, nilai: null, fotoTugasList: [] };
+
+            // Foto tugas simulasi: tiap siswa "kumpul" dapat 1 foto kiriman yang
+            // konsisten (seed dari id siswa + id tugas, jadi sama terus tiap
+            // dibuka ulang) & sengaja diminta resolusi kecil (480x340) supaya
+            // ringan/kompres tapi isinya tetap jelas kelihatan pas dibuka guru.
+            const fotoTugasList = [`https://picsum.photos/seed/tugas${seed}/480/340`];
+
+            return {
+                submitted: true,
+                waktu,
+                nilai: tersimpan ? tersimpan.nilai : null,
+                catatan: tersimpan ? tersimpan.catatan : null,
+                fotoTugasList
+            };
         }
 
         // Format timestamp waktuKirimGuru (Date.now() saat tugas dikirim/diedit guru)
@@ -2282,10 +2326,10 @@
                     statusLabelText = `<span class="text-blue-600 font-semibold italic">Belum Kumpul</span>`;
                 }
 
-                const bisaDiperiksa = status.submitted && m.id === 1;
+                const bisaDiperiksa = status.submitted;
 
                 gridContainer.innerHTML += `
-                    <div ${bisaDiperiksa ? `onclick="periksaSiswa(${m.id})"` : ''} class="p-3 rounded-2xl border-2 ${cardBangkuStyle} ${bisaDiperiksa ? 'cursor-pointer' : ''} transition-all flex flex-col justify-between space-y-2 relative group">
+                    <div ${bisaDiperiksa ? `onclick="bukaPeriksaTugasDariRekap(${m.id})"` : ''} class="kartu-rekap-tugas-siswa ${bisaDiperiksa ? 'bisa-diperiksa' : ''} p-3 rounded-2xl border-2 ${cardBangkuStyle} ${bisaDiperiksa ? 'cursor-pointer' : ''} transition-all flex flex-col justify-between space-y-2 relative group overflow-hidden">
                         <div class="flex items-center justify-between gap-1">
                             <span class="text-[10px] font-mono font-bold text-slate-500 truncate">${m.title} ${penandaPintu}</span>
                             ${badgeStatusBangku}
@@ -2299,6 +2343,12 @@
                         <div class="pt-2 border-t border-slate-200/50 flex items-center justify-between text-[10px] font-bold">
                             <span class="text-slate-400">${status.submitted ? 'Kumpul:' : 'Status:'}</span> ${statusLabelText}
                         </div>
+                        ${bisaDiperiksa ? `
+                        <div class="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/5 flex items-end justify-center pb-2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none">
+                            <span class="text-[9px] font-bold text-white bg-slate-900/85 px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                                <i class="fa-solid fa-image"></i> Lihat Foto & Beri Nilai
+                            </span>
+                        </div>` : ''}
                     </div>
                 `;
             });
@@ -2837,7 +2887,59 @@
         }
 
         let siswaAktifDiPeriksa = null;
+        // Dua "pintu masuk" berbeda pakai modal #modal-periksa yang sama:
+        // - 'detail'  -> dibuka dari Denah Bangku di tab Detail Kelas (periksaSiswa)
+        // - 'rekap'   -> dibuka dari kartu siswa di "Rekap Pengumpulan per Tugas"
+        //                (bukaPeriksaTugasDariRekap), scoped ke SATU tugas spesifik
+        let periksaModeAktif = 'detail';
+        let rekapAktifDiPeriksa = null; // { namaKelas, taskId, idSiswa }
+
+        // Dibuka dari kartu siswa di modal "Rekap Pengumpulan per Tugas" (grid
+        // hasil bukaRekapPengumpulanTugas). Beda dari periksaSiswa() di bawah,
+        // ini scoped ke SATU tugas yang sedang dibuka (taskAktifDipilihUntukRekap),
+        // jadi foto/nilai/pesan yang tampil & disimpan memang benar-benar milik
+        // tugas itu, bukan status umum siswa di kelas.
+        function bukaPeriksaTugasDariRekap(idSiswa) {
+            if (!taskAktifDipilihUntukRekap) return;
+            const { namaKelas, taskId } = taskAktifDipilihUntukRekap;
+            const tasksKelasIni = getTasksKelas(namaKelas);
+            const task = tasksKelasIni.find(t => t.id === taskId);
+            const murid = sampleMurid30.find(m => m.id === idSiswa);
+            if (!task || !murid) return;
+
+            const kedaluwarsa = cekStatusTugasKedaluwarsaGuru(task);
+            const status = statusPengumpulanUntukTugas(murid, task, kedaluwarsa);
+            if (!status.submitted) {
+                alert(`⚠️ INFO: ${murid.nama} belum/tidak mengumpulkan tugas ini.`);
+                return;
+            }
+
+            periksaModeAktif = 'rekap';
+            rekapAktifDiPeriksa = { namaKelas, taskId, idSiswa };
+
+            document.getElementById('periksa-nama-siswa').innerText = `${murid.nama} (Meja #${murid.meja})`;
+            document.getElementById('input-nilai-angka').value = status.nilai || '';
+            document.getElementById('input-catatan-guru').value = status.catatan || '';
+
+            const previewContainer = document.getElementById('periksa-preview-berkas');
+            const daftarFoto = status.fotoTugasList || [];
+            if (daftarFoto.length > 0) {
+                previewContainer.innerHTML = `
+                    <div class="w-full h-full overflow-y-auto p-2.5">
+                        <p class="text-[10px] font-bold text-slate-500 mb-2">${daftarFoto.length} foto dikirim — klik salah satu untuk lihat ukuran penuh</p>
+                        <div class="grid grid-cols-3 gap-2">
+                            ${daftarFoto.map(src => `<img src="${src}" onclick="window.open(this.src, '_blank')" class="w-full h-24 object-cover rounded-lg border border-slate-200 shadow-sm cursor-zoom-in hover:opacity-90 transition-all" alt="Tugas Siswa">`).join('')}
+                        </div>
+                    </div>`;
+            } else {
+                previewContainer.innerHTML = `<span class="text-xs text-slate-400 italic">File dikirim dalam bentuk teks/dokumen digital.</span>`;
+            }
+            document.getElementById('modal-periksa').classList.remove('hidden');
+        }
+
         function periksaSiswa(idSiswa) {
+            periksaModeAktif = 'detail';
+            rekapAktifDiPeriksa = null;
             if (idSiswa === 1) sinkronkanSubmissionAsliSiswaID1();
             const siswa = sampleMurid30.find(s => s.id === idSiswa);
             if (!siswa) return;
@@ -2870,14 +2972,44 @@
 
         function tutupPeriksaSiswa() {
             document.getElementById('modal-periksa').classList.add('hidden');
+            periksaModeAktif = 'detail';
+            rekapAktifDiPeriksa = null;
         }
 
         function simpanNilaiSiswa() {
             const nilaiVal = document.getElementById('input-nilai-angka').value;
+            const catatanVal = document.getElementById('input-catatan-guru').value.trim();
             if (!nilaiVal) {
                 alert("Harap masukkan nilai angka untuk siswa ini.");
                 return;
             }
+
+            // Mode 'rekap': nilai & pesan disimpan scoped ke (tugas, siswa) yang
+            // sedang dibuka dari "Rekap Pengumpulan per Tugas", lalu grid-nya
+            // di-refresh supaya "Kumpul: ..." langsung berubah jadi "Nilai: ...".
+            if (periksaModeAktif === 'rekap' && rekapAktifDiPeriksa) {
+                const { namaKelas, taskId, idSiswa } = rekapAktifDiPeriksa;
+                localStorage.setItem(kunciHasilPeriksaTugas(taskId, idSiswa), JSON.stringify({ nilai: nilaiVal, catatan: catatanVal }));
+
+                // Siswa ID #1 adalah akun asli yang benar-benar kirim tugas dari
+                // Dashboard Siswa -- nilainya disinkronkan juga ke field `grade`
+                // pada objek tugas itu sendiri (pola lama), supaya tempat lain
+                // yang baca task.grade tetap konsisten.
+                if (idSiswa === 1) {
+                    const tasks = getTasksKelas(namaKelas);
+                    const idx = tasks.findIndex(t => t.id === taskId);
+                    if (idx > -1) {
+                        tasks[idx].grade = nilaiVal;
+                        saveTasksKelas(namaKelas, tasks);
+                    }
+                }
+
+                alert(`✅ Nilai (${nilaiVal}) berhasil disimpan${catatanVal ? ' beserta pesan untuk siswa' : ''}.`);
+                tutupPeriksaSiswa();
+                bukaRekapPengumpulanTugas(namaKelas, taskId, true);
+                return;
+            }
+
             if (siswaAktifDiPeriksa) {
                 siswaAktifDiPeriksa.nilai = nilaiVal;
                 if (siswaAktifDiPeriksa.id === 1) {
