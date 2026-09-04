@@ -7820,6 +7820,21 @@
                     </div>
                 `;
                 }
+                // Badge "Kristal Imortal" (khusus akun IMO) sekarang juga punya
+                // aset gambar logo asli (achivement_imortal.png, logo naga emas
+                // IMO) -- sama seperti Admin di atas, jadi tidak lagi pakai ikon
+                // permata generik (fa-gem) begitu border ini dimiliki siswa.
+                if (border.id === 'border_imortal') {
+                    return `
+                    <div class="flex flex-col items-center text-center gap-1" title="${border.nama} — ${border.rank}">
+                        <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-violet-50 flex items-center justify-center text-base text-violet-500">
+                            <img src="../static/img/achivement_imortal.png" class="w-full h-full object-cover" alt="Lencana ${border.nama}" onerror="this.replaceWith(Object.assign(document.createElement('i'), {className: 'fa-solid fa-gem'}))">
+                        </div>
+                        <p class="text-[9px] font-bold text-slate-700 leading-tight truncate w-full">${border.nama}</p>
+                        <p class="text-[8px] text-slate-400 leading-tight truncate w-full">${border.rank}</p>
+                    </div>
+                `;
+                }
                 const gaya = ikonLencanaProfilSementara(border);
                 return `
                 <div class="flex flex-col items-center text-center gap-1" title="${border.nama} — ${border.rank}">
@@ -13879,7 +13894,11 @@
             // title-badge-imortal yang sama dgn badge title di ID card, biar
             // satu keluarga warna dgn efek nama & badge title lainnya.
             if (border && border.id === 'border_imortal') {
-                return `<span class="badge-dev px-1 py-0.5 sm:px-2 text-[8px] sm:text-[10px] font-bold rounded-md shadow-sm whitespace-nowrap flex-shrink-0 title-badge-imortal"><i class="fa-solid fa-gem text-[7px] sm:text-[8px] mr-0.5"></i>IMMORTAL</span>`;
+                // Ikon fa-gem generik diganti logo IMO asli (achivement_imortal.png)
+                // supaya badge title "IMMORTAL" beneran pakai logo IMO, bukan cuma
+                // ikon permata umum. onerror tetap jaga-jaga balik ke fa-gem kalau
+                // asetnya gagal dimuat di perangkat siswa (mis. path belum ada).
+                return `<span class="badge-dev px-1 py-0.5 sm:px-2 text-[8px] sm:text-[10px] font-bold rounded-md shadow-sm whitespace-nowrap flex-shrink-0 title-badge-imortal"><img src="../static/img/achivement_imortal.png" class="inline-block w-[9px] h-[9px] sm:w-[11px] sm:h-[11px] rounded-full object-cover align-middle mr-0.5 -mt-0.5" alt="" onerror="this.replaceWith(Object.assign(document.createElement('i'), {className: 'fa-solid fa-gem text-[7px] sm:text-[8px] mr-0.5'}))">IMMORTAL</span>`;
             }
             return '';
         }
