@@ -4974,7 +4974,14 @@
          renderDaftarGuru() untuk angka X.X/5 di tiap kartu (localStorage
          'evaluasi_guru'), jadi angkanya selalu konsisten. -->
     <div id="modal-detail-guru" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[106] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupModalDetailGuru()">
-        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <!-- "relative" WAJIB ada di sini -- tanpa ini, tombol X di bawah (yang
+             "absolute") jadi nempel ke pojok LAYAR/viewport (induk fixed
+             #modal-detail-guru), bukan ke pojok KARTU ini. Efeknya kartu
+             tampil TANPA tombol X sama sekali di HP (tombolnya "ngambang"
+             di luar kartu, ketutup/nggak kelihatan). Pola yang sama (button
+             absolute + wrapper relative) sudah dipakai benar di modal ID Card
+             teman (lihat #modal-id-card-teman) -- di sini disamakan. -->
+        <div class="relative bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <button onclick="tutupModalDetailGuru()" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/70 hover:bg-white text-slate-500 flex items-center justify-center transition-colors z-10" aria-label="Tutup">
                 <i class="fa-solid fa-xmark"></i>
             </button>
@@ -4998,7 +5005,12 @@
                     </div>
                 </div>
                 <div id="detail-guru-info-wrap" class="flex-1 min-w-0 p-5 sm:p-7 space-y-4">
-                    <div>
+                    <!-- pr-8 supaya nama/mapel (terutama yang panjang) tidak
+                         numpuk/ketiban tombol X di pojok kanan atas kartu --
+                         paling kerasa di layar HP yang sempit, kolom kanan
+                         ini jadi lumayan kecil karena kolom foto sudah makan
+                         38% lebar kartu. -->
+                    <div class="pr-8">
                         <h3 id="detail-guru-nama" class="font-extrabold text-xl leading-tight text-slate-900">-</h3>
                         <p id="detail-guru-mapel" class="text-sm text-slate-500 mt-1">-</p>
                     </div>
