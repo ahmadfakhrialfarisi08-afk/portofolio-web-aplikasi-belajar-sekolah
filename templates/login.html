@@ -955,20 +955,38 @@
       statusMaskotPassword();
     });
 
-    /* ---------- Mata mengikuti kursor ---------- */
+    /* ---------- Mata mengikuti kursor (laptop) / jari (HP) ----------
+       Dulu cuma dengar event 'mousemove', jadi di HP (yang gerakannya
+       lewat sentuhan, bukan mouse) mata maskot ini nggak pernah gerak
+       sama sekali. Sekarang logic-nya dipisah ke fungsi gerakkanMata()
+       yang dipakai bareng oleh listener 'mousemove' (laptop/desktop)
+       DAN listener 'touchstart' + 'touchmove' (HP/tablet) -- begitu jari
+       nyentuh & ditahan/digeser di layar, posisi sentuhan pertama
+       (e.touches[0]) dipakai persis seperti posisi kursor mouse. Listener
+       touch sengaja pakai { passive: true } supaya TIDAK memblokir scroll
+       halaman seperti biasa. */
     var batasGerak = 3.2;
-    document.addEventListener('mousemove', function (e) {
+    function gerakkanMata(clientX, clientY) {
       if (maskot.classList.contains('tutup-mata') || maskot.classList.contains('melek-lebar')) return;
       var rect = maskot.getBoundingClientRect();
       var cx = rect.left + rect.width / 2;
       var cy = rect.top + rect.height / 2;
-      var dx = Math.max(-1, Math.min(1, (e.clientX - cx) / 260));
-      var dy = Math.max(-1, Math.min(1, (e.clientY - cy) / 260));
+      var dx = Math.max(-1, Math.min(1, (clientX - cx) / 260));
+      var dy = Math.max(-1, Math.min(1, (clientY - cy) / 260));
       var tx = dx * batasGerak;
       var ty = dy * batasGerak;
       pupilKiri.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
       pupilKanan.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
+    }
+    document.addEventListener('mousemove', function (e) {
+      gerakkanMata(e.clientX, e.clientY);
     });
+    document.addEventListener('touchstart', function (e) {
+      if (e.touches && e.touches.length > 0) gerakkanMata(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    document.addEventListener('touchmove', function (e) {
+      if (e.touches && e.touches.length > 0) gerakkanMata(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
 
     /* ---------- Reaksi ke field password ---------- */
     inputPassword.addEventListener('focus', statusMaskotPassword);
