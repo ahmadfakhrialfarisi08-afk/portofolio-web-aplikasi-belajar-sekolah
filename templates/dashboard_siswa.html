@@ -3258,20 +3258,53 @@
                 </div>
             </div>
 
-            <div class="bg-slate-50 border border-slate-200/80 p-3 rounded-xl">
-                <div class="flex items-center gap-2 mb-2">
-                    <i class="fa-solid fa-comment-dots text-blue-600 text-xs"></i>
-                    <h4 class="text-xs font-bold text-slate-900">Kotak Saran Siswa</h4>
-                </div>
-                <label for="input-saran-siswa" class="sr-only">Tulis saran atau masukan</label>
-                <textarea id="input-saran-siswa" rows="2" placeholder="Tuliskan saran atau masukan..." class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white resize-none"></textarea>
-                <label class="flex items-center gap-2 mt-2 text-[11px] text-slate-600 font-semibold cursor-pointer select-none">
-                    <input type="checkbox" id="checkbox-anonim-saran-siswa" class="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0">
-                    <i class="fa-solid fa-user-secret text-slate-400"></i> Sembunyikan nama saya (kirim anonim)
-                </label>
-                <button onclick="kirimSaranSiswa()" class="w-full mt-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm transition-colors flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-paper-plane text-[10px]"></i> Kirim Saran
+            <!-- ============================================================
+                 PANEL KOTAK SARAN (khusus akun dev — AHMAD FAKHRI AL FARISI)
+                 Dulu box ini ("Kotak Saran Siswa") nongol di sidebar buat
+                 SEMUA siswa & saran cuma tersimpan di localStorage browser
+                 pengirim doang (jadi tidak kebaca kalau dibuka dari HP/laptop
+                 lain). Sekarang form kirim + daftar saran yang masuk digabung
+                 jadi SATU panel, dan panel ini HANYA dimunculkan buat akun
+                 login ASLI 'siswa' -- gating-nya SAMA persis polanya kayak
+                 Panel Akun Dummy & Panel Dummy Leaderboard di atas (lihat
+                 DOMContentLoaded). Data saran didorong & ditarik dari server
+                 (/api/saran/kirim & /api/saran/list, lihat simpanSaranKeServer
+                 & sinkronkanSaranDenganServer) supaya daftar saran yang masuk
+                 SAMA persis kelihatannya baik dibuka dari HP maupun laptop,
+                 bukan cuma nyangkut di 1 browser doang seperti versi lama.
+                 ============================================================ -->
+            <div id="wrapper-panel-kotak-saran" class="hidden bg-slate-50 border border-slate-200/80 rounded-xl overflow-hidden">
+                <button onclick="toggleKotakSaranPanel()" class="w-full flex items-center justify-between px-3 py-2.5 text-left" aria-expanded="false" aria-controls="panel-kotak-saran">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-comment-dots text-blue-600 text-xs"></i>
+                        <h4 class="text-xs font-bold text-slate-900">Kotak Saran</h4>
+                    </div>
+                    <i id="icon-toggle-kotak-saran-panel" class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform"></i>
                 </button>
+                <div id="panel-kotak-saran" class="hidden px-3.5 pb-3.5 space-y-3">
+                    <div>
+                        <label for="input-saran-siswa" class="sr-only">Tulis saran atau masukan</label>
+                        <textarea id="input-saran-siswa" rows="2" placeholder="Tuliskan saran atau masukan..." class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white resize-none"></textarea>
+                        <label class="flex items-center gap-2 mt-2 text-[11px] text-slate-600 font-semibold cursor-pointer select-none">
+                            <input type="checkbox" id="checkbox-anonim-saran-siswa" class="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0">
+                            <i class="fa-solid fa-user-secret text-slate-400"></i> Sembunyikan nama saya (kirim anonim)
+                        </label>
+                        <button onclick="kirimSaranSiswa()" class="w-full mt-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm transition-colors flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-paper-plane text-[10px]"></i> Kirim Saran
+                        </button>
+                    </div>
+
+                    <div class="pt-2.5 border-t border-slate-200/80">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Saran Masuk</p>
+                            <button onclick="sinkronkanSaranDenganServer()" title="Muat ulang" aria-label="Muat ulang daftar saran" class="text-slate-400 hover:text-blue-600 transition-colors">
+                                <i class="fa-solid fa-arrows-rotate text-[10px]"></i>
+                            </button>
+                        </div>
+                        <div id="list-kotak-saran-admin" class="space-y-1.5 max-h-56 overflow-y-auto"></div>
+                        <p id="kotak-saran-admin-kosong" class="hidden text-[10px] text-slate-400 text-center py-4">Belum ada saran yang masuk.</p>
+                    </div>
+                </div>
             </div>
 
             <div class="bg-gradient-to-br from-blue-600 to-indigo-600 p-3.5 rounded-xl text-white text-center">
@@ -5356,6 +5389,33 @@
             document.body.style.overflow = '';
         }
 
+        const KEY_SARAN_SISWA = 'student_suggestions';
+
+        function getSaranSiswaLokal() {
+            try {
+                const raw = localStorage.getItem(KEY_SARAN_SISWA);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        // Buka/tutup panel Kotak Saran (khusus akun dev) -- tiap kali dibuka,
+        // langsung tarik ulang daftar saran dari server supaya yang kelihatan
+        // selalu yang terbaru (mis. ada saran baru masuk dari perangkat lain
+        // sejak halaman ini pertama dibuka).
+        function toggleKotakSaranPanel() {
+            const panel = document.getElementById('panel-kotak-saran');
+            const icon = document.getElementById('icon-toggle-kotak-saran-panel');
+            if (!panel) return;
+            const akanTampil = panel.classList.contains('hidden');
+            panel.classList.toggle('hidden');
+            if (icon) icon.classList.toggle('rotate-180', akanTampil);
+            const tombolToggle = panel.previousElementSibling;
+            if (tombolToggle) tombolToggle.setAttribute('aria-expanded', String(akanTampil));
+            if (akanTampil) sinkronkanSaranDenganServer();
+        }
+
         function kirimSaranSiswa() {
             const inputSaran = document.getElementById('input-saran-siswa');
             if (!inputSaran) return;
@@ -5377,25 +5437,132 @@
             // anonim -- sama seperti prinsip modal "Beri Saran/Evaluasi" untuk guru.
             const kirimAnonim = checkboxAnonim ? checkboxAnonim.checked : false;
 
-            const daftarSaran = JSON.parse(localStorage.getItem('student_suggestions') || '[]');
+            const daftarSaran = getSaranSiswaLokal();
             const now = getAccurateNow();
             const timestamp = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + 
                               String(now.getHours()).padStart(2, '0') + ':' + 
                               String(now.getMinutes()).padStart(2, '0') + ' WIB';
 
-            daftarSaran.push({
+            const saranBaru = {
+                id: `saran_${Date.now()}`,
                 anonim: kirimAnonim,
                 nama: kirimAnonim ? null : NAMA_SISWA_AKTIF,
-                kelas: kirimAnonim ? null : 'XII TKJ 3',
+                kelas: kirimAnonim ? null : getKelasAktifQuiz(),
                 saran: textSaran,
                 waktu: timestamp
-            });
+            };
+            daftarSaran.push(saranBaru);
+            localStorage.setItem(KEY_SARAN_SISWA, JSON.stringify(daftarSaran));
+            simpanSaranKeServer(saranBaru, saranBaru.id);
 
-            localStorage.setItem('student_suggestions', JSON.stringify(daftarSaran));
             inputSaran.value = '';
             if (checkboxAnonim) checkboxAnonim.checked = false;
             alert('Terima kasih! Saran Anda telah berhasil dikirim ke sistem.');
             triggerDynamicIsland("Saran berhasil dikirim!");
+            renderDaftarSaranAdmin(daftarSaran);
+        }
+
+        // ============================================================
+        // SINKRONISASI KOTAK SARAN KE SERVER (endpoint SENDIRI, /api/saran/...
+        // -- pola fire-and-forget + retry 1x SAMA persis ditiru dari
+        // simpanPrestasiKeServer, supaya kirim saran tetap coba jalan walau
+        // tab langsung ditinggal/pindah halaman setelah tombol "Kirim Saran"
+        // ditekan. Server MEMBUAT ULANG id (bukan percaya id kiriman client,
+        // lihat api_saran_kirim di app.py) supaya 2 saran dari pengirim beda
+        // tidak pernah kebetulan bentrok id -- makanya begitu server balas
+        // sukses, id lokal (idSementara) ditimpa dengan id resmi dari server
+        // supaya sinkronkanSaranDenganServer() nanti tidak menganggapnya 2
+        // saran yang beda (dobel).
+        // ============================================================
+        function simpanSaranKeServer(saranBaru, idSementara, percobaanUlang) {
+            fetch('/api/saran/kirim', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                keepalive: true,
+                body: JSON.stringify({ data: saranBaru, expected_username: USERNAME_SISWA_ASLI })
+            })
+                .then(res => res.json())
+                .then(hasil => {
+                    if (hasil && hasil.session_mismatch) tampilkanPeringatanSesiBerubah();
+                    if (hasil && hasil.success && hasil.data && hasil.data.id) {
+                        const daftar = getSaranSiswaLokal();
+                        const idx = daftar.findIndex(item => item.id === idSementara);
+                        if (idx !== -1) {
+                            daftar[idx] = hasil.data;
+                            localStorage.setItem(KEY_SARAN_SISWA, JSON.stringify(daftar));
+                            renderDaftarSaranAdmin(daftar);
+                        }
+                    }
+                })
+                .catch(() => {
+                    if (!percobaanUlang) {
+                        setTimeout(() => simpanSaranKeServer(saranBaru, idSementara, true), 1500);
+                    }
+                });
+        }
+
+        // Tarik SEMUA saran (lintas siswa/kelas/perangkat) dari server lalu
+        // render ke panel Kotak Saran -- panel ini sendiri HANYA dimunculkan
+        // buat akun 'siswa' (AHMAD FAKHRI AL FARISI), jadi daftar saran yang
+        // masuk kebaca SAMA persis baik dibuka dari HP maupun laptop, tidak
+        // cuma nyangkut di localStorage 1 browser doang seperti versi lama.
+        async function sinkronkanSaranDenganServer() {
+            try {
+                const res = await fetch('/api/saran/list');
+                const hasil = await res.json();
+                if (!hasil || !hasil.success) return;
+                const dariServer = Array.isArray(hasil.data) ? hasil.data : [];
+
+                // Gabung dengan yang ada di lokal (mis. baru saja kirim tapi
+                // belum sempat ke-fetch balik dari server) -- pola sama
+                // seperti sinkronkanPrestasiDenganServer.
+                const dariLokal = getSaranSiswaLokal();
+                const peta = new Map();
+                dariServer.forEach(item => peta.set(item.id, item));
+                dariLokal.forEach(item => { if (!peta.has(item.id)) peta.set(item.id, item); });
+                const gabungan = Array.from(peta.values());
+                localStorage.setItem(KEY_SARAN_SISWA, JSON.stringify(gabungan));
+
+                renderDaftarSaranAdmin(gabungan);
+            } catch (e) {
+                // Offline/endpoint belum ada -> tetap tampilkan yang ada di lokal
+                renderDaftarSaranAdmin(getSaranSiswaLokal());
+            }
+        }
+
+        function renderDaftarSaranAdmin(daftarSaran) {
+            const listEl = document.getElementById('list-kotak-saran-admin');
+            const elKosong = document.getElementById('kotak-saran-admin-kosong');
+            if (!listEl) return;
+
+            // Terbaru di atas -- diurutkan dari timestamp yang disisipkan di
+            // id tiap saran (saran_<ts>), sama seperti pola id di prestasi.
+            const terurut = [...daftarSaran].sort((a, b) => {
+                const idA = Number(String(a.id || '').split('_')[1]) || 0;
+                const idB = Number(String(b.id || '').split('_')[1]) || 0;
+                return idB - idA;
+            });
+
+            if (terurut.length === 0) {
+                listEl.innerHTML = '';
+                if (elKosong) elKosong.classList.remove('hidden');
+                return;
+            }
+            if (elKosong) elKosong.classList.add('hidden');
+
+            listEl.innerHTML = terurut.map(item => {
+                const namaTampil = item.anonim ? 'Anonim' : (item.nama || 'Anonim');
+                const kelasTampil = (!item.anonim && item.kelas) ? ` • ${item.kelas}` : '';
+                return `
+                    <div class="bg-white border border-slate-200 rounded-lg p-2">
+                        <div class="flex items-center justify-between mb-0.5 gap-2">
+                            <span class="text-[10px] font-bold text-slate-700 truncate">${namaTampil}${kelasTampil}</span>
+                            <span class="text-[9px] text-slate-400 flex-shrink-0">${item.waktu || ''}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600 leading-snug break-words">${item.saran || ''}</p>
+                    </div>
+                `;
+            }).join('');
         }
 
         function toggleProfileDropdown(event) {
@@ -10206,8 +10373,14 @@
             if (USERNAME_SISWA_ASLI === 'siswa') {
                 const wrapperAkunDummy = document.getElementById('wrapper-panel-akun-dummy-profil');
                 const wrapperDummyLeaderboard = document.getElementById('wrapper-panel-dummy-leaderboard');
+                const wrapperKotakSaran = document.getElementById('wrapper-panel-kotak-saran');
                 if (wrapperAkunDummy) wrapperAkunDummy.classList.remove('hidden');
                 if (wrapperDummyLeaderboard) wrapperDummyLeaderboard.classList.remove('hidden');
+                if (wrapperKotakSaran) wrapperKotakSaran.classList.remove('hidden');
+                // Tarik daftar saran dari server begitu dashboard dibuka, supaya
+                // badge/daftar sudah siap begitu panel Kotak Saran dibuka manual
+                // (bukan baru fetch pas diklik pertama kali).
+                sinkronkanSaranDenganServer();
             }
             backfillRiwayatJikaPerlu();
             sinkronkanRiwayatDenganTugasAktif();

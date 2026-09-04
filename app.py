@@ -5,6 +5,7 @@ import random
 import string
 import smtplib
 import ssl
+import time
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response, jsonify, send_from_directory
@@ -437,6 +438,51 @@ def _simpan_prestasi_store():
 
 
 prestasi_store = _muat_prestasi_store()
+
+
+# ----------------------------------------------------
+# DATA KOTAK SARAN (SIMULASI TABEL suggestion_submissions)
+# SENGAJA dibuat TERPISAH TOTAL dari quiz_store & prestasi_store di atas --
+# variabel Python beda (saran_store, bukan quiz_store/prestasi_store), file
+# JSON di disk beda (saran_store.json), dan endpoint beda (/api/saran/...)
+# -- supaya proses baca/tulis salah satu fitur TIDAK PERNAH bentrok/nimpa
+# punya fitur satunya.
+#
+# Beda skema dengan prestasi_store: prestasi_store dipecah per KELAS
+# (karena guru cuma perlu lihat prestasi kelas yang diampu), sedangkan
+# saran_store adalah SATU daftar datar (list) yang menampung saran dari
+# SEMUA siswa/kelas sekaligus -- soalnya kotak saran ini cuma boleh dibaca
+# oleh SATU akun (Admin/Developer, lihat _akun_ini_admin_dev), bukan per
+# kelas seperti prestasi. Skema tiap item:
+#   { id, anonim, nama, kelas, saran, waktu }
+# Persis sama dengan objek yang dikirim client (lihat kirimSaranSiswa() /
+# simpanSaranKeServer() di dashboard_siswa.html).
+# ----------------------------------------------------
+SARAN_STORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'saran_store.json')
+
+
+def _muat_saran_store():
+    """Baca saran_store (list) dari file JSON di disk (kalau ada)."""
+    try:
+        with open(SARAN_STORE_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return data if isinstance(data, list) else []
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def _simpan_saran_store():
+    """Tulis saran_store saat ini ke file JSON di disk (atomic, sama pola
+    dengan _simpan_prestasi_store supaya tidak korup kalau ketiban proses
+    lain nulis bersamaan)."""
+    os.makedirs(os.path.dirname(SARAN_STORE_PATH), exist_ok=True)
+    tmp_path = SARAN_STORE_PATH + '.tmp'
+    with open(tmp_path, 'w', encoding='utf-8') as f:
+        json.dump(saran_store, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, SARAN_STORE_PATH)
+
+
+saran_store = _muat_saran_store()
 
 
 def _default_quiz_blob(jenis):
@@ -1078,6 +1124,59 @@ def api_prestasi_save():
     prestasi_store[kelas] = data
     _simpan_prestasi_store()
     return jsonify(success=True)
+
+
+# ----------------------------------------------------
+# API: KOTAK SARAN -- endpoint SENDIRI, terpisah dari /api/prestasi/... &
+# /api/quiz/... di atas (lihat catatan di saran_store). Dipanggil dari
+# dashboard_siswa.html (kirimSaranSiswa / sinkronkanSaranDenganServer)
+# supaya saran yang masuk tersimpan di server (bukan cuma localStorage 1
+# browser) dan bisa dibaca Admin/Developer (Ahmad Fakhri Al Farisi) dari
+# perangkat manapun (HP maupun laptop).
+# ----------------------------------------------------
+@app.route('/api/saran/kirim', methods=['POST'])
+def api_saran_kirim():
+    """Simpan SATU saran baru ke server. Endpoint ini SENGAJA terbuka untuk
+    siapapun yang sedang login (bukan cuma Admin/Dev) -- karena yang perlu
+    MENGIRIM saran adalah siswa biasa, sedangkan yang perlu MELIHAT daftar
+    saran (lihat api_saran_list di bawah) memang cuma Admin/Dev."""
+    body = request.get_json(silent=True) or {}
+
+    ok, err_resp, err_code = _cek_sesi_masih_cocok(body.get('expected_username'))
+    if not ok:
+        return err_resp, err_code
+
+    data = body.get('data')
+    if not isinstance(data, dict) or not (data.get('saran') or '').strip():
+        return jsonify(success=False, message='Data saran tidak valid.'), 400
+
+    # id dibuat ulang di server (bukan percaya begitu saja pada id kiriman
+    # client) supaya tidak ada 2 saran beda pengirim kebetulan bentrok id --
+    # format tetap sama (saran_<timestamp ms>) supaya urutan "terbaru di
+    # atas" di dashboard tetap bisa dihitung dari id seperti pola prestasi.
+    saran_baru = {
+        'id': f"saran_{int(time.time() * 1000)}",
+        'anonim': bool(data.get('anonim')),
+        'nama': None if data.get('anonim') else data.get('nama'),
+        'kelas': None if data.get('anonim') else data.get('kelas'),
+        'saran': (data.get('saran') or '').strip(),
+        'waktu': data.get('waktu'),
+    }
+    saran_store.append(saran_baru)
+    _simpan_saran_store()
+    return jsonify(success=True, data=saran_baru)
+
+
+@app.route('/api/saran/list', methods=['GET'])
+def api_saran_list():
+    """Ambil SELURUH daftar saran yang pernah masuk (lintas siswa/kelas/
+    perangkat). HANYA boleh diakses Admin/Developer ASLI (Ahmad Fakhri Al
+    Farisi) -- siswa lain yang mencoba akses endpoint ini langsung ditolak,
+    sama persis pola proteksinya dengan endpoint kelola guru di bawah."""
+    if not _akun_ini_admin_dev():
+        return jsonify(success=False, message='Tidak punya akses ke Kotak Saran.'), 403
+
+    return jsonify(success=True, data=saran_store)
 
 
 # ----------------------------------------------------
