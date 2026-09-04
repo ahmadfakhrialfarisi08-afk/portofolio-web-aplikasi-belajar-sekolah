@@ -3259,21 +3259,37 @@
             </div>
 
             <!-- ============================================================
-                 PANEL KOTAK SARAN (khusus akun dev — AHMAD FAKHRI AL FARISI)
-                 Dulu box ini ("Kotak Saran Siswa") nongol di sidebar buat
-                 SEMUA siswa & saran cuma tersimpan di localStorage browser
-                 pengirim doang (jadi tidak kebaca kalau dibuka dari HP/laptop
-                 lain). Sekarang form kirim + daftar saran yang masuk digabung
-                 jadi SATU panel, dan panel ini HANYA dimunculkan buat akun
-                 login ASLI 'siswa' -- gating-nya SAMA persis polanya kayak
-                 Panel Akun Dummy & Panel Dummy Leaderboard di atas (lihat
-                 DOMContentLoaded). Data saran didorong & ditarik dari server
-                 (/api/saran/kirim & /api/saran/list, lihat simpanSaranKeServer
-                 & sinkronkanSaranDenganServer) supaya daftar saran yang masuk
-                 SAMA persis kelihatannya baik dibuka dari HP maupun laptop,
-                 bukan cuma nyangkut di 1 browser doang seperti versi lama.
+                 PANEL KOTAK SARAN
+                 Kotak "Kirim Saran" (textarea + tombol) TAMPIL UNTUK SEMUA
+                 SISWA -- wrapper ini SENGAJA TIDAK diberi class "hidden",
+                 beda dari Panel Akun Dummy/Dummy Leaderboard di atas yang
+                 memang khusus akun dev. Karena <aside id="sidebar-utama">
+                 ini dipakai sebagai sidebar tetap di laptop (md+) DAN
+                 sebagai bottom-sheet menu "Lainnya" di HP (lihat CSS
+                 translate-y-full md:translate-y-0 di #sidebar-utama), kotak
+                 ini otomatis muncul di KEDUA tempat itu tanpa perlu markup
+                 terpisah.
+
+                 Sub-bagian "Saran Masuk" (daftar SEMUA saran yang pernah
+                 dikirim siswa) dibungkus wrapper terpisah
+                 (#wrapper-daftar-saran-admin) yang default "hidden" & HANYA
+                 di-reveal lewat JS buat akun login ASLI 'siswa' (AHMAD
+                 FAKHRI AL FARISI) -- lihat DOMContentLoaded. Ini supaya
+                 CUMA admin yang bisa BACA saran siswa lain; siswa biasa
+                 cuma bisa MENGIRIM. Pembatasannya bukan cuma sembunyi di
+                 tampilan: endpoint /api/saran/list (lihat
+                 sinkronkanSaranDenganServer & toggleKotakSaranPanel) HANYA
+                 dipanggil kalau bagian admin ini memang ter-reveal, jadi
+                 daftar saran siswa lain tidak pernah ikut ditarik/tersimpan
+                 di localStorage perangkat siswa biasa sama sekali.
+
+                 Data saran didorong & ditarik dari server (/api/saran/kirim
+                 & /api/saran/list, lihat simpanSaranKeServer &
+                 sinkronkanSaranDenganServer) supaya daftar saran yang masuk
+                 SAMA persis kelihatannya baik dibuka dari HP maupun laptop
+                 milik admin, bukan cuma nyangkut di 1 browser doang.
                  ============================================================ -->
-            <div id="wrapper-panel-kotak-saran" class="hidden bg-slate-50 border border-slate-200/80 rounded-xl overflow-hidden">
+            <div id="wrapper-panel-kotak-saran" class="bg-slate-50 border border-slate-200/80 rounded-xl overflow-hidden">
                 <button onclick="toggleKotakSaranPanel()" class="w-full flex items-center justify-between px-3 py-2.5 text-left" aria-expanded="false" aria-controls="panel-kotak-saran">
                     <div class="flex items-center gap-2">
                         <i class="fa-solid fa-comment-dots text-blue-600 text-xs"></i>
@@ -3284,7 +3300,7 @@
                 <div id="panel-kotak-saran" class="hidden px-3.5 pb-3.5 space-y-3">
                     <div>
                         <label for="input-saran-siswa" class="sr-only">Tulis saran atau masukan</label>
-                        <textarea id="input-saran-siswa" rows="2" placeholder="Tuliskan saran atau masukan..." class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white resize-none"></textarea>
+                        <textarea id="input-saran-siswa" rows="2" placeholder="Tuliskan saran atau masukan tentang aplikasi..." class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white resize-none"></textarea>
                         <label class="flex items-center gap-2 mt-2 text-[11px] text-slate-600 font-semibold cursor-pointer select-none">
                             <input type="checkbox" id="checkbox-anonim-saran-siswa" class="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0">
                             <i class="fa-solid fa-user-secret text-slate-400"></i> Sembunyikan nama saya (kirim anonim)
@@ -3292,9 +3308,11 @@
                         <button onclick="kirimSaranSiswa()" class="w-full mt-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm transition-colors flex items-center justify-center gap-1.5">
                             <i class="fa-solid fa-paper-plane text-[10px]"></i> Kirim Saran
                         </button>
+                        <p class="text-[9px] text-slate-400 text-center leading-relaxed mt-1.5">Saran kamu akan dibaca langsung oleh admin aplikasi.</p>
                     </div>
 
-                    <div class="pt-2.5 border-t border-slate-200/80">
+                    <!-- Khusus akun admin -- lihat catatan gating di atas -->
+                    <div id="wrapper-daftar-saran-admin" class="hidden pt-2.5 border-t border-slate-200/80">
                         <div class="flex items-center justify-between mb-1.5">
                             <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Saran Masuk</p>
                             <button onclick="sinkronkanSaranDenganServer()" title="Muat ulang" aria-label="Muat ulang daftar saran" class="text-slate-400 hover:text-blue-600 transition-colors">
@@ -5400,10 +5418,14 @@
             }
         }
 
-        // Buka/tutup panel Kotak Saran (khusus akun dev) -- tiap kali dibuka,
+        // Buka/tutup panel Kotak Saran -- untuk akun ADMIN, tiap kali dibuka
         // langsung tarik ulang daftar saran dari server supaya yang kelihatan
         // selalu yang terbaru (mis. ada saran baru masuk dari perangkat lain
-        // sejak halaman ini pertama dibuka).
+        // sejak halaman ini pertama dibuka). Untuk siswa BIASA, bagian
+        // "Saran Masuk" (#wrapper-daftar-saran-admin) tetap "hidden" (tidak
+        // pernah di-reveal, lihat DOMContentLoaded), jadi endpoint
+        // /api/saran/list SENGAJA tidak pernah dipanggil buat mereka --
+        // siswa biasa cuma lihat form kirimnya saja.
         function toggleKotakSaranPanel() {
             const panel = document.getElementById('panel-kotak-saran');
             const icon = document.getElementById('icon-toggle-kotak-saran-panel');
@@ -5413,7 +5435,9 @@
             if (icon) icon.classList.toggle('rotate-180', akanTampil);
             const tombolToggle = panel.previousElementSibling;
             if (tombolToggle) tombolToggle.setAttribute('aria-expanded', String(akanTampil));
-            if (akanTampil) sinkronkanSaranDenganServer();
+            const wrapperDaftarSaran = document.getElementById('wrapper-daftar-saran-admin');
+            const adminBisaLihatDaftar = wrapperDaftarSaran && !wrapperDaftarSaran.classList.contains('hidden');
+            if (akanTampil && adminBisaLihatDaftar) sinkronkanSaranDenganServer();
         }
 
         function kirimSaranSiswa() {
@@ -5566,29 +5590,35 @@
         }
 
         // ============================================================
-        // Reveal panel Kotak Saran didaftarkan lewat listener DOMContentLoaded
-        // TERPISAH dari listener /* ================= INIT ================= */
-        // yang besar di bawah (tempat Panel Akun Dummy & Panel Dummy
-        // Leaderboard di-reveal). SENGAJA dipisah + dibungkus try/catch:
-        // browser tetap memanggil SEMUA listener 'DOMContentLoaded' yang
-        // terdaftar sekalipun salah satunya lempar error di tengah jalan --
-        // tapi baris-baris SETELAH baris yang error di listener yang SAMA
-        // tidak akan pernah jalan. Berarti kalau ada error tak terduga di
-        // suatu tempat SEBELUM baris reveal panel ini di listener utama,
-        // panel Kotak Saran (yang taruhannya di akhir urutan) ikut gak
-        // pernah kebuka -- padahal error itu sama sekali bukan salah kode
-        // panel ini. Listener sendiri begini bikin reveal-nya kebal dari
-        // masalah di bagian lain script.
+        // Reveal bagian "Saran Masuk" (daftar saran, khusus admin) didaftarkan
+        // lewat listener DOMContentLoaded TERPISAH dari listener
+        // /* ================= INIT ================= */ yang besar di bawah
+        // (tempat Panel Akun Dummy & Panel Dummy Leaderboard di-reveal).
+        // SENGAJA dipisah + dibungkus try/catch: browser tetap memanggil
+        // SEMUA listener 'DOMContentLoaded' yang terdaftar sekalipun salah
+        // satunya lempar error di tengah jalan -- tapi baris-baris SETELAH
+        // baris yang error di listener yang SAMA tidak akan pernah jalan.
+        // Berarti kalau ada error tak terduga di suatu tempat SEBELUM baris
+        // reveal ini di listener utama, bagian admin (yang taruhannya di
+        // akhir urutan) ikut gak pernah kebuka -- padahal error itu sama
+        // sekali bukan salah kode panel ini. Listener sendiri begini bikin
+        // reveal-nya kebal dari masalah di bagian lain script.
+        //
+        // Kotak "Kirim Saran" sendiri TIDAK perlu di-reveal di sini karena
+        // sudah tampil default untuk semua siswa (lihat HTML). Yang
+        // di-reveal cuma sub-bagian daftar "Saran Masuk" -- dan
+        // sinkronkanSaranDenganServer() (yang menarik SEMUA saran dari
+        // server) HANYA dipanggil untuk akun admin.
         // ============================================================
         document.addEventListener('DOMContentLoaded', function () {
             try {
                 if (typeof USERNAME_SISWA_ASLI !== 'undefined' && USERNAME_SISWA_ASLI === 'siswa') {
-                    const wrapperKotakSaran = document.getElementById('wrapper-panel-kotak-saran');
-                    if (wrapperKotakSaran) wrapperKotakSaran.classList.remove('hidden');
+                    const wrapperDaftarSaran = document.getElementById('wrapper-daftar-saran-admin');
+                    if (wrapperDaftarSaran) wrapperDaftarSaran.classList.remove('hidden');
                     sinkronkanSaranDenganServer();
                 }
             } catch (e) {
-                console.error('Gagal memunculkan panel Kotak Saran:', e);
+                console.error('Gagal memunculkan daftar Saran Masuk (admin):', e);
             }
         });
 
