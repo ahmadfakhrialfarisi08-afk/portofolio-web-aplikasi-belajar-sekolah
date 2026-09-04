@@ -1027,10 +1027,13 @@
                 </div>
 
                 <div class="relative z-10 w-full">
-                    <div class="flex items-center gap-2 mb-1">
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
                         <span id="rekap-tugas-badge-kelas" class="px-2.5 py-0.5 bg-blue-600 text-white rounded-full text-[10px] font-extrabold uppercase">XII TKJ 3</span>
                         <span id="rekap-tugas-badge-tipe" class="px-2.5 py-0.5 bg-white/10 border border-white/20 text-slate-200 rounded-full text-[10px] font-extrabold uppercase">Tugas Utama</span>
-                        <span class="text-xs text-slate-300">Deadline: <b id="rekap-tugas-text-deadline" class="text-amber-300">-</b></span>
+                    </div>
+                    <div class="mb-1.5 space-y-0.5">
+                        <p class="text-xs text-slate-300">Dikirim: <b id="rekap-tugas-text-dikirim" class="text-slate-100">-</b></p>
+                        <p class="text-xs text-slate-300">Deadline: <b id="rekap-tugas-text-deadline" class="text-amber-300">-</b></p>
                     </div>
                     <h2 id="rekap-tugas-judul" class="text-2xl font-black">-</h2>
                     <p id="rekap-tugas-instruksi" class="text-xs text-slate-300 mt-0.5 max-w-2xl">-</p>
@@ -2195,6 +2198,23 @@
             return { submitted: true, waktu, nilai: null, fotoTugasList: [] };
         }
 
+        // Format timestamp waktuKirimGuru (Date.now() saat tugas dikirim/diedit guru)
+        // jadi teks tanggal+jam yang gampang dibaca, mis. "4 September 2026, Pukul
+        // 09:15 WIB". Kalau tugas ini tugas lama yang belum punya waktuKirimGuru
+        // (dibuat sebelum fitur ini ada), tampilkan keterangan netral.
+        function formatWaktuKirimTugasGuru(task) {
+            if (!task.waktuKirimGuru) return 'Tidak tercatat';
+            const d = new Date(task.waktuKirimGuru);
+            if (isNaN(d.getTime())) return 'Tidak tercatat';
+            const namaBulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+            const tanggal = d.getDate();
+            const bulan = namaBulan[d.getMonth()];
+            const tahun = d.getFullYear();
+            const jam = String(d.getHours()).padStart(2, '0');
+            const menit = String(d.getMinutes()).padStart(2, '0');
+            return `${tanggal} ${bulan} ${tahun}, Pukul ${jam}:${menit} WIB`;
+        }
+
         function bukaRekapPengumpulanTugas(namaKelas, taskId) {
             const tasksKelasIni = getTasksKelas(namaKelas);
             const task = tasksKelasIni.find(t => t.id === taskId);
@@ -2208,6 +2228,7 @@
 
             document.getElementById('rekap-tugas-badge-kelas').innerText = namaKelas;
             document.getElementById('rekap-tugas-badge-tipe').innerText = task.tipe || 'Tugas';
+            document.getElementById('rekap-tugas-text-dikirim').innerText = formatWaktuKirimTugasGuru(task);
             document.getElementById('rekap-tugas-text-deadline').innerText = task.deadline || 'Belum Ditentukan';
             document.getElementById('rekap-tugas-judul').innerText = task.judul || (kelasInfo ? kelasInfo.mapel : '-');
             document.getElementById('rekap-tugas-instruksi').innerText = task.teks || '-';
