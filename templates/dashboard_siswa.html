@@ -3129,12 +3129,12 @@
         <div class="absolute inset-0 bg-slate-900/70"></div>
         <div class="relative w-full max-w-sm overlay-pelanggaran-kartu">
             <div class="bg-white rounded-3xl shadow-2xl p-6 text-center">
-                <div class="overlay-pelanggaran-ikon-wrap mx-auto mb-4 w-20 h-20 rounded-full bg-amber-50 flex items-center justify-center">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-500 text-4xl"></i>
+                <div class="overlay-pelanggaran-ikon-wrap mx-auto mb-4 w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center">
+                    <i class="fa-solid fa-triangle-exclamation text-rose-600 text-4xl"></i>
                 </div>
                 <h3 id="overlay-pelanggaran-judul" class="font-extrabold text-lg text-slate-900 mb-2">Pelanggaran Aktif</h3>
                 <p id="overlay-pelanggaran-pesan" class="text-sm font-bold text-slate-700 leading-relaxed min-h-[76px]"></p>
-                <button type="button" id="tombol-overlay-pelanggaran-mengerti" disabled class="mt-5 w-full py-3 rounded-2xl bg-blue-600 text-white text-sm font-bold shadow-sm transition-opacity">
+                <button type="button" id="tombol-overlay-pelanggaran-mengerti" disabled class="mt-5 w-full py-3 rounded-2xl bg-rose-600 text-white text-sm font-bold shadow-sm transition-opacity">
                     Saya Mengerti<span id="overlay-pelanggaran-hitung-mundur"></span>
                 </button>
             </div>
@@ -9002,6 +9002,14 @@
             }
 
             let statusActionHTML = '';
+            // FITUR TAMBAHAN: kunci tugas selama siswa masih berstatus "Pelanggaran
+            // Aktif" (lihat overlay & window.pelanggaranSiswaSedangAktif() di script
+            // dekat penutup </body>). Hanya berlaku utk tugas yang BELUM
+            // dikumpulkan/belum kedaluwarsa -- tugas yang sudah terkirim atau sudah
+            // lewat deadline tetap tampil seperti biasa (statusnya sudah final).
+            const pelanggaranAktifSekarang = !(data.studentSubmitted || data.sudahMengumpulkan) && !isExpired &&
+                (typeof window.pelanggaranSiswaSedangAktif === 'function') && window.pelanggaranSiswaSedangAktif();
+
             if (data.studentSubmitted || data.sudahMengumpulkan) {
                 let studentImagePreview = '';
                 if (Array.isArray(data.studentImages) && data.studentImages.length > 0) {
@@ -9027,6 +9035,11 @@
                 statusActionHTML = `
                     <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-bold flex items-center gap-2 shadow-sm">
                         <i class="fa-solid fa-lock text-sm"></i> Waktu Habis (${batasWaktuTugas}). Tugas kini berstatus <u>Kedaluwarsa</u> &amp; tercatat "Tidak Dikerjakan" di riwayatmu -- tidak dapat dikirim lagi, tapi tugasnya tetap tersimpan (bukan dihapus).
+                    </div>`;
+            } else if (pelanggaranAktifSekarang) {
+                statusActionHTML = `
+                    <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-bold flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-lock text-sm"></i> Tugas ini terkunci -- kamu masih berstatus <u>Pelanggaran Aktif</u>. Selesaikan dulu dengan guru/wali kelas supaya bisa mengumpulkan tugas ini lagi.
                     </div>`;
             } else {
                 statusActionHTML = `
@@ -9069,8 +9082,8 @@
                     ${teacherImageHTML}
                     ${voiceNoteHTML}
                     <div class="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-blue-100 gap-3">
-                        <span class="text-xs font-bold ${data.studentSubmitted || data.sudahMengumpulkan ? 'text-emerald-600' : (isExpired ? 'text-rose-600' : 'text-amber-600')}">
-                            Status: ${data.studentSubmitted || data.sudahMengumpulkan ? 'Sudah Dikirim' : (isExpired ? 'Kedaluwarsa (Tidak Dikerjakan)' : 'Belum Dikerjakan')}
+                        <span class="text-xs font-bold ${data.studentSubmitted || data.sudahMengumpulkan ? 'text-emerald-600' : (isExpired ? 'text-rose-600' : (pelanggaranAktifSekarang ? 'text-rose-600' : 'text-amber-600'))}">
+                            Status: ${data.studentSubmitted || data.sudahMengumpulkan ? 'Sudah Dikirim' : (isExpired ? 'Kedaluwarsa (Tidak Dikerjakan)' : (pelanggaranAktifSekarang ? 'Terkunci (Pelanggaran Aktif)' : 'Belum Dikerjakan'))}
                         </span>
                         ${statusActionHTML}
                     </div>
@@ -9112,6 +9125,16 @@
 
             if (isExpired) {
                 alert('Gagal! Batas waktu pengumpulan ("' + batasWaktuTugas + '") sudah lewat. Tugas otomatis terkunci.');
+                renderLiveTaskContent();
+                return;
+            }
+
+            // FITUR TAMBAHAN: guard pertahanan kedua -- selain tombol kirim yang
+            // sudah diganti jadi pesan terkunci di renderKartuTugas() saat status
+            // Pelanggaran Aktif, cek ulang di sini juga supaya tugas TIDAK bisa
+            // kekirim lewat cara apa pun selama statusnya masih aktif.
+            if ((typeof window.pelanggaranSiswaSedangAktif === 'function') && window.pelanggaranSiswaSedangAktif()) {
+                alert('Gagal! Tugas ini terkunci karena kamu masih berstatus Pelanggaran Aktif. Selesaikan dulu dengan guru/wali kelas.');
                 renderLiveTaskContent();
                 return;
             }
@@ -15461,10 +15484,17 @@
             // global yang sudah dipakai file ini.
             window.aktifkanPelanggaranSiswa = function () {
                 _setStatusPelanggaranAktif(true);
+                try { if (typeof renderLiveTaskContent === 'function') renderLiveTaskContent(); } catch (e) {}
             };
             window.selesaikanPelanggaranSiswa = function () {
                 _setStatusPelanggaranAktif(false);
+                try { if (typeof renderLiveTaskContent === 'function') renderLiveTaskContent(); } catch (e) {}
             };
+            // FITUR TAMBAHAN (lock tugas): diekspos ke window supaya bisa dibaca
+            // dari renderKartuTugas()/kirimTugasSiswa() yang letaknya jauh di atas
+            // (deklarasi function di sini cuma lokal ke IIFE ini) -- lihat dua
+            // fungsi tsb utk logika kunci tugas selama status masih aktif.
+            window.pelanggaranSiswaSedangAktif = statusPelanggaranSedangAktif;
 
             function ketikPesanOverlayPelanggaran(elPesan, teks, selesai) {
                 elPesan.innerHTML = '';
@@ -15512,6 +15542,13 @@
                     overlay.classList.add('hidden');
                     overlay.setAttribute('aria-hidden', 'true');
                 }, 180);
+                // Render ulang daftar tugas supaya kartu tugas langsung tampil
+                // dalam kondisi terkunci (status pelanggaran TETAP aktif setelah
+                // overlay ditutup -- cuma guru/wali kelas yang bisa membebaskannya,
+                // lihat renderKartuTugas()/kirimTugasSiswa() di atas).
+                try {
+                    if (typeof renderLiveTaskContent === 'function') renderLiveTaskContent();
+                } catch (e) { /* abaikan kalau daftar tugas belum siap dirender */ }
             }
 
             function tampilkanOverlayPelanggaranAktif() {

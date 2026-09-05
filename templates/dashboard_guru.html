@@ -2500,7 +2500,7 @@
                 if (!status.submitted) {
                     const sudahPelanggaranAktif = siswaPunyaPelanggaranAktif(m.username);
                     tombolPelanggaranHTML = `
-                        <button onclick="event.stopPropagation(); klikTogglePelanggaranSatuMurid(${m.id})" class="w-full py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${sudahPelanggaranAktif ? 'bg-rose-600 hover:bg-rose-700 text-white' : 'bg-amber-100 hover:bg-amber-200 text-amber-700'}">
+                        <button onclick="event.stopPropagation(); klikTogglePelanggaranSatuMurid(${m.id})" class="w-full py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${sudahPelanggaranAktif ? 'bg-rose-600 hover:bg-rose-700 text-white' : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300'}">
                             <i class="fa-solid fa-triangle-exclamation"></i> ${sudahPelanggaranAktif ? 'Pelanggaran Aktif · Batalkan' : 'Kasih Pelanggaran'}
                         </button>
                     `;
