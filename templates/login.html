@@ -819,6 +819,12 @@
         {% endif %}
       {% endwith %}
 
+      <!-- Diisi lewat JS saat login GAGAL (lihat tampilkanPesanErrorLogin() di
+           bawah) -- sengaja terpisah dari flash-container Flask di atas supaya
+           tidak perlu reload halaman untuk menampilkan pesan error, jadi
+           username/password/role yang sudah diisi user TIDAK ikut hilang. -->
+      <div class="flash-container" id="jsFlashContainer"></div>
+
     </form>
 
     <div class="bottom-links">
@@ -1119,6 +1125,18 @@
       return 'rgb(' + r + ',' + g + ',' + b + ')';
     }
 
+    var jsFlashContainer = document.getElementById('jsFlashContainer');
+
+    function tampilkanPesanErrorLogin(pesan) {
+      // Bikin ulang isi kontainer tiap kali gagal, jadi kalau user coba lagi
+      // dan gagal lagi, pesan lama tidak menumpuk.
+      jsFlashContainer.innerHTML = '';
+      var kotak = document.createElement('div');
+      kotak.className = 'flash-msg error';
+      kotak.textContent = pesan;
+      jsFlashContainer.appendChild(kotak);
+    }
+
     function tampilkanHasilLogin(hasil) {
       transisiPersen.style.opacity = '0';
 
@@ -1136,18 +1154,29 @@
         }, 650);
       } else {
         // ---------- GAGAL: kunci warna ring merah + mainkan silang (X) ----------
+        // PENTING: tidak lagi redirect/reload ke /login di sini seperti
+        // sebelumnya -- reload penuh itu yang bikin username/password/role
+        // yang sudah diisi user ikut hilang. Sekarang overlay cuma ditutup
+        // lagi di halaman yang sama, jadi isian form tetap ada dan user
+        // tinggal betulkan lalu coba lagi.
         transisiMasuk.classList.add('gagal');
         cincinIsi.style.stroke = '#ef4444';
         cincinIsi.style.filter = 'drop-shadow(0 0 7px #ef4444)';
         transisiGagal.classList.add('tampil');
         transisiTeks.textContent = 'Login gagal!';
-        transisiSubteks.textContent = (hasil && hasil.message) || 'Username, password, atau role salah!';
+        var pesanGagal = (hasil && hasil.message) || 'Username, password, atau role salah!';
+        transisiSubteks.textContent = pesanGagal;
 
-        // Tahan sebentar biar animasi silang kelihatan, baru "mental" balik ke
-        // halaman login (reload beneran, bukan cuma sembunyikan overlay) --
-        // pesan error tampil lewat flash message Flask yang sudah tersedia.
+        // Tahan sebentar biar animasi silang kelihatan, baru tutup overlay
+        // transisi dan kembalikan tombol submit ke keadaan siap-pakai --
+        // TANPA menyentuh nilai input username/password/role sama sekali.
         setTimeout(function () {
-          window.location.href = (hasil && hasil.loginUrl) || '/login';
+          transisiMasuk.classList.remove('tampil', 'gagal');
+          transisiCheck.classList.remove('tampil');
+          transisiGagal.classList.remove('tampil');
+          tombolSubmit.disabled = false;
+          tombolSubmit.style.opacity = '1';
+          tampilkanPesanErrorLogin(pesanGagal);
         }, 1400);
       }
     }
@@ -1159,6 +1188,7 @@
 
         tombolSubmit.disabled = true;
         tombolSubmit.style.opacity = '0.7';
+        jsFlashContainer.innerHTML = ''; // bersihkan pesan error percobaan sebelumnya
         transisiMasuk.classList.remove('gagal');
         transisiCheck.classList.remove('tampil');
         transisiGagal.classList.remove('tampil');

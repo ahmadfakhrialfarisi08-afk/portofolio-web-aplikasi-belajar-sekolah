@@ -5,7 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Belajar - Dashboard Siswa</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- CATATAN OPTIMASI (PENYEBAB UTAMA LAG saat klik/scroll/buka menu):
+         Sebelumnya di sini ada <script src="https://cdn.tailwindcss.com"></script>
+         -- itu bukan cuma file CSS, tapi COMPILER Tailwind lengkap yang jalan
+         LANGSUNG DI BROWSER tiap kali halaman dibuka: dia pasang MutationObserver
+         yang mengawasi SELURUH halaman, dan setiap kali ada elemen baru muncul/
+         berubah (toast notifikasi, render ulang daftar tugas, buka menu, dsb --
+         yang di dashboard ini terjadi SANGAT sering), compiler itu ikut jalan
+         lagi mem-parse & menyusun ulang CSS dari nol. Ini yang bikin klik/scroll/
+         buka menu kerasa berat, apalagi di HP yang CPU-nya lebih lemah dari laptop.
+         Sekarang diganti stylesheet CSS statis (tailwind_compiled.css) yang sudah
+         di-generate SEKALI DI LUAR browser (build time) berisi PERSIS kelas
+         Tailwind yang benar-benar dipakai di halaman ini -- browser tinggal
+         baca file CSS biasa, tidak ada compiler/observer yang jalan sama sekali.
+         Kalau nanti ada kelas Tailwind BARU ditambahkan ke halaman ini dan
+         belum kelihatan stylenya, itu tandanya tailwind_compiled.css perlu
+         di-generate ulang (lihat catatan build di README yang menyertai file
+         CSS ini) -- bukan tinggal pasang lagi <script src=cdn.tailwindcss.com>. -->
+    <link rel="stylesheet" href="../static/css/tailwind_compiled.css">
     <!-- OCR (Ekstraksi Teks Otomatis) untuk verifikasi foto bukti prestasi -->
     <!-- CATATAN OPTIMASI (halaman terasa berat): Tesseract.js dulu dimuat di sini
          lewat <script src> biasa, jadi library OCR (beberapa MB, jarang dipakai)
