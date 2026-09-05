@@ -1347,14 +1347,45 @@
         // ===== Penyimpanan Tugas Multi (Banyak Tugas per Kelas) =====
         // Setiap kelas punya ARRAY tugas (bukan 1 objek tunggal), jadi kalau guru
         // kirim tugas baru ke kelas yang sama, tugas lama TIDAK ketimpa/ke-replace.
+        // ===== Helper sinkron ke server (menggantikan localStorage-only) =====
+        // getSync() sengaja pakai XMLHttpRequest SYNCHRONOUS (bukan fetch async)
+        // supaya getTasksKelas() tetap bisa dipanggil langsung dan return array
+        // seketika seperti localStorage dulu, tanpa perlu ubah SEMUA pemanggilnya
+        // jadi async/await. Kalau server lagi tidak bisa dihubungi (mis. offline),
+        // otomatis fallback ke localStorage biar dashboard tidak nge-blank.
+        function getSync(kunci, fallback) {
+            try {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', `/api/sync/${encodeURIComponent(kunci)}`, false);
+                xhr.send(null);
+                if (xhr.status === 200) {
+                    const res = JSON.parse(xhr.responseText);
+                    if (res.ok) return (res.data === null || res.data === undefined) ? fallback : res.data;
+                }
+            } catch (e) {
+                console.warn('Gagal ambil data dari server, pakai cadangan lokal:', kunci, e);
+            }
+            const raw = localStorage.getItem(kunci);
+            return raw ? JSON.parse(raw) : fallback;
+        }
+        function setSync(kunci, data) {
+            // Tetap simpan salinan di localStorage sebagai cadangan offline,
+            // tapi sumber utama sekarang di server (data/sync_store.json).
+            localStorage.setItem(kunci, JSON.stringify(data));
+            fetch(`/api/sync/${encodeURIComponent(kunci)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data })
+            }).catch(e => console.warn('Gagal simpan data ke server:', kunci, e));
+        }
+
         function getTasksKelas(namaKelas) {
             const key = `tasks_${namaKelas.replace(/\s+/g, '_')}`;
-            const raw = localStorage.getItem(key);
-            return raw ? JSON.parse(raw) : [];
+            return getSync(key, []);
         }
         function saveTasksKelas(namaKelas, tasks) {
             const key = `tasks_${namaKelas.replace(/\s+/g, '_')}`;
-            localStorage.setItem(key, JSON.stringify(tasks));
+            setSync(key, tasks);
         }
         function buatIDTugasBaru() {
             return 'tgs_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
@@ -2141,8 +2172,7 @@
         // dan pesan bahwa tugas tersebut ditarik/tidak perlu dikerjakan lagi.
         function simpanNotifTugasDitarik(namaKelas, tugasDitarik) {
             const key = `notif_tugas_${namaKelas.replace(/\s+/g, '_')}`;
-            const raw = localStorage.getItem(key);
-            const daftarNotif = raw ? JSON.parse(raw) : [];
+            const daftarNotif = getSync(key, []);
 
             const namaGuru = tugasDitarik.namaGuru || cariNamaGuruKelas(namaKelas);
             const judulTugas = tugasDitarik.judul || tugasDitarik.tipe || 'Tugas Pembelajaran';
@@ -2157,8 +2187,8 @@
                 dibaca: false
             });
 
-            // Batasi maksimal 30 notifikasi tersimpan per kelas biar localStorage tidak membengkak.
-            localStorage.setItem(key, JSON.stringify(daftarNotif.slice(0, 30)));
+            // Batasi maksimal 30 notifikasi tersimpan per kelas biar data tidak membengkak.
+            setSync(key, daftarNotif.slice(0, 30));
         }
 
         // Notifikasi "tambahan waktu" untuk Dashboard Siswa. Dipicu otomatis dari mode
@@ -2168,8 +2198,7 @@
         // bisa menampilkannya dengan tema hijau (kabar baik) alih-alih merah.
         function simpanNotifTambahanWaktu(namaKelas, tugasData, menitDitambah) {
             const key = `notif_tugas_${namaKelas.replace(/\s+/g, '_')}`;
-            const raw = localStorage.getItem(key);
-            const daftarNotif = raw ? JSON.parse(raw) : [];
+            const daftarNotif = getSync(key, []);
 
             const namaGuru = tugasData.namaGuru || cariNamaGuruKelas(namaKelas);
             const judulTugas = tugasData.judul || tugasData.tipe || 'Tugas Pembelajaran';
@@ -2184,7 +2213,7 @@
                 dibaca: false
             });
 
-            localStorage.setItem(key, JSON.stringify(daftarNotif.slice(0, 30)));
+            setSync(key, daftarNotif.slice(0, 30));
         }
 
         // Tugas yang deadline-nya sudah lewat TIDAK dihapus dari sistem -- baris di
@@ -2285,8 +2314,7 @@
         }
         function ambilHasilPeriksaTersimpan(taskId, idSiswa) {
             try {
-                const raw = localStorage.getItem(kunciHasilPeriksaTugas(taskId, idSiswa));
-                return raw ? JSON.parse(raw) : null;
+                return getSync(kunciHasilPeriksaTugas(taskId, idSiswa), null);
             } catch (e) { return null; }
         }
 
@@ -3219,7 +3247,7 @@
             // di-refresh supaya "Kumpul: ..." langsung berubah jadi "Nilai: ...".
             if (periksaModeAktif === 'rekap' && rekapAktifDiPeriksa) {
                 const { namaKelas, taskId, idSiswa } = rekapAktifDiPeriksa;
-                localStorage.setItem(kunciHasilPeriksaTugas(taskId, idSiswa), JSON.stringify({ nilai: nilaiVal, catatan: catatanVal }));
+                setSync(kunciHasilPeriksaTugas(taskId, idSiswa), { nilai: nilaiVal, catatan: catatanVal });
 
                 // Siswa ID #1 adalah akun asli yang benar-benar kirim tugas dari
                 // Dashboard Siswa -- nilainya disinkronkan juga ke field `grade`

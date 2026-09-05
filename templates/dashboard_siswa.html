@@ -6416,12 +6416,41 @@
         // CATATAN: tugas & notifikasi tugas SENGAJA tetap dinamespace per KELAS
         // (bukan per akun) karena memang data ini dibagikan bersama ke satu kelas.
         const KELAS_AKTIF_SISWA = 'XII_TKJ_3';
+
+        // ===== Helper sinkron ke server (menggantikan localStorage-only) =====
+        // Sama seperti di Dashboard Guru: kunci yang dipakai SAMA PERSIS dengan
+        // kunci localStorage lama, cuma sekarang datanya betulan disimpan &
+        // dibaca dari server (data/sync_store.json) supaya tugas yang diinput
+        // guru dari device manapun langsung muncul juga di device siswa manapun.
+        function getSync(kunci, fallback) {
+            try {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', `/api/sync/${encodeURIComponent(kunci)}`, false);
+                xhr.send(null);
+                if (xhr.status === 200) {
+                    const res = JSON.parse(xhr.responseText);
+                    if (res.ok) return (res.data === null || res.data === undefined) ? fallback : res.data;
+                }
+            } catch (e) {
+                console.warn('Gagal ambil data dari server, pakai cadangan lokal:', kunci, e);
+            }
+            const raw = localStorage.getItem(kunci);
+            return raw ? JSON.parse(raw) : fallback;
+        }
+        function setSync(kunci, data) {
+            localStorage.setItem(kunci, JSON.stringify(data));
+            fetch(`/api/sync/${encodeURIComponent(kunci)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data })
+            }).catch(e => console.warn('Gagal simpan data ke server:', kunci, e));
+        }
+
         function getTasksSiswa() {
-            const raw = localStorage.getItem(`tasks_${KELAS_AKTIF_SISWA}`);
-            return raw ? JSON.parse(raw) : [];
+            return getSync(`tasks_${KELAS_AKTIF_SISWA}`, []);
         }
         function saveTasksSiswa(tasks) {
-            localStorage.setItem(`tasks_${KELAS_AKTIF_SISWA}`, JSON.stringify(tasks));
+            setSync(`tasks_${KELAS_AKTIF_SISWA}`, tasks);
         }
 
         /* ================= 4. NOTIFIKASI TUGAS DITARIK GURU =================
@@ -6432,15 +6461,14 @@
         const NOTIF_TUGAS_DITARIK_KEY = `notif_tugas_${KELAS_AKTIF_SISWA}`;
 
         function getNotifTugasDitarik() {
-            const raw = localStorage.getItem(NOTIF_TUGAS_DITARIK_KEY);
-            return raw ? JSON.parse(raw) : [];
+            return getSync(NOTIF_TUGAS_DITARIK_KEY, []);
         }
 
         function tandaiNotifTugasDibaca(notifId) {
             const daftarNotif = getNotifTugasDitarik();
             const notif = daftarNotif.find(n => n.id === notifId);
             if (notif) notif.dibaca = true;
-            localStorage.setItem(NOTIF_TUGAS_DITARIK_KEY, JSON.stringify(daftarNotif));
+            setSync(NOTIF_TUGAS_DITARIK_KEY, daftarNotif);
         }
 
         function tampilkanToastTugasDitarik(notif) {

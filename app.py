@@ -635,6 +635,61 @@ def _simpan_friends_store():
  
  
 friendships, friend_requests = _muat_friends_store()
+
+# ----------------------------------------------------
+# GENERIC KEY-VALUE SYNC STORE
+# ----------------------------------------------------
+# Dulu banyak data (daftar tugas per kelas, notifikasi tugas ditarik guru,
+# dll) cuma disimpan di localStorage browser -- artinya data itu NEMPEL di
+# satu device/browser doang dan TIDAK sinkron antara HP & laptop walau
+# login akun yang sama. Store generik ini jadi "localStorage versi server":
+# dashboard_guru.html & dashboard_siswa.html simpan/ambil data pakai kunci
+# yang SAMA PERSIS dengan nama kunci localStorage lama (mis. 'tasks_XII_TKJ_3',
+# 'notif_tugas_XII_TKJ_3'), tapi sekarang datanya betulan disimpan di sini
+# (file JSON di server) sehingga device mana pun yang buka dashboard akan
+# baca data yang sama.
+SYNC_STORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'sync_store.json')
+
+
+def _muat_sync_store():
+    try:
+        with open(SYNC_STORE_PATH, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _simpan_sync_store(store):
+    os.makedirs(os.path.dirname(SYNC_STORE_PATH), exist_ok=True)
+    tmp_path = SYNC_STORE_PATH + '.tmp'
+    with open(tmp_path, 'w', encoding='utf-8') as f:
+        json.dump(store, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, SYNC_STORE_PATH)
+
+
+@app.route('/api/sync/<kunci>', methods=['GET'])
+def api_sync_get(kunci):
+    """Ambil data yang tersimpan di server untuk 1 kunci (mis. 'tasks_XII_TKJ_3')."""
+    if 'user' not in session:
+        return jsonify({'ok': False, 'error': 'Belum login'}), 401
+    store = _muat_sync_store()
+    # None (bukan [] atau {}) kalau kuncinya belum pernah disimpan -- biar
+    # client yang tahu persis "kunci ini kosong" dan bisa pakai fallback-nya
+    # sendiri (array kosong, null, dsb) sesuai jenis data yang dia harapkan.
+    return jsonify({'ok': True, 'data': store.get(kunci, None)})
+
+
+@app.route('/api/sync/<kunci>', methods=['POST'])
+def api_sync_set(kunci):
+    """Timpa data untuk 1 kunci dengan data baru dari client (dikirim utuh,
+    sama seperti localStorage.setItem yang juga selalu menimpa seluruh isi kunci)."""
+    if 'user' not in session:
+        return jsonify({'ok': False, 'error': 'Belum login'}), 401
+    payload = request.get_json(silent=True) or {}
+    store = _muat_sync_store()
+    store[kunci] = payload.get('data', [])
+    _simpan_sync_store(store)
+    return jsonify({'ok': True})
  
  
 def _apakah_berteman(a, b):
