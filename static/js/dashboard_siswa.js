@@ -824,8 +824,8 @@
         // Dipakai supaya nama yang tampil & data progres (quiz/border/prestasi)
         // benar-benar ikut akun yang login, bukan data dummy/akun lain yang
         // kebetulan pernah login di browser yang sama.
-        const NAMA_SISWA_ASLI = "{{ nama }}";
-        const USERNAME_SISWA_ASLI = "{{ login_username }}";
+        const NAMA_SISWA_ASLI = window.NAMA_SISWA_ASLI;
+        const USERNAME_SISWA_ASLI = window.USERNAME_SISWA_ASLI;
 
         // ===== PROFIL AKUN DUMMY (khusus mode "coba sebagai akun lain") =====
         // Kalau user sedang "memakai" salah satu profil dummy (lewat Panel Akun
@@ -1004,20 +1004,39 @@
         // kunci localStorage lama, cuma sekarang datanya betulan disimpan &
         // dibaca dari server (data/sync_store.json) supaya tugas yang diinput
         // guru dari device manapun langsung muncul juga di device siswa manapun.
+        //
+        // PERBAIKAN PERFORMA (PENTING): versi lama fungsi ini pakai
+        // XMLHttpRequest SYNCHRONOUS (xhr.open(..., false)) -- itu bikin
+        // SELURUH TAB BROWSER BENAR-BENAR FREEZE (jam berhenti, animasi
+        // macet, klik tidak direspons) selama menunggu balasan server,
+        // dan fungsi ini dipanggil lewat getTasksSiswa() di BELASAN tempat
+        // termasuk tiap 3 detik lewat polling -- jadi tiap server sedikit
+        // lambat (wajar di hosting 1 worker), seluruh dashboard ikut freeze.
+        // Sekarang: getSync() SELALU balik nilai secara instan dari cache/
+        // localStorage (tidak pernah menunggu network sama sekali), sambil
+        // diam-diam nge-refresh cache-nya di background pakai fetch() biasa
+        // (non-blocking) supaya pemanggilan BERIKUTNYA sudah dapat data
+        // paling baru. Data yang ditampilkan bisa saja sepersekian detik
+        // "tertinggal" dari server, tapi UI tidak akan pernah freeze lagi.
+        const _cacheSync = {};
         function getSync(kunci, fallback) {
-            try {
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', `/api/sync/${encodeURIComponent(kunci)}`, false);
-                xhr.send(null);
-                if (xhr.status === 200) {
-                    const res = JSON.parse(xhr.responseText);
-                    if (res.ok) return (res.data === null || res.data === undefined) ? fallback : res.data;
-                }
-            } catch (e) {
-                console.warn('Gagal ambil data dari server, pakai cadangan lokal:', kunci, e);
-            }
+            _refreshSyncDiBackground(kunci, fallback);
+            if (kunci in _cacheSync) return _cacheSync[kunci];
             const raw = localStorage.getItem(kunci);
-            return raw ? JSON.parse(raw) : fallback;
+            const nilaiLokal = raw ? JSON.parse(raw) : fallback;
+            _cacheSync[kunci] = nilaiLokal;
+            return nilaiLokal;
+        }
+        function _refreshSyncDiBackground(kunci, fallback) {
+            fetch(`/api/sync/${encodeURIComponent(kunci)}`)
+                .then(res => res.ok ? res.json() : null)
+                .then(res => {
+                    if (!res || !res.ok) return;
+                    const data = (res.data === null || res.data === undefined) ? fallback : res.data;
+                    _cacheSync[kunci] = data;
+                    localStorage.setItem(kunci, JSON.stringify(data));
+                })
+                .catch(e => console.warn('Gagal ambil data dari server, pakai cadangan lokal:', kunci, e));
         }
         function setSync(kunci, data) {
             localStorage.setItem(kunci, JSON.stringify(data));
@@ -4000,28 +4019,26 @@
                         studentImage: cache.images && cache.images[0]
                     });
                 }
-                // Belum ada cache di memori -> tanya server sekali (sinkron, sama
-                // pola dengan getSync) supaya status tetap benar walau baru buka
-                // dashboard/reload (misal abis kirim dari device lain).
-                try {
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('GET', `/api/tugas/submission/${encodeURIComponent(t.id)}`, false);
-                    xhr.send(null);
-                    if (xhr.status === 200) {
-                        const res = JSON.parse(xhr.responseText);
-                        if (res.ok !== false && res.data && res.data.submitted) {
-                            window._statusTugasSendiri[t.id] = res.data;
-                            return Object.assign({}, t, {
-                                studentSubmitted: true,
-                                sudahMengumpulkan: true,
-                                waktuKirim: res.data.waktu,
-                                studentImages: res.data.images,
-                                studentImage: res.data.images && res.data.images[0]
-                            });
-                        }
-                    }
-                } catch (e) {
-                    console.warn('Gagal cek status pengumpulan tugas milik sendiri:', t.id, e);
+                // Belum ada cache di memori -> tanya server di BACKGROUND (bukan
+                // sinkron/blocking lagi -- lihat catatan besar di getSync() soal
+                // kenapa XHR synchronous berbahaya). Fungsi ini tetap balik nilai
+                // "belum dikumpulkan" SEKARANG JUGA (instan, tidak menunggu),
+                // dan kalau ternyata server bilang sudah pernah dikumpulkan,
+                // hasilnya disimpan ke cache + dashboard di-render ulang sekali
+                // begitu datanya sampai -- jadi tetap akurat, cuma tidak nge-freeze.
+                if (!window._sedangCekStatusTugas) window._sedangCekStatusTugas = {};
+                if (!window._sedangCekStatusTugas[t.id]) {
+                    window._sedangCekStatusTugas[t.id] = true;
+                    fetch(`/api/tugas/submission/${encodeURIComponent(t.id)}`)
+                        .then(res => res.ok ? res.json() : null)
+                        .then(res => {
+                            if (res && res.ok !== false && res.data && res.data.submitted) {
+                                window._statusTugasSendiri[t.id] = res.data;
+                                try { if (typeof renderLiveTaskContent === 'function') renderLiveTaskContent(); } catch (e) {}
+                            }
+                        })
+                        .catch(e => console.warn('Gagal cek status pengumpulan tugas milik sendiri:', t.id, e))
+                        .finally(() => { delete window._sedangCekStatusTugas[t.id]; });
                 }
                 // Belum pernah dikirim akun ini -> pastikan tidak kebawa flag lama
                 // dari skema sekelas (tasks_<KELAS>) yang mungkin masih ada di data.

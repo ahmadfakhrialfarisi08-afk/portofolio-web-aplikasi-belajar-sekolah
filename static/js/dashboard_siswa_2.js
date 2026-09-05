@@ -1720,7 +1720,7 @@
 
         const NAMA_PEMAIN_QUIZ = NAMA_SISWA_AKTIF;
         const KEY_QUIZ_DATA = `quiz_data_${ID_SISWA_AKTIF}`;
-        const AVATAR_DEFAULT_QUIZ = "{{ foto_profil }}";
+        const AVATAR_DEFAULT_QUIZ = window.AVATAR_DEFAULT_QUIZ;
 
         // Ambil foto profil siswa yang sedang aktif SEKARANG (biar snapshot yang
         // disimpan ke tiap entri leaderboard selalu sinkron sama foto terbaru,
