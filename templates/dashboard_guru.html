@@ -5,7 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Guru & Siswa - SMK Banjar Asri Cimaung</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- CATATAN OPTIMASI (PENYEBAB UTAMA LAG saat klik/scroll/buka menu -- sama
+         seperti yang sudah diperbaiki di dashboard_siswa.html):
+         Sebelumnya di sini ada <script src="https://cdn.tailwindcss.com"></script>
+         -- itu compiler Tailwind lengkap yang jalan LANGSUNG DI BROWSER, memasang
+         MutationObserver yang mengawasi seluruh perubahan halaman dan menyusun
+         ulang CSS tiap kali ada elemen baru muncul/berubah (modal konfirmasi,
+         render ulang tabel/daftar, dsb). Sekarang diganti stylesheet statis
+         (tailwind_compiled_guru.css) yang sudah di-generate SEKALI di build time,
+         isinya persis kelas Tailwind yang dipakai di halaman GURU ini saja --
+         sengaja file terpisah dari punya siswa (tailwind_compiled.css) supaya
+         gampang dibedakan, dan supaya nggak ada kelas yang kepotong kalau salah
+         satu halaman punya kelas dinamis yang tidak dipakai di halaman lain.
+         Kalau nanti ada kelas Tailwind BARU dipakai di halaman ini dan belum
+         kelihatan stylenya, file ini perlu di-generate ulang -- bukan tinggal
+         pasang lagi <script src=cdn.tailwindcss.com>. -->
+    <link rel="stylesheet" href="../static/css/tailwind_compiled_guru.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
