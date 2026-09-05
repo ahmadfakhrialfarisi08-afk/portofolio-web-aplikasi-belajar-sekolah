@@ -15443,55 +15443,70 @@
            supaya ID_SISWA_AKTIF (dideklarasikan jauh di atas) sudah pasti
            ada saat script ini jalan.
 
-           Sumber status "aktif/tidak" pelanggaran disimpan per-siswa di
-           localStorage (namespace ID_SISWA_AKTIF, sama seperti data
-           pribadi siswa lainnya di file ini), lewat key hasil
-           keyPelanggaranAktifSiswa() di bawah.
-
-           Untuk keperluan pengujian/integrasi lanjutan (mis. nanti
-           dari sisi guru), dua helper ini sengaja diekspos ke window:
-             - window.aktifkanPelanggaranSiswa()  -> set status jadi aktif
-             - window.selesaikanPelanggaranSiswa() -> set status jadi tidak aktif
+           SEBELUMNYA status "aktif/tidak" pelanggaran cuma disimpan di
+           localStorage browser ini sendiri -- artinya kalau guru menandai
+           dari PERANGKAT LAIN (kondisi sungguhan di sekolah: guru & siswa
+           pasti beda HP/laptop), status itu TIDAK PERNAH sampai ke sini
+           sama sekali, reload manual pun percuma karena localStorage
+           memang tidak pernah dibagi antar perangkat.
+           Sekarang status diambil dari SERVER (endpoint
+           /api/pelanggaran/status di app.py, lihat tabel pelanggaran_store
+           di sana) lewat POLLING berkala (lihat JEDA_POLL_PELANGGARAN_MS
+           di bawah) -- supaya begitu guru "Kasih Pelanggaran"/"Batalkan"
+           dari perangkatnya, dalam hitungan detik overlay peringatan di
+           sini otomatis muncul/hilang sendiri TANPA siswa perlu reload
+           manual (jadi tidak bisa "pura-pura tidak lihat" nunggu reload).
+           _statusPelanggaranAktifCache di bawah cuma salinan lokal hasil
+           poll terakhir, dipakai fungsi-fungsi lain di file ini yang
+           butuh cek status ini secara SINKRON (lewat
+           window.pelanggaranSiswaSedangAktif(), lihat 2 pemakaiannya di
+           renderKartuTugas()/kirimTugasSiswa() jauh di atas).
            ============================================================ */
         (function () {
             var PESAN_OVERLAY_PELANGGARAN = 'Opps, kamu ada pelanggaran! Segera selesaikan, jika tidak kamu tidak bisa membereskan tugas yang lain.';
             var LAMA_TOMBOL_TERKUNCI_DETIK = 5;
+            var JEDA_POLL_PELANGGARAN_MS = 5000; // cek ke server tiap 5 detik
 
-            function keyPelanggaranAktifSiswa() {
-                var idSiswa = (typeof ID_SISWA_AKTIF !== 'undefined' && ID_SISWA_AKTIF) ? ID_SISWA_AKTIF : 'siswa';
-                return 'pelanggaran_aktif_' + idSiswa;
-            }
+            var _statusPelanggaranAktifCache = false; // salinan lokal, diupdate tiap poll
 
             function statusPelanggaranSedangAktif() {
-                try {
-                    return localStorage.getItem(keyPelanggaranAktifSiswa()) === '1';
-                } catch (e) {
-                    return false;
-                }
+                return _statusPelanggaranAktifCache;
             }
 
-            function _setStatusPelanggaranAktif(aktif) {
-                try {
-                    if (aktif) {
-                        localStorage.setItem(keyPelanggaranAktifSiswa(), '1');
-                    } else {
-                        localStorage.removeItem(keyPelanggaranAktifSiswa());
-                    }
-                } catch (e) { /* localStorage tidak tersedia -- abaikan */ }
+            // Tarik status TERBARU dari server (bukan localStorage lagi -- lihat
+            // catatan besar di atas). Dipanggil sekali saat dashboard dibuka,
+            // lalu berulang tiap JEDA_POLL_PELANGGARAN_MS lewat setInterval di
+            // bawah -- ini yang bikin perubahan dari guru "kelihatan" di sini
+            // tanpa reload, walau guru & siswa beda perangkat.
+            function cekStatusPelanggaranKeServer() {
+                fetch('/api/pelanggaran/status')
+                    .then(function (res) { return res.json(); })
+                    .then(function (json) {
+                        if (!json || !json.success) return;
+                        var sebelumnya = _statusPelanggaranAktifCache;
+                        _statusPelanggaranAktifCache = !!json.aktif;
+                        if (_statusPelanggaranAktifCache === sebelumnya) return; // tidak berubah, tidak perlu apa-apa
+
+                        if (_statusPelanggaranAktifCache) {
+                            // Baru saja ditandai guru -- langsung tampilkan overlay
+                            // peringatan kalau belum kelihatan.
+                            tampilkanOverlayPelanggaranAktif();
+                        } else {
+                            // Baru saja dicabut/dibatalkan guru -- tutup overlay
+                            // otomatis kalau kebetulan lagi kebuka, dan buka kunci
+                            // tugas yang tadinya terkunci.
+                            tutupOverlayPelanggaranAktif();
+                        }
+                        try { if (typeof renderLiveTaskContent === 'function') renderLiveTaskContent(); } catch (e) {}
+                    })
+                    .catch(function () {
+                        // Offline/gagal sesaat -- biarkan cache lama dipakai dulu,
+                        // dicoba lagi di tick poll berikutnya.
+                    });
             }
 
-            // Helper publik (lihat catatan di atas) -- tidak menimpa nama
-            // global yang sudah dipakai file ini.
-            window.aktifkanPelanggaranSiswa = function () {
-                _setStatusPelanggaranAktif(true);
-                try { if (typeof renderLiveTaskContent === 'function') renderLiveTaskContent(); } catch (e) {}
-            };
-            window.selesaikanPelanggaranSiswa = function () {
-                _setStatusPelanggaranAktif(false);
-                try { if (typeof renderLiveTaskContent === 'function') renderLiveTaskContent(); } catch (e) {}
-            };
-            // FITUR TAMBAHAN (lock tugas): diekspos ke window supaya bisa dibaca
-            // dari renderKartuTugas()/kirimTugasSiswa() yang letaknya jauh di atas
+            // FITUR (lock tugas): diekspos ke window supaya bisa dibaca dari
+            // renderKartuTugas()/kirimTugasSiswa() yang letaknya jauh di atas
             // (deklarasi function di sini cuma lokal ke IIFE ini) -- lihat dua
             // fungsi tsb utk logika kunci tugas selama status masih aktif.
             window.pelanggaranSiswaSedangAktif = statusPelanggaranSedangAktif;
@@ -15576,21 +15591,25 @@
                 };
             }
 
-            function cekDanTampilkanOverlayPelanggaranAktif() {
-                if (statusPelanggaranSedangAktif()) {
-                    tampilkanOverlayPelanggaranAktif();
-                }
+            // Poll PERTAMA sengaja ditunda dulu (biar tidak tumpang tindih sama
+            // animasi transisi masuk dashboard yang butuh ~450-650ms -- lihat
+            // IIFE "layar transisi masuk dashboard" tepat di atas) -- kalau
+            // hasilnya aktif=true, tampilkanOverlayPelanggaranAktif() otomatis
+            // dipanggil dari dalam cekStatusPelanggaranKeServer() di atas.
+            // Setelah itu, polling jalan terus tiap JEDA_POLL_PELANGGARAN_MS
+            // via setInterval -- inilah yang bikin "Kasih Pelanggaran"/
+            // "Batalkan" dari guru (di perangkat manapun) kelihatan di sini
+            // dalam hitungan detik, TANPA siswa perlu reload manual.
+            function mulaiPollingStatusPelanggaran() {
+                cekStatusPelanggaranKeServer();
+                setInterval(cekStatusPelanggaranKeServer, JEDA_POLL_PELANGGARAN_MS);
             }
 
-            // Ditampilkan sesaat setelah layar transisi masuk dashboard selesai
-            // (lihat IIFE "layar transisi masuk dashboard" tepat di atas, yang
-            // butuh ~450-650ms) supaya overlay tidak tumpang tindih dengan
-            // animasi masuk tersebut.
             if (document.readyState === 'complete') {
-                setTimeout(cekDanTampilkanOverlayPelanggaranAktif, 700);
+                setTimeout(mulaiPollingStatusPelanggaran, 700);
             } else {
                 window.addEventListener('load', function () {
-                    setTimeout(cekDanTampilkanOverlayPelanggaranAktif, 700);
+                    setTimeout(mulaiPollingStatusPelanggaran, 700);
                 });
             }
         })();

@@ -2292,30 +2292,71 @@
 
         /* ============================================================
            FITUR TAMBAHAN — "KASIH PELANGGARAN" dari Rekap Pengumpulan per Tugas
-           Status disimpan di localStorage dengan key persis SAMA formatnya
-           dengan yang dibaca dashboard_siswa.html (lihat keyPelanggaranAktifSiswa()
-           di sana): `pelanggaran_aktif_${username}`. Karena roster di sini
-           memakai username akun login ASLI (siswa/syam/waldi/dst -- lihat
-           SISWA_KELAS_INI), begitu murid terkait buka dashboard-nya sendiri,
-           overlay peringatan "Pelanggaran Aktif" otomatis muncul di sana.
-           Murni fitur tambahan -- tidak mengubah data/fungsi rekap yang sudah ada.
+           SEBELUMNYA status ditulis ke localStorage browser guru (key
+           `pelanggaran_aktif_${username}`) -- tapi ternyata itu artinya
+           status ini TIDAK PERNAH sampai ke siswa kalau guru & siswa buka
+           dashboard di PERANGKAT YANG BERBEDA (localStorage tidak dibagi
+           antar perangkat/browser), reload di sisi siswa pun percuma.
+           Sekarang status disimpan di SERVER (lihat /api/pelanggaran/set,
+           /api/pelanggaran/semua di app.py, tabel pelanggaran_store).
+           _cachePelanggaranAktifServer di bawah cuma SALINAN LOKAL biar
+           render kartu tetap instan (tidak perlu network tiap kartu
+           dirender) -- disegarkan dari server tiap kali jendela Rekap ini
+           dibuka (lihat muatPelanggaranAktifDariServer(), dipanggil dari
+           bukaRekapPengumpulanTugas()). Di sisi siswa, status di-polling
+           berkala (lihat dashboard_siswa.html) supaya overlay peringatan &
+           penguncian tugas langsung berubah tanpa reload manual, walau
+           beda perangkat dengan guru. Karena roster di sini memakai
+           username akun login ASLI (siswa/syam/waldi/dst -- lihat
+           SISWA_KELAS_INI), begitu murid terkait buka dashboard-nya
+           sendiri (di perangkat manapun), overlay peringatan "Pelanggaran
+           Aktif" otomatis muncul di sana.
            ============================================================ */
-        function keyPelanggaranAktifUntukUsername(username) {
-            return `pelanggaran_aktif_${username}`;
+        let _cachePelanggaranAktifServer = {}; // salinan lokal { username: true } dari /api/pelanggaran/semua
+
+        async function muatPelanggaranAktifDariServer() {
+            try {
+                const res = await fetch('/api/pelanggaran/semua');
+                const json = await res.json();
+                if (json && json.success) _cachePelanggaranAktifServer = json.aktif || {};
+            } catch (e) {
+                // Gagal/offline -- biarkan cache lokal yang lama dulu, jangan
+                // sampai jendela Rekap gagal kebuka gara-gara ini.
+            }
         }
+
         function siswaPunyaPelanggaranAktif(username) {
-            try {
-                return localStorage.getItem(keyPelanggaranAktifUntukUsername(username)) === '1';
-            } catch (e) { return false; }
+            return !!_cachePelanggaranAktifServer[username];
         }
-        function setPelanggaranAktifUntukUsername(username, aktif) {
+
+        // Kirim perubahan status ke SERVER (bukan localStorage lagi -- lihat
+        // catatan besar di atas). Cache lokal diupdate SEBELUM network
+        // selesai (baris² sebelum `await fetch` di bawah jalan sinkron)
+        // supaya pemanggil (klikTogglePelanggaranSatuMurid dkk) bisa
+        // langsung render ulang kartu tanpa nunggu -- kalau ternyata
+        // requestnya GAGAL, cache dibalikin lagi & guru diberi tahu.
+        async function setPelanggaranAktifUntukUsername(username, aktif) {
+            if (aktif) _cachePelanggaranAktifServer[username] = true;
+            else delete _cachePelanggaranAktifServer[username];
+
             try {
-                if (aktif) {
-                    localStorage.setItem(keyPelanggaranAktifUntukUsername(username), '1');
-                } else {
-                    localStorage.removeItem(keyPelanggaranAktifUntukUsername(username));
+                const res = await fetch('/api/pelanggaran/set', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, aktif })
+                });
+                const json = await res.json();
+                if (!json || !json.success) throw new Error((json && json.message) || 'Gagal menyimpan.');
+            } catch (e) {
+                // Server menolak/gagal -- balikin cache lokal ke keadaan semula
+                // supaya tampilan guru tidak "bohong" bilang sudah tersimpan.
+                if (aktif) delete _cachePelanggaranAktifServer[username];
+                else _cachePelanggaranAktifServer[username] = true;
+                tampilkanToastSuksesKirimTugas('Gagal Tersimpan', 'Perubahan status pelanggaran gagal disimpan ke server. Coba lagi.');
+                if (taskAktifDipilihUntukRekap) {
+                    bukaRekapPengumpulanTugas(taskAktifDipilihUntukRekap.namaKelas, taskAktifDipilihUntukRekap.taskId, true);
                 }
-            } catch (e) { /* localStorage tidak tersedia -- abaikan */ }
+            }
         }
 
         // Toggle status utk SATU murid, dipanggil dari tombol kecil di kartu
@@ -2439,6 +2480,16 @@
             // profil / border sebelum guru buka rekap ini, tampilannya langsung
             // mengikuti perubahan itu, bukan data lama yang nyangkut di memori.
             if (!_dariSinkron && namaKelas === 'XII TKJ 3') sinkronBorderRosterDariServer();
+
+            // Tarik status Pelanggaran Aktif TERBARU dari server (lihat catatan
+            // besar di _cachePelanggaranAktifServer di atas) tiap kali jendela ini
+            // dibuka pertama kali -- supaya tombol "Kasih Pelanggaran"/"Batalkan"
+            // tiap murid akurat walau statusnya barusan diubah dari perangkat lain.
+            if (!_dariSinkron) {
+                muatPelanggaranAktifDariServer().then(function () {
+                    bukaRekapPengumpulanTugas(namaKelas, taskId, true);
+                });
+            }
 
             const tasksKelasIni = getTasksKelas(namaKelas);
             const task = tasksKelasIni.find(t => t.id === taskId);

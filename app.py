@@ -485,6 +485,102 @@ def _simpan_saran_store():
 saran_store = _muat_saran_store()
 
 
+# ----------------------------------------------------
+# DATA PELANGGARAN AKTIF SISWA (SIMULASI TABEL student_violations)
+# SEBELUMNYA fitur "Kasih Pelanggaran"/"Cabut Pelanggaran" di Dashboard Guru
+# CUMA nulis ke localStorage browser (key `pelanggaran_aktif_<username>`) --
+# artinya kalau guru & siswa buka dashboard di PERANGKAT/BROWSER YANG
+# BERBEDA (kondisi pemakaian sungguhan di sekolah), status itu TIDAK PERNAH
+# nyampe ke siswa sama sekali, reload berkali-kali pun percuma, karena
+# localStorage tidak pernah dibagi antar perangkat.
+# Sekarang status disimpan di SINI (server, ditulis ke file JSON di disk --
+# pola sama seperti quiz_store/prestasi_store/saran_store di atas) supaya:
+#   1) Guru menandai dari perangkatnya -> langsung kesimpan di server.
+#   2) Siswa (dari perangkat LAIN) polling status miliknya sendiri secara
+#      berkala (lihat dashboard_siswa.html) -- jadi overlay peringatan &
+#      penguncian tugas muncul/hilang TANPA perlu reload manual, walau
+#      guru & siswa beda perangkat.
+# Skema: pelanggaran_store[username] = { aktif: bool, updated_at, oleh }
+# ----------------------------------------------------
+PELANGGARAN_STORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'pelanggaran_store.json')
+
+
+def _muat_pelanggaran_store():
+    """Baca pelanggaran_store dari file JSON di disk (kalau ada)."""
+    try:
+        with open(PELANGGARAN_STORE_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _simpan_pelanggaran_store():
+    """Tulis pelanggaran_store saat ini ke file JSON di disk (atomic, sama
+    pola dengan _simpan_quiz_store dkk supaya tidak korup kalau ketiban
+    proses lain nulis bersamaan)."""
+    os.makedirs(os.path.dirname(PELANGGARAN_STORE_PATH), exist_ok=True)
+    tmp_path = PELANGGARAN_STORE_PATH + '.tmp'
+    with open(tmp_path, 'w', encoding='utf-8') as f:
+        json.dump(pelanggaran_store, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, PELANGGARAN_STORE_PATH)
+
+
+pelanggaran_store = _muat_pelanggaran_store()
+
+
+@app.route('/api/pelanggaran/set', methods=['POST'])
+def api_pelanggaran_set():
+    """Guru menandai ('Kasih Pelanggaran') atau mencabut ('Batalkan') status
+    Pelanggaran Aktif utk SATU siswa, by username akun login ASLI (sama
+    seperti roster di dashboard_guru.html). Disimpan di server -- lihat
+    catatan besar di atas pelanggaran_store soal kenapa ini dipindah dari
+    localStorage."""
+    if 'user' not in session or session['user']['role'] != 'guru':
+        return jsonify(success=False, message='Belum login sebagai guru.'), 401
+
+    body = request.get_json(silent=True) or {}
+    username = (body.get('username') or '').strip()
+    aktif = bool(body.get('aktif'))
+    if not username:
+        return jsonify(success=False, message='Username siswa kosong.'), 400
+
+    if aktif:
+        pelanggaran_store[username] = {
+            'aktif': True,
+            'updated_at': datetime.utcnow().isoformat(),
+            'oleh': session['user'].get('nama') or session['user']['username']
+        }
+    else:
+        pelanggaran_store.pop(username, None)
+    _simpan_pelanggaran_store()
+    return jsonify(success=True, username=username, aktif=aktif)
+
+
+@app.route('/api/pelanggaran/semua', methods=['GET'])
+def api_pelanggaran_semua():
+    """Daftar SEMUA username yang statusnya sedang Pelanggaran Aktif saat
+    ini -- dipakai Dashboard Guru buat render tombol tiap murid (ganti
+    total dari cek localStorage per-username)."""
+    if 'user' not in session or session['user']['role'] != 'guru':
+        return jsonify(success=False, message='Belum login sebagai guru.'), 401
+    aktif_saja = {u: True for u, v in pelanggaran_store.items() if v.get('aktif')}
+    return jsonify(success=True, aktif=aktif_saja)
+
+
+@app.route('/api/pelanggaran/status', methods=['GET'])
+def api_pelanggaran_status():
+    """Dipanggil dari Dashboard Siswa (sekali saat dashboard dibuka, LALU
+    di-poll berkala tiap beberapa detik) buat cek status Pelanggaran Aktif
+    milik akun yang sedang login sendiri -- lintas perangkat, tidak lagi
+    bergantung localStorage yang ditulis browser guru."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login sebagai siswa.'), 401
+    username = session['user']['username']
+    entri = pelanggaran_store.get(username)
+    return jsonify(success=True, aktif=bool(entri and entri.get('aktif')))
+
+
 def _default_quiz_blob(jenis):
     if jenis == 'essay':
         return {'bestByLevel': {'easy': 0, 'medium': 0, 'hard': 0}, 'leaderboard': []}
