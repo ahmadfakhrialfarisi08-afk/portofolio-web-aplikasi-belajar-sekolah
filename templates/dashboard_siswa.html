@@ -6756,16 +6756,30 @@
             if (badgeNav) badgeNav.classList.toggle('hidden', jumlah <= 0);
         }
 
+        // Hemat request: kalau renderPermintaanTeman() dan renderDaftarTeman()
+        // dipanggil hampir bersamaan (mis. dari polling berkala tiap 3 detik di
+        // bawah), keduanya butuh data yang PERSIS SAMA dari /api/teman/relasi.
+        // Daripada fetch 2x buat data identik, panggilan yang datang selagi
+        // masih ada fetch yang berjalan cukup "menumpang" promise yang sama
+        // (in-flight de-dupe) -- bukan cache berjangka waktu, jadi tidak bikin
+        // data basi setelah aksi seperti terima/tolak pertemanan.
+        let _janjiRelasiPertemananBerjalan = null;
         async function ambilRelasiPertemanan() {
-            try {
-                const res = await fetch('/api/teman/relasi');
-                const json = await res.json();
-                if (!json.success) return { permintaan_masuk: [], teman: [] };
-                return json;
-            } catch (e) {
-                console.error('Gagal ambil data pertemanan:', e);
-                return { permintaan_masuk: [], teman: [] };
-            }
+            if (_janjiRelasiPertemananBerjalan) return _janjiRelasiPertemananBerjalan;
+            _janjiRelasiPertemananBerjalan = (async () => {
+                try {
+                    const res = await fetch('/api/teman/relasi');
+                    const json = await res.json();
+                    if (!json.success) return { permintaan_masuk: [], teman: [] };
+                    return json;
+                } catch (e) {
+                    console.error('Gagal ambil data pertemanan:', e);
+                    return { permintaan_masuk: [], teman: [] };
+                } finally {
+                    _janjiRelasiPertemananBerjalan = null;
+                }
+            })();
+            return _janjiRelasiPertemananBerjalan;
         }
 
         async function renderPermintaanTeman() {
@@ -11165,7 +11179,17 @@
             cekPembaruanTugasRealtime(); // set snapshot awal sebagai baseline
             updateGlobalCountdown();
             setInterval(updateGlobalCountdown, 1000);
-            setInterval(() => {
+            // Sinkronisasi berkala (riwayat tugas, notif, badge pertemanan &
+            // perangkat) tiap 3 detik. PENTING buat hemat resource hosting:
+            // kalau tab ini sedang tidak aktif dilihat (di-minimize/pindah
+            // tab/laptop terkunci), tick ini di-skip total -- tidak ada fetch
+            // sama sekali ke server selama tab tidak aktif, walau timer-nya
+            // sendiri tetap jalan tiap 3 detik (murah, cuma timer JS lokal).
+            // Begitu tab aktif lagi, listener visibilitychange di bawah
+            // langsung memicu satu kali sinkronisasi supaya datanya tetap
+            // terasa real-time buat siswa, tanpa perlu menunggu tick berikutnya.
+            function jalankanSinkronisasiBerkalaDashboard() {
+                if (document.hidden) return; // tab tidak sedang dilihat -- jangan buang request
                 sinkronkanRiwayatDenganTugasAktif();
                 catatRiwayatTugasKedaluwarsaJikaPerlu();
                 cekPembaruanTugasRealtime();
@@ -11174,7 +11198,11 @@
                 renderPermintaanTeman(); // cek permintaan pertemanan baru dari server -- biar titik merah di sidebar & badge dropdown langsung muncul di sisi penerima walau dashboard sudah kebuka duluan
                 renderDaftarTeman(); // biar daftar teman ikut update kalau ada pertemanan baru terbentuk dari sisi lain
                 updateBadgePerangkatNavSaja(); // cek ada tidaknya perangkat baru yang pending, tanpa nge-render ulang tabel penuh tiap 3 detik
-            }, 3000);
+            }
+            setInterval(jalankanSinkronisasiBerkalaDashboard, 3000);
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) jalankanSinkronisasiBerkalaDashboard();
+            });
             cekNotifBaruTugasDitarik();
             cekNotifBaruStatusPrestasi();
         });
@@ -15586,6 +15614,14 @@
             // bawah -- ini yang bikin perubahan dari guru "kelihatan" di sini
             // tanpa reload, walau guru & siswa beda perangkat.
             function cekStatusPelanggaranKeServer() {
+                // Hemat resource: kalau tab ini sedang tidak dilihat (tab lain
+                // aktif/window di-minimize), skip -- tidak ada gunanya menampilkan
+                // overlay peringatan di tab yang tidak sedang dilihat siapa pun,
+                // dan ini yang paling banyak menyumbang request kalau siswa lupa
+                // menutup tab dashboard berjam-jam. Listener visibilitychange di
+                // bawah memicu 1x cek langsung begitu tab aktif lagi, jadi tidak
+                // ada delay yang terasa oleh siswa.
+                if (document.hidden) return;
                 fetch('/api/pelanggaran/status')
                     .then(function (res) { return res.json(); })
                     .then(function (json) {
@@ -15710,6 +15746,9 @@
             function mulaiPollingStatusPelanggaran() {
                 cekStatusPelanggaranKeServer();
                 setInterval(cekStatusPelanggaranKeServer, JEDA_POLL_PELANGGARAN_MS);
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden) cekStatusPelanggaranKeServer();
+                });
             }
 
             if (document.readyState === 'complete') {
