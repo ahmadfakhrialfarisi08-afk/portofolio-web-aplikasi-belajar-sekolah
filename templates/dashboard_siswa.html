@@ -3035,6 +3035,71 @@
             html:not(.dark) .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #E8E8EF; }
         }
     </style>
+
+    <!-- ============================================================
+         FITUR TAMBAHAN — OVERLAY PERINGATAN "PELANGGARAN AKTIF"
+         Style di bawah ini KHUSUS untuk overlay yang muncul saat
+         dashboard dibuka dan status pelanggaran siswa masih aktif
+         (lihat markup #overlay-pelanggaran-aktif di <body> dan script
+         di dekat penutup </body>). Murni tambahan -- tidak mengubah
+         style/CSS lain yang sudah ada di atas.
+         ============================================================ -->
+    <style>
+        /* Blur cepat pada dashboard di belakang overlay. Ditarget lewat
+           class di <body> supaya TIDAK perlu bungkus ulang markup yang
+           sudah ada -- seluruh anak langsung <body> ikut diburamkan
+           KECUALI overlay itu sendiri. */
+        body.pelanggaran-aktif-blur > *:not(#overlay-pelanggaran-aktif) {
+            filter: blur(10px);
+            transition: filter .18s ease-out;
+        }
+
+        #overlay-pelanggaran-aktif {
+            opacity: 0;
+            transition: opacity .18s ease-out;
+        }
+        #overlay-pelanggaran-aktif.overlay-pelanggaran--tampil {
+            opacity: 1;
+        }
+
+        .overlay-pelanggaran-kartu {
+            transform: scale(.8) translateY(16px);
+            opacity: 0;
+        }
+        #overlay-pelanggaran-aktif.overlay-pelanggaran--tampil .overlay-pelanggaran-kartu {
+            animation: overlayPelanggaranPopBounce .55s cubic-bezier(.34,1.56,.64,1) forwards;
+        }
+        @keyframes overlayPelanggaranPopBounce {
+            0%   { opacity: 0; transform: scale(.75) translateY(22px); }
+            55%  { opacity: 1; transform: scale(1.06) translateY(-6px); }
+            80%  { transform: scale(.97) translateY(2px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .overlay-pelanggaran-ikon-wrap {
+            animation: overlayPelanggaranBounceIkon 1.1s ease-in-out .5s infinite;
+        }
+        @keyframes overlayPelanggaranBounceIkon {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-9px); }
+        }
+
+        #overlay-pelanggaran-pesan .overlay-pelanggaran-kursor {
+            display: inline-block;
+            width: 2px;
+            margin-left: 2px;
+            animation: overlayPelanggaranKedipKursor .8s steps(1) infinite;
+        }
+        @keyframes overlayPelanggaranKedipKursor {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        #tombol-overlay-pelanggaran-mengerti:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden">
     <!-- Layar transisi masuk dashboard: gelap -> terang, mirip halaman login -->
@@ -3050,6 +3115,31 @@
          dan tidak mengganggu interaksi (pointer-events: none). -->
     <div id="efek-transisi-tema" class="fixed inset-0 pointer-events-none z-[999] overflow-hidden" aria-hidden="true"></div>
 
+    <!-- ============================================================
+         FITUR TAMBAHAN — OVERLAY PERINGATAN "PELANGGARAN AKTIF"
+         Muncul otomatis saat dashboard dibuka DAN status pelanggaran
+         siswa yang login masih "aktif" (lihat cekDanTampilkanOverlayPelanggaranAktif()
+         di bagian script dekat penutup </body>). Default-nya "hidden" dan
+         TIDAK pernah tampil kalau status pelanggaran tidak aktif -- jadi
+         tidak mengubah tampilan/alur dashboard yang sudah ada sama sekali.
+         z-[1000] sengaja di atas semua overlay lain (maks sebelumnya z-[999])
+         supaya selalu jadi lapisan paling atas selama pelanggaran aktif.
+         ============================================================ -->
+    <div id="overlay-pelanggaran-aktif" class="hidden fixed inset-0 z-[1000] items-center justify-center p-5" role="alertdialog" aria-modal="true" aria-labelledby="overlay-pelanggaran-judul" aria-hidden="true">
+        <div class="absolute inset-0 bg-slate-900/70"></div>
+        <div class="relative w-full max-w-sm overlay-pelanggaran-kartu">
+            <div class="bg-white rounded-3xl shadow-2xl p-6 text-center">
+                <div class="overlay-pelanggaran-ikon-wrap mx-auto mb-4 w-20 h-20 rounded-full bg-amber-50 flex items-center justify-center">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-500 text-4xl"></i>
+                </div>
+                <h3 id="overlay-pelanggaran-judul" class="font-extrabold text-lg text-slate-900 mb-2">Pelanggaran Aktif</h3>
+                <p id="overlay-pelanggaran-pesan" class="text-sm font-bold text-slate-700 leading-relaxed min-h-[76px]"></p>
+                <button type="button" id="tombol-overlay-pelanggaran-mengerti" disabled class="mt-5 w-full py-3 rounded-2xl bg-blue-600 text-white text-sm font-bold shadow-sm transition-opacity">
+                    Saya Mengerti<span id="overlay-pelanggaran-hitung-mundur"></span>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <a href="#main-content" class="skip-link">Lompat ke konten utama</a>
 
@@ -15318,6 +15408,153 @@
                 window.addEventListener('load', function () { setTimeout(sembunyikanLayarMasuk, 450); });
                 // jaga-jaga kalau event load lambat/gagal, tetap sembunyikan
                 setTimeout(sembunyikanLayarMasuk, 3000);
+            }
+        })();
+    </script>
+    <script>
+        /* ============================================================
+           FITUR TAMBAHAN — OVERLAY PERINGATAN "PELANGGARAN AKTIF"
+           Script ini BERDIRI SENDIRI (IIFE terpisah) dan HANYA menambah
+           fitur baru -- tidak mengubah/menghapus fungsi, variabel, atau
+           logika apa pun yang sudah ada di atas. Dipasang paling akhir
+           supaya ID_SISWA_AKTIF (dideklarasikan jauh di atas) sudah pasti
+           ada saat script ini jalan.
+
+           Sumber status "aktif/tidak" pelanggaran disimpan per-siswa di
+           localStorage (namespace ID_SISWA_AKTIF, sama seperti data
+           pribadi siswa lainnya di file ini), lewat key hasil
+           keyPelanggaranAktifSiswa() di bawah.
+
+           Untuk keperluan pengujian/integrasi lanjutan (mis. nanti
+           dari sisi guru), dua helper ini sengaja diekspos ke window:
+             - window.aktifkanPelanggaranSiswa()  -> set status jadi aktif
+             - window.selesaikanPelanggaranSiswa() -> set status jadi tidak aktif
+           ============================================================ */
+        (function () {
+            var PESAN_OVERLAY_PELANGGARAN = 'Opps, kamu ada pelanggaran! Segera selesaikan, jika tidak kamu tidak bisa membereskan tugas yang lain.';
+            var LAMA_TOMBOL_TERKUNCI_DETIK = 5;
+
+            function keyPelanggaranAktifSiswa() {
+                var idSiswa = (typeof ID_SISWA_AKTIF !== 'undefined' && ID_SISWA_AKTIF) ? ID_SISWA_AKTIF : 'siswa';
+                return 'pelanggaran_aktif_' + idSiswa;
+            }
+
+            function statusPelanggaranSedangAktif() {
+                try {
+                    return localStorage.getItem(keyPelanggaranAktifSiswa()) === '1';
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            function _setStatusPelanggaranAktif(aktif) {
+                try {
+                    if (aktif) {
+                        localStorage.setItem(keyPelanggaranAktifSiswa(), '1');
+                    } else {
+                        localStorage.removeItem(keyPelanggaranAktifSiswa());
+                    }
+                } catch (e) { /* localStorage tidak tersedia -- abaikan */ }
+            }
+
+            // Helper publik (lihat catatan di atas) -- tidak menimpa nama
+            // global yang sudah dipakai file ini.
+            window.aktifkanPelanggaranSiswa = function () {
+                _setStatusPelanggaranAktif(true);
+            };
+            window.selesaikanPelanggaranSiswa = function () {
+                _setStatusPelanggaranAktif(false);
+            };
+
+            function ketikPesanOverlayPelanggaran(elPesan, teks, selesai) {
+                elPesan.innerHTML = '';
+                var kursor = document.createElement('span');
+                kursor.className = 'overlay-pelanggaran-kursor';
+                var i = 0;
+                var kecepatanMs = 22;
+
+                function langkahBerikutnya() {
+                    if (i < teks.length) {
+                        elPesan.textContent = teks.slice(0, i + 1);
+                        elPesan.appendChild(kursor);
+                        i++;
+                        setTimeout(langkahBerikutnya, kecepatanMs);
+                    } else {
+                        kursor.remove();
+                        if (typeof selesai === 'function') selesai();
+                    }
+                }
+                langkahBerikutnya();
+            }
+
+            function mulaiHitungMundurTombolMengerti(tombol, elHitungMundur) {
+                var sisaDetik = LAMA_TOMBOL_TERKUNCI_DETIK;
+                tombol.disabled = true;
+                elHitungMundur.textContent = ' (' + sisaDetik + ')';
+                var interval = setInterval(function () {
+                    sisaDetik--;
+                    if (sisaDetik <= 0) {
+                        clearInterval(interval);
+                        elHitungMundur.textContent = '';
+                        tombol.disabled = false;
+                    } else {
+                        elHitungMundur.textContent = ' (' + sisaDetik + ')';
+                    }
+                }, 1000);
+            }
+
+            function tutupOverlayPelanggaranAktif() {
+                var overlay = document.getElementById('overlay-pelanggaran-aktif');
+                if (!overlay) return;
+                overlay.classList.remove('overlay-pelanggaran--tampil');
+                document.body.classList.remove('pelanggaran-aktif-blur');
+                setTimeout(function () {
+                    overlay.classList.add('hidden');
+                    overlay.setAttribute('aria-hidden', 'true');
+                }, 180);
+            }
+
+            function tampilkanOverlayPelanggaranAktif() {
+                var overlay = document.getElementById('overlay-pelanggaran-aktif');
+                var elPesan = document.getElementById('overlay-pelanggaran-pesan');
+                var tombol = document.getElementById('tombol-overlay-pelanggaran-mengerti');
+                var elHitungMundur = document.getElementById('overlay-pelanggaran-hitung-mundur');
+                if (!overlay || !elPesan || !tombol || !elHitungMundur) return;
+
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+                overlay.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('pelanggaran-aktif-blur');
+
+                requestAnimationFrame(function () {
+                    overlay.classList.add('overlay-pelanggaran--tampil');
+                });
+
+                ketikPesanOverlayPelanggaran(elPesan, PESAN_OVERLAY_PELANGGARAN);
+                mulaiHitungMundurTombolMengerti(tombol, elHitungMundur);
+
+                tombol.onclick = function () {
+                    if (tombol.disabled) return;
+                    tutupOverlayPelanggaranAktif();
+                };
+            }
+
+            function cekDanTampilkanOverlayPelanggaranAktif() {
+                if (statusPelanggaranSedangAktif()) {
+                    tampilkanOverlayPelanggaranAktif();
+                }
+            }
+
+            // Ditampilkan sesaat setelah layar transisi masuk dashboard selesai
+            // (lihat IIFE "layar transisi masuk dashboard" tepat di atas, yang
+            // butuh ~450-650ms) supaya overlay tidak tumpang tindih dengan
+            // animasi masuk tersebut.
+            if (document.readyState === 'complete') {
+                setTimeout(cekDanTampilkanOverlayPelanggaranAktif, 700);
+            } else {
+                window.addEventListener('load', function () {
+                    setTimeout(cekDanTampilkanOverlayPelanggaranAktif, 700);
+                });
             }
         })();
     </script>
