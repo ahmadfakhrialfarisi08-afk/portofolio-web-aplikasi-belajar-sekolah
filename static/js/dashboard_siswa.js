@@ -3725,13 +3725,15 @@
                     </div>`;
             } else if (isExpired) {
                 statusActionHTML = `
-                    <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-bold flex items-center gap-2 shadow-sm">
-                        <i class="fa-solid fa-lock text-sm"></i> Waktu Habis (${batasWaktuTugas}). Tugas kini berstatus <u>Kedaluwarsa</u> &amp; tercatat "Tidak Dikerjakan" di riwayatmu -- tidak dapat dikirim lagi, tapi tugasnya tetap tersimpan (bukan dihapus).
+                    <div class="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold flex items-start gap-2.5 shadow-sm w-full">
+                        <i class="fa-solid fa-lock text-sm mt-0.5 shrink-0"></i>
+                        <span class="leading-relaxed">Waktu Habis (${batasWaktuTugas}). Tugas kini berstatus <u class="font-bold">Kedaluwarsa</u> &amp; tercatat "Tidak Dikerjakan" di riwayatmu -- tidak dapat dikirim lagi, tapi tugasnya tetap tersimpan (bukan dihapus).</span>
                     </div>`;
             } else if (pelanggaranAktifSekarang) {
                 statusActionHTML = `
-                    <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-bold flex items-center gap-2 shadow-sm">
-                        <i class="fa-solid fa-lock text-sm"></i> Tugas ini terkunci -- kamu masih berstatus <u>Pelanggaran Aktif</u>. Selesaikan dulu dengan guru/wali kelas supaya bisa mengumpulkan tugas ini lagi.
+                    <div class="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold flex items-start gap-2.5 shadow-sm w-full">
+                        <i class="fa-solid fa-lock text-sm mt-0.5 shrink-0"></i>
+                        <span class="leading-relaxed">Tugas ini terkunci -- kamu masih berstatus <u class="font-bold">Pelanggaran Aktif</u>. Selesaikan dulu dengan guru/wali kelas supaya bisa mengumpulkan tugas ini lagi.</span>
                     </div>`;
             } else {
                 statusActionHTML = `
@@ -3754,15 +3756,15 @@
 
             return `
                 <div class="p-4 sm:p-6 rounded-2xl border-2 border-blue-200 bg-blue-50/25 space-y-4 shadow-sm" data-task-id="${data.id}">
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
                         <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-lg uppercase">${tipeKonten}</span>
-                        <span class="text-xs text-amber-800 font-extrabold font-mono bg-amber-50 border border-amber-200 px-3 py-1 rounded-xl">
+                        <span class="text-xs text-amber-800 font-extrabold font-mono bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl leading-snug">
                             <i class="fa-regular fa-clock mr-1"></i> Batas: ${batasWaktuTugas}${/wib\s*$/i.test(batasWaktuTugas.trim()) ? '' : ' WIB'}
                         </span>
                     </div>
-                    <div>
-                        <h4 class="font-bold text-slate-900 text-base">${judulTugas}</h4>
-                        <p class="text-[11px] text-slate-500 mt-0.5"><i class="fa-solid fa-chalkboard-user mr-1 text-blue-500"></i> Diberikan oleh: <span class="font-semibold text-slate-600">${namaGuruTugas}</span></p>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-slate-900 text-base leading-snug">${judulTugas}</h4>
+                        <p class="text-[11px] text-slate-500"><i class="fa-solid fa-chalkboard-user mr-1 text-blue-500"></i> Diberikan oleh: <span class="font-semibold text-slate-600">${namaGuruTugas}</span></p>
                     </div>
                     ${(!(data.studentSubmitted || data.sudahMengumpulkan) && !isExpired) ? `
                     <div id="inline-countdown-tugas-${data.id}" class="inline-countdown-tugas-item flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200">
