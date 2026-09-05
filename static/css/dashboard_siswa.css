@@ -1405,7 +1405,7 @@
            border beneran satu keluarga warna yang sama-sama "ngikutin"
            border yang lagi dipakai. */
         .title-badge-imortal {
-            background: linear-gradient(90deg, #78350f, #eab308, #fde68a, #a78bfa, #fbbf24, #5eead4, #fef3c7, #78350f);
+            background: linear-gradient(90deg, #eab308, #fde68a, #a78bfa, #fbbf24, #5eead4, #fef3c7, #eab308);
             background-size: 200% auto;
             color: #4c1d95;
             border: 1px solid #eab308;
@@ -1588,7 +1588,7 @@
            ungu-cyan merata ala neon (revisi awal) ataupun emas polos tanpa
            aksen sama sekali (revisi kemarin). */
         .efek-nama-imortal {
-            background: linear-gradient(90deg, #78350f, #eab308, #fde68a, #a78bfa, #fbbf24, #5eead4, #fef3c7, #78350f);
+            background: linear-gradient(90deg, #eab308, #fde68a, #a78bfa, #fbbf24, #5eead4, #fef3c7, #eab308);
             background-size: 200% auto;
             -webkit-background-clip: text; background-clip: text; color: transparent;
             animation: shimmerNama 3.5s ease-in-out infinite reverse;
