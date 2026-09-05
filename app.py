@@ -6,6 +6,9 @@ import string
 import smtplib
 import ssl
 import time
+import threading
+from collections import defaultdict, deque
+from functools import wraps
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response, jsonify, send_from_directory
@@ -41,6 +44,138 @@ def _cegah_cache_halaman_sensitif(response):
         response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
         response.headers['Pragma'] = 'no-cache'
     return response
+
+# Asset statis (CSS/JS/gambar di folder /static) boleh di-cache lumayan lama
+# oleh browser -- tidak sensitif seperti halaman dashboard di atas, dan ini
+# yang paling gampang "gratis" menghemat request ke hosting yang resource-nya
+# terbatas (browser tidak perlu minta ulang file yang sama tiap kunjungan).
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 60 * 60 * 24 * 7  # 7 hari
+
+# ----------------------------------------------------
+# RATE LIMITING SEDERHANA PER-IP (TANPA DEPENDENCY TAMBAHAN)
+# ----------------------------------------------------
+# Sengaja custom (bukan pakai library seperti flask-limiter) supaya tidak
+# perlu tambahan instalasi paket di hosting gratis yang resource-nya
+# terbatas. Implementasinya sliding-window sederhana pakai in-memory deque
+# per kunci -- cukup untuk skala pengguna sekolah ini (puluhan akun),
+# TIDAK dirancang untuk trafik besar/multi-proses (kalau nanti pakai
+# banyak worker/proses, jatah ini akan kesebar per proses, bukan global).
+#
+# Kunci pembatas = IP + username yang sedang login (kalau ada). Ini penting
+# supaya banyak siswa yang kebetulan berbagi 1 IP publik yang sama (mis.
+# WiFi sekolah/warnet) TIDAK ikut kena blokir massal gara-gara 1 akun lain
+# di jaringan yang sama kena limit -- tiap akun yang sudah login tetap
+# dapat jatah sendiri-sendiri. Untuk request yang BELUM login (mis. mencoba
+# login/reset password), kunci tetap murni per-IP karena memang di situ
+# titik anti brute-force-nya.
+_rate_limit_lock = threading.Lock()
+_rate_limit_hits = defaultdict(deque)  # kunci -> deque[timestamp request]
+
+# (maks_request, jendela_detik) per kategori endpoint -- angka awal sesuai
+# yang diminta, silakan disesuaikan lagi kalau ternyata masih kurang pas.
+BATAS_RATE_LIMIT = {
+    'login':  (5, 60),     # login, register, kirim/verifikasi OTP
+    'umum':   (60, 60),    # API umum (baca/tulis data ringan)
+    'berat':  (20, 60),    # endpoint yang baca banyak data / komputasi berat
+    'upload': (10, 60),    # upload foto/tugas
+    'burst':  (10, 10),    # jaga-jaga lonjakan beruntun dalam waktu singkat
+}
+
+
+def _ambil_ip_client():
+    # Kalau nanti dashboard ini dipasang di belakang reverse proxy/Cloudflare,
+    # header X-Forwarded-For baru bisa dipercaya SETELAH proxy tepercaya
+    # dikonfigurasi (lihat catatan Cloudflare di bawah). Untuk sekarang,
+    # fallback ke IP koneksi langsung dari Flask.
+    xff = request.headers.get('X-Forwarded-For', '')
+    if xff:
+        return xff.split(',')[0].strip()
+    return request.remote_addr or 'unknown'
+
+
+def _kunci_rate_limit():
+    ip = _ambil_ip_client()
+    user = (session.get('user') or {}).get('username')
+    return f"{ip}::{user}" if user else ip
+
+
+def _cek_dan_catat_rate_limit(kategori):
+    """True = masih boleh lanjut, False = sudah melebihi batas kategori ini."""
+    maks_request, jendela = BATAS_RATE_LIMIT[kategori]
+    kunci = f"{kategori}:{_kunci_rate_limit()}"
+    sekarang = time.time()
+    with _rate_limit_lock:
+        antrian = _rate_limit_hits[kunci]
+        while antrian and sekarang - antrian[0] > jendela:
+            antrian.popleft()
+        if len(antrian) >= maks_request:
+            return False
+        antrian.append(sekarang)
+        return True
+
+
+def _respon_429():
+    resp = jsonify(success=False, ok=False, message='Terlalu banyak request, coba lagi sebentar ya.')
+    resp.status_code = 429
+    resp.headers['Retry-After'] = '10'
+    return resp
+
+
+def batasi(kategori):
+    """Decorator rate-limit untuk 1 route. Burst-check (jendela 10 detik)
+    selalu dicek duluan sebelum kategori spesifiknya, supaya lonjakan
+    beruntun (mis. klik ganda / bug loop di frontend) kena batas duluan
+    sebelum jatah per-menitnya ikut habis karena hal yang sama."""
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if not _cek_dan_catat_rate_limit('burst'):
+                return _respon_429()
+            if not _cek_dan_catat_rate_limit(kategori):
+                return _respon_429()
+            return fn(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+# ----------------------------------------------------
+# LOGGING SEDERHANA PER-REQUEST (untuk cari tahu endpoint mana yang paling
+# banyak dipanggil saat traffic terasa tinggi)
+# ----------------------------------------------------
+LOG_AKSES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'access_log.jsonl')
+_log_lock = threading.Lock()
+
+
+@app.before_request
+def _catat_waktu_mulai_request():
+    request._waktu_mulai = time.time()
+
+
+@app.after_request
+def _log_akses_request(response):
+    try:
+        # Jangan ikut log request ke file statis (css/js/gambar) -- biar log
+        # tetap fokus ke endpoint aplikasi/API yang relevan buat didiagnosis.
+        if request.endpoint != 'static':
+            durasi_ms = round((time.time() - getattr(request, '_waktu_mulai', time.time())) * 1000, 1)
+            baris = {
+                'waktu': datetime.utcnow().isoformat(),
+                'ip': _ambil_ip_client(),
+                'method': request.method,
+                'path': request.path,
+                'status': response.status_code,
+                'durasi_ms': durasi_ms,
+                'user': (session.get('user') or {}).get('username'),
+            }
+            os.makedirs(os.path.dirname(LOG_AKSES_PATH), exist_ok=True)
+            with _log_lock:
+                with open(LOG_AKSES_PATH, 'a', encoding='utf-8') as f:
+                    f.write(json.dumps(baris, ensure_ascii=False) + '\n')
+    except Exception as exc:
+        # Logging tidak boleh sampai bikin request utama gagal.
+        print(f"[WARN] Gagal menulis access log: {exc}")
+    return response
+
 
 # ----------------------------------------------------
 # KONFIGURASI ASISTEN AI (OLLAMA LOKAL)
@@ -530,6 +665,7 @@ pelanggaran_store = _muat_pelanggaran_store()
 
 
 @app.route('/api/pelanggaran/set', methods=['POST'])
+@batasi('umum')
 def api_pelanggaran_set():
     """Guru menandai ('Kasih Pelanggaran') atau mencabut ('Batalkan') status
     Pelanggaran Aktif utk SATU siswa, by username akun login ASLI (sama
@@ -558,6 +694,7 @@ def api_pelanggaran_set():
 
 
 @app.route('/api/pelanggaran/semua', methods=['GET'])
+@batasi('berat')
 def api_pelanggaran_semua():
     """Daftar SEMUA username yang statusnya sedang Pelanggaran Aktif saat
     ini -- dipakai Dashboard Guru buat render tombol tiap murid (ganti
@@ -569,6 +706,7 @@ def api_pelanggaran_semua():
 
 
 @app.route('/api/pelanggaran/status', methods=['GET'])
+@batasi('umum')
 def api_pelanggaran_status():
     """Dipanggil dari Dashboard Siswa (sekali saat dashboard dibuka, LALU
     di-poll berkala tiap beberapa detik) buat cek status Pelanggaran Aktif
@@ -621,6 +759,7 @@ tugas_submission_store = _muat_tugas_submission_store()
 
 
 @app.route('/api/tugas/submit', methods=['POST'])
+@batasi('upload')
 def api_tugas_submit():
     """Siswa yang SEDANG LOGIN mengirim tugas. Ini satu-satunya endpoint yang
     bisa mengubah status pengumpulan tugas suatu akun jadi True -- dan itu
@@ -658,6 +797,7 @@ def api_tugas_submit():
 
 
 @app.route('/api/tugas/submissions/<task_id>', methods=['GET'])
+@batasi('berat')
 def api_tugas_submissions(task_id):
     """Guru mengambil status pengumpulan ASLI SEMUA siswa untuk SATU tugas
     (dipakai buat rekap roster di Dashboard Guru) -- menggantikan simulasi
@@ -669,6 +809,7 @@ def api_tugas_submissions(task_id):
 
 
 @app.route('/api/tugas/submission/<task_id>', methods=['GET'])
+@batasi('umum')
 def api_tugas_submission_diri_sendiri(task_id):
     """Siswa cek status pengumpulan tugas MILIKNYA SENDIRI (per akun),
     dipakai Dashboard Siswa supaya status 'Sudah Dikirim' tidak lagi
@@ -682,6 +823,7 @@ def api_tugas_submission_diri_sendiri(task_id):
 
 
 @app.route('/api/tugas/nilai', methods=['POST'])
+@batasi('umum')
 def api_tugas_nilai():
     """Guru memberi nilai/catatan ke pengumpulan tugas SATU siswa tertentu."""
     if 'user' not in session or session['user']['role'] != 'guru':
@@ -768,24 +910,43 @@ friendships, friend_requests = _muat_friends_store()
 # baca data yang sama.
 SYNC_STORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'sync_store.json')
 
+# CATATAN PERBAIKAN PERFORMA: sebelumnya _muat_sync_store() membaca ULANG
+# file JSON dari disk di SETIAP request GET -- dikombinasikan dengan
+# frontend yang dulu memanggil endpoint ini sekali per kelas (lihat
+# perbaikan getTasksKelas() di dashboard_guru.html), ini jadi puluhan
+# operasi baca-file per kali halaman dibuka. Sekarang isi file di-cache di
+# memori proses dan HANYA dibaca ulang dari disk sekali saat proses start,
+# lalu di-invalidasi (diperbarui) sendiri tiap kali _simpan_sync_store()
+# menulis data baru -- jadi tetap konsisten, tanpa baca file berulang.
+_sync_store_cache = None
+_sync_store_lock = threading.Lock()
+
 
 def _muat_sync_store():
-    try:
-        with open(SYNC_STORE_PATH, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
+    global _sync_store_cache
+    with _sync_store_lock:
+        if _sync_store_cache is None:
+            try:
+                with open(SYNC_STORE_PATH, 'r', encoding='utf-8') as f:
+                    _sync_store_cache = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                _sync_store_cache = {}
+        return _sync_store_cache
 
 
 def _simpan_sync_store(store):
+    global _sync_store_cache
     os.makedirs(os.path.dirname(SYNC_STORE_PATH), exist_ok=True)
     tmp_path = SYNC_STORE_PATH + '.tmp'
     with open(tmp_path, 'w', encoding='utf-8') as f:
         json.dump(store, f, ensure_ascii=False, indent=2)
     os.replace(tmp_path, SYNC_STORE_PATH)
+    with _sync_store_lock:
+        _sync_store_cache = store
 
 
 @app.route('/api/sync/<kunci>', methods=['GET'])
+@batasi('berat')
 def api_sync_get(kunci):
     """Ambil data yang tersimpan di server untuk 1 kunci (mis. 'tasks_XII_TKJ_3')."""
     if 'user' not in session:
@@ -798,6 +959,7 @@ def api_sync_get(kunci):
 
 
 @app.route('/api/sync/<kunci>', methods=['POST'])
+@batasi('umum')
 def api_sync_set(kunci):
     """Timpa data untuk 1 kunci dengan data baru dari client (dikirim utuh,
     sama seperti localStorage.setItem yang juga selalu menimpa seluruh isi kunci)."""
@@ -808,6 +970,22 @@ def api_sync_set(kunci):
     store[kunci] = payload.get('data', [])
     _simpan_sync_store(store)
     return jsonify({'ok': True})
+
+
+@app.route('/api/sync/bulk', methods=['GET'])
+@batasi('berat')
+def api_sync_bulk_get():
+    """Versi 'banyak sekaligus' dari /api/sync/<kunci> GET -- terima daftar
+    kunci dipisah koma lewat query string (?kunci=tasks_X,tasks_Y,...) dan
+    balikkan semuanya dalam SATU response. Dibuat supaya frontend yang
+    sebelumnya harus request satu-satu per kelas (lihat komentar di
+    getTasksKelas() / muatCacheSemuaTugas() di dashboard_guru.html) bisa
+    jadi cukup 1 request untuk semua kelas sekaligus."""
+    if 'user' not in session:
+        return jsonify({'ok': False, 'error': 'Belum login'}), 401
+    daftar_kunci = [k.strip() for k in (request.args.get('kunci') or '').split(',') if k.strip()]
+    store = _muat_sync_store()
+    return jsonify({'ok': True, 'data': {k: store.get(k, None) for k in daftar_kunci}})
  
  
 def _apakah_berteman(a, b):
@@ -957,6 +1135,17 @@ def login():
         return render_template('login.html')
  
     if request.method == 'POST':
+        # Rate limit di sini (bukan decorator di seluruh route) supaya
+        # cuma PERCOBAAN login (POST) yang dibatasi -- membuka halaman
+        # /login (GET) tetap bebas, tidak ikut jatah yang sama.
+        if not _cek_dan_catat_rate_limit('login'):
+            pesan_gagal = 'Terlalu banyak percobaan login. Coba lagi sebentar ya.'
+            is_ajax_limit = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            flash(pesan_gagal, 'error')
+            if is_ajax_limit:
+                return jsonify(success=False, message=pesan_gagal), 429
+            return redirect(url_for('login'))
+
         role = request.form.get('role')
         username = request.form.get('username')
         password = request.form.get('password')
@@ -1012,6 +1201,10 @@ def _finish_login(user, is_ajax=False):
 @app.route('/buat_akun_baru.html', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        if not _cek_dan_catat_rate_limit('login'):
+            flash('Terlalu banyak percobaan. Coba lagi sebentar ya.', 'error')
+            return redirect(url_for('register'))
+
         role = request.form.get('role')
         fullname = request.form.get('fullname')
         identity_number = request.form.get('identity_number')
@@ -1089,6 +1282,7 @@ def _find_user_by_role_username(role, username):
 # API: KIRIM / KIRIM ULANG KODE OTP
 # ----------------------------------------------------
 @app.route('/api/forgot-password/send-otp', methods=['POST'])
+@batasi('login')
 def api_forgot_password_send_otp():
     data = request.get_json(silent=True) or {}
     role = (data.get('role') or '').strip()
@@ -1147,6 +1341,7 @@ def api_forgot_password_send_otp():
 # API: VERIFIKASI KODE OTP
 # ----------------------------------------------------
 @app.route('/api/forgot-password/verify-otp', methods=['POST'])
+@batasi('login')
 def api_forgot_password_verify_otp():
     data = request.get_json(silent=True) or {}
     username = (data.get('username') or '').strip()
@@ -1191,6 +1386,7 @@ def api_forgot_password_verify_otp():
 # API: SET PASSWORD BARU (SETELAH OTP TERVERIFIKASI)
 # ----------------------------------------------------
 @app.route('/api/forgot-password/reset-password', methods=['POST'])
+@batasi('login')
 def api_forgot_password_reset_password():
     data = request.get_json(silent=True) or {}
     username = (data.get('username') or '').strip()
@@ -1276,6 +1472,7 @@ def _kunci_slot_quiz(username, slot_id):
  
  
 @app.route('/api/quiz/load', methods=['GET'])
+@batasi('umum')
 def api_quiz_load():
     """Ambil data quiz milik SLOT yang sedang aktif (akun asli, atau profil
     dummy yang sedang dipakai) di akun yang sedang login. Dipanggil saat
@@ -1296,6 +1493,7 @@ def api_quiz_load():
  
  
 @app.route('/api/quiz/save', methods=['POST'])
+@batasi('umum')
 def api_quiz_save():
     """Simpan data quiz milik SLOT yang sedang aktif (lihat _kunci_slot_quiz)
     ke server. Dipanggil setiap kali skor/leaderboard lokal di-update
@@ -1321,6 +1519,7 @@ def api_quiz_save():
  
  
 @app.route('/api/quiz/leaderboard-global', methods=['GET'])
+@batasi('berat')
 def api_quiz_leaderboard_global():
     """Gabungkan entri leaderboard dari SEMUA akun siswa yang sudah pernah
     menyimpan data, supaya siswa manapun yang login bisa lihat peringkat
@@ -1356,6 +1555,7 @@ def api_quiz_leaderboard_global():
 # quiz_store.
 # ----------------------------------------------------
 @app.route('/api/prestasi/load', methods=['GET'])
+@batasi('umum')
 def api_prestasi_load():
     """Ambil daftar pengajuan prestasi milik SATU kelas dari server.
     Dipanggil saat dashboard siswa dibuka, supaya prestasi yang diajukan/
@@ -1373,6 +1573,7 @@ def api_prestasi_load():
 
 
 @app.route('/api/prestasi/save', methods=['POST'])
+@batasi('umum')
 def api_prestasi_save():
     """Simpan (timpa) seluruh daftar pengajuan prestasi milik SATU kelas
     ke server. Dipanggil setiap kali daftar lokal berubah (pengajuan baru,
@@ -1404,6 +1605,7 @@ def api_prestasi_save():
 # perangkat manapun (HP maupun laptop).
 # ----------------------------------------------------
 @app.route('/api/saran/kirim', methods=['POST'])
+@batasi('umum')
 def api_saran_kirim():
     """Simpan SATU saran baru ke server. Endpoint ini SENGAJA terbuka untuk
     siapapun yang sedang login (bukan cuma Admin/Dev) -- karena yang perlu
@@ -1437,6 +1639,7 @@ def api_saran_kirim():
 
 
 @app.route('/api/saran/list', methods=['GET'])
+@batasi('umum')
 def api_saran_list():
     """Ambil SELURUH daftar saran yang pernah masuk (lintas siswa/kelas/
     perangkat). HANYA boleh diakses Admin/Developer ASLI (Ahmad Fakhri Al
@@ -1452,6 +1655,7 @@ def api_saran_list():
 # API: CARI TEMAN (pencarian siswa, permintaan pertemanan, profil statistik)
 # ----------------------------------------------------
 @app.route('/api/teman/cari', methods=['GET'])
+@batasi('umum')
 def api_teman_cari():
     """Cari siswa lain berdasarkan nama (dipakai search bar 'Cari Teman').
     Punya session sendiri per akun -- jadi akun Ahmad login di satu browser
@@ -1486,6 +1690,7 @@ def api_teman_cari():
  
  
 @app.route('/api/kelas/roster', methods=['GET'])
+@batasi('berat')
 def api_kelas_roster():
     """Daftar siswa di satu kelas beserta border yang sedang mereka pakai --
     dipakai 'Denah Kelas' di Dashboard Guru supaya avatar tiap murid sinkron
@@ -1523,6 +1728,7 @@ def api_kelas_roster():
  
  
 @app.route('/api/profil/border', methods=['POST'])
+@batasi('umum')
 def api_profil_border():
     """Simpan id border yang sedang dipakai siswa ini ke server (bukan cuma
     localStorage), supaya siswa LAIN yang lihat lewat 'Cari Teman' bisa
@@ -1558,6 +1764,7 @@ def api_profil_border():
 # API: KELOLA DAFTAR GURU (menu "Daftar Guru")
 # ----------------------------------------------------
 @app.route('/api/guru/list', methods=['GET'])
+@batasi('umum')
 def api_guru_list():
     """Ambil daftar guru terbaru -- dibaca siapapun yang sudah login
     (siswa/guru/staf), supaya menu 'Daftar Guru' semua orang selalu sinkron
@@ -1568,6 +1775,7 @@ def api_guru_list():
 
 
 @app.route('/api/guru/tambah', methods=['POST'])
+@batasi('umum')
 def api_guru_tambah():
     """Tambah data guru baru -- KHUSUS akun Admin/Developer asli. Dicek di
     server (bukan cuma disembunyikan di UI) supaya tidak bisa ditembus lewat
@@ -1597,6 +1805,7 @@ def api_guru_tambah():
 
 
 @app.route('/api/guru/edit/<int:id_guru>', methods=['POST'])
+@batasi('umum')
 def api_guru_edit(id_guru):
     """Ubah data guru yang sudah ada -- KHUSUS Admin/Developer, sama seperti
     /api/guru/tambah di atas."""
@@ -1621,6 +1830,7 @@ def api_guru_edit(id_guru):
 
 
 @app.route('/api/guru/hapus/<int:id_guru>', methods=['POST'])
+@batasi('umum')
 def api_guru_hapus(id_guru):
     """Hapus data guru -- KHUSUS Admin/Developer."""
     if not _akun_ini_admin_dev():
@@ -1637,6 +1847,7 @@ def api_guru_hapus(id_guru):
 
 
 @app.route('/api/profil/sosmed', methods=['GET'])
+@batasi('umum')
 def api_profil_sosmed_get():
     """Ambil sosial media milik akun sendiri yang sedang login, buat isi awal
     form modal 'Atur Sosial Media' di dashboard_siswa.html supaya siswa lihat
@@ -1650,6 +1861,7 @@ def api_profil_sosmed_get():
 
 
 @app.route('/api/profil/sosmed', methods=['POST'])
+@batasi('umum')
 def api_profil_sosmed_post():
     """Simpan sosial media (IG, TikTok, dll) siswa ke server -- pola sama
     dengan /api/profil/foto & /api/profil/border di atas. Dipakai balik oleh
@@ -1678,6 +1890,7 @@ def api_profil_sosmed_post():
 
 
 @app.route('/api/profil/foto', methods=['POST'])
+@batasi('upload')
 def api_profil_foto():
     """Simpan foto profil (base64) siswa ke server -- pola sama persis dengan
     /api/profil/border di atas. Sebelumnya foto profil cuma tersimpan di
@@ -1702,6 +1915,7 @@ def api_profil_foto():
  
  
 @app.route('/api/teman/relasi', methods=['GET'])
+@batasi('umum')
 def api_teman_relasi():
     """Ambil daftar permintaan pertemanan yang MASUK ke akun ini + daftar
     teman yang sudah terkonfirmasi. Dipanggil buat isi dropdown lonceng
@@ -1741,6 +1955,7 @@ def api_teman_relasi():
  
  
 @app.route('/api/teman/kirim', methods=['POST'])
+@batasi('umum')
 def api_teman_kirim():
     """Kirim permintaan pertemanan ke siswa lain. Kalau ternyata siswa itu
     sudah LEBIH DULU ngirim permintaan ke kita, langsung dianggap saling
@@ -1775,6 +1990,7 @@ def api_teman_kirim():
  
  
 @app.route('/api/teman/tanggapi', methods=['POST'])
+@batasi('umum')
 def api_teman_tanggapi():
     """Terima/tolak permintaan pertemanan yang masuk ke akun yang sedang login."""
     if 'user' not in session or session['user']['role'] != 'siswa':
@@ -1798,6 +2014,7 @@ def api_teman_tanggapi():
  
  
 @app.route('/api/teman/profil/<username>', methods=['GET'])
+@batasi('umum')
 def api_teman_profil(username):
     """Data buat ID card statistik siswa yang muncul saat nama di hasil
     pencarian diklik: identitas, kelas, jumlah teman, dan skor quiz
@@ -1843,6 +2060,7 @@ def api_teman_profil(username):
 # ROUTE ASISTEN AI (PROXY KE OLLAMA LOKAL)
 # ----------------------------------------------------
 @app.route('/api/ai/chat', methods=['POST'])
+@batasi('berat')
 def api_ai_chat():
     """Terima pertanyaan dari widget 'AI Support' di dashboard, teruskan ke
     Ollama yang jalan lokal (lihat OLLAMA_URL/OLLAMA_MODEL di atas), lalu

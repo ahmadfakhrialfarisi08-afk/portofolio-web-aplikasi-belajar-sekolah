@@ -1379,13 +1379,74 @@
             }).catch(e => console.warn('Gagal simpan data ke server:', kunci, e));
         }
 
+        // ===== PERBAIKAN TRAFFIC: cache tugas SEMUA kelas, diisi 1x lewat
+        // /api/sync/bulk =====
+        // Dulu getTasksKelas() manggil getSync() (1 request KE SERVER per
+        // kelas) SETIAP KALI dipanggil -- dan dipanggil di dalam forEach yang
+        // loop ke SEMUA 21 kelas, di banyak fungsi render berbeda (beranda,
+        // daftar kelas, rekap semua tugas, dst). Efeknya: 1x render bisa
+        // memicu puluhan request sinkron (blocking) ke server, dan render
+        // itu sendiri terpicu berkali-kali (tiap load halaman, tiap ganti
+        // filter, tiap buka tab rekap) -- ini sumber traffic paling besar.
+        //
+        // Perbaikannya BUKAN mengubah data/skema, cuma mengubah CARA
+        // AMBILNYA: sekarang semua kelas diambil SEKALIGUS dalam 1 request
+        // (lihat muatCacheTugasSemuaKelas()), disimpan di cache memori ini,
+        // dan getTasksKelas() baca dari cache tsb -- tanpa request baru.
+        // Cache di-refresh otomatis tiap kali guru menyimpan/mengubah tugas
+        // (lihat saveTasksKelas()), jadi datanya tetap selalu up to date.
+        let _cacheTugasSemuaKelas = null; // null = belum pernah dimuat sama sekali
+
+        function _kunciTugasKelas(namaKelas) {
+            return `tasks_${namaKelas.replace(/\s+/g, '_')}`;
+        }
+
+        async function muatCacheTugasSemuaKelas() {
+            const semuaKunci = daftarSeluruhKelasDummy.map(k => _kunciTugasKelas(k.nama));
+            try {
+                const res = await fetch(`/api/sync/bulk?kunci=${encodeURIComponent(semuaKunci.join(','))}`);
+                const json = await res.json();
+                if (json.ok) {
+                    const cacheBaru = {};
+                    daftarSeluruhKelasDummy.forEach(k => {
+                        const kunci = _kunciTugasKelas(k.nama);
+                        cacheBaru[k.nama] = json.data[kunci] || [];
+                    });
+                    _cacheTugasSemuaKelas = cacheBaru;
+                    return;
+                }
+            } catch (e) {
+                console.warn('Gagal muat cache tugas semua kelas dari server, pakai cadangan lokal:', e);
+            }
+            // Fallback offline: bangun cache dari localStorage kalau server
+            // tidak bisa dihubungi, biar dashboard tidak nge-blank.
+            const cacheFallback = {};
+            daftarSeluruhKelasDummy.forEach(k => {
+                const raw = localStorage.getItem(_kunciTugasKelas(k.nama));
+                cacheFallback[k.nama] = raw ? JSON.parse(raw) : [];
+            });
+            _cacheTugasSemuaKelas = cacheFallback;
+        }
+
         function getTasksKelas(namaKelas) {
-            const key = `tasks_${namaKelas.replace(/\s+/g, '_')}`;
-            return getSync(key, []);
+            // Cache belum pernah dimuat (mis. ada interaksi super cepat
+            // sebelum muatCacheTugasSemuaKelas() di DOMContentLoaded selesai)
+            // -- fallback baca localStorage SAJA, TANPA bikin request baru
+            // ke server, supaya tidak balik lagi ke pola lama yang boros.
+            if (_cacheTugasSemuaKelas === null) {
+                return getSync(_kunciTugasKelas(namaKelas), []);
+            }
+            return _cacheTugasSemuaKelas[namaKelas] || [];
         }
         function saveTasksKelas(namaKelas, tasks) {
-            const key = `tasks_${namaKelas.replace(/\s+/g, '_')}`;
+            const key = _kunciTugasKelas(namaKelas);
             setSync(key, tasks);
+            // Perbarui cache di memori langsung (optimistic update) supaya
+            // pemanggilan getTasksKelas() berikutnya di sesi ini langsung
+            // dapat data terbaru tanpa perlu fetch ulang ke server.
+            if (_cacheTugasSemuaKelas !== null) {
+                _cacheTugasSemuaKelas[namaKelas] = tasks;
+            }
         }
         function buatIDTugasBaru() {
             return 'tgs_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
@@ -4481,22 +4542,35 @@
             }).join('');
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             updateHeaderClock();
             setInterval(updateHeaderClock, 1000);
+
+            // PERBAIKAN TRAFFIC: ambil tugas SEMUA kelas dalam 1 request
+            // (lihat muatCacheTugasSemuaKelas()) SEBELUM render yang
+            // butuh data itu, supaya renderBerandaKelasBerurutan() dan
+            // renderSeluruhKelas() di bawah ini baca dari cache -- bukan
+            // memicu puluhan request satu-satu seperti sebelumnya.
+            await muatCacheTugasSemuaKelas();
             renderBerandaKelasBerurutan();
             renderSeluruhKelas();
+
             renderTeacherSchedule();
-            setInterval(renderTeacherSchedule, 30000);
+            // PERBAIKAN TRAFFIC: hentikan polling saat tab sedang tidak
+            // aktif/di-minimize (document.hidden) -- tidak ada gunanya
+            // terus render jadwal & cek bel kalau guru sedang tidak
+            // melihat halaman ini sama sekali.
+            setInterval(() => { if (!document.hidden) renderTeacherSchedule(); }, 30000);
             loadSavedProfilePhotoGuru();
             loadBioGuru();
             updateBadgePrestasiMenunggu();
             updateBadgeEvaluasiGuru();
 
             // Begitu guru masuk, langsung dicek apakah saat ini sudah masuk
-            // jam mengajarnya hari ini (lalu terus dipantau tiap 5 detik).
+            // jam mengajarnya hari ini (lalu terus dipantau tiap 5 detik,
+            // kecuali saat tab sedang tidak aktif).
             cekBelJamMengajarOtomatis();
-            setInterval(cekBelJamMengajarOtomatis, 5000);
+            setInterval(() => { if (!document.hidden) cekBelJamMengajarOtomatis(); }, 5000);
         });
     </script>
     <script>
