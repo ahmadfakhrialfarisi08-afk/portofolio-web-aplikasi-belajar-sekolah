@@ -5,24 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Belajar - Dashboard Siswa</title>
     
-    <!-- CATATAN OPTIMASI (PENYEBAB UTAMA LAG saat klik/scroll/buka menu):
-         Sebelumnya di sini ada <script src="https://cdn.tailwindcss.com"></script>
-         -- itu bukan cuma file CSS, tapi COMPILER Tailwind lengkap yang jalan
-         LANGSUNG DI BROWSER tiap kali halaman dibuka: dia pasang MutationObserver
-         yang mengawasi SELURUH halaman, dan setiap kali ada elemen baru muncul/
-         berubah (toast notifikasi, render ulang daftar tugas, buka menu, dsb --
-         yang di dashboard ini terjadi SANGAT sering), compiler itu ikut jalan
-         lagi mem-parse & menyusun ulang CSS dari nol. Ini yang bikin klik/scroll/
-         buka menu kerasa berat, apalagi di HP yang CPU-nya lebih lemah dari laptop.
-         Sekarang diganti stylesheet CSS statis (tailwind_compiled.css) yang sudah
-         di-generate SEKALI DI LUAR browser (build time) berisi PERSIS kelas
-         Tailwind yang benar-benar dipakai di halaman ini -- browser tinggal
-         baca file CSS biasa, tidak ada compiler/observer yang jalan sama sekali.
-         Kalau nanti ada kelas Tailwind BARU ditambahkan ke halaman ini dan
-         belum kelihatan stylenya, itu tandanya tailwind_compiled.css perlu
-         di-generate ulang (lihat catatan build di README yang menyertai file
-         CSS ini) -- bukan tinggal pasang lagi <script src=cdn.tailwindcss.com>. -->
-    <link rel="stylesheet" href="../static/css/tailwind_compiled.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <!-- OCR (Ekstraksi Teks Otomatis) untuk verifikasi foto bukti prestasi -->
     <!-- CATATAN OPTIMASI (halaman terasa berat): Tesseract.js dulu dimuat di sini
          lewat <script src> biasa, jadi library OCR (beberapa MB, jarang dipakai)
@@ -6773,46 +6756,16 @@
             if (badgeNav) badgeNav.classList.toggle('hidden', jumlah <= 0);
         }
 
-        // Versi ringan dari renderPermintaanTeman(): cuma fetch + update badge
-        // titik merah (sidebar & dropdown), TIDAK menulis ulang daftar
-        // permintaan (yang berarti bikin elemen DOM + gambar avatar/border baru
-        // tiap baris). Dipakai polling berkala tiap 3 detik supaya siswa di
-        // tab MANAPUN tetap lihat notifikasi permintaan teman baru, tanpa
-        // ikut menanggung biaya render list yang cuma kepakai kalau tab
-        // "Cari Teman" memang sedang dibuka (lihat jalankanSinkronisasiBerkalaDashboard).
-        async function updateBadgePermintaanTemanSaja() {
-            try {
-                const { permintaan_masuk: pending } = await ambilRelasiPertemanan();
-                updateBadgePermintaanTeman(pending.length);
-            } catch (e) {
-                console.error('Gagal cek badge permintaan teman:', e);
-            }
-        }
-
-        // Hemat request: kalau renderPermintaanTeman() dan renderDaftarTeman()
-        // dipanggil hampir bersamaan (mis. dari polling berkala tiap 3 detik di
-        // bawah), keduanya butuh data yang PERSIS SAMA dari /api/teman/relasi.
-        // Daripada fetch 2x buat data identik, panggilan yang datang selagi
-        // masih ada fetch yang berjalan cukup "menumpang" promise yang sama
-        // (in-flight de-dupe) -- bukan cache berjangka waktu, jadi tidak bikin
-        // data basi setelah aksi seperti terima/tolak pertemanan.
-        let _janjiRelasiPertemananBerjalan = null;
         async function ambilRelasiPertemanan() {
-            if (_janjiRelasiPertemananBerjalan) return _janjiRelasiPertemananBerjalan;
-            _janjiRelasiPertemananBerjalan = (async () => {
-                try {
-                    const res = await fetch('/api/teman/relasi');
-                    const json = await res.json();
-                    if (!json.success) return { permintaan_masuk: [], teman: [] };
-                    return json;
-                } catch (e) {
-                    console.error('Gagal ambil data pertemanan:', e);
-                    return { permintaan_masuk: [], teman: [] };
-                } finally {
-                    _janjiRelasiPertemananBerjalan = null;
-                }
-            })();
-            return _janjiRelasiPertemananBerjalan;
+            try {
+                const res = await fetch('/api/teman/relasi');
+                const json = await res.json();
+                if (!json.success) return { permintaan_masuk: [], teman: [] };
+                return json;
+            } catch (e) {
+                console.error('Gagal ambil data pertemanan:', e);
+                return { permintaan_masuk: [], teman: [] };
+            }
         }
 
         async function renderPermintaanTeman() {
@@ -11212,53 +11165,16 @@
             cekPembaruanTugasRealtime(); // set snapshot awal sebagai baseline
             updateGlobalCountdown();
             setInterval(updateGlobalCountdown, 1000);
-            // Sinkronisasi berkala (riwayat tugas, notif, badge pertemanan &
-            // perangkat) tiap 3 detik. PENTING buat hemat resource hosting:
-            // kalau tab ini sedang tidak aktif dilihat (di-minimize/pindah
-            // tab/laptop terkunci), tick ini di-skip total -- tidak ada fetch
-            // sama sekali ke server selama tab tidak aktif, walau timer-nya
-            // sendiri tetap jalan tiap 3 detik (murah, cuma timer JS lokal).
-            // Begitu tab aktif lagi, listener visibilitychange di bawah
-            // langsung memicu satu kali sinkronisasi supaya datanya tetap
-            // terasa real-time buat siswa, tanpa perlu menunggu tick berikutnya.
-            function jalankanSinkronisasiBerkalaDashboard() {
-                if (document.hidden) return; // tab tidak sedang dilihat -- jangan buang request
+            setInterval(() => {
                 sinkronkanRiwayatDenganTugasAktif();
                 catatRiwayatTugasKedaluwarsaJikaPerlu();
                 cekPembaruanTugasRealtime();
                 cekNotifBaruStatusPrestasi();
                 updateTaskCounter(); // biar streak otomatis putus/berubah warna begitu deadline lewat, tanpa perlu refresh
-
-                // PERBAIKAN PERFORMA: renderPermintaanTeman() & renderDaftarTeman()
-                // itu MAHAL -- tiap panggil selalu fetch ke server LALU rebuild
-                // total elemen DOM + gambar avatar/border utk tiap baris, padahal
-                // isinya cuma kepakai kalau tab "Cari Teman" memang sedang dibuka.
-                // Sebelumnya keduanya dipaksa jalan tiap 3 detik di SEMUA tab
-                // (Beranda/Tugas/Quiz/dll) -- inilah salah satu penyebab utama
-                // dashboard kerasa lag/nge-freeze sebentar tiap ~3 detik,
-                // terutama kalau pas bertepatan sama tap/klik user & koneksi ke
-                // server (pythonanywhere) lagi agak lambat.
-                // Sekarang: kalau tab "Cari Teman" SEDANG dibuka -> tetap render
-                // penuh spt biasa (datanya memang perlu selalu segar di situ).
-                // Kalau tab lain yang dibuka -> cukup cek badge/titik merah
-                // notifikasinya saja (1 fetch ringan, tanpa rebuild list),
-                // list lengkapnya baru di-render pas tab itu benar-benar dibuka
-                // (sudah ada pemicunya sendiri di switchTab()).
-                const tabCariTemanEl = document.getElementById('tab-cari-teman');
-                const tabCariTemanTerlihat = !!tabCariTemanEl && !tabCariTemanEl.classList.contains('hidden');
-                if (tabCariTemanTerlihat) {
-                    renderPermintaanTeman(); // cek permintaan pertemanan baru dari server -- biar titik merah di sidebar & badge dropdown langsung muncul di sisi penerima walau dashboard sudah kebuka duluan
-                    renderDaftarTeman(); // biar daftar teman ikut update kalau ada pertemanan baru terbentuk dari sisi lain
-                } else {
-                    updateBadgePermintaanTemanSaja(); // versi ringan: badge doang, tanpa rebuild list yang lagi gak keliatan
-                }
-
+                renderPermintaanTeman(); // cek permintaan pertemanan baru dari server -- biar titik merah di sidebar & badge dropdown langsung muncul di sisi penerima walau dashboard sudah kebuka duluan
+                renderDaftarTeman(); // biar daftar teman ikut update kalau ada pertemanan baru terbentuk dari sisi lain
                 updateBadgePerangkatNavSaja(); // cek ada tidaknya perangkat baru yang pending, tanpa nge-render ulang tabel penuh tiap 3 detik
-            }
-            setInterval(jalankanSinkronisasiBerkalaDashboard, 3000);
-            document.addEventListener('visibilitychange', () => {
-                if (!document.hidden) jalankanSinkronisasiBerkalaDashboard();
-            });
+            }, 3000);
             cekNotifBaruTugasDitarik();
             cekNotifBaruStatusPrestasi();
         });
@@ -15670,14 +15586,6 @@
             // bawah -- ini yang bikin perubahan dari guru "kelihatan" di sini
             // tanpa reload, walau guru & siswa beda perangkat.
             function cekStatusPelanggaranKeServer() {
-                // Hemat resource: kalau tab ini sedang tidak dilihat (tab lain
-                // aktif/window di-minimize), skip -- tidak ada gunanya menampilkan
-                // overlay peringatan di tab yang tidak sedang dilihat siapa pun,
-                // dan ini yang paling banyak menyumbang request kalau siswa lupa
-                // menutup tab dashboard berjam-jam. Listener visibilitychange di
-                // bawah memicu 1x cek langsung begitu tab aktif lagi, jadi tidak
-                // ada delay yang terasa oleh siswa.
-                if (document.hidden) return;
                 fetch('/api/pelanggaran/status')
                     .then(function (res) { return res.json(); })
                     .then(function (json) {
@@ -15802,9 +15710,6 @@
             function mulaiPollingStatusPelanggaran() {
                 cekStatusPelanggaranKeServer();
                 setInterval(cekStatusPelanggaranKeServer, JEDA_POLL_PELANGGARAN_MS);
-                document.addEventListener('visibilitychange', () => {
-                    if (!document.hidden) cekStatusPelanggaranKeServer();
-                });
             }
 
             if (document.readyState === 'complete') {
