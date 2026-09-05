@@ -1019,6 +1019,25 @@
         // paling baru. Data yang ditampilkan bisa saja sepersekian detik
         // "tertinggal" dari server, tapi UI tidak akan pernah freeze lagi.
         const _cacheSync = {};
+        // PERBAIKAN PERFORMA (PENTING): getSync() dipanggil lewat getTasksSiswa()
+        // dari BELASAN fungsi render berbeda (updateTaskCounter, hitungStreakTugas,
+        // cekPembaruanTugasRealtime, renderTugasTerdekat, dll). Sebelumnya TIAP
+        // panggilan getSync() -- tidak peduli sudah berapa kali dipanggil dalam
+        // satu detik yang sama -- SELALU memicu fetch baru ke server lewat
+        // _refreshSyncDiBackground(), walau kunci yang sama baru saja (bahkan
+        // sepersekian detik lalu) selesai di-fetch. Karena banyak fungsi itu
+        // dipanggil beruntun dalam satu tick sinkronisasi 3 detik (lihat
+        // jalankanSinkronisasiBerkalaDashboard), ini membanjiri server dengan
+        // request duplikat ke endpoint yang sama persis sampai kena 429 (Too
+        // Many Requests) -- inilah sumber utama dashboard kerasa berat.
+        // Sekarang: setiap kunci punya jeda minimum JEDA_MIN_REFRESH_SYNC_MS
+        // antar fetch, dan kalau fetch untuk kunci itu masih berjalan (belum
+        // selesai), panggilan baru untuk kunci yang sama di-skip dulu (tidak
+        // menumpuk request paralel). Data yang ditampilkan tetap maksimal
+        // seusia jeda ini (~2.5 detik), jadi tidak terasa bedanya buat siswa.
+        const _lastFetchAtSync = {};
+        const _pendingFetchSync = {};
+        const JEDA_MIN_REFRESH_SYNC_MS = 2500;
         function getSync(kunci, fallback) {
             _refreshSyncDiBackground(kunci, fallback);
             if (kunci in _cacheSync) return _cacheSync[kunci];
@@ -1028,6 +1047,11 @@
             return nilaiLokal;
         }
         function _refreshSyncDiBackground(kunci, fallback) {
+            if (_pendingFetchSync[kunci]) return; // masih ada fetch kunci ini yang berjalan, jangan tumpuk lagi
+            const terakhirDifetch = _lastFetchAtSync[kunci] || 0;
+            if (Date.now() - terakhirDifetch < JEDA_MIN_REFRESH_SYNC_MS) return; // masih terlalu baru, skip dulu
+
+            _pendingFetchSync[kunci] = true;
             fetch(`/api/sync/${encodeURIComponent(kunci)}`)
                 .then(res => res.ok ? res.json() : null)
                 .then(res => {
@@ -1036,7 +1060,11 @@
                     _cacheSync[kunci] = data;
                     localStorage.setItem(kunci, JSON.stringify(data));
                 })
-                .catch(e => console.warn('Gagal ambil data dari server, pakai cadangan lokal:', kunci, e));
+                .catch(e => console.warn('Gagal ambil data dari server, pakai cadangan lokal:', kunci, e))
+                .finally(() => {
+                    _lastFetchAtSync[kunci] = Date.now();
+                    _pendingFetchSync[kunci] = false;
+                });
         }
         function setSync(kunci, data) {
             localStorage.setItem(kunci, JSON.stringify(data));
