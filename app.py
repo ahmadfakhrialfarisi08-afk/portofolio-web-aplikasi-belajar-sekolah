@@ -581,6 +581,124 @@ def api_pelanggaran_status():
     return jsonify(success=True, aktif=bool(entri and entri.get('aktif')))
 
 
+# ----------------------------------------------------
+# DATA PENGUMPULAN TUGAS PER SISWA (SIMULASI TABEL task_submissions)
+# SEBELUMNYA status "Sudah Kumpul" utk siswa selain akun DEV (id #1) di
+# Dashboard Guru CUMA di-generate dari hash(username+task_id) -- artinya
+# status & FOTO yang tampil (termasuk foto acak dari picsum.photos) TIDAK
+# PERNAH benar-benar berasal dari input siswa ybs, walau kelihatan
+# "konsisten" tiap dibuka ulang. Sekarang diganti data ASLI: satu-satunya
+# cara entri di sini terisi adalah request POST /api/tugas/submit yang
+# datang dari SESI LOGIN siswa ybs sendiri (session['user']['username']),
+# membawa foto yang memang dia pilih di browser -- sama seperti akun DEV.
+# Skema: tugas_submission_store[task_id][username] =
+#   { submitted, images: [...], waktu, waktu_iso, nilai, catatan }
+# Disimpan per-siswa (bukan satu flag per-tugas yang dibagi sekelas seperti
+# skema lama di tasks_<KELAS>), supaya satu siswa kirim tugas TIDAK ikut
+# menandai siswa lain di kelas yang sama sebagai "sudah kumpul".
+# ----------------------------------------------------
+TUGAS_SUBMISSION_STORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'tugas_submission_store.json')
+
+
+def _muat_tugas_submission_store():
+    try:
+        with open(TUGAS_SUBMISSION_STORE_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _simpan_tugas_submission_store():
+    os.makedirs(os.path.dirname(TUGAS_SUBMISSION_STORE_PATH), exist_ok=True)
+    tmp_path = TUGAS_SUBMISSION_STORE_PATH + '.tmp'
+    with open(tmp_path, 'w', encoding='utf-8') as f:
+        json.dump(tugas_submission_store, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, TUGAS_SUBMISSION_STORE_PATH)
+
+
+tugas_submission_store = _muat_tugas_submission_store()
+
+
+@app.route('/api/tugas/submit', methods=['POST'])
+def api_tugas_submit():
+    """Siswa yang SEDANG LOGIN mengirim tugas. Ini satu-satunya endpoint yang
+    bisa mengubah status pengumpulan tugas suatu akun jadi True -- dan itu
+    cuma bisa terjadi kalau requestnya datang dari sesi login akun ybs
+    sendiri (tidak bisa 'atas nama' siswa lain), membawa minimal 1 foto.
+    Jam pengumpulan dicatat dari JAM SERVER (bukan jam browser siswa) supaya
+    tidak bisa dimanipulasi lewat ubah jam device."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login sebagai siswa.'), 401
+
+    body = request.get_json(silent=True) or {}
+    task_id = (body.get('task_id') or '').strip()
+    images = body.get('images') or []
+    if not task_id:
+        return jsonify(success=False, message='task_id kosong.'), 400
+    if not isinstance(images, list) or len(images) == 0:
+        return jsonify(success=False, message='Belum ada foto yang dikirim.'), 400
+
+    username = session['user']['username']
+    waktu_utc = datetime.utcnow()
+    waktu_wib = waktu_utc + timedelta(hours=7)  # WIB = UTC+7
+
+    tugas_submission_store.setdefault(task_id, {})
+    lama = tugas_submission_store[task_id].get(username, {})
+    tugas_submission_store[task_id][username] = {
+        'submitted': True,
+        'images': images,
+        'waktu': waktu_wib.strftime('%H:%M:%S') + ' WIB',
+        'waktu_iso': waktu_utc.isoformat(),
+        'nilai': lama.get('nilai'),
+        'catatan': lama.get('catatan'),
+    }
+    _simpan_tugas_submission_store()
+    return jsonify(success=True, waktu=tugas_submission_store[task_id][username]['waktu'])
+
+
+@app.route('/api/tugas/submissions/<task_id>', methods=['GET'])
+def api_tugas_submissions(task_id):
+    """Guru mengambil status pengumpulan ASLI SEMUA siswa untuk SATU tugas
+    (dipakai buat rekap roster di Dashboard Guru) -- menggantikan simulasi
+    hash yang lama. Kalau belum ada satupun siswa yang kirim, hasilnya
+    objek kosong -- BUKAN data acak."""
+    if 'user' not in session or session['user']['role'] != 'guru':
+        return jsonify(success=False, message='Belum login sebagai guru.'), 401
+    return jsonify(success=True, submissions=tugas_submission_store.get(task_id, {}))
+
+
+@app.route('/api/tugas/submission/<task_id>', methods=['GET'])
+def api_tugas_submission_diri_sendiri(task_id):
+    """Siswa cek status pengumpulan tugas MILIKNYA SENDIRI (per akun),
+    dipakai Dashboard Siswa supaya status 'Sudah Dikirim' tidak lagi
+    kebawa/ketuker ke siswa lain di kelas yang sama seperti skema lama
+    (tasks_<KELAS> yang satu flag dibagi sekelas)."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login sebagai siswa.'), 401
+    username = session['user']['username']
+    entri = tugas_submission_store.get(task_id, {}).get(username)
+    return jsonify(success=True, data=entri or {'submitted': False})
+
+
+@app.route('/api/tugas/nilai', methods=['POST'])
+def api_tugas_nilai():
+    """Guru memberi nilai/catatan ke pengumpulan tugas SATU siswa tertentu."""
+    if 'user' not in session or session['user']['role'] != 'guru':
+        return jsonify(success=False, message='Belum login sebagai guru.'), 401
+    body = request.get_json(silent=True) or {}
+    task_id = (body.get('task_id') or '').strip()
+    username = (body.get('username') or '').strip()
+    if not task_id or not username:
+        return jsonify(success=False, message='task_id/username kosong.'), 400
+    if task_id not in tugas_submission_store or username not in tugas_submission_store[task_id]:
+        return jsonify(success=False, message='Data pengumpulan tidak ditemukan.'), 404
+    tugas_submission_store[task_id][username]['nilai'] = body.get('nilai')
+    tugas_submission_store[task_id][username]['catatan'] = body.get('catatan')
+    _simpan_tugas_submission_store()
+    return jsonify(success=True)
+
+
 def _default_quiz_blob(jenis):
     if jenis == 'essay':
         return {'bestByLevel': {'easy': 0, 'medium': 0, 'hard': 0}, 'leaderboard': []}

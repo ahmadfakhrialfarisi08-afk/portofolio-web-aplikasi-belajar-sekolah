@@ -2298,14 +2298,16 @@
         // di kolom "Pengumpulan Siswa" pada tabel Rekap Semua Tugas).
         // ============================================================
 
-        // Siswa ID#1 (akun DEV yang tersambung ke Dashboard Siswa lewat
-        // localStorage) punya data pengumpulan ASLI per-tugas (studentSubmitted
-        // & studentTime tersimpan langsung di objek tugasnya). Untuk 3 siswa
-        // lain di roster (Syam, Waldi, Fadzri) belum ada sistem pengumpulan
-        // file sungguhan per akun, jadi statusnya disimulasikan -- tapi dibuat
-        // KONSISTEN (deterministik dari kombinasi id siswa + id tugas), supaya
-        // tiap kali jendela ini dibuka ulang hasilnya tidak berubah-ubah acak.
-        // Kunci localStorage tempat nilai + pesan/catatan guru buat kombinasi
+        // PERBAIKAN: dulu cuma Siswa ID#1 (akun DEV) yang punya data pengumpulan
+        // ASLI; siswa lain di roster statusnya DISIMULASIKAN dari hash(id+taskId)
+        // -- termasuk foto acak dari picsum.photos -- walau belum pernah ada
+        // satupun dari mereka yang login/kirim apa pun. Sekarang SEMUA siswa
+        // (lihat statusPengumpulanUntukTugas() & ambilSubmisiTugasServer() di
+        // atas) dibaca dari /api/tugas/submissions/<taskId>, yaitu data ASLI
+        // yang cuma bisa terisi lewat POST /api/tugas/submit dari sesi login
+        // siswa ybs sendiri.
+        // Kunci (server, lewat getSync/setSync) tempat nilai + pesan/catatan
+        // guru buat kombinasi
         // (tugas, siswa) tertentu disimpan -- supaya begitu guru kasih nilai
         // dari "Rekap Pengumpulan per Tugas", hasilnya tetap ada walau kartu
         // dirender ulang / halaman dibuka lagi nanti.
@@ -2439,45 +2441,51 @@
             });
         }
 
+        // CATATAN PERBAIKAN: dulu fungsi ini cuma baca data ASLI (task.studentSubmitted)
+        // buat murid.id === 1 (akun DEV yang lagi dipakai login browser ini), dan
+        // untuk SEMUA murid lain nge-generate status "kumpul" dari hash(id+taskId)
+        // -- ~60% peluang, lengkap dengan foto ACAK dari picsum.photos. Akibatnya
+        // siswa yang belum pernah login/kirim apa pun bisa muncul "Sudah Kumpul" di
+        // Dashboard Guru. Sekarang SEMUA murid (termasuk id #1) dibaca dari data ASLI
+        // hasil POST /api/tugas/submit siswa ybs -- lihat ambilSubmisiTugasServer().
+        window._cacheSubmisiTugas = window._cacheSubmisiTugas || {};
+        function ambilSubmisiTugasServer(taskId) {
+            // Sinkron (XHR), sama pola dengan getSync() -- dipanggil sekali tiap
+            // rekap dibuka (lihat bukaRekapPengumpulanTugas()), hasilnya di-cache
+            // per taskId supaya statusPengumpulanUntukTugas() per-murid tidak
+            // fetch berkali-kali saat looping roster.
+            try {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', `/api/tugas/submissions/${encodeURIComponent(taskId)}`, false);
+                xhr.send(null);
+                if (xhr.status === 200) {
+                    const res = JSON.parse(xhr.responseText);
+                    if (res.success) return res.submissions || {};
+                }
+            } catch (e) {
+                console.warn('Gagal ambil data pengumpulan tugas dari server:', taskId, e);
+            }
+            return {};
+        }
+
         function statusPengumpulanUntukTugas(murid, task, kedaluwarsa) {
             const tersimpan = ambilHasilPeriksaTersimpan(task.id, murid.id);
+            const submisiSemua = window._cacheSubmisiTugas[task.id] || {};
+            const entri = submisiSemua[murid.username];
 
-            if (murid.id === 1) {
-                const submitted = !!task.studentSubmitted;
-                let fotoList = [];
-                if (Array.isArray(task.studentImages) && task.studentImages.length > 0) fotoList = task.studentImages;
-                else if (task.studentImage) fotoList = [task.studentImage];
-                return {
-                    submitted,
-                    waktu: submitted ? (task.studentTime || task.waktuKirim || null) : null,
-                    nilai: submitted ? (task.grade || (tersimpan ? tersimpan.nilai : null)) : null,
-                    catatan: submitted ? (tersimpan ? tersimpan.catatan : null) : null,
-                    fotoTugasList: fotoList
-                };
+            if (!entri || !entri.submitted) {
+                return { submitted: false, waktu: null, nilai: null, catatan: null, fotoTugasList: [] };
             }
 
-            let hash = 0;
-            const seed = `${murid.id}_${task.id}`;
-            for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-            const submitted = (hash % 10) < 6; // simulasi ~60% peluang kumpul, konsisten per kombinasi
-            if (!submitted) return { submitted: false, waktu: null, nilai: null, catatan: null, fotoTugasList: [] };
-
-            const jam = 7 + (hash % 10);
-            const menit = (Math.floor(hash / 7)) % 60;
-            const waktu = `${String(jam).padStart(2, '0')}:${String(menit).padStart(2, '0')} WIB`;
-
-            // Foto tugas simulasi: tiap siswa "kumpul" dapat 1 foto kiriman yang
-            // konsisten (seed dari id siswa + id tugas, jadi sama terus tiap
-            // dibuka ulang) & sengaja diminta resolusi kecil (480x340) supaya
-            // ringan/kompres tapi isinya tetap jelas kelihatan pas dibuka guru.
-            const fotoTugasList = [`https://picsum.photos/seed/tugas${seed}/480/340`];
+            let fotoList = [];
+            if (Array.isArray(entri.images) && entri.images.length > 0) fotoList = entri.images;
 
             return {
                 submitted: true,
-                waktu,
-                nilai: tersimpan ? tersimpan.nilai : null,
-                catatan: tersimpan ? tersimpan.catatan : null,
-                fotoTugasList
+                waktu: entri.waktu || null,
+                nilai: (entri.nilai !== undefined && entri.nilai !== null) ? entri.nilai : (tersimpan ? tersimpan.nilai : null),
+                catatan: entri.catatan || (tersimpan ? tersimpan.catatan : null),
+                fotoTugasList: fotoList
             };
         }
 
@@ -2525,6 +2533,11 @@
                 alert('Tugas ini tidak ditemukan (mungkin sudah dihapus).');
                 return;
             }
+
+            // Tarik data pengumpulan tugas ASLI semua siswa (bukan simulasi hash
+            // lama) sekali tiap rekap dibuka, di-cache per taskId -- lihat catatan
+            // besar di statusPengumpulanUntukTugas().
+            window._cacheSubmisiTugas[taskId] = ambilSubmisiTugasServer(taskId);
 
             const kedaluwarsa = cekStatusTugasKedaluwarsaGuru(task);
             const kelasInfo = daftarSeluruhKelasDummy.find(k => k.nama === namaKelas);
