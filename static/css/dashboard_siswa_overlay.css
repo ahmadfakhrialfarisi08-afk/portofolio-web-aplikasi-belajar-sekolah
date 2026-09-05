@@ -1,0 +1,54 @@
+        /* Blur cepat pada dashboard di belakang overlay. Ditarget lewat
+           class di <body> supaya TIDAK perlu bungkus ulang markup yang
+           sudah ada -- seluruh anak langsung <body> ikut diburamkan
+           KECUALI overlay itu sendiri. */
+        body.pelanggaran-aktif-blur > *:not(#overlay-pelanggaran-aktif) {
+            filter: blur(10px);
+            transition: filter .18s ease-out;
+        }
+
+        #overlay-pelanggaran-aktif {
+            opacity: 0;
+            transition: opacity .18s ease-out;
+        }
+        #overlay-pelanggaran-aktif.overlay-pelanggaran--tampil {
+            opacity: 1;
+        }
+
+        .overlay-pelanggaran-kartu {
+            transform: scale(.8) translateY(16px);
+            opacity: 0;
+        }
+        #overlay-pelanggaran-aktif.overlay-pelanggaran--tampil .overlay-pelanggaran-kartu {
+            animation: overlayPelanggaranPopBounce .55s cubic-bezier(.34,1.56,.64,1) forwards;
+        }
+        @keyframes overlayPelanggaranPopBounce {
+            0%   { opacity: 0; transform: scale(.75) translateY(22px); }
+            55%  { opacity: 1; transform: scale(1.06) translateY(-6px); }
+            80%  { transform: scale(.97) translateY(2px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .overlay-pelanggaran-ikon-wrap {
+            animation: overlayPelanggaranBounceIkon 1.1s ease-in-out .5s infinite;
+        }
+        @keyframes overlayPelanggaranBounceIkon {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-9px); }
+        }
+
+        #overlay-pelanggaran-pesan .overlay-pelanggaran-kursor {
+            display: inline-block;
+            width: 2px;
+            margin-left: 2px;
+            animation: overlayPelanggaranKedipKursor .8s steps(1) infinite;
+        }
+        @keyframes overlayPelanggaranKedipKursor {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        #tombol-overlay-pelanggaran-mengerti:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
