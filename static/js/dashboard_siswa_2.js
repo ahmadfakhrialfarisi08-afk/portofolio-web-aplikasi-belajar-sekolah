@@ -2085,7 +2085,10 @@
                 skor: snapshot.skor,
                 benar: snapshot.benar,
                 waktuSisa: cfg.waktu,
-                timerId: null
+                timerId: null,
+                waktuMulaiSoal: null,
+                beruntunJawabCepat: 0,
+                sedangDiproses: false
             };
 
             tampilkanViewQuiz('play');
@@ -2520,6 +2523,25 @@
             return { label: '🔰 Pemula', warna: 'text-white' };
         }
 
+        // Mengacak URUTAN opsi (A/B/C/D) satu soal PG, termasuk ikut memindahkan
+        // posisi jawaban yang benar -- supaya siswa nggak bisa hafal "pola posisi"
+        // (mis. jawaban benar kebetulan sering di bank data ada di opsi pertama).
+        // Mengembalikan OBJEK BARU (bukan mengubah soal aslinya di
+        // QUIZ_BANK_PG_BY_MAPEL), jadi bank soal master tetap bersih & tiap kali
+        // soal ini muncul lagi di sesi lain, posisinya diacak ulang dari nol.
+        function acakUrutanOpsiSoal(soal) {
+            const opsiDenganPenanda = soal.opsi.map((teks, i) => ({ teks, iniJawabanBenar: i === soal.jawaban }));
+            for (let i = opsiDenganPenanda.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [opsiDenganPenanda[i], opsiDenganPenanda[j]] = [opsiDenganPenanda[j], opsiDenganPenanda[i]];
+            }
+            return {
+                ...soal,
+                opsi: opsiDenganPenanda.map(o => o.teks),
+                jawaban: opsiDenganPenanda.findIndex(o => o.iniJawabanBenar)
+            };
+        }
+
         function acakSoalQuiz(mapelId, level, jumlah) {
             const bankMapel = (QUIZ_BANK_PG_BY_MAPEL[mapelId] && QUIZ_BANK_PG_BY_MAPEL[mapelId][level]) || [];
             const bank = [...bankMapel];
@@ -2527,7 +2549,7 @@
                 const j = Math.floor(Math.random() * (i + 1));
                 [bank[i], bank[j]] = [bank[j], bank[i]];
             }
-            return bank.slice(0, Math.min(jumlah, bank.length));
+            return bank.slice(0, Math.min(jumlah, bank.length)).map(acakUrutanOpsiSoal);
         }
 
         const SEMUA_VIEW_QUIZ = ['jenis', 'kategori-mapel', 'pilih-mapel', 'tingkat-pg', 'tingkat-essay', 'play', 'result'];
@@ -2754,7 +2776,7 @@
             const mapelId = quizMapelState.mapelId;
             const soal = jenis === 'essay' ? acakSoalQuizEssay(mapelId, level, 5) : acakSoalQuiz(mapelId, level, 5);
             const cfg = jenis === 'essay' ? QUIZ_CONFIG_ESSAY[level] : QUIZ_CONFIG[level];
-            quizState = { jenis, level, mapelId, mapelNama: quizMapelState.mapelNama, soal, index: 0, skor: 0, benar: 0, waktuSisa: cfg.waktu, timerId: null, waktuMulaiSoal: null, beruntunJawabCepat: 0 };
+            quizState = { jenis, level, mapelId, mapelNama: quizMapelState.mapelNama, soal, index: 0, skor: 0, benar: 0, waktuSisa: cfg.waktu, timerId: null, waktuMulaiSoal: null, beruntunJawabCepat: 0, sedangDiproses: false };
             tampilkanViewQuiz('play');
             document.getElementById('quiz-play-total').innerText = String(soal.length);
 
@@ -2807,6 +2829,9 @@
             }
 
             quizState.waktuSisa = cfg.waktu;
+            // Direset tiap soal baru -- lihat guard anti-double-submit di
+            // pilihJawabanQuiz()/jawabEssayQuiz() (quizState.sedangDiproses).
+            quizState.sedangDiproses = false;
             // Dicatat SETIAP soal baru ditampilkan -- dipakai deteksiKlikCepatQuiz()
             // di bawah untuk menghitung berapa detik siswa benar-benar butuh
             // sebelum menjawab (bukan cuma dari sisa timer yang resolusinya per-detik).
@@ -2959,6 +2984,11 @@
 
         function pilihJawabanQuiz(indexDipilih) {
             if (!quizState) return;
+            // Kunci: kalau soal ini SUDAH diproses (misal timer habis & klik user
+            // kebetulan hampir bersamaan, atau tombol sempat ke-tap dobel), jangan
+            // diproses lagi -- mencegah skor/progress soal yang sama dihitung 2x.
+            if (quizState.sedangDiproses) return;
+            quizState.sedangDiproses = true;
             clearInterval(quizState.timerId);
 
             const cfg = QUIZ_CONFIG[quizState.level];
@@ -2966,6 +2996,10 @@
             const tombolTombol = document.querySelectorAll('#quiz-options-container .quiz-opsi-btn');
 
             tombolTombol.forEach((btn, i) => {
+                // disabled=true (bukan cuma copot onclick) supaya SEMUA jalur klik --
+                // mouse, keyboard (Enter/Space), maupun tap cepat berulang di HP --
+                // benar-benar tidak bisa memicu event apa pun lagi di tombol ini.
+                btn.disabled = true;
                 btn.onclick = null;
                 const dasarKelas = 'quiz-opsi-btn text-left flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:gap-0 px-2.5 py-2.5 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl border-2 text-[11px] sm:text-sm font-semibold transition-all leading-snug';
                 if (i === item.jawaban) {
@@ -3018,17 +3052,26 @@
         // dari timer saat siswa tidak sempat menjawab (dianggap salah).
         function jawabEssayQuiz(waktuHabis) {
             if (!quizState) return;
+            // Kunci: cegah jawaban/skor soal yang sama diproses dobel (mis. tombol
+            // "Kirim" di-tap 2x cepat sebelum UI sempat berubah, atau kebetulan
+            // bertabrakan dengan waktu habis) -- sama seperti versi Pilihan Ganda.
+            if (quizState.sedangDiproses) return;
+            quizState.sedangDiproses = true;
             clearInterval(quizState.timerId);
 
             const cfg = QUIZ_CONFIG_ESSAY[quizState.level];
             const item = quizState.soal[quizState.index];
             const input = document.getElementById('quiz-essay-jawaban');
-            const jawabanSiswa = waktuHabis === true ? '' : (input.value || '');
-            const benar = waktuHabis !== true && cocokkanJawabanEssay(jawabanSiswa, item.kunci);
 
+            // Nonaktifkan input & tombol submit SEGERA (paling duluan, sebelum
+            // proses cocokkan jawaban/skor) supaya tidak ada celah buat spam klik
+            // menggandakan skor atau kirim jawaban berkali-kali.
             input.disabled = true;
             const tombolSubmit = document.getElementById('quiz-essay-submit-btn');
             if (tombolSubmit) tombolSubmit.disabled = true;
+
+            const jawabanSiswa = waktuHabis === true ? '' : (input.value || '');
+            const benar = waktuHabis !== true && cocokkanJawabanEssay(jawabanSiswa, item.kunci);
 
             const feedback = document.getElementById('quiz-essay-feedback');
             if (feedback) {
@@ -3289,28 +3332,105 @@
         function bukaQuizDariAwal() {
             if (quizState) clearInterval(quizState.timerId);
 
-            // FITUR BARU: sebelum reset ke menu awal, cek dulu apakah ada
-            // progres quiz yang sempat "kepotong" tersimpan di localStorage
-            // (lihat simpanProgressQuizSementara(), dipanggil tiap kali siswa
-            // menjawab 1 soal) -- baik karena tab sempat dipindah, koneksi
-            // ngadat, atau browser/tab tertutup di tengah jalan sebelum
-            // sampai soal terakhir. Kalau ketemu, tawarkan lanjut dulu lewat
-            // confirm() SEBELUM quiz lama ini betul-betul dianggap hilang.
+            // Sebelum reset ke menu awal, cek dulu apakah ada progres quiz yang
+            // sempat "kepotong" tersimpan di localStorage (lihat
+            // simpanProgressQuizSementara(), dipanggil tiap kali siswa menjawab
+            // 1 soal) -- baik karena tab sempat dipindah, koneksi ngadat, atau
+            // browser/tab tertutup di tengah jalan sebelum sampai soal terakhir.
+            // Kalau ketemu, tawarkan lanjut dulu lewat dialog custom (BUKAN
+            // confirm() bawaan browser yang kaku) SEBELUM quiz lama ini betul-
+            // betul dianggap hilang. Keputusan siswa (Lanjut/Mulai Baru) diproses
+            // di dalam tampilkanKonfirmasiLanjutkanQuiz() sendiri, jadi di sini
+            // cukup return dan JANGAN langsung reset ke menu.
             const snapshotTerputus = ambilProgressQuizSementara();
             if (snapshotTerputus) {
-                const mauLanjut = confirm(
-                    `Kamu punya quiz "${snapshotTerputus.mapelNama || 'sebelumnya'}" yang belum selesai ` +
-                    `(soal ${snapshotTerputus.index + 1} dari ${snapshotTerputus.soal.length}). Lanjutkan dari situ?`
-                );
-                if (mauLanjut) {
-                    lanjutkanQuizDariSnapshot(snapshotTerputus);
-                    return; // JANGAN reset ke menu awal -- quiz lama sudah dilanjutkan
-                }
-                hapusProgressQuizSementara(); // ditolak -> anggap dibuang, quiz baru mulai bersih
+                tampilkanKonfirmasiLanjutkanQuiz(snapshotTerputus);
+                return;
             }
 
             tampilkanViewQuiz('jenis');
             renderMenuQuiz();
+        }
+
+        // Dialog custom pengganti confirm() bawaan browser: nampilin secara
+        // spesifik "terputus di Soal nomor X", dengan 2 pilihan jelas --
+        // "Lanjutkan" (rekonstruksi quiz persis dari snapshot terakhir lewat
+        // lanjutkanQuizDariSnapshot()) atau "Mulai dari Awal" (snapshot dibuang
+        // permanen, quiz baru dimulai dari lembar kosong). Animasi
+        // kemunculannya pakai pola fade+slide bertahap yang sama dengan notif
+        // "jawab kecepatan" (tampilkanNotifJawabTerlaluCepat) biar konsisten.
+        function tampilkanKonfirmasiLanjutkanQuiz(snapshot) {
+            const overlayLama = document.getElementById('overlay-konfirmasi-lanjut-quiz');
+            if (overlayLama) overlayLama.remove();
+
+            const nomorSoalTerakhir = snapshot.index + 1;
+            const namaKuis = snapshot.mapelNama ? ` "${snapshot.mapelNama}"` : '';
+
+            const overlay = document.createElement('div');
+            overlay.id = 'overlay-konfirmasi-lanjut-quiz';
+            overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4 opacity-0 transition-opacity duration-300 ease-out';
+            overlay.innerHTML = `
+                <div id="kotak-konfirmasi-lanjut-quiz" class="bg-white rounded-2xl shadow-2xl max-w-xs w-full p-5 text-center transform transition-all duration-300 ease-out scale-95">
+                    <div id="ikon-konfirmasi-lanjut-quiz" class="w-14 h-14 mx-auto mb-3 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center text-2xl opacity-0 translate-y-2 transition-all duration-500 ease-out">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <p id="teks-konfirmasi-lanjut-quiz" class="text-sm font-bold text-slate-800 leading-snug mb-4 opacity-0 translate-y-2 transition-all duration-500 ease-out">
+                        Wah, kuis kamu${namaKuis} sebelumnya sempat terputus di Soal nomor ${nomorSoalTerakhir}. Mau dilanjutkan dari situ atau mulai dari awal?
+                    </p>
+                    <div id="tombol-konfirmasi-lanjut-quiz" class="flex flex-col gap-2 opacity-0 translate-y-2 transition-all duration-500 ease-out">
+                        <button id="btn-lanjutkan-quiz-snapshot" type="button"
+                            class="w-full py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-sm transition-all">
+                            Lanjutkan dari Soal ${nomorSoalTerakhir}
+                        </button>
+                        <button id="btn-mulai-baru-quiz-snapshot" type="button"
+                            class="w-full py-2.5 rounded-xl bg-slate-100 text-slate-500 font-bold text-xs hover:bg-slate-200 transition-all">
+                            Mulai dari Awal
+                        </button>
+                    </div>
+                </div>`;
+            document.body.appendChild(overlay);
+
+            const kotak = document.getElementById('kotak-konfirmasi-lanjut-quiz');
+            const ikon = document.getElementById('ikon-konfirmasi-lanjut-quiz');
+            const teks = document.getElementById('teks-konfirmasi-lanjut-quiz');
+            const tombolWrap = document.getElementById('tombol-konfirmasi-lanjut-quiz');
+
+            requestAnimationFrame(() => {
+                overlay.classList.remove('opacity-0');
+                if (kotak) kotak.classList.remove('scale-95');
+            });
+
+            [{ el: ikon, delay: 150 }, { el: teks, delay: 260 }, { el: tombolWrap, delay: 370 }]
+                .forEach(({ el, delay }) => {
+                    if (!el) return;
+                    setTimeout(() => el.classList.remove('opacity-0', 'translate-y-2'), delay);
+                });
+
+            const tutupOverlay = () => overlay.remove();
+
+            const btnLanjut = document.getElementById('btn-lanjutkan-quiz-snapshot');
+            if (btnLanjut) {
+                btnLanjut.onclick = () => {
+                    tutupOverlay();
+                    // Rekonstruksi kuis persis kondisi terakhir -- soal yang sudah
+                    // dijawab (skor, benar, index) tetap kepakai, lanjut ke soal
+                    // berikutnya yang belum sempat dijawab.
+                    lanjutkanQuizDariSnapshot(snapshot);
+                };
+            }
+
+            const btnMulaiBaru = document.getElementById('btn-mulai-baru-quiz-snapshot');
+            if (btnMulaiBaru) {
+                btnMulaiBaru.onclick = () => {
+                    tutupOverlay();
+                    // Dibatalkan -> snapshot dibuang bersih, kuis baru dimulai dari
+                    // lembar kosong (bukan cuma disembunyikan, tapi dihapus dari
+                    // localStorage supaya tidak nyangkut lagi lain kali).
+                    hapusProgressQuizSementara();
+                    tampilkanViewQuiz('jenis');
+                    renderMenuQuiz();
+                };
+            }
         }
 
         function renderMenuQuiz() {
