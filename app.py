@@ -252,7 +252,14 @@ users = {
         'role': 'guru',
         'email': 'guru@sekolah.sch.id',
         'fullname': 'Guru Pengajar',
-        'identity_number': '198501012010011001'
+        'identity_number': '198501012010011001',
+        # GANTI KE NOMOR WA ASLI GURU/GURU PIKET YANG BERSANGKUTAN --
+        # dipakai tombol "Ajukan Banding" di overlay peringatan pelanggaran
+        # siswa (lihat _format_nomor_wa() & api_pelanggaran_set() di bawah)
+        # supaya siswa bisa langsung diarahkan ke chat WhatsApp guru yang
+        # menandai pelanggarannya. Format bebas (boleh pakai 08xx atau
+        # +62xx), otomatis dirapikan ke format internasional saat dipakai.
+        'whatsapp': '081234567890'
     },
     'siswa': {
         'username': 'siswa', 
@@ -765,6 +772,20 @@ def _simpan_pelanggaran_store():
 pelanggaran_store = _muat_pelanggaran_store()
 
 
+def _format_nomor_wa(nomor):
+    """Rapikan nomor HP guru (boleh diinput '08xx', '+62xx', atau '62xx')
+    jadi format internasional TANPA tanda '+' yang dipakai link wa.me/,
+    mis. '081234567890' -> '6281234567890'. Dipakai tombol "Ajukan Banding"
+    di overlay peringatan pelanggaran siswa supaya langsung buka chat WA
+    guru yang bersangkutan tanpa siswa perlu ketik manual nomornya."""
+    bersih = ''.join(ch for ch in str(nomor or '') if ch.isdigit())
+    if bersih.startswith('0'):
+        return '62' + bersih[1:]
+    if bersih.startswith('62'):
+        return bersih
+    return bersih
+
+
 @app.route('/api/pelanggaran/set', methods=['POST'])
 @batasi('umum')
 def api_pelanggaran_set():
@@ -772,29 +793,41 @@ def api_pelanggaran_set():
     Pelanggaran Aktif utk SATU siswa, by username akun login ASLI (sama
     seperti roster di dashboard_guru.html). Disimpan di server -- lihat
     catatan besar di atas pelanggaran_store soal kenapa ini dipindah dari
-    localStorage."""
+    localStorage.
+
+    'keterangan' (opsional dari form guru): jenis/alasan pelanggarannya apa
+    -- ditampilkan apa adanya di overlay peringatan siswa (lihat
+    "Harus Ada Tombol Aksi Nyata": siswa berhak tahu pelanggarannya APA,
+    bukan cuma pesan generik). Kalau guru tidak mengisi, dikasih teks
+    default supaya overlay tidak kosong."""
     if 'user' not in session or session['user']['role'] != 'guru':
         return jsonify(success=False, message='Belum login sebagai guru.'), 401
 
     body = request.get_json(silent=True) or {}
     username = (body.get('username') or '').strip()
     aktif = bool(body.get('aktif'))
+    keterangan = (body.get('keterangan') or '').strip()[:300]
     if not username:
         return jsonify(success=False, message='Username siswa kosong.'), 400
 
     if aktif:
+        guru_login = users.get(session['user']['username'], {})
         # 'dilihat_at' SENGAJA di-reset ke None tiap kali guru menandai
         # pelanggaran baru (termasuk kalau sebelumnya sempat dicabut lalu
         # ditandai lagi) -- ini akar dari prinsip "Sekali Tampil dan
         # Dicatat": tiap PELANGGARAN BARU wajib tampil sekali lagi ke
-        # siswa, terlepas dari pelanggaran lama yang sudah pernah
-        # dia lihat sebelumnya. Lihat /api/pelanggaran/dilihat &
-        # /api/pelanggaran/status di bawah utk sisi pencatatannya.
+        # siswa & wajib diklik-konfirmasi lagi, terlepas dari pelanggaran
+        # lama yang sudah pernah dia acknowledge sebelumnya. Lihat
+        # /api/pelanggaran/dilihat & /api/pelanggaran/status di bawah utk
+        # sisi pencatatan acknowledge-nya.
         pelanggaran_store[username] = {
             'aktif': True,
             'updated_at': datetime.utcnow().isoformat(),
             'oleh': session['user'].get('nama') or session['user']['username'],
-            'dilihat_at': None
+            'oleh_whatsapp': _format_nomor_wa(guru_login.get('whatsapp')),
+            'keterangan': keterangan or 'Pelanggaran tata tertib sekolah. Segera hubungi guru piket untuk penjelasan lebih lanjut.',
+            'dilihat_at': None,
+            'aksi_siswa': None  # 'mengerti' atau 'banding' -- diisi api_pelanggaran_dilihat()
         }
     else:
         pelanggaran_store.pop(username, None)
@@ -822,9 +855,12 @@ def api_pelanggaran_status():
     milik akun yang sedang login sendiri -- lintas perangkat, tidak lagi
     bergantung localStorage yang ditulis browser guru.
 
-    'sudah_dilihat' ikut disertakan (prinsip "Sekali Tampil dan Dicatat"):
-    frontend cuma boleh memunculkan modal/overlay peringatan kalau field
-    ini masih False -- begitu ditampilkan sekali, frontend memanggil
+    Menyertakan detail pelanggarannya (keterangan, oleh, kapan) supaya
+    overlay bisa menampilkan info nyata -- bukan cuma pesan generik --
+    plus 'oleh_whatsapp' utk tombol "Ajukan Banding". 'sudah_dilihat'
+    (prinsip "Sekali Tampil dan Dicatat"): frontend cuma boleh memunculkan
+    modal peringatan kalau field ini masih False -- begitu siswa KLIK salah
+    satu tombol aksi (Saya Mengerti / Ajukan Banding), frontend memanggil
     /api/pelanggaran/dilihat supaya field ini jadi True & modal TIDAK
     muncul berulang tiap siswa login ulang selama pelanggaran yang SAMA
     belum diselesaikan guru. Penguncian tugas (pelanggaranSiswaSedangAktif())
@@ -832,32 +868,43 @@ def api_pelanggaran_status():
     if 'user' not in session or session['user']['role'] != 'siswa':
         return jsonify(success=False, message='Belum login sebagai siswa.'), 401
     username = session['user']['username']
-    entri = pelanggaran_store.get(username)
+    entri = pelanggaran_store.get(username) or {}
     return jsonify(
         success=True,
-        aktif=bool(entri and entri.get('aktif')),
-        sudah_dilihat=bool(entri and entri.get('dilihat_at'))
+        aktif=bool(entri.get('aktif')),
+        sudah_dilihat=bool(entri.get('dilihat_at')),
+        keterangan=entri.get('keterangan') or '',
+        oleh=entri.get('oleh') or '',
+        oleh_whatsapp=entri.get('oleh_whatsapp') or '',
+        updated_at=entri.get('updated_at') or ''
     )
 
 
 @app.route('/api/pelanggaran/dilihat', methods=['POST'])
 @batasi('umum')
 def api_pelanggaran_dilihat():
-    """Ditandai oleh Dashboard Siswa TEPAT SAAT modal/overlay peringatan
-    'Pelanggaran Aktif' pertama kali ditampilkan ke siswa yang bersangkutan
-    (lihat tampilkanOverlayPelanggaranAktif() -> catatDilihatPelanggaranKeServer()
-    di dashboard_siswa_pelanggaran.js). Bagian "Dicatat" dari prinsip
-    "Sekali Tampil dan Dicatat" -- begitu tercatat, /api/pelanggaran/status
-    akan balikin sudah_dilihat=True sehingga modal ini tidak muncul lagi
-    berulang-ulang tiap kali siswa itu login/refresh selama pelanggaran
-    yang SAMA belum dicabut guru. Idempotent: dipanggil berkali-kali pun
-    aman, tidak menimpa timestamp 'dilihat_at' yang sudah tercatat."""
+    """Ditandai oleh Dashboard Siswa TEPAT SAAT siswa MENGKLIK salah satu
+    tombol aksi nyata di overlay peringatan -- "Saya Mengerti" ATAU
+    "Ajukan Banding" (lihat tombolOverlayPelanggaranDiklik() di
+    dashboard_siswa_pelanggaran.js) -- BUKAN otomatis begitu overlay
+    tampil. Body request boleh menyertakan {'aksi': 'mengerti'|'banding'}
+    supaya guru/BK bisa tahu siswa memilih jalur apa saat menanggapi
+    peringatannya. Bagian "Dicatat" dari prinsip "Sekali Tampil dan
+    Dicatat" -- begitu tercatat, /api/pelanggaran/status akan balikin
+    sudah_dilihat=True sehingga modal ini tidak muncul lagi berulang-ulang
+    tiap kali siswa itu login/refresh selama pelanggaran yang SAMA belum
+    dicabut guru. Idempotent: dipanggil berkali-kali pun aman, tidak
+    menimpa timestamp 'dilihat_at' yang sudah tercatat."""
     if 'user' not in session or session['user']['role'] != 'siswa':
         return jsonify(success=False, message='Belum login.'), 401
     username = session['user']['username']
+    body = request.get_json(silent=True) or {}
+    aksi = body.get('aksi') if body.get('aksi') in ('mengerti', 'banding') else None
+
     entri = pelanggaran_store.get(username)
     if entri and entri.get('aktif') and not entri.get('dilihat_at'):
         entri['dilihat_at'] = datetime.utcnow().isoformat()
+        entri['aksi_siswa'] = aksi
         _simpan_pelanggaran_store()
     return jsonify(success=True)
 

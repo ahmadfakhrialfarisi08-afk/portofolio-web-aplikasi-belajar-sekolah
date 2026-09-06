@@ -24,6 +24,37 @@
            butuh cek status ini secara SINKRON (lewat
            window.pelanggaranSiswaSedangAktif(), lihat 2 pemakaiannya di
            renderKartuTugas()/kirimTugasSiswa() jauh di atas).
+
+           ------------------------------------------------------------
+           TAMBAHAN: "Harus Ada Tombol Aksi Nyata" + "Sekali Tampil dan
+           Dicatat". Overlay ini sekarang:
+             1) Menampilkan KETERANGAN pelanggaran yang sebenarnya (diisi
+                guru saat "Kasih Pelanggaran", bukan cuma pesan generik).
+             2) Punya 2 tombol aksi nyata: "Saya Mengerti" (tutup overlay,
+                tugas tetap terkunci sampai guru mencabut) & "Ajukan
+                Banding" (buka chat WhatsApp guru yang menandai
+                pelanggaran ini, nomor & pesan sudah otomatis terisi).
+             3) BARU tercatat sebagai "sudah dilihat" (acknowledge) ke
+                server TEPAT SAAT salah satu tombol itu diklik -- BUKAN
+                otomatis begitu overlay tampil. Jadi kalau siswa menutup
+                tab tanpa klik apa pun, overlay ini akan tampil LAGI di
+                sesi berikutnya sampai dia benar-benar menekan salah satu
+                tombol aksi. Ini yang membuat "Dicatat" di sini berarti
+                "tercatat siswa sudah membaca & bertindak", bukan sekadar
+                "pernah ditampilkan ke layar".
+
+           CATATAN MARKUP HTML YANG DIPERLUKAN (lihat overview jawaban):
+           file ini butuh beberapa elemen baru di modal overlay pada
+           dashboard_siswa.html yang belum tentu ada di markup lama kamu:
+             - #overlay-pelanggaran-keterangan  (teks jenis pelanggaran)
+             - #overlay-pelanggaran-oleh        (teks "Dicatat oleh: ...")
+             - #tombol-overlay-pelanggaran-banding (tombol "Ajukan Banding")
+             - #overlay-pelanggaran-hitung-mundur-banding (span countdown
+               tombol banding, pola sama seperti punya tombol mengerti)
+           Elemen yang belum ada di markup akan otomatis DILEWATI (script
+           ini defensif, tidak error) -- tapi fitur terkait elemen itu
+           (mis. tombol banding) baru akan MUNCUL & jalan setelah markupnya
+           ditambahkan.
            ============================================================ */
         (function () {
             var PESAN_OVERLAY_PELANGGARAN = 'Opps, kamu ada pelanggaran! Segera selesaikan, jika tidak kamu tidak bisa membereskan tugas yang lain.';
@@ -37,34 +68,41 @@
             var _statusPelanggaranAktifCache = false; // salinan lokal, diupdate tiap poll
             // PRINSIP "SEKALI TAMPIL DAN DICATAT": modal/overlay peringatan cuma
             // BOLEH tampil SEKALI per pelanggaran -- begitu siswa login dan
-            // ternyata punya pelanggaran aktif yang belum pernah dia lihat sama
-            // sekali, modal langsung muncul jelas di awal, LALU kemunculannya
-            // dicatat ke server (/api/pelanggaran/dilihat). Selama pelanggaran
-            // yang SAMA belum dicabut guru, modal TIDAK akan muncul lagi tiap
-            // siswa login/refresh ulang -- yang tetap jalan cuma penguncian
-            // tugasnya (lihat pelanggaranSiswaSedangAktif(), murni ikut 'aktif',
-            // tidak peduli sudah dicatat/dilihat atau belum). Kalau guru
-            // menandai pelanggaran BARU (lihat reset dilihat_at=None di
-            // /api/pelanggaran/set), siklus "tampil sekali" ini mulai dari nol
-            // lagi -- modal akan muncul sekali lagi utk pelanggaran barunya.
+            // ternyata punya pelanggaran aktif yang belum pernah dia ACC
+            // (klik salah satu tombol aksi), modal langsung muncul jelas di
+            // awal & TETAP terbuka lagi tiap login/refresh berikutnya SAMPAI
+            // dia benar-benar mengklik salah satu tombol. Begitu diklik,
+            // kemunculannya "dicatat" ke server (/api/pelanggaran/dilihat).
+            // Setelah tercatat, modal TIDAK akan muncul lagi selama
+            // pelanggaran yang SAMA belum dicabut guru -- yang tetap jalan
+            // cuma penguncian tugasnya (lihat pelanggaranSiswaSedangAktif(),
+            // murni ikut 'aktif', tidak peduli sudah dicatat/di-acc atau
+            // belum). Kalau guru menandai pelanggaran BARU (lihat reset
+            // dilihat_at=None di /api/pelanggaran/set), siklus "tampil
+            // sekali" ini mulai dari nol lagi.
             var _statusSudahDilihatCache = false; // salinan lokal dari 'sudah_dilihat' hasil poll terakhir
             var _sedangMencatatDilihat = false;   // guard biar tidak POST dobel selagi request pertama masih jalan
+            var _detailPelanggaranTerakhir = null; // {keterangan, oleh, oleh_whatsapp, updated_at} dari poll terakhir
 
             function statusPelanggaranSedangAktif() {
                 return _statusPelanggaranAktifCache;
             }
 
-            // Bagian "Dicatat" -- lapor ke server begitu modal ditampilkan,
-            // supaya /api/pelanggaran/status berikutnya balikin sudah_dilihat=true
-            // dan modal ini tidak muncul lagi berulang. Update cache lokal
-            // SEBELUM request selesai (optimistic) supaya poll berikutnya yang
-            // kebetulan nembak sebelum response ini balik tidak ikut memicu
-            // modal tampil dobel.
-            function catatDilihatPelanggaranKeServer() {
+            // Bagian "Dicatat" -- lapor ke server TEPAT SAAT siswa mengklik
+            // salah satu tombol aksi (bukan otomatis saat overlay tampil),
+            // supaya /api/pelanggaran/status berikutnya balikin
+            // sudah_dilihat=true dan modal ini tidak muncul lagi berulang.
+            // `aksi` ('mengerti'/'banding') ikut dikirim biar tercatat siswa
+            // pilih jalur mana saat menanggapi peringatannya.
+            function catatDilihatPelanggaranKeServer(aksi) {
                 if (_sedangMencatatDilihat || _statusSudahDilihatCache) return;
                 _sedangMencatatDilihat = true;
-                _statusSudahDilihatCache = true;
-                fetch('/api/pelanggaran/dilihat', { method: 'POST' })
+                _statusSudahDilihatCache = true; // optimistic, ditolak balik kalau request gagal
+                fetch('/api/pelanggaran/dilihat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ aksi: aksi || null })
+                })
                     .catch(function () {
                         // Gagal (mis. offline sesaat) -- biarkan saja, longgar:
                         // paling modal berpotensi muncul lagi di poll berikutnya
@@ -97,6 +135,12 @@
                         var sebelumnyaAktif = _statusPelanggaranAktifCache;
                         _statusPelanggaranAktifCache = !!json.aktif;
                         _statusSudahDilihatCache = !!json.sudah_dilihat;
+                        _detailPelanggaranTerakhir = {
+                            keterangan: json.keterangan || '',
+                            oleh: json.oleh || '',
+                            oleh_whatsapp: json.oleh_whatsapp || '',
+                            updated_at: json.updated_at || ''
+                        };
 
                         if (!_statusPelanggaranAktifCache) {
                             // Tidak/tidak lagi aktif -- tutup overlay kalau kebetulan
@@ -113,10 +157,10 @@
                         // pelanggaranSiswaSedangAktif() di renderKartuTugas()/
                         // kirimTugasSiswa(), terlepas dari modal ditampilkan atau
                         // tidak. Modalnya sendiri CUMA muncul kalau server bilang
-                        // belum pernah dicatat terlihat (prinsip "Sekali Tampil").
+                        // siswa belum pernah klik tombol aksi utk pelanggaran ini
+                        // (prinsip "Sekali Tampil dan Dicatat").
                         if (!_statusSudahDilihatCache) {
-                            tampilkanOverlayPelanggaranAktif();
-                            catatDilihatPelanggaranKeServer();
+                            tampilkanOverlayPelanggaranAktif(_detailPelanggaranTerakhir);
                         }
                         if (!sebelumnyaAktif) {
                             try { if (typeof renderLiveTaskContent === 'function') renderLiveTaskContent(); } catch (e) {}
@@ -155,19 +199,34 @@
                 langkahBerikutnya();
             }
 
-            function mulaiHitungMundurTombolMengerti(tombol, elHitungMundur) {
+            // Diperluas supaya bisa mengunci LEBIH dari satu tombol sekaligus
+            // (sekarang ada "Saya Mengerti" & "Ajukan Banding") -- keduanya
+            // dikunci bareng selama LAMA_TOMBOL_TERKUNCI_DETIK supaya siswa
+            // kebaca dulu pesannya sebelum bisa ambil tindakan apa pun.
+            // `pasangan` = array of {tombol, elHitungMundur} -- entri dengan
+            // tombol/elHitungMundur null (elemen belum ada di markup) otomatis
+            // dilewati, jadi aman dipanggil walau tombol banding belum dipasang
+            // di HTML.
+            function mulaiHitungMundurTombol(pasangan) {
+                var aktifSaja = pasangan.filter(function (p) { return p.tombol && p.elHitungMundur; });
+                if (!aktifSaja.length) return;
+
                 var sisaDetik = LAMA_TOMBOL_TERKUNCI_DETIK;
-                tombol.disabled = true;
-                elHitungMundur.textContent = ' (' + sisaDetik + ')';
+                aktifSaja.forEach(function (p) {
+                    p.tombol.disabled = true;
+                    p.elHitungMundur.textContent = ' (' + sisaDetik + ')';
+                });
                 var interval = setInterval(function () {
                     sisaDetik--;
-                    if (sisaDetik <= 0) {
-                        clearInterval(interval);
-                        elHitungMundur.textContent = '';
-                        tombol.disabled = false;
-                    } else {
-                        elHitungMundur.textContent = ' (' + sisaDetik + ')';
-                    }
+                    aktifSaja.forEach(function (p) {
+                        if (sisaDetik <= 0) {
+                            p.elHitungMundur.textContent = '';
+                            p.tombol.disabled = false;
+                        } else {
+                            p.elHitungMundur.textContent = ' (' + sisaDetik + ')';
+                        }
+                    });
+                    if (sisaDetik <= 0) clearInterval(interval);
                 }, 1000);
             }
 
@@ -189,12 +248,35 @@
                 } catch (e) { /* abaikan kalau daftar tugas belum siap dirender */ }
             }
 
-            function tampilkanOverlayPelanggaranAktif() {
+            // Bangun link wa.me dengan pesan pembuka yang sudah otomatis terisi
+            // konteks pelanggarannya -- siswa tinggal klik "Kirim" di WhatsApp,
+            // tidak perlu ketik ulang jelaskan pelanggaran apa dari awal.
+            function buatLinkWhatsappBanding(nomorWa, keterangan) {
+                var namaSiswa = (typeof USERNAME_SISWA_ASLI !== 'undefined' && USERNAME_SISWA_ASLI) || '';
+                var pesan = 'Assalamualaikum, saya ' + namaSiswa +
+                    ' ingin mengajukan banding terkait pelanggaran yang tercatat: "' +
+                    (keterangan || '-') + '". Mohon penjelasan/kesempatan klarifikasi. Terima kasih.';
+                return 'https://wa.me/' + nomorWa + '?text=' + encodeURIComponent(pesan);
+            }
+
+            function tampilkanOverlayPelanggaranAktif(detail) {
                 var overlay = document.getElementById('overlay-pelanggaran-aktif');
                 var elPesan = document.getElementById('overlay-pelanggaran-pesan');
-                var tombol = document.getElementById('tombol-overlay-pelanggaran-mengerti');
-                var elHitungMundur = document.getElementById('overlay-pelanggaran-hitung-mundur');
-                if (!overlay || !elPesan || !tombol || !elHitungMundur) return;
+                var tombolMengerti = document.getElementById('tombol-overlay-pelanggaran-mengerti');
+                var elHitungMundurMengerti = document.getElementById('overlay-pelanggaran-hitung-mundur');
+                if (!overlay || !elPesan || !tombolMengerti || !elHitungMundurMengerti) return;
+
+                // Elemen TAMBAHAN (opsional) -- info pelanggaran & tombol banding.
+                // Kalau belum ada di markup HTML, cukup dilewati (tidak error),
+                // tapi bagian ini baru benar-benar tampil setelah markupnya
+                // ditambahkan (lihat catatan di kepala file).
+                var elKeterangan = document.getElementById('overlay-pelanggaran-keterangan');
+                var elOleh = document.getElementById('overlay-pelanggaran-oleh');
+                var tombolBanding = document.getElementById('tombol-overlay-pelanggaran-banding');
+                var elHitungMundurBanding = document.getElementById('overlay-pelanggaran-hitung-mundur-banding');
+
+                if (elKeterangan) elKeterangan.textContent = (detail && detail.keterangan) || '';
+                if (elOleh) elOleh.textContent = detail && detail.oleh ? ('Dicatat oleh: ' + detail.oleh) : '';
 
                 overlay.classList.remove('hidden');
                 overlay.classList.add('flex');
@@ -206,12 +288,42 @@
                 });
 
                 ketikPesanOverlayPelanggaran(elPesan, PESAN_OVERLAY_PELANGGARAN);
-                mulaiHitungMundurTombolMengerti(tombol, elHitungMundur);
+                mulaiHitungMundurTombol([
+                    { tombol: tombolMengerti, elHitungMundur: elHitungMundurMengerti },
+                    { tombol: tombolBanding, elHitungMundur: elHitungMundurBanding }
+                ]);
 
-                tombol.onclick = function () {
-                    if (tombol.disabled) return;
+                // TOMBOL AKSI NYATA #1: "Saya Mengerti" -- tutup overlay & catat
+                // acknowledge. Tugas TETAP terkunci sampai guru mencabut status
+                // pelanggarannya (lihat pelanggaranSiswaSedangAktif()).
+                tombolMengerti.onclick = function () {
+                    if (tombolMengerti.disabled) return;
+                    catatDilihatPelanggaranKeServer('mengerti');
                     tutupOverlayPelanggaranAktif();
                 };
+
+                // TOMBOL AKSI NYATA #2: "Ajukan Banding" -- buka chat WhatsApp
+                // guru yang menandai pelanggaran ini (nomor & pesan pembuka
+                // sudah otomatis terisi), sambil tetap mencatat acknowledge &
+                // menutup overlay-nya (siswa dianggap sudah membaca & memilih
+                // jalur bandingnya).
+                if (tombolBanding) {
+                    var nomorWa = detail && detail.oleh_whatsapp;
+                    if (!nomorWa) {
+                        // Guru yang menandai belum punya nomor WA tersimpan di
+                        // server (lihat field 'whatsapp' di users['guru'] pada
+                        // app.py) -- sembunyikan tombolnya drpd buka link rusak.
+                        tombolBanding.classList.add('hidden');
+                    } else {
+                        tombolBanding.classList.remove('hidden');
+                        tombolBanding.onclick = function () {
+                            if (tombolBanding.disabled) return;
+                            catatDilihatPelanggaranKeServer('banding');
+                            window.open(buatLinkWhatsappBanding(nomorWa, detail && detail.keterangan), '_blank', 'noopener');
+                            tutupOverlayPelanggaranAktif();
+                        };
+                    }
+                }
             }
 
             // Poll PERTAMA sengaja ditunda dulu (biar tidak tumpang tindih sama
