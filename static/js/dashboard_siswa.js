@@ -539,6 +539,46 @@
             img.src = dataUrl;
         }
 
+        // ===== PREVIEW FOTO PROFIL (klik foto -> lihat foto yang SEDANG dipakai) =====
+        // Ini SENGAJA dipisah dari updateProfilePhoto(). Klik foto profil sekarang
+        // cuma menampilkan foto yang lagi aktif dalam ukuran besar (preview), TIDAK
+        // langsung membuka galeri/kamera HP. Untuk ganti foto, siswa tetap harus
+        // klik tombol/ikon "Ganti Foto" terpisah yang baru memicu input file
+        // (lihat updateProfilePhoto di atas) -- supaya tidak ke-trigger galeri HP
+        // tanpa sengaja cuma gara-gara mau lihat foto profilnya sendiri dulu.
+        function bukaPreviewFotoProfilSendiri(event) {
+            if (event) event.stopPropagation();
+            const fotoAktif = (typeof getFotoProfilAktifQuiz === 'function')
+                ? getFotoProfilAktifQuiz()
+                : (document.getElementById('dropdown-user-avatar')?.src
+                    || document.getElementById('header-user-avatar')?.src);
+            if (!fotoAktif) return;
+
+            let modal = document.getElementById('modal-preview-foto-profil');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'modal-preview-foto-profil';
+                modal.className = 'fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-6';
+                modal.innerHTML = `
+                    <div class="relative max-w-sm w-full">
+                        <button type="button" onclick="tutupPreviewFotoProfilSendiri()"
+                            class="absolute -top-10 right-0 text-white text-3xl leading-none w-10 h-10 flex items-center justify-center">&times;</button>
+                        <img id="img-preview-foto-profil-sendiri" src="" alt="Foto profil kamu"
+                            class="w-full aspect-square object-cover rounded-2xl shadow-2xl bg-slate-800">
+                    </div>`;
+                // Klik area gelap di luar foto -> tutup modal
+                modal.addEventListener('click', (e) => { if (e.target === modal) tutupPreviewFotoProfilSendiri(); });
+                document.body.appendChild(modal);
+            }
+            document.getElementById('img-preview-foto-profil-sendiri').src = fotoAktif;
+            modal.classList.remove('hidden');
+        }
+
+        function tutupPreviewFotoProfilSendiri() {
+            const modal = document.getElementById('modal-preview-foto-profil');
+            if (modal) modal.classList.add('hidden');
+        }
+
         function bukaModalCropFoto(img) {
             const viewport = document.getElementById('crop-viewport');
             const imgEl = document.getElementById('crop-img');
