@@ -1740,6 +1740,40 @@
         html.dark .border-purple-200 { border-color: rgba(139, 92, 246, 0.4) !important; }
         html.dark .text-purple-600 { color: var(--accent-violet-soft) !important; }
 
+        /* FIX kontras badge angka tab tugas (Belum Selesai/Sedang Dikerjakan/
+           Riwayat-Selesai): span badge-nya pakai bg-white/70, tapi selama ini
+           belum ada override html.dark untuk bg-white/70 secara umum (yang ada
+           cuma versi scoped ke kartu lain -- lihat .bento-stat-card--accent &
+           #grid-daftar-guru di bawah). Akibatnya lingkaran badge tetap putih
+           terang solid, sementara angka di dalamnya ikut warna teks yang sudah
+           diterangkan (text-blue-700/text-slate-500 hasil override) -> teks
+           terang di atas lingkaran nyaris-putih, jadi angkanya kurang tajam/
+           susah dibaca di mode gelap. Diredupkan + dikasih warna teks eksplisit
+           khusus di dalam badge subtab tugas ini saja (tidak menyentuh
+           bg-white/70 di tempat lain seperti ikon trofi atau tombol tutup modal). */
+        html.dark .subtab-btn-tugas .bg-white\/70 {
+            background-color: rgba(255, 255, 255, 0.16) !important;
+            color: #f1f5f9 !important;
+        }
+
+        /* FIX kontras 2 panel testing khusus akun admin (Akun Dummy Profil
+           Login & Panel Dummy Leaderboard, cuma kelihatan buat akun 'siswa' /
+           AHMAD FAKHRI AL FARISI): wrapper-nya pakai bg-indigo-50/70 & bg-purple-50/70
+           (varian OPACITY Tailwind) -- beda class dari bg-indigo-50/bg-purple-50
+           TANPA slash yang sudah punya override di atas, jadi selama ini kartu
+           tetap pucat/pastel terang di mode gelap sementara judulnya
+           (text-slate-900) sudah ikut diterangkan lewat override umum ->
+           judul terang di atas kartu pucat, jadinya kurang kelihatan/nge-blur.
+           Warna disamakan dgn aksen yang sudah dipakai ikon masing-masing panel:
+           panel Akun Dummy pakai ikon text-indigo-600 (yang di mode gelap ikut
+           var(--brand) = Cyan Neon), panel Dummy Leaderboard pakai ikon
+           text-purple-600 (nilai sama persis dengan .bg-purple-50/.border-purple-200
+           di atas, biar konsisten). */
+        html.dark .bg-indigo-50\/70 { background-color: rgba(6, 182, 212, 0.10) !important; }
+        html.dark .border-indigo-200\/70 { border-color: rgba(6, 182, 212, 0.3) !important; }
+        html.dark .bg-purple-50\/70 { background-color: rgba(139, 92, 246, 0.14) !important; }
+        html.dark .border-purple-200\/70 { border-color: rgba(139, 92, 246, 0.4) !important; }
+
         /* ---------- Kartu "Border yang Sudah Dimiliki": border sedang dipakai
            & border yang siap diklaim ----------
            Kartu border "sedang dipakai" pakai bg-amber-50/50 dan kartu "siap
