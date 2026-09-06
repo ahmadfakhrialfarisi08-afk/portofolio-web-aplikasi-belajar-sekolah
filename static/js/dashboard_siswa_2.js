@@ -1997,6 +1997,111 @@
         let quizState = null; // { jenis: 'pg'|'essay', level, soal[], index, skor, benar, waktuSisa, timerId }
 
         // ============================================================
+        // SAFETY NET LOKAL UNTUK QUIZ YANG SEDANG DIKERJAKAN
+        // ------------------------------------------------------------
+        // Selama ini quizState di atas HANYA hidup di memori (variabel JS
+        // biasa) selama quiz berjalan -- baru ditulis ke localStorage &
+        // dikirim ke server (simpanQuizKeServer, SATU request besar/bulk)
+        // pas soal TERAKHIR selesai dijawab, lewat selesaikanQuiz()/
+        // selesaikanQuizEssay() di bawah. Kalau koneksi ngadat atau
+        // tab/browser tertutup DI TENGAH quiz (belum sampai soal
+        // terakhir), seluruh progres yang sudah dikerjakan hilang
+        // percuma karena cuma ada di memori.
+        //
+        // Fungsi-fungsi di bawah ini menambah lapisan pengaman: setiap
+        // kali siswa selesai menjawab 1 soal (dipanggil dari
+        // pilihJawabanQuiz()/jawabEssayQuiz()), snapshot progres saat itu
+        // (soal, index, skor, benar) langsung ditulis ke localStorage
+        // secara INSTAN. Ini TIDAK mengubah alur pengiriman ke server --
+        // server tetap cuma menerima SATU request bulk di akhir seperti
+        // sebelumnya. Snapshot ini murni jaga-jaga di sisi browser saja,
+        // dan otomatis ditawarkan untuk dilanjutkan lewat
+        // bukaQuizDariAwal() (lihat listener switchTab tabName==='quiz')
+        // kalau ketemu progres yang belum sempat tuntas.
+        // ============================================================
+        const KEY_QUIZ_INPROGRESS = `quiz_inprogress_${ID_SISWA_AKTIF}`;
+
+        function simpanProgressQuizSementara() {
+            if (!quizState) return;
+            try {
+                const snapshot = {
+                    jenis: quizState.jenis,
+                    level: quizState.level,
+                    mapelId: quizState.mapelId,
+                    mapelNama: quizState.mapelNama,
+                    soal: quizState.soal,
+                    index: quizState.index,
+                    skor: quizState.skor,
+                    benar: quizState.benar,
+                    disimpanPada: Date.now()
+                };
+                localStorage.setItem(KEY_QUIZ_INPROGRESS, JSON.stringify(snapshot));
+            } catch (e) {
+                // localStorage penuh/nonaktif -- abaikan, quiz tetap jalan normal
+                // di memori (quizState), cuma safety net-nya saja yang tidak aktif.
+            }
+        }
+
+        function hapusProgressQuizSementara() {
+            try { localStorage.removeItem(KEY_QUIZ_INPROGRESS); } catch (e) {}
+        }
+
+        // Dipanggil dari bukaQuizDariAwal() sebelum quiz baru direset ke menu.
+        // Validasi ketat: snapshot cuma dianggap valid kalau soal-nya array
+        // & index-nya masih di dalam batas (belum "selesai semua" secara
+        // tidak sengaja tertinggal karena gagal terhapus).
+        function ambilProgressQuizSementara() {
+            try {
+                const raw = localStorage.getItem(KEY_QUIZ_INPROGRESS);
+                if (!raw) return null;
+                const snap = JSON.parse(raw);
+                if (!snap || !Array.isArray(snap.soal) || typeof snap.index !== 'number') return null;
+                if (snap.index >= snap.soal.length) return null; // sudah kejawab semua, tidak perlu ditawarkan lagi
+                return snap;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Merekonstruksi quizState persis dari snapshot localStorage & langsung
+        // menampilkan soal berikutnya yang belum sempat dijawab -- dipakai
+        // siswa memilih "Lanjutkan" di konfirmasi dalam bukaQuizDariAwal().
+        // waktuSisa SENGAJA direset penuh (bukan dihitung mundur dari snapshot
+        // lama) karena kita tidak tahu persis berapa detik yang sudah lewat
+        // sejak snapshot terakhir disimpan (mis. baru dibuka lagi besoknya).
+        function lanjutkanQuizDariSnapshot(snapshot) {
+            quizJenisDipilih = snapshot.jenis === 'essay' ? 'essay' : 'pg';
+            quizMapelState.mapelId = snapshot.mapelId;
+            quizMapelState.mapelNama = snapshot.mapelNama;
+
+            const cfg = snapshot.jenis === 'essay' ? QUIZ_CONFIG_ESSAY[snapshot.level] : QUIZ_CONFIG[snapshot.level];
+            quizState = {
+                jenis: snapshot.jenis,
+                level: snapshot.level,
+                mapelId: snapshot.mapelId,
+                mapelNama: snapshot.mapelNama,
+                soal: snapshot.soal,
+                index: snapshot.index,
+                skor: snapshot.skor,
+                benar: snapshot.benar,
+                waktuSisa: cfg.waktu,
+                timerId: null
+            };
+
+            tampilkanViewQuiz('play');
+            document.getElementById('quiz-play-total').innerText = String(snapshot.soal.length);
+            const badge = document.getElementById('quiz-play-level-badge');
+            if (badge) {
+                badge.className = `px-3 py-1 rounded-lg text-xs font-bold ${cfg.warnaBadge}`;
+                badge.innerText = snapshot.jenis === 'essay' ? `${cfg.label} · Essay` : cfg.label;
+            }
+            const mapelBadge = document.getElementById('quiz-play-mapel-badge');
+            if (mapelBadge) mapelBadge.innerText = quizMapelState.mapelNama || '';
+
+            renderSoalQuiz();
+        }
+
+        // ============================================================
         // STATE PEMILIHAN MAPEL QUIZ (kategori produktif/umum + mapel spesifik)
         // Dipilih di antara VIEW "jenis" (PG/Essay) dan VIEW "tingkat kesulitan".
         // Tingkat kesulitan (easy/medium/hard) TETAP ada di setiap mapel yang
@@ -2641,6 +2746,11 @@
         }
 
         function startQuiz(jenis, level) {
+            // Pastikan tidak ada sisa snapshot safety-net dari quiz lama yang
+            // nyangkut (mestinya sudah ditangani lewat bukaQuizDariAwal() di
+            // atas, ini cuma jaga-jaga tambahan supaya quiz baru selalu mulai
+            // dari snapshot yang bersih).
+            hapusProgressQuizSementara();
             const mapelId = quizMapelState.mapelId;
             const soal = jenis === 'essay' ? acakSoalQuizEssay(mapelId, level, 5) : acakSoalQuiz(mapelId, level, 5);
             const cfg = jenis === 'essay' ? QUIZ_CONFIG_ESSAY[level] : QUIZ_CONFIG[level];
@@ -2751,6 +2861,12 @@
 
             setTimeout(() => {
                 quizState.index += 1;
+                // Simpan snapshot progres ke localStorage SEGERA setiap kali 1 soal
+                // selesai dijawab -- safety net kalau tab/koneksi/browser tiba-tiba
+                // bermasalah sebelum soal terakhir (lihat catatan lengkap di
+                // simpanProgressQuizSementara()). Server tetap TIDAK dikirimi apa-apa
+                // di sini -- pengiriman ke server tetap cuma 1x lewat selesaikanQuiz().
+                simpanProgressQuizSementara();
                 if (quizState.index < quizState.soal.length) {
                     renderSoalQuiz();
                 } else {
@@ -2794,6 +2910,10 @@
 
             setTimeout(() => {
                 quizState.index += 1;
+                // Sama seperti versi Pilihan Ganda: safety net lokal instan tiap 1
+                // soal Essay selesai dijawab, TANPA mengirim apa pun ke server di
+                // sini (bulk ke server tetap cuma 1x lewat selesaikanQuizEssay()).
+                simpanProgressQuizSementara();
                 if (quizState.index < quizState.soal.length) {
                     renderSoalQuiz();
                 } else {
@@ -2821,6 +2941,7 @@
             document.getElementById('quiz-result-poin').innerText = String(skor);
             document.getElementById('quiz-result-level').innerText = `${cfg.label} · Essay`;
             tampilkanViewQuiz('result');
+            hapusProgressQuizSementara(); // quiz sudah tuntas -- snapshot safety-net tidak perlu lagi
 
             // LANGKAH 2: simpan progres & leaderboard, dibungkus try/catch
             // supaya error di sini tidak bikin layar hasil (langkah 1) blank.
@@ -2890,6 +3011,7 @@
             document.getElementById('quiz-result-poin').innerText = String(skor);
             document.getElementById('quiz-result-level').innerText = cfg.label;
             tampilkanViewQuiz('result');
+            hapusProgressQuizSementara(); // quiz sudah tuntas -- snapshot safety-net tidak perlu lagi
 
             // ============================================================
             // LANGKAH 2: simpan progres, update leaderboard, border, & notif.
@@ -3018,6 +3140,27 @@
         // dari halaman pilih jenis (Pilihan Ganda / Essay).
         function bukaQuizDariAwal() {
             if (quizState) clearInterval(quizState.timerId);
+
+            // FITUR BARU: sebelum reset ke menu awal, cek dulu apakah ada
+            // progres quiz yang sempat "kepotong" tersimpan di localStorage
+            // (lihat simpanProgressQuizSementara(), dipanggil tiap kali siswa
+            // menjawab 1 soal) -- baik karena tab sempat dipindah, koneksi
+            // ngadat, atau browser/tab tertutup di tengah jalan sebelum
+            // sampai soal terakhir. Kalau ketemu, tawarkan lanjut dulu lewat
+            // confirm() SEBELUM quiz lama ini betul-betul dianggap hilang.
+            const snapshotTerputus = ambilProgressQuizSementara();
+            if (snapshotTerputus) {
+                const mauLanjut = confirm(
+                    `Kamu punya quiz "${snapshotTerputus.mapelNama || 'sebelumnya'}" yang belum selesai ` +
+                    `(soal ${snapshotTerputus.index + 1} dari ${snapshotTerputus.soal.length}). Lanjutkan dari situ?`
+                );
+                if (mauLanjut) {
+                    lanjutkanQuizDariSnapshot(snapshotTerputus);
+                    return; // JANGAN reset ke menu awal -- quiz lama sudah dilanjutkan
+                }
+                hapusProgressQuizSementara(); // ditolak -> anggap dibuang, quiz baru mulai bersih
+            }
+
             tampilkanViewQuiz('jenis');
             renderMenuQuiz();
         }
