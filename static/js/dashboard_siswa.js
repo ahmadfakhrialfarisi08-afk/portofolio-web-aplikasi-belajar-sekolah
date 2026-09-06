@@ -3512,10 +3512,9 @@
 
             if (tasks.length === 0) {
                 container.innerHTML = `
-                    <div class="py-6 sm:py-8 text-center">
-                        <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg mx-auto mb-3"><i class="fa-solid fa-check"></i></div>
-                        <p class="text-sm font-bold text-slate-800">Belum ada tugas terdekat. Semua aman!</p>
-                        <p class="text-xs text-slate-400 mt-1">Nikmati waktumu atau pelajari materi kuis selanjutnya.</p>
+                    <div class="p-4 sm:p-6 border-2 border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                        <i class="fa-solid fa-calendar-check text-2xl mb-1 text-slate-300"></i>
+                        <p class="text-xs font-medium">Belum ada tugas terdekat. Semua aman!</p>
                     </div>`;
                 return;
             }
