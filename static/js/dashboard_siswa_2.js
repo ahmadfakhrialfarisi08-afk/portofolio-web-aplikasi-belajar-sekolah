@@ -2754,7 +2754,7 @@
             const mapelId = quizMapelState.mapelId;
             const soal = jenis === 'essay' ? acakSoalQuizEssay(mapelId, level, 5) : acakSoalQuiz(mapelId, level, 5);
             const cfg = jenis === 'essay' ? QUIZ_CONFIG_ESSAY[level] : QUIZ_CONFIG[level];
-            quizState = { jenis, level, mapelId, mapelNama: quizMapelState.mapelNama, soal, index: 0, skor: 0, benar: 0, waktuSisa: cfg.waktu, timerId: null };
+            quizState = { jenis, level, mapelId, mapelNama: quizMapelState.mapelNama, soal, index: 0, skor: 0, benar: 0, waktuSisa: cfg.waktu, timerId: null, waktuMulaiSoal: null, beruntunJawabCepat: 0 };
             tampilkanViewQuiz('play');
             document.getElementById('quiz-play-total').innerText = String(soal.length);
 
@@ -2807,6 +2807,10 @@
             }
 
             quizState.waktuSisa = cfg.waktu;
+            // Dicatat SETIAP soal baru ditampilkan -- dipakai deteksiKlikCepatQuiz()
+            // di bawah untuk menghitung berapa detik siswa benar-benar butuh
+            // sebelum menjawab (bukan cuma dari sisa timer yang resolusinya per-detik).
+            quizState.waktuMulaiSoal = Date.now();
             updateTimerBarQuiz();
             clearInterval(quizState.timerId);
             quizState.timerId = setInterval(() => {
@@ -2830,6 +2834,104 @@
             bar.style.width = `${persen}%`;
             bar.className = `h-full transition-all duration-1000 ease-linear ${persen <= 30 ? 'bg-rose-500' : cfg.warnaBar}`;
             document.getElementById('quiz-timer-text').innerText = `${Math.max(0, quizState.waktuSisa)}s`;
+        }
+
+        /* ==========================================================
+           DETEKSI JAWAB KUIS KELEWAT CEPAT (asal klak-klik tanpa baca)
+           ==========================================================
+           Kalau siswa menjawab beruntun di bawah 1 detik per soal (baik
+           Pilihan Ganda maupun Essay) sebanyak AMBANG_BERUNTUN_JAWAB_CEPAT
+           kali berturut-turut, munculkan notif "pelan-pelan" di TENGAH
+           layar quiz. Selama notif ini tampil, soal berikutnya SENGAJA
+           belum dirender (artinya timer/waktu soal berikutnya otomatis
+           ikut berhenti dulu) -- baru lanjut setelah siswa menutup notif
+           lewat tombol yang dikunci beberapa detik (hitung mundur) supaya
+           bener-bener kepake buat jeda baca, bukan langsung diklik lagi
+           refleks.
+        */
+        const AMBANG_JAWAB_CEPAT_MS = 1000;      // "Angka Aman" = 1,0 detik/soal. Manusia secepat apapun
+                                                  // refleksnya tetap butuh jeda proses visual >= 1 detik --
+                                                  // di bawah itu & terjadi BERUNTUN = indikasi bot/auto-clicker,
+                                                  // bukan cuma siswa ngebut biasa.
+        const AMBANG_BERUNTUN_JAWAB_CEPAT = 3;   // baru dianggap pelanggaran setelah cepat 3x BERUNTUN tanpa jeda
+        const DURASI_COUNTDOWN_NOTIF_CEPAT = 3;  // detik, sebelum tombol tutup notif aktif
+
+        // Mengembalikan true kalau beruntun-cepatnya baru saja mencapai ambang
+        // (dan sekaligus mereset hitungannya, biar notif nggak numpuk tiap soal).
+        function catatKecepatanJawabQuiz() {
+            if (!quizState || !quizState.waktuMulaiSoal) return false;
+            const elapsedMs = Date.now() - quizState.waktuMulaiSoal;
+
+            if (elapsedMs < AMBANG_JAWAB_CEPAT_MS) {
+                quizState.beruntunJawabCepat = (quizState.beruntunJawabCepat || 0) + 1;
+            } else {
+                quizState.beruntunJawabCepat = 0;
+            }
+
+            if (quizState.beruntunJawabCepat >= AMBANG_BERUNTUN_JAWAB_CEPAT) {
+                quizState.beruntunJawabCepat = 0;
+                return true;
+            }
+            return false;
+        }
+
+        // Notif peringatan di tengah layar + hitung mundur sebelum bisa ditutup.
+        // lanjutkanCallback() baru dipanggil SETELAH siswa menutup notif --
+        // ini yang bikin progres/soal berikutnya (dan timernya) ikut "berhenti"
+        // sampai notifnya beneran ditutup.
+        function tampilkanNotifJawabTerlaluCepat(lanjutkanCallback) {
+            const overlayLama = document.getElementById('overlay-notif-jawab-cepat');
+            if (overlayLama) overlayLama.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'overlay-notif-jawab-cepat';
+            overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4';
+            overlay.innerHTML = `
+                <div id="kotak-notif-jawab-cepat" class="bg-white rounded-2xl shadow-2xl max-w-xs w-full p-5 text-center transform transition-all duration-200 scale-95 opacity-0">
+                    <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center text-2xl">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <p class="text-sm font-bold text-slate-800 leading-snug mb-4">
+                        Eh, jarinya cepet banget kayak kilat. Pelan-pelan aja bacanya, nanti salah loh!
+                    </p>
+                    <button id="btn-tutup-notif-jawab-cepat" type="button" disabled
+                        class="w-full py-2.5 rounded-xl bg-slate-200 text-slate-400 font-bold text-xs cursor-not-allowed transition-all">
+                        Mengerti (<span id="hitung-mundur-notif-cepat">${DURASI_COUNTDOWN_NOTIF_CEPAT}</span>)
+                    </button>
+                </div>`;
+            document.body.appendChild(overlay);
+
+            requestAnimationFrame(() => {
+                const kotak = document.getElementById('kotak-notif-jawab-cepat');
+                if (kotak) kotak.classList.remove('scale-95', 'opacity-0');
+            });
+
+            const tombolTutup = document.getElementById('btn-tutup-notif-jawab-cepat');
+            const teksHitung = document.getElementById('hitung-mundur-notif-cepat');
+            let sisaHitung = DURASI_COUNTDOWN_NOTIF_CEPAT;
+
+            const timerHitungMundur = setInterval(() => {
+                sisaHitung -= 1;
+                if (sisaHitung <= 0) {
+                    clearInterval(timerHitungMundur);
+                    if (tombolTutup) {
+                        tombolTutup.disabled = false;
+                        tombolTutup.innerText = 'Oke, aku baca pelan-pelan';
+                        tombolTutup.className = 'w-full py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-sm transition-all';
+                    }
+                } else if (teksHitung) {
+                    teksHitung.innerText = String(sisaHitung);
+                }
+            }, 1000);
+
+            if (tombolTutup) {
+                tombolTutup.onclick = () => {
+                    if (tombolTutup.disabled) return;
+                    clearInterval(timerHitungMundur);
+                    overlay.remove();
+                    if (typeof lanjutkanCallback === 'function') lanjutkanCallback();
+                };
+            }
         }
 
         function pilihJawabanQuiz(indexDipilih) {
@@ -2859,7 +2961,7 @@
             }
             document.getElementById('quiz-play-skor').innerText = String(quizState.skor);
 
-            setTimeout(() => {
+            function lanjutSetelahJawabPG() {
                 quizState.index += 1;
                 // Simpan snapshot progres ke localStorage SEGERA setiap kali 1 soal
                 // selesai dijawab -- safety net kalau tab/koneksi/browser tiba-tiba
@@ -2873,7 +2975,19 @@
                     document.getElementById('quiz-progress-bar').style.width = '100%';
                     selesaikanQuiz();
                 }
-            }, 1200);
+            }
+
+            // Cek dulu apakah ini sudah beruntun ke-3 (dst) kalinya siswa jawab
+            // di bawah 1 detik -- kalau iya, notif "pelan-pelan" muncul dulu di
+            // tengah layar (soal berikutnya & timernya ikut nunggu sampai notif
+            // ditutup), baru lanjut. Kalau nggak, alurnya tetap seperti biasa.
+            if (catatKecepatanJawabQuiz()) {
+                setTimeout(() => {
+                    tampilkanNotifJawabTerlaluCepat(lanjutSetelahJawabPG);
+                }, 700); // jeda dikit biar warna benar/salah sempat kebaca dulu
+            } else {
+                setTimeout(lanjutSetelahJawabPG, 1200);
+            }
         }
 
         // Proses jawaban isian Essay: dicocokkan otomatis ke kunci jawaban lewat
@@ -2908,7 +3022,7 @@
             }
             document.getElementById('quiz-play-skor').innerText = String(quizState.skor);
 
-            setTimeout(() => {
+            function lanjutSetelahJawabEssay() {
                 quizState.index += 1;
                 // Sama seperti versi Pilihan Ganda: safety net lokal instan tiap 1
                 // soal Essay selesai dijawab, TANPA mengirim apa pun ke server di
@@ -2920,7 +3034,18 @@
                     document.getElementById('quiz-progress-bar').style.width = '100%';
                     selesaikanQuizEssay();
                 }
-            }, 1400);
+            }
+
+            // Sama seperti versi Pilihan Ganda -- kalau waktuHabis=true, elapsed-nya
+            // otomatis nggak akan kehitung "cepat" (lihat catatKecepatanJawabQuiz()),
+            // jadi notif ini murni buat siswa yang beneran asal klik submit tanpa baca.
+            if (catatKecepatanJawabQuiz()) {
+                setTimeout(() => {
+                    tampilkanNotifJawabTerlaluCepat(lanjutSetelahJawabEssay);
+                }, 700);
+            } else {
+                setTimeout(lanjutSetelahJawabEssay, 1400);
+            }
         }
 
         // Versi ringkas dari selesaikanQuiz() khusus Essay: cuma menyimpan skor
