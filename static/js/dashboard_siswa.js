@@ -1034,10 +1034,15 @@
         // antar fetch, dan kalau fetch untuk kunci itu masih berjalan (belum
         // selesai), panggilan baru untuk kunci yang sama di-skip dulu (tidak
         // menumpuk request paralel). Data yang ditampilkan tetap maksimal
-        // seusia jeda ini (~2.5 detik), jadi tidak terasa bedanya buat siswa.
+        // seusia jeda ini, jadi tidak terasa bedanya buat siswa.
+        // NAIKKAN INTERVAL POLLING: sebelumnya 2500ms. Dinaikkan ke 8000ms
+        // supaya sejalan dengan interval jalankanSinkronisasiBerkalaDashboard
+        // (lihat dashboard_siswa_2.js) yang juga dinaikkan ke 8 detik -- kalau
+        // jeda ini dibiarkan lebih pendek dari tick pemanggilnya, angkanya
+        // percuma karena tidak akan pernah kepakai.
         const _lastFetchAtSync = {};
         const _pendingFetchSync = {};
-        const JEDA_MIN_REFRESH_SYNC_MS = 2500;
+        const JEDA_MIN_REFRESH_SYNC_MS = 8000;
         function getSync(kunci, fallback) {
             _refreshSyncDiBackground(kunci, fallback);
             if (kunci in _cacheSync) return _cacheSync[kunci];

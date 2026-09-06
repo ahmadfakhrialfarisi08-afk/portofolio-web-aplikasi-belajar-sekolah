@@ -28,7 +28,11 @@
         (function () {
             var PESAN_OVERLAY_PELANGGARAN = 'Opps, kamu ada pelanggaran! Segera selesaikan, jika tidak kamu tidak bisa membereskan tugas yang lain.';
             var LAMA_TOMBOL_TERKUNCI_DETIK = 5;
-            var JEDA_POLL_PELANGGARAN_MS = 5000; // cek ke server tiap 5 detik
+            // NAIKKAN INTERVAL POLLING: sebelumnya 5000ms (tiap 5 detik). Status
+            // pelanggaran tidak butuh nyaris-realtime -- 15 detik masih cukup
+            // cepat supaya overlay peringatan muncul dalam hitungan detik begitu
+            // guru menandai, tapi memangkas ~3x jumlah request ke server.
+            var JEDA_POLL_PELANGGARAN_MS = 15000; // cek ke server tiap 15 detik
 
             var _statusPelanggaranAktifCache = false; // salinan lokal, diupdate tiap poll
 

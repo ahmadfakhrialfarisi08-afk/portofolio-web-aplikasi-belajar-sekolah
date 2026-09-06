@@ -1711,8 +1711,13 @@
             cekPembaruanTugasRealtime(); // set snapshot awal sebagai baseline
             updateGlobalCountdown();
             setInterval(updateGlobalCountdown, 1000);
+            // NAIKKAN INTERVAL POLLING: sebelumnya tiap 3 detik. Dinaikkan jadi
+            // 8 detik -- data di sini (badge pertemanan/perangkat, notif tugas)
+            // tidak krusial real-time, jadi jeda beberapa detik lebih tidak
+            // terasa oleh siswa, tapi memangkas jumlah request ke server hampir
+            // 3x lipat saat banyak siswa buka dashboard bersamaan.
             // Sinkronisasi berkala (riwayat tugas, notif, badge pertemanan &
-            // perangkat) tiap 3 detik. PENTING buat hemat resource hosting:
+            // perangkat). PENTING buat hemat resource hosting:
             // kalau tab ini sedang tidak aktif dilihat (di-minimize/pindah
             // tab/laptop terkunci), tick ini di-skip total -- tidak ada fetch
             // sama sekali ke server selama tab tidak aktif, walau timer-nya
@@ -1754,7 +1759,7 @@
 
                 updateBadgePerangkatNavSaja(); // cek ada tidaknya perangkat baru yang pending, tanpa nge-render ulang tabel penuh tiap 3 detik
             }
-            setInterval(jalankanSinkronisasiBerkalaDashboard, 3000);
+            setInterval(jalankanSinkronisasiBerkalaDashboard, 8000);
             document.addEventListener('visibilitychange', () => {
                 if (!document.hidden) jalankanSinkronisasiBerkalaDashboard();
             });
