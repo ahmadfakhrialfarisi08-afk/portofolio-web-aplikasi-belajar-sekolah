@@ -35,9 +35,45 @@
             var JEDA_POLL_PELANGGARAN_MS = 15000; // cek ke server tiap 15 detik
 
             var _statusPelanggaranAktifCache = false; // salinan lokal, diupdate tiap poll
+            // PRINSIP "SEKALI TAMPIL DAN DICATAT": modal/overlay peringatan cuma
+            // BOLEH tampil SEKALI per pelanggaran -- begitu siswa login dan
+            // ternyata punya pelanggaran aktif yang belum pernah dia lihat sama
+            // sekali, modal langsung muncul jelas di awal, LALU kemunculannya
+            // dicatat ke server (/api/pelanggaran/dilihat). Selama pelanggaran
+            // yang SAMA belum dicabut guru, modal TIDAK akan muncul lagi tiap
+            // siswa login/refresh ulang -- yang tetap jalan cuma penguncian
+            // tugasnya (lihat pelanggaranSiswaSedangAktif(), murni ikut 'aktif',
+            // tidak peduli sudah dicatat/dilihat atau belum). Kalau guru
+            // menandai pelanggaran BARU (lihat reset dilihat_at=None di
+            // /api/pelanggaran/set), siklus "tampil sekali" ini mulai dari nol
+            // lagi -- modal akan muncul sekali lagi utk pelanggaran barunya.
+            var _statusSudahDilihatCache = false; // salinan lokal dari 'sudah_dilihat' hasil poll terakhir
+            var _sedangMencatatDilihat = false;   // guard biar tidak POST dobel selagi request pertama masih jalan
 
             function statusPelanggaranSedangAktif() {
                 return _statusPelanggaranAktifCache;
+            }
+
+            // Bagian "Dicatat" -- lapor ke server begitu modal ditampilkan,
+            // supaya /api/pelanggaran/status berikutnya balikin sudah_dilihat=true
+            // dan modal ini tidak muncul lagi berulang. Update cache lokal
+            // SEBELUM request selesai (optimistic) supaya poll berikutnya yang
+            // kebetulan nembak sebelum response ini balik tidak ikut memicu
+            // modal tampil dobel.
+            function catatDilihatPelanggaranKeServer() {
+                if (_sedangMencatatDilihat || _statusSudahDilihatCache) return;
+                _sedangMencatatDilihat = true;
+                _statusSudahDilihatCache = true;
+                fetch('/api/pelanggaran/dilihat', { method: 'POST' })
+                    .catch(function () {
+                        // Gagal (mis. offline sesaat) -- biarkan saja, longgar:
+                        // paling modal berpotensi muncul lagi di poll berikutnya
+                        // kalau ternyata server belum sempat mencatatnya. Lebih
+                        // aman siswa lihat peringatan 1x lebih banyak drpd tidak
+                        // pernah tercatat sama sekali.
+                        _statusSudahDilihatCache = false;
+                    })
+                    .finally(function () { _sedangMencatatDilihat = false; });
             }
 
             // Tarik status TERBARU dari server (bukan localStorage lagi -- lihat
@@ -58,21 +94,33 @@
                     .then(function (res) { return res.json(); })
                     .then(function (json) {
                         if (!json || !json.success) return;
-                        var sebelumnya = _statusPelanggaranAktifCache;
+                        var sebelumnyaAktif = _statusPelanggaranAktifCache;
                         _statusPelanggaranAktifCache = !!json.aktif;
-                        if (_statusPelanggaranAktifCache === sebelumnya) return; // tidak berubah, tidak perlu apa-apa
+                        _statusSudahDilihatCache = !!json.sudah_dilihat;
 
-                        if (_statusPelanggaranAktifCache) {
-                            // Baru saja ditandai guru -- langsung tampilkan overlay
-                            // peringatan kalau belum kelihatan.
-                            tampilkanOverlayPelanggaranAktif();
-                        } else {
-                            // Baru saja dicabut/dibatalkan guru -- tutup overlay
-                            // otomatis kalau kebetulan lagi kebuka, dan buka kunci
-                            // tugas yang tadinya terkunci.
-                            tutupOverlayPelanggaranAktif();
+                        if (!_statusPelanggaranAktifCache) {
+                            // Tidak/tidak lagi aktif -- tutup overlay kalau kebetulan
+                            // lagi kebuka (guru baru saja mencabutnya), buka kunci
+                            // tugas. Tidak ada apa pun yang perlu "dicatat" di sini.
+                            if (sebelumnyaAktif) {
+                                tutupOverlayPelanggaranAktif();
+                                try { if (typeof renderLiveTaskContent === 'function') renderLiveTaskContent(); } catch (e) {}
+                            }
+                            return;
                         }
-                        try { if (typeof renderLiveTaskContent === 'function') renderLiveTaskContent(); } catch (e) {}
+
+                        // Aktif -- tugas ikut terkunci otomatis lewat
+                        // pelanggaranSiswaSedangAktif() di renderKartuTugas()/
+                        // kirimTugasSiswa(), terlepas dari modal ditampilkan atau
+                        // tidak. Modalnya sendiri CUMA muncul kalau server bilang
+                        // belum pernah dicatat terlihat (prinsip "Sekali Tampil").
+                        if (!_statusSudahDilihatCache) {
+                            tampilkanOverlayPelanggaranAktif();
+                            catatDilihatPelanggaranKeServer();
+                        }
+                        if (!sebelumnyaAktif) {
+                            try { if (typeof renderLiveTaskContent === 'function') renderLiveTaskContent(); } catch (e) {}
+                        }
                     })
                     .catch(function () {
                         // Offline/gagal sesaat -- biarkan cache lama dipakai dulu,

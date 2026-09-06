@@ -783,10 +783,18 @@ def api_pelanggaran_set():
         return jsonify(success=False, message='Username siswa kosong.'), 400
 
     if aktif:
+        # 'dilihat_at' SENGAJA di-reset ke None tiap kali guru menandai
+        # pelanggaran baru (termasuk kalau sebelumnya sempat dicabut lalu
+        # ditandai lagi) -- ini akar dari prinsip "Sekali Tampil dan
+        # Dicatat": tiap PELANGGARAN BARU wajib tampil sekali lagi ke
+        # siswa, terlepas dari pelanggaran lama yang sudah pernah
+        # dia lihat sebelumnya. Lihat /api/pelanggaran/dilihat &
+        # /api/pelanggaran/status di bawah utk sisi pencatatannya.
         pelanggaran_store[username] = {
             'aktif': True,
             'updated_at': datetime.utcnow().isoformat(),
-            'oleh': session['user'].get('nama') or session['user']['username']
+            'oleh': session['user'].get('nama') or session['user']['username'],
+            'dilihat_at': None
         }
     else:
         pelanggaran_store.pop(username, None)
@@ -812,12 +820,46 @@ def api_pelanggaran_status():
     """Dipanggil dari Dashboard Siswa (sekali saat dashboard dibuka, LALU
     di-poll berkala tiap beberapa detik) buat cek status Pelanggaran Aktif
     milik akun yang sedang login sendiri -- lintas perangkat, tidak lagi
-    bergantung localStorage yang ditulis browser guru."""
+    bergantung localStorage yang ditulis browser guru.
+
+    'sudah_dilihat' ikut disertakan (prinsip "Sekali Tampil dan Dicatat"):
+    frontend cuma boleh memunculkan modal/overlay peringatan kalau field
+    ini masih False -- begitu ditampilkan sekali, frontend memanggil
+    /api/pelanggaran/dilihat supaya field ini jadi True & modal TIDAK
+    muncul berulang tiap siswa login ulang selama pelanggaran yang SAMA
+    belum diselesaikan guru. Penguncian tugas (pelanggaranSiswaSedangAktif())
+    tetap mengikuti 'aktif' saja, tidak terpengaruh 'sudah_dilihat'."""
     if 'user' not in session or session['user']['role'] != 'siswa':
         return jsonify(success=False, message='Belum login sebagai siswa.'), 401
     username = session['user']['username']
     entri = pelanggaran_store.get(username)
-    return jsonify(success=True, aktif=bool(entri and entri.get('aktif')))
+    return jsonify(
+        success=True,
+        aktif=bool(entri and entri.get('aktif')),
+        sudah_dilihat=bool(entri and entri.get('dilihat_at'))
+    )
+
+
+@app.route('/api/pelanggaran/dilihat', methods=['POST'])
+@batasi('umum')
+def api_pelanggaran_dilihat():
+    """Ditandai oleh Dashboard Siswa TEPAT SAAT modal/overlay peringatan
+    'Pelanggaran Aktif' pertama kali ditampilkan ke siswa yang bersangkutan
+    (lihat tampilkanOverlayPelanggaranAktif() -> catatDilihatPelanggaranKeServer()
+    di dashboard_siswa_pelanggaran.js). Bagian "Dicatat" dari prinsip
+    "Sekali Tampil dan Dicatat" -- begitu tercatat, /api/pelanggaran/status
+    akan balikin sudah_dilihat=True sehingga modal ini tidak muncul lagi
+    berulang-ulang tiap kali siswa itu login/refresh selama pelanggaran
+    yang SAMA belum dicabut guru. Idempotent: dipanggil berkali-kali pun
+    aman, tidak menimpa timestamp 'dilihat_at' yang sudah tercatat."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login.'), 401
+    username = session['user']['username']
+    entri = pelanggaran_store.get(username)
+    if entri and entri.get('aktif') and not entri.get('dilihat_at'):
+        entri['dilihat_at'] = datetime.utcnow().isoformat()
+        _simpan_pelanggaran_store()
+    return jsonify(success=True)
 
 
 # ----------------------------------------------------
