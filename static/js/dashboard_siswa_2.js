@@ -2036,6 +2036,13 @@
                     disimpanPada: Date.now()
                 };
                 localStorage.setItem(KEY_QUIZ_INPROGRESS, JSON.stringify(snapshot));
+                // Kirim salinan yang sama ke server juga (lihat blok komentar
+                // "SAFETY NET LOKAL..." di atas + catatan cross-device di bawah) --
+                // supaya kalau siswa lanjut buka dashboard dari perangkat/browser
+                // LAIN (laptop -> HP/tablet atau sebaliknya), progres yang baru
+                // ditinggal ini tetap ketemu & bisa ditawarkan utk dilanjutkan,
+                // bukan cuma nyangkut di localStorage perangkat asalnya saja.
+                simpanProgressQuizKeServer(snapshot);
             } catch (e) {
                 // localStorage penuh/nonaktif -- abaikan, quiz tetap jalan normal
                 // di memori (quizState), cuma safety net-nya saja yang tidak aktif.
@@ -2044,6 +2051,81 @@
 
         function hapusProgressQuizSementara() {
             try { localStorage.removeItem(KEY_QUIZ_INPROGRESS); } catch (e) {}
+            hapusProgressQuizDiServer();
+        }
+
+        // ============================================================
+        // SINKRONISASI SNAPSHOT IN-PROGRESS KE SERVER (LINTAS PERANGKAT)
+        // ------------------------------------------------------------
+        // Tiga fungsi di bawah ini murni menambah lapisan sinkron ke
+        // /api/quiz/inprogress/... (endpoint baru, terpisah dari
+        // /api/quiz/save yang menyimpan hasil FINAL) -- localStorage di atas
+        // TETAP jadi sumber utama yang dibaca duluan tiap saat (lebih cepat,
+        // tidak perlu nunggu network), server cuma "titipan" tambahan supaya
+        // progres yang sama bisa ketemu lagi dari perangkat lain. Kalau
+        // network gagal/lambat, quiz tetap jalan normal seperti biasa --
+        // fungsi2 ini semua fire-and-forget (kecuali ambilProgressQuizDariServer
+        // yang memang perlu ditunggu hasilnya, dipanggil dari
+        // ambilProgressQuizGabungan() di bawah).
+        // ============================================================
+        function simpanProgressQuizKeServer(snapshot, percobaanUlang) {
+            fetch('/api/quiz/inprogress/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                keepalive: true,
+                body: JSON.stringify({ data: snapshot, expected_username: USERNAME_SISWA_ASLI, slot_id: ID_SISWA_AKTIF })
+            })
+                .then(res => res.json())
+                .then(hasil => {
+                    if (hasil && hasil.session_mismatch) tampilkanPeringatanSesiBerubah();
+                })
+                .catch(() => {
+                    if (!percobaanUlang) setTimeout(() => simpanProgressQuizKeServer(snapshot, true), 1500);
+                    /* sudah retry & masih gagal -> progres tetap aman di localStorage perangkat ini */
+                });
+        }
+
+        function hapusProgressQuizDiServer() {
+            fetch('/api/quiz/inprogress/clear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                keepalive: true,
+                body: JSON.stringify({ expected_username: USERNAME_SISWA_ASLI, slot_id: ID_SISWA_AKTIF })
+            }).catch(() => { /* jaga-jaga jaringan gagal -- tidak fatal, bukan data kritis */ });
+        }
+
+        // Dipanggil dari ambilProgressQuizGabungan(). Dibungkus try/catch di
+        // dalam supaya kegagalan network/parse tidak pernah melempar error ke
+        // pemanggil -- cukup dianggap "tidak ada progres di server".
+        async function ambilProgressQuizDariServer() {
+            try {
+                const url = `/api/quiz/inprogress/load?expected_username=${encodeURIComponent(USERNAME_SISWA_ASLI || '')}&slot_id=${encodeURIComponent(ID_SISWA_AKTIF || '')}`;
+                const res = await fetch(url);
+                const hasil = await res.json();
+                if (hasil && hasil.session_mismatch) tampilkanPeringatanSesiBerubah();
+                const snap = hasil && hasil.data;
+                if (!snap || !Array.isArray(snap.soal) || typeof snap.index !== 'number') return null;
+                if (snap.index >= snap.soal.length) return null; // sudah kejawab semua
+                return snap;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Gabungkan snapshot LOKAL (localStorage, instan) dengan snapshot
+        // SERVER (mewakili progres dari perangkat lain, perlu ditunggu
+        // fetch-nya) -- kalau dua-duanya ada, menangkan yang disimpanPada-nya
+        // paling baru (progres paling akhir yang benar-benar dikerjakan
+        // siswa). Dipanggil dari bukaQuizDariAwal() setiap kali tab Quiz
+        // dibuka.
+        async function ambilProgressQuizGabungan() {
+            const lokal = ambilProgressQuizSementara();
+            const server = await ambilProgressQuizDariServer();
+
+            if (lokal && server) {
+                return (server.disimpanPada || 0) > (lokal.disimpanPada || 0) ? server : lokal;
+            }
+            return lokal || server || null;
         }
 
         // Dipanggil dari bukaQuizDariAwal() sebelum quiz baru direset ke menu.
@@ -3329,21 +3411,29 @@
 
         // Dipanggil setiap kali tab Quiz dibuka dari sidebar -> selalu mulai
         // dari halaman pilih jenis (Pilihan Ganda / Essay).
-        function bukaQuizDariAwal() {
+        async function bukaQuizDariAwal() {
             if (quizState) clearInterval(quizState.timerId);
 
             // Sebelum reset ke menu awal, cek dulu apakah ada progres quiz yang
-            // sempat "kepotong" tersimpan di localStorage (lihat
-            // simpanProgressQuizSementara(), dipanggil tiap kali siswa menjawab
-            // 1 soal) -- baik karena tab sempat dipindah, koneksi ngadat, atau
-            // browser/tab tertutup di tengah jalan sebelum sampai soal terakhir.
-            // Kalau ketemu, tawarkan lanjut dulu lewat dialog custom (BUKAN
-            // confirm() bawaan browser yang kaku) SEBELUM quiz lama ini betul-
-            // betul dianggap hilang. Keputusan siswa (Lanjut/Mulai Baru) diproses
-            // di dalam tampilkanKonfirmasiLanjutkanQuiz() sendiri, jadi di sini
-            // cukup return dan JANGAN langsung reset ke menu.
-            const snapshotTerputus = ambilProgressQuizSementara();
+            // sempat "kepotong" -- baik yang tersimpan di localStorage PERANGKAT
+            // INI (lihat simpanProgressQuizSementara(), dipanggil tiap kali
+            // siswa menjawab 1 soal), MAUPUN yang tersimpan di SERVER dari
+            // perangkat/browser LAIN (mis. mulai di laptop, buka lagi lewat HP
+            // atau tablet) -- lihat ambilProgressQuizGabungan(). Kalau ketemu,
+            // tawarkan lanjut dulu lewat dialog custom (BUKAN confirm() bawaan
+            // browser yang kaku) SEBELUM quiz lama ini betul-betul dianggap
+            // hilang. Keputusan siswa (Lanjut/Mulai Baru) diproses di dalam
+            // tampilkanKonfirmasiLanjutkanQuiz() sendiri, jadi di sini cukup
+            // return dan JANGAN langsung reset ke menu.
+            const snapshotTerputus = await ambilProgressQuizGabungan();
             if (snapshotTerputus) {
+                // Kalau ternyata snapshot yang menang itu datang dari SERVER
+                // (progres terakhir dikerjakan di perangkat lain), tulis dulu ke
+                // localStorage perangkat ini juga -- supaya begitu siswa pilih
+                // "Lanjutkan", kartu snapshot yang dipakai fungsi2 lain (mis.
+                // hapusProgressQuizSementara nanti pas quiz ini tuntas) selalu
+                // konsisten baca dari satu sumber yang sama (localStorage lokal).
+                try { localStorage.setItem(KEY_QUIZ_INPROGRESS, JSON.stringify(snapshotTerputus)); } catch (e) {}
                 tampilkanKonfirmasiLanjutkanQuiz(snapshotTerputus);
                 return;
             }

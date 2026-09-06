@@ -552,6 +552,60 @@ quiz_store = _muat_quiz_store()
 
 
 # ----------------------------------------------------
+# PROGRES QUIZ YANG BELUM SELESAI (SNAPSHOT "IN-PROGRESS")
+# SENGAJA dibuat TERPISAH TOTAL dari quiz_store di atas (variabel Python
+# beda, file JSON di disk beda: quiz_inprogress_store.json) -- supaya:
+#   1) Snapshot kuis yang BELUM tuntas ini TIDAK PERNAH ikut kebaca oleh
+#      api_quiz_leaderboard_global() (yang iterasi murni ke quiz_store),
+#      jadi tidak mungkin nyasar tampil di leaderboard sebagai skor final.
+#   2) File quiz_store.json (data final, penting buat leaderboard semua
+#      siswa) tetap bersih -- baca/tulis snapshot in-progress yang lebih
+#      sering (tiap 1 soal dijawab) tidak numpuk campur di file yang sama.
+#
+# Struktur: quiz_inprogress_store[kunci_slot] = snapshot persis sama seperti
+# yang dulu HANYA hidup di localStorage klien (lihat
+# simpanProgressQuizSementara() di dashboard_siswa_2.js): { jenis, level,
+# mapelId, mapelNama, soal, index, skor, benar, disimpanPada }. Cuma SATU
+# snapshot aktif per slot (bukan dipisah per jenis PG/Essay) -- field
+# 'jenis' di dalam objeknya sendiri yang menandai tipe quiz-nya, sama
+# persis perilaku KEY_QUIZ_INPROGRESS di localStorage yang juga cuma 1 key
+# (ditimpa/dihapus tiap kali quiz baru dimulai apapun jenisnya). kunci_slot
+# sama persis dengan _kunci_slot_quiz() yang dipakai quiz_store, jadi tiap
+# akun (atau tiap profil dummy) tetap punya slot progres sendiri-sendiri.
+#
+# Kenapa perlu disimpan ke SERVER (bukan cukup localStorage saja): supaya
+# dialog "kuis kamu terputus di soal nomor X, lanjutkan?" tetap bisa muncul
+# walau siswa buka dashboard dari PERANGKAT/BROWSER LAIN dari tempat dia
+# terakhir main (mis. mulai di laptop, lanjut dibuka lagi dari HP/tablet).
+# ----------------------------------------------------
+QUIZ_INPROGRESS_STORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'quiz_inprogress_store.json')
+
+
+def _muat_quiz_inprogress_store():
+    """Baca quiz_inprogress_store dari file JSON di disk (kalau ada). Pola
+    sama persis dengan _muat_quiz_store."""
+    try:
+        with open(QUIZ_INPROGRESS_STORE_PATH, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _simpan_quiz_inprogress_store():
+    """Tulis quiz_inprogress_store saat ini ke file JSON di disk (atomic,
+    pola sama dengan _simpan_quiz_store supaya tidak korup kalau ketiban
+    proses lain)."""
+    os.makedirs(os.path.dirname(QUIZ_INPROGRESS_STORE_PATH), exist_ok=True)
+    tmp_path = QUIZ_INPROGRESS_STORE_PATH + '.tmp'
+    with open(tmp_path, 'w', encoding='utf-8') as f:
+        json.dump(quiz_inprogress_store, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, QUIZ_INPROGRESS_STORE_PATH)
+
+
+quiz_inprogress_store = _muat_quiz_inprogress_store()
+
+
+# ----------------------------------------------------
 # DATA PRESTASI SISWA (SIMULASI TABEL prestasi_submissions)
 # SENGAJA dibuat TERPISAH TOTAL dari quiz_store di atas -- variabel Python
 # beda (prestasi_store, bukan quiz_store), file JSON di disk beda
@@ -1571,6 +1625,76 @@ def api_quiz_leaderboard_global():
  
     daftar = list(gabungan.values())
     return jsonify(success=True, leaderboard=daftar)
+
+
+@app.route('/api/quiz/inprogress/load', methods=['GET'])
+@batasi('umum')
+def api_quiz_inprogress_load():
+    """Ambil snapshot progres quiz yang BELUM selesai milik SLOT yang
+    sedang aktif -- dipanggil tiap kali tab Quiz dibuka (bukaQuizDariAwal()
+    di client), supaya progres yang terakhir ditinggal di perangkat/browser
+    LAIN tetap ketemu & ditawarkan untuk dilanjutkan. Cuma ada SATU snapshot
+    aktif per slot (bukan dipisah per jenis PG/Essay) -- persis meniru
+    perilaku KEY_QUIZ_INPROGRESS di localStorage client yang juga cuma 1
+    key, ditimpa/dihapus tiap kali quiz baru dimulai apapun jenisnya."""
+    ok, err_resp, err_code = _cek_sesi_masih_cocok(request.args.get('expected_username'))
+    if not ok:
+        return err_resp, err_code
+
+    username = session['user']['username']
+    kunci = _kunci_slot_quiz(username, request.args.get('slot_id'))
+    snapshot = quiz_inprogress_store.get(kunci)
+    return jsonify(success=True, data=snapshot)  # null kalau memang tidak ada progres tertinggal
+
+
+@app.route('/api/quiz/inprogress/save', methods=['POST'])
+@batasi('umum')
+def api_quiz_inprogress_save():
+    """Simpan/timpa snapshot progres quiz yang sedang berjalan milik SLOT
+    aktif ke server. Dipanggil tiap kali siswa selesai menjawab 1 soal
+    (sama seperti simpanProgressQuizSementara() menulis ke localStorage),
+    supaya kalau lanjut dibuka dari perangkat lain, progres ini tetap
+    ketemu. Body tidak divalidasi detail strukturnya (dianggap 'blob'
+    milik client, sama seperti api_quiz_save) -- cukup pastikan berupa
+    object."""
+    body = request.get_json(silent=True) or {}
+
+    ok, err_resp, err_code = _cek_sesi_masih_cocok(body.get('expected_username'))
+    if not ok:
+        return err_resp, err_code
+
+    data = body.get('data')
+    if not isinstance(data, dict):
+        return jsonify(success=False, message='Snapshot progres quiz tidak valid.'), 400
+
+    username = session['user']['username']
+    kunci = _kunci_slot_quiz(username, body.get('slot_id'))
+    quiz_inprogress_store[kunci] = data
+    _simpan_quiz_inprogress_store()
+    return jsonify(success=True)
+
+
+@app.route('/api/quiz/inprogress/clear', methods=['POST'])
+@batasi('umum')
+def api_quiz_inprogress_clear():
+    """Hapus snapshot progres quiz milik SLOT aktif dari server -- dipanggil
+    begitu quiz benar-benar tuntas dijawab semua (selesaikanQuiz()/
+    selesaikanQuizEssay()), tiap kali quiz baru mulai (startQuiz(), jaga-
+    jaga tambahan), ATAU siswa memilih 'Mulai dari Awal' di dialog
+    konfirmasi lanjut quiz, supaya progres lama tidak nyangkut terus &
+    ditawarkan lagi padahal sudah tidak relevan."""
+    body = request.get_json(silent=True) or {}
+
+    ok, err_resp, err_code = _cek_sesi_masih_cocok(body.get('expected_username'))
+    if not ok:
+        return err_resp, err_code
+
+    username = session['user']['username']
+    kunci = _kunci_slot_quiz(username, body.get('slot_id'))
+    if kunci in quiz_inprogress_store:
+        del quiz_inprogress_store[kunci]
+        _simpan_quiz_inprogress_store()
+    return jsonify(success=True)
 
 
 # ----------------------------------------------------
