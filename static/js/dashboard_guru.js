@@ -1202,12 +1202,26 @@
 
         // Toggle status utk SATU murid, dipanggil dari tombol kecil di kartu
         // rekap (cuma tampil buat murid yang belum mengerjakan tugas ini).
+        //
+        // PERBAIKAN PERFORMA (PENTING): dulu di akhir fungsi ini manggil ulang
+        // bukaRekapPengumpulanTugas(..., true) secara PENUH cuma buat update
+        // 1 tombol -- itu artinya SETIAP klik toggle pelanggaran memicu 2
+        // request network lagi (ambilSubmisiTugasServer + ambilHasilPeriksaBulkServer)
+        // DAN membongkar+merender ulang SELURUH grid kartu murid lewat
+        // gridContainer.innerHTML = ... (bukan cuma kartu yang diklik). Ini
+        // sumber utama scroll jendela Rekap kerasa "berat"/patah tiap habis
+        // klik tombol -- padahal cuma warna & teks 1 tombol yang berubah.
+        // Sekarang cukup update tombolnya sendiri langsung di DOM (lihat
+        // perbaruiTombolPelanggaranDiKartu di bawah), tanpa network & tanpa
+        // menyentuh kartu murid lain sama sekali -- posisi scroll & kartu
+        // lain tidak lagi ke-reset/dibangun ulang.
         function klikTogglePelanggaranSatuMurid(muridId) {
             const murid = sampleMurid30.find(m => m.id === muridId);
             if (!murid || !taskAktifDipilihUntukRekap) return;
 
             const sudahAktif = siswaPunyaPelanggaranAktif(murid.username);
-            setPelanggaranAktifUntukUsername(murid.username, !sudahAktif);
+            const akanAktif = !sudahAktif;
+            setPelanggaranAktifUntukUsername(murid.username, akanAktif);
 
             if (sudahAktif) {
                 tampilkanToastSuksesKirimTugas('Dibatalkan', `Status Pelanggaran Aktif untuk ${murid.nama} sudah dibatalkan.`);
@@ -1215,8 +1229,30 @@
                 tampilkanToastSuksesKirimTugas('Pelanggaran Diberikan', `${murid.nama} ditandai Pelanggaran Aktif. Overlay peringatan akan muncul saat dashboard-nya dibuka.`);
             }
 
-            // render ulang kartu supaya tombol & warnanya langsung update
-            bukaRekapPengumpulanTugas(taskAktifDipilihUntukRekap.namaKelas, taskAktifDipilihUntukRekap.taskId, true);
+            perbaruiTombolPelanggaranDiKartu(muridId, akanAktif);
+        }
+
+        // Update tampilan SATU tombol "Kasih Pelanggaran" langsung di DOM
+        // (warna + teks), tanpa membongkar/merender ulang kartu murid lain
+        // ataupun grid secara keseluruhan. Kalau request ke server ternyata
+        // gagal, setPelanggaranAktifUntukUsername() di atas sudah menangani
+        // rollback-nya sendiri lewat render ulang penuh (jalur error, jarang
+        // terjadi) -- jadi jalur normal (sukses) di sini boleh tetap ringan.
+        function perbaruiTombolPelanggaranDiKartu(muridId, aktif) {
+            const tombol = document.querySelector(
+                `#rekap-tugas-grid-bangku button[onclick*="klikTogglePelanggaranSatuMurid(${muridId})"]`
+            );
+            if (!tombol) return;
+
+            tombol.classList.toggle('bg-rose-600', aktif);
+            tombol.classList.toggle('hover:bg-rose-700', aktif);
+            tombol.classList.toggle('text-white', aktif);
+            tombol.classList.toggle('bg-rose-50', !aktif);
+            tombol.classList.toggle('hover:bg-rose-100', !aktif);
+            tombol.classList.toggle('text-rose-700', !aktif);
+            tombol.classList.toggle('border', !aktif);
+            tombol.classList.toggle('border-rose-300', !aktif);
+            tombol.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${aktif ? 'Pelanggaran Aktif · Batalkan' : 'Kasih Pelanggaran'}`;
         }
 
         // Beri pelanggaran ke SEMUA murid di kelas ini yang belum mengerjakan
@@ -1248,9 +1284,11 @@
                 ikon: 'fa-triangle-exclamation',
                 warnaTombol: 'rose',
                 onKonfirmasi: function () {
-                    belumKerja.forEach(m => setPelanggaranAktifUntukUsername(m.username, true));
+                    belumKerja.forEach(m => {
+                        setPelanggaranAktifUntukUsername(m.username, true);
+                        perbaruiTombolPelanggaranDiKartu(m.id, true);
+                    });
                     tampilkanToastSuksesKirimTugas('Pelanggaran Diberikan', `${belumKerja.length} murid yang belum mengerjakan tugas ini sudah ditandai Pelanggaran Aktif.`);
-                    bukaRekapPengumpulanTugas(namaKelas, taskId, true);
                 }
             });
         }
