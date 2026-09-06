@@ -1415,11 +1415,17 @@
                 try {
                     const res = await fetch('/api/teman/relasi');
                     const json = await res.json();
-                    if (!json.success) return { permintaan_masuk: [], teman: [] };
+                    // PERBAIKAN: dulu balikin array kosong di sini kalau gagal --
+                    // jadinya "gagal ambil data" ketimpang dianggap sama dengan
+                    // "memang belum ada teman/permintaan", padahal beda kasus.
+                    // Sekarang balikin null biar pemanggilnya (renderDaftarTeman /
+                    // renderPermintaanTeman) bisa bedain & tidak menimpa tampilan
+                    // yang sudah benar cuma gara-gara satu request lagi gagal.
+                    if (!json.success) return null;
                     return json;
                 } catch (e) {
                     console.error('Gagal ambil data pertemanan:', e);
-                    return { permintaan_masuk: [], teman: [] };
+                    return null;
                 } finally {
                     _janjiRelasiPertemananBerjalan = null;
                 }
@@ -1432,7 +1438,9 @@
             const kosong = document.getElementById('permintaan-teman-kosong');
             if (!list) return;
 
-            const { permintaan_masuk: pending } = await ambilRelasiPertemanan();
+            const dataRelasi = await ambilRelasiPertemanan();
+            if (!dataRelasi) return; // fetch gagal -> biarkan dropdown/badge yang sudah ada, jangan ditimpa kosong
+            const { permintaan_masuk: pending } = dataRelasi;
             list.innerHTML = '';
 
             if (pending.length === 0) {
@@ -1514,7 +1522,9 @@
             const jumlahEl = document.getElementById('daftar-teman-jumlah');
             if (!list) return;
 
-            const { teman: daftarTeman } = await ambilRelasiPertemanan();
+            const dataRelasi = await ambilRelasiPertemanan();
+            if (!dataRelasi) return; // fetch gagal -> biarkan daftar teman yang sudah tampil, jangan ditimpa kosong
+            const { teman: daftarTeman } = dataRelasi;
 
             list.innerHTML = '';
             if (jumlahEl) jumlahEl.textContent = `(${daftarTeman.length})`;
