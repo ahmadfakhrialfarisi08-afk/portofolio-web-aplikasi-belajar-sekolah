@@ -2849,11 +2849,38 @@
             });
         }
 
-        function startQuiz(jenis, level) {
-            // Pastikan tidak ada sisa snapshot safety-net dari quiz lama yang
-            // nyangkut (mestinya sudah ditangani lewat bukaQuizDariAwal() di
-            // atas, ini cuma jaga-jaga tambahan supaya quiz baru selalu mulai
-            // dari snapshot yang bersih).
+        // Dipanggil tiap kali siswa benar-benar mencoba MEMULAI sebuah quiz
+        // (pilih tingkat kesulitan di menu PG/Essay -- apa pun jenis/mapelnya,
+        // sama ataupun beda dari quiz yang mungkin masih tertinggal). Di SINI
+        // (bukan lagi di bukaQuizDariAwal()) progres lama dicek & baru
+        // ditawarkan "lanjutkan?" -- karena di sinilah progres lama beneran
+        // beresiko ketimpa/hilang, bukan cuma karena sekadar buka tab Quiz.
+        async function startQuiz(jenis, level) {
+            const snapshotTerputus = await ambilProgressQuizGabungan();
+            if (snapshotTerputus) {
+                // Kalau ternyata snapshot yang menang itu datang dari SERVER
+                // (progres terakhir dikerjakan di perangkat lain), tulis dulu ke
+                // localStorage perangkat ini juga -- supaya fungsi2 lain (mis.
+                // hapusProgressQuizSementara) konsisten baca dari satu sumber
+                // yang sama (localStorage lokal).
+                try { localStorage.setItem(KEY_QUIZ_INPROGRESS, JSON.stringify(snapshotTerputus)); } catch (e) {}
+                // "Mulai dari Awal" di dialog ini artinya lanjut ke quiz BARU
+                // yang barusan dipilih siswa (jenis/level saat ini), makanya
+                // callback-nya bawa jenis & level dari argumen startQuiz ini,
+                // bukan dari snapshot yang ditinggal.
+                tampilkanKonfirmasiLanjutkanQuiz(snapshotTerputus, () => mulaiQuizBaruBersih(jenis, level));
+                return;
+            }
+            mulaiQuizBaruBersih(jenis, level);
+        }
+
+        // Isi asli "mulai quiz dari nol" (dulu langsung di dalam startQuiz())
+        // -- sekarang dipanggil kalau memang tidak ada progres lama yang
+        // tertinggal, ATAU siswa pilih "Mulai dari Awal" di dialog konfirmasi.
+        function mulaiQuizBaruBersih(jenis, level) {
+            // Pastikan tidak ada sisa snapshot lama yang nyangkut (baik karena
+            // memang tidak ada dari awal, atau siswa sengaja membuang progres
+            // lama lewat tombol "Mulai dari Awal").
             hapusProgressQuizSementara();
             const mapelId = quizMapelState.mapelId;
             const soal = jenis === 'essay' ? acakSoalQuizEssay(mapelId, level, 5) : acakSoalQuiz(mapelId, level, 5);
@@ -3411,33 +3438,18 @@
 
         // Dipanggil setiap kali tab Quiz dibuka dari sidebar -> selalu mulai
         // dari halaman pilih jenis (Pilihan Ganda / Essay).
-        async function bukaQuizDariAwal() {
+        //
+        // PERUBAHAN: dulu fungsi ini yang langsung cek & menawarkan dialog
+        // "lanjutkan quiz?" begitu tab Quiz dibuka -- jadi popup itu muncul
+        // dadakan padahal siswa cuma numpang lihat menu/leaderboard, belum
+        // tentu mau lanjut/mulai quiz apa pun. Sekarang tab Quiz SELALU
+        // tampil menu polos dulu di sini; pengecekan & tawaran "lanjutkan?"
+        // dipindah ke startQuiz() -- baru muncul PAS siswa benar-benar coba
+        // memulai sebuah quiz (PG atau Essay, sama ataupun beda dari yang
+        // tertinggal), karena di situlah progres lama beneran beresiko
+        // tertimpa/hilang.
+        function bukaQuizDariAwal() {
             if (quizState) clearInterval(quizState.timerId);
-
-            // Sebelum reset ke menu awal, cek dulu apakah ada progres quiz yang
-            // sempat "kepotong" -- baik yang tersimpan di localStorage PERANGKAT
-            // INI (lihat simpanProgressQuizSementara(), dipanggil tiap kali
-            // siswa menjawab 1 soal), MAUPUN yang tersimpan di SERVER dari
-            // perangkat/browser LAIN (mis. mulai di laptop, buka lagi lewat HP
-            // atau tablet) -- lihat ambilProgressQuizGabungan(). Kalau ketemu,
-            // tawarkan lanjut dulu lewat dialog custom (BUKAN confirm() bawaan
-            // browser yang kaku) SEBELUM quiz lama ini betul-betul dianggap
-            // hilang. Keputusan siswa (Lanjut/Mulai Baru) diproses di dalam
-            // tampilkanKonfirmasiLanjutkanQuiz() sendiri, jadi di sini cukup
-            // return dan JANGAN langsung reset ke menu.
-            const snapshotTerputus = await ambilProgressQuizGabungan();
-            if (snapshotTerputus) {
-                // Kalau ternyata snapshot yang menang itu datang dari SERVER
-                // (progres terakhir dikerjakan di perangkat lain), tulis dulu ke
-                // localStorage perangkat ini juga -- supaya begitu siswa pilih
-                // "Lanjutkan", kartu snapshot yang dipakai fungsi2 lain (mis.
-                // hapusProgressQuizSementara nanti pas quiz ini tuntas) selalu
-                // konsisten baca dari satu sumber yang sama (localStorage lokal).
-                try { localStorage.setItem(KEY_QUIZ_INPROGRESS, JSON.stringify(snapshotTerputus)); } catch (e) {}
-                tampilkanKonfirmasiLanjutkanQuiz(snapshotTerputus);
-                return;
-            }
-
             tampilkanViewQuiz('jenis');
             renderMenuQuiz();
         }
@@ -3449,7 +3461,7 @@
         // permanen, quiz baru dimulai dari lembar kosong). Animasi
         // kemunculannya pakai pola fade+slide bertahap yang sama dengan notif
         // "jawab kecepatan" (tampilkanNotifJawabTerlaluCepat) biar konsisten.
-        function tampilkanKonfirmasiLanjutkanQuiz(snapshot) {
+        function tampilkanKonfirmasiLanjutkanQuiz(snapshot, onMulaiBaru) {
             const overlayLama = document.getElementById('overlay-konfirmasi-lanjut-quiz');
             if (overlayLama) overlayLama.remove();
 
@@ -3513,12 +3525,19 @@
             if (btnMulaiBaru) {
                 btnMulaiBaru.onclick = () => {
                     tutupOverlay();
-                    // Dibatalkan -> snapshot dibuang bersih, kuis baru dimulai dari
-                    // lembar kosong (bukan cuma disembunyikan, tapi dihapus dari
-                    // localStorage supaya tidak nyangkut lagi lain kali).
+                    // Dibatalkan -> snapshot dibuang bersih, kuis lama dianggap
+                    // hilang permanen (bukan cuma disembunyikan, tapi dihapus dari
+                    // localStorage & server supaya tidak nyangkut lagi lain kali).
                     hapusProgressQuizSementara();
-                    tampilkanViewQuiz('jenis');
-                    renderMenuQuiz();
+                    if (typeof onMulaiBaru === 'function') {
+                        // Dipanggil dari startQuiz(): lanjut ke quiz BARU yang
+                        // barusan dipilih siswa (jenis/level saat itu), bukan
+                        // balik lagi ke menu paling awal.
+                        onMulaiBaru();
+                    } else {
+                        tampilkanViewQuiz('jenis');
+                        renderMenuQuiz();
+                    }
                 };
             }
         }
