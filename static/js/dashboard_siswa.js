@@ -1945,6 +1945,15 @@
                 document.getElementById('modal-id-card-teman').classList.remove('hidden');
                 document.getElementById('modal-id-card-teman').classList.add('flex');
                 aktifkanRevealIdCard();
+
+                // BARU: dorong 1 entry history khusus modal ini -- supaya
+                // tombol back HP/browser (atau swipe-back) yang ditekan
+                // SELAGI ID Card ini kebuka akan MENUTUP ID CARD INI DULU,
+                // bukan langsung pindah tab/keluar app. Pola sama persis
+                // dengan modalGuruHistoryAktif di Modal "Detail Penilaian
+                // Guru" (lihat dorongHistoryTampilan & popstate listener).
+                modalIdCardHistoryAktif = true;
+                dorongHistoryTampilan({ type: 'modal', modal: 'id-card-teman' });
             } catch (e) {
                 console.error('Gagal memuat ID card teman:', e);
             }
@@ -2178,11 +2187,58 @@
             }).join('');
         }
 
-        function tutupIdCardTeman() {
+        // dariTombolBack: true kalau dipanggil DARI handler popstate (tombol
+        // back HP/browser sudah ditekan, history sudah otomatis mundur
+        // sendiri). false/kosong kalau ditutup manual lewat tombol X atau
+        // klik area gelap (backdrop) -- sama pola dengan tutupModalDetailGuru().
+        function tutupIdCardTeman(dariTombolBack) {
             const modal = document.getElementById('modal-id-card-teman');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             USERNAME_ID_CARD_TERBUKA = null;
+
+            if (!dariTombolBack && modalIdCardHistoryAktif) {
+                modalIdCardHistoryAktif = false;
+                history.back();
+            } else {
+                modalIdCardHistoryAktif = false;
+            }
+        }
+
+        // Lightbox foto profil ID Card -- dibuka DI ATAS ID Card yang sudah
+        // terbuka (lihat #idcard-avatar-foto di HTML). Cuma menampilkan foto
+        // ukuran penuh dari foto yang sedang dipakai ID Card, tidak fetch data
+        // baru ke server. Mengikuti pola history yang sama seperti ID Card &
+        // Modal "Detail Penilaian Guru" -- back pertama menutup lightbox ini
+        // dulu (karena selalu dibuka di atas ID Card), back kedua baru
+        // menutup ID Card di baliknya.
+        let modalIdCardHistoryAktif = false;
+        let modalLightboxIdCardHistoryAktif = false;
+
+        function bukaLightboxFotoIdCard() {
+            const fotoSumber = document.getElementById('idcard-avatar-foto');
+            const fotoLightbox = document.getElementById('lightbox-idcard-foto');
+            if (!fotoSumber || !fotoLightbox || !fotoSumber.src) return;
+            fotoLightbox.src = fotoSumber.src;
+            const modal = document.getElementById('modal-lightbox-foto-idcard');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            modalLightboxIdCardHistoryAktif = true;
+            dorongHistoryTampilan({ type: 'modal', modal: 'lightbox-idcard' });
+        }
+
+        function tutupLightboxFotoIdCard(dariTombolBack) {
+            const modal = document.getElementById('modal-lightbox-foto-idcard');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+
+            if (!dariTombolBack && modalLightboxIdCardHistoryAktif) {
+                modalLightboxIdCardHistoryAktif = false;
+                history.back();
+            } else {
+                modalLightboxIdCardHistoryAktif = false;
+            }
         }
 
         async function klikAksiIdCardTeman() {
@@ -2630,6 +2686,24 @@
         }
 
         window.addEventListener('popstate', (event) => {
+            // Urutan cek SENGAJA dari modal paling "atas" ke paling "bawah",
+            // karena lightbox foto ID Card selalu dibuka DI ATAS ID Card yang
+            // sudah terbuka -- back pertama harus menutup lightbox dulu,
+            // BUKAN langsung tembus menutup ID Card di baliknya sekaligus.
+            if (modalLightboxIdCardHistoryAktif) {
+                modalLightboxIdCardHistoryAktif = false;
+                tutupLightboxFotoIdCard(true);
+                return;
+            }
+            // ID Card (punya sendiri maupun teman) ikut ditutup otomatis
+            // kalau tombol back HP/browser (atau swipe-back) ditekan selagi
+            // modal ini masih kebuka -- pola sama seperti Modal "Detail
+            // Penilaian Guru" di bawah.
+            if (modalIdCardHistoryAktif) {
+                modalIdCardHistoryAktif = false;
+                tutupIdCardTeman(true);
+                return;
+            }
             // Modal "Detail Penilaian Guru" ikut ditutup otomatis kalau tombol
             // back HP/browser (atau swipe-back) ditekan selagi modal ini masih
             // kebuka -- konsisten dengan ekspektasi umum navigasi mobile

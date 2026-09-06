@@ -2002,7 +2002,7 @@
                 <div class="idcard-reveal flex flex-wrap sm:flex-nowrap items-start justify-between gap-x-4 gap-y-2 pr-10">
                     <div class="flex items-center gap-3 min-w-0">
                         <div class="profile-wrapper w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 relative">
-                            <img id="idcard-avatar-foto" src="" class="user-avatar" alt="Avatar">
+                            <img id="idcard-avatar-foto" src="" class="user-avatar cursor-zoom-in" alt="Avatar" onclick="event.stopPropagation(); bukaLightboxFotoIdCard()">
                             <img id="idcard-avatar-border" src="" class="user-border" alt="Border">
                         </div>
                         <div class="text-left min-w-0">
@@ -2084,6 +2084,21 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Lightbox foto profil ID Card -- muncul di TENGAH, di ATAS modal ID
+         Card (z-index lebih tinggi), dipicu klik foto avatar di dalam ID
+         Card (lihat #idcard-avatar-foto). Cuma nampilin foto ukuran penuh,
+         tidak ada data lain. Ikut sistem "tombol back menutup modal paling
+         atas dulu" (lihat modalLightboxIdCardHistoryAktif di JS) -- karena
+         modal ini SELALU dibuka dari ATAS ID Card yang sudah terbuka, back
+         pertama menutup lightbox ini dulu, baru back kedua menutup ID Card
+         di baliknya. -->
+    <div id="modal-lightbox-foto-idcard" class="fixed inset-0 bg-slate-950/90 z-[110] hidden items-center justify-center p-4" onclick="if(event.target === this) tutupLightboxFotoIdCard()">
+        <button onclick="tutupLightboxFotoIdCard()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors z-10" aria-label="Tutup">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <img id="lightbox-idcard-foto" src="" alt="Foto profil ukuran penuh" class="max-w-full max-h-full rounded-2xl object-contain">
     </div>
 
     <!-- Modal "Atur Sosial Media" -- dipicu tombol di dropdown profil sendiri
