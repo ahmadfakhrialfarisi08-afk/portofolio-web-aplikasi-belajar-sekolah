@@ -438,12 +438,39 @@ def _muat_daftar_guru():
     """Baca guru_store.json (hasil tambah/edit/hapus admin sebelumnya) kalau
     sudah ada. Kalau belum pernah ada sama sekali (baru pertama kali server
     dijalankan), pakai DAFTAR_GURU_DEFAULT di atas dengan id 0..N diisi dari
-    urutan array-nya."""
+    urutan array-nya.
+
+    BUG YANG DIPERBAIKI: kalau file guru_store.json ini sempat diedit manual
+    (atau berasal dari versi lama sebelum field 'id' selalu diisi otomatis),
+    ada entri guru yang bisa saja tidak punya field 'id' sama sekali. Sebelum
+    perbaikan ini, itu bikin /api/guru/tambah CRASH 500 setiap kali diklik --
+    baris `max(g['id'] for g in daftar_guru)` langsung KeyError begitu ketemu
+    satu saja entri tanpa 'id'. Sekarang begitu dibaca dari file, entri yang
+    belum punya 'id' otomatis dikasih id baru (lanjutan dari id tertinggi yang
+    sudah ada), dan hasilnya langsung ditulis balik ke file supaya rapi
+    permanen -- bukan cuma "ditambal" sementara di memori tiap start server."""
     try:
         with open(GURU_STORE_PATH, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            data = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return [dict(g, id=i) for i, g in enumerate(DAFTAR_GURU_DEFAULT)]
+
+    id_berikutnya = max((g['id'] for g in data if 'id' in g), default=-1) + 1
+    ada_yang_dibetulkan = False
+    for g in data:
+        if 'id' not in g:
+            g['id'] = id_berikutnya
+            id_berikutnya += 1
+            ada_yang_dibetulkan = True
+    if ada_yang_dibetulkan:
+        try:
+            tmp_path = GURU_STORE_PATH + '.tmp'
+            with open(tmp_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            os.replace(tmp_path, GURU_STORE_PATH)
+        except OSError as exc:
+            print(f"[WARN] Gagal menulis perbaikan id guru ke disk: {exc}")
+    return data
 
 
 daftar_guru = _muat_daftar_guru()
@@ -1788,7 +1815,16 @@ def api_guru_tambah():
     if not nama:
         return jsonify(success=False, message='Nama guru wajib diisi.'), 400
 
-    id_baru = max((g['id'] for g in daftar_guru), default=-1) + 1
+    # .get('id', -1) sengaja dipakai (bukan g['id']) supaya kalaupun ada entri
+    # lama di guru_store.json yang entah bagaimana masih tanpa 'id', endpoint
+    # ini tidak ikut crash -- _muat_daftar_guru() di atas memang sudah
+    # membetulkan itu saat startup, ini cuma jaga-jaga lapis kedua.
+    id_baru = max((g.get('id', -1) for g in daftar_guru), default=-1) + 1
+    # BUG YANG DIPERBAIKI: field 'jenis' (Biasa/Produktif) dari form "Kelola
+    # Guru" sebelumnya tidak ikut disimpan sama sekali di sini -- makanya
+    # pilihan jenis mapel yang dipilih admin di form selalu hilang. Divalidasi
+    # ke 2 nilai yang valid, fallback 'biasa' kalau datang nilai lain/kosong.
+    jenis = data.get('jenis') if data.get('jenis') in ('biasa', 'produktif') else 'biasa'
     guru_baru = {
         'id': id_baru,
         'nama': nama,
@@ -1797,6 +1833,7 @@ def api_guru_tambah():
         'kelas': (data.get('kelas') or '').strip(),
         'tingkat': (data.get('tingkat') or '').strip(),
         'jurusan': (data.get('jurusan') or '').strip(),
+        'jenis': jenis,
         'foto': (data.get('foto') or '').strip(),
     }
     daftar_guru.append(guru_baru)
@@ -1812,7 +1849,7 @@ def api_guru_edit(id_guru):
     if not _akun_ini_admin_dev():
         return jsonify(success=False, message='Khusus akun Admin/Developer yang boleh mengelola daftar guru.'), 403
 
-    target = next((g for g in daftar_guru if g['id'] == id_guru), None)
+    target = next((g for g in daftar_guru if g.get('id') == id_guru), None)
     if not target:
         return jsonify(success=False, message='Guru tidak ditemukan.'), 404
 
@@ -1824,6 +1861,10 @@ def api_guru_edit(id_guru):
     for field in ('nama', 'lulusan', 'mapel', 'kelas', 'tingkat', 'jurusan', 'foto'):
         if field in data:
             target[field] = (data.get(field) or '').strip()
+    # BUG YANG DIPERBAIKI: sama seperti /api/guru/tambah, field 'jenis'
+    # (Biasa/Produktif) sebelumnya tidak ikut di-update di sini.
+    if 'jenis' in data and data.get('jenis') in ('biasa', 'produktif'):
+        target['jenis'] = data.get('jenis')
 
     _simpan_daftar_guru()
     return jsonify(success=True, guru=target)
@@ -1838,7 +1879,7 @@ def api_guru_hapus(id_guru):
 
     global daftar_guru
     sebelum = len(daftar_guru)
-    daftar_guru = [g for g in daftar_guru if g['id'] != id_guru]
+    daftar_guru = [g for g in daftar_guru if g.get('id') != id_guru]
     if len(daftar_guru) == sebelum:
         return jsonify(success=False, message='Guru tidak ditemukan.'), 404
 
