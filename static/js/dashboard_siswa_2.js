@@ -2876,37 +2876,60 @@
         }
 
         // Notif peringatan di tengah layar + hitung mundur sebelum bisa ditutup.
-        // lanjutkanCallback() baru dipanggil SETELAH siswa menutup notif --
-        // ini yang bikin progres/soal berikutnya (dan timernya) ikut "berhenti"
-        // sampai notifnya beneran ditutup.
+        // Animasi kemunculannya SENGAJA dibikin bertahap (staggered fade + slide up),
+        // pola yang sama persis dengan reveal kartu di Daftar Guru (.guru-card-reveal):
+        // elemen mulai dari kondisi "belum ada" (opacity 0 + sedikit turun ke bawah),
+        // lalu satu-satu muncul smooth ke posisi normalnya -- bukan langsung "nyentak"
+        // sekali tampil semua.
+        // lanjutkanCallback() baru dipanggil SETELAH siswa menutup notif -- ini yang
+        // bikin progres/soal berikutnya (dan timernya) ikut "berhenti" sampai notifnya
+        // beneran ditutup.
         function tampilkanNotifJawabTerlaluCepat(lanjutkanCallback) {
             const overlayLama = document.getElementById('overlay-notif-jawab-cepat');
             if (overlayLama) overlayLama.remove();
 
             const overlay = document.createElement('div');
             overlay.id = 'overlay-notif-jawab-cepat';
-            overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4';
+            overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4 opacity-0 transition-opacity duration-300 ease-out';
             overlay.innerHTML = `
-                <div id="kotak-notif-jawab-cepat" class="bg-white rounded-2xl shadow-2xl max-w-xs w-full p-5 text-center transform transition-all duration-200 scale-95 opacity-0">
-                    <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center text-2xl">
+                <div id="kotak-notif-jawab-cepat" class="bg-white rounded-2xl shadow-2xl max-w-xs w-full p-5 text-center transform transition-all duration-300 ease-out scale-95">
+                    <div id="ikon-notif-jawab-cepat" class="w-14 h-14 mx-auto mb-3 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center text-2xl opacity-0 translate-y-2 transition-all duration-500 ease-out">
                         <i class="fa-solid fa-bolt"></i>
                     </div>
-                    <p class="text-sm font-bold text-slate-800 leading-snug mb-4">
+                    <p id="teks-notif-jawab-cepat" class="text-sm font-bold text-slate-800 leading-snug mb-4 opacity-0 translate-y-2 transition-all duration-500 ease-out">
                         Eh, jarinya cepet banget kayak kilat. Pelan-pelan aja bacanya, nanti salah loh!
                     </p>
                     <button id="btn-tutup-notif-jawab-cepat" type="button" disabled
-                        class="w-full py-2.5 rounded-xl bg-slate-200 text-slate-400 font-bold text-xs cursor-not-allowed transition-all">
+                        class="w-full py-2.5 rounded-xl bg-slate-200 text-slate-400 font-bold text-xs cursor-not-allowed transition-all duration-300 opacity-0 translate-y-2">
                         Mengerti (<span id="hitung-mundur-notif-cepat">${DURASI_COUNTDOWN_NOTIF_CEPAT}</span>)
                     </button>
                 </div>`;
             document.body.appendChild(overlay);
 
+            const kotak = document.getElementById('kotak-notif-jawab-cepat');
+            const ikon = document.getElementById('ikon-notif-jawab-cepat');
+            const teks = document.getElementById('teks-notif-jawab-cepat');
+            const tombolTutup = document.getElementById('btn-tutup-notif-jawab-cepat');
+
+            // Tahap 1 (langsung): backdrop + kartu fade-in duluan, masih kosong dulu.
             requestAnimationFrame(() => {
-                const kotak = document.getElementById('kotak-notif-jawab-cepat');
-                if (kotak) kotak.classList.remove('scale-95', 'opacity-0');
+                overlay.classList.remove('opacity-0');
+                if (kotak) kotak.classList.remove('scale-95');
             });
 
-            const tombolTutup = document.getElementById('btn-tutup-notif-jawab-cepat');
+            // Tahap 2 (bertahap/staggered): ikon -> teks -> tombol, masing-masing
+            // muncul smooth dari transparan+sedikit turun ke posisi normalnya --
+            // delay-nya dibuat mirip transition-delay per item di .guru-card-reveal.
+            const JADWAL_REVEAL_ISI_NOTIF = [
+                { el: ikon, delay: 150 },
+                { el: teks, delay: 260 },
+                { el: tombolTutup, delay: 370 }
+            ];
+            JADWAL_REVEAL_ISI_NOTIF.forEach(({ el, delay }) => {
+                if (!el) return;
+                setTimeout(() => el.classList.remove('opacity-0', 'translate-y-2'), delay);
+            });
+
             const teksHitung = document.getElementById('hitung-mundur-notif-cepat');
             let sisaHitung = DURASI_COUNTDOWN_NOTIF_CEPAT;
 
