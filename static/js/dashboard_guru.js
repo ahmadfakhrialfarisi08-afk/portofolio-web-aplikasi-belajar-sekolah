@@ -932,9 +932,23 @@
         // Notifikasi "tugas ditarik" untuk Dashboard Siswa. Disimpan per kelas supaya
         // saat guru menarik tugas, siswa di kelas tsb dapat notif berisi nama guru
         // dan pesan bahwa tugas tersebut ditarik/tidak perlu dikerjakan lagi.
-        function simpanNotifTugasDitarik(namaKelas, tugasDitarik) {
+        //
+        // PERBAIKAN PERFORMA: dulu di sini pakai getSync() (XHR SINKRON, bisa
+        // membekukan seluruh tab beberapa detik). Sekarang pakai fetch() async
+        // biasa -- fungsi jadi async, tapi pemanggilnya (hapusTugasByID) TIDAK
+        // perlu nunggu (await) fungsi ini, karena efeknya cuma nambah notif
+        // buat siswa, tidak ada tampilan guru yang bergantung ke hasilnya.
+        async function simpanNotifTugasDitarik(namaKelas, tugasDitarik) {
             const key = `notif_tugas_${namaKelas.replace(/\s+/g, '_')}`;
-            const daftarNotif = getSync(key, []);
+            let daftarNotif = [];
+            try {
+                const res = await fetch(`/api/sync/${encodeURIComponent(key)}`);
+                const json = await res.json();
+                if (json.ok && json.data) daftarNotif = json.data;
+            } catch (e) {
+                const raw = localStorage.getItem(key);
+                daftarNotif = raw ? JSON.parse(raw) : [];
+            }
 
             const namaGuru = tugasDitarik.namaGuru || cariNamaGuruKelas(namaKelas);
             const judulTugas = tugasDitarik.judul || tugasDitarik.tipe || 'Tugas Pembelajaran';
@@ -959,8 +973,19 @@
         // ditarik (satu kotak notif per kelas), cuma beda `tipe` supaya Dashboard Siswa
         // bisa menampilkannya dengan tema hijau (kabar baik) alih-alih merah.
         function simpanNotifTambahanWaktu(namaKelas, tugasData, menitDitambah) {
+            simpanNotifTambahanWaktuAsync(namaKelas, tugasData, menitDitambah);
+        }
+        async function simpanNotifTambahanWaktuAsync(namaKelas, tugasData, menitDitambah) {
             const key = `notif_tugas_${namaKelas.replace(/\s+/g, '_')}`;
-            const daftarNotif = getSync(key, []);
+            let daftarNotif = [];
+            try {
+                const res = await fetch(`/api/sync/${encodeURIComponent(key)}`);
+                const json = await res.json();
+                if (json.ok && json.data) daftarNotif = json.data;
+            } catch (e) {
+                const raw = localStorage.getItem(key);
+                daftarNotif = raw ? JSON.parse(raw) : [];
+            }
 
             const namaGuru = tugasData.namaGuru || cariNamaGuruKelas(namaKelas);
             const judulTugas = tugasData.judul || tugasData.tipe || 'Tugas Pembelajaran';
@@ -2012,7 +2037,7 @@
         // ini scoped ke SATU tugas yang sedang dibuka (taskAktifDipilihUntukRekap),
         // jadi foto/nilai/pesan yang tampil & disimpan memang benar-benar milik
         // tugas itu, bukan status umum siswa di kelas.
-        function bukaPeriksaTugasDariRekap(idSiswa) {
+        async function bukaPeriksaTugasDariRekap(idSiswa) {
             if (!taskAktifDipilihUntukRekap) return;
             const { namaKelas, taskId } = taskAktifDipilihUntukRekap;
             const tasksKelasIni = getTasksKelas(namaKelas);
@@ -2021,7 +2046,14 @@
             if (!task || !murid) return;
 
             const kedaluwarsa = cekStatusTugasKedaluwarsaGuru(task);
-            const status = statusPengumpulanUntukTugas(murid, task, kedaluwarsa);
+            // PERBAIKAN PERFORMA: dulu di sini manggil statusPengumpulanUntukTugas()
+            // TANPA hasilPeriksaBulk -- itu artinya jatuh ke
+            // ambilHasilPeriksaTersimpan() yang pakai getSync() (XHR SINKRON,
+            // bisa membekukan seluruh tab). Sekarang ambil hasil periksa murid
+            // ini dulu lewat fetch async biasa (bulk isi 1 murid, pola sama
+            // dengan ambilHasilPeriksaBulkServer di bukaRekapPengumpulanTugas).
+            const hasilPeriksaBulk = await ambilHasilPeriksaBulkServer(taskId, [murid.id]);
+            const status = statusPengumpulanUntukTugas(murid, task, kedaluwarsa, hasilPeriksaBulk);
             if (!status.submitted) {
                 alert(`⚠️ INFO: ${murid.nama} belum/tidak mengumpulkan tugas ini.`);
                 return;
