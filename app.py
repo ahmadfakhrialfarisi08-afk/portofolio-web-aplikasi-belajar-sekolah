@@ -208,6 +208,26 @@ SYSTEM_PROMPT_AI_SUPPORT = (
 # Dashboard Siswa tombolnya memang sudah disembunyikan/dikunci untuk mereka.
 USERNAME_ADMIN_DEV = 'siswa'
 BORDER_ID_ADMIN = 'admin_dev'
+
+
+def _border_publik_aman(u):
+    """Ambil border_aktif seorang user, TAPI kalau ternyata border-nya
+    'admin_dev' padahal usernya BUKAN akun dev asli, turunkan paksa ke
+    'starter_pemula' -- sama kayak sanitasi yang sudah ada di
+    /api/kelas/roster. BUG YANG DIPERBAIKI: sanitasi itu dulu cuma
+    ditempel di /api/kelas/roster, sedangkan endpoint lain yang juga
+    nampilin border ke publik (/api/teman/cari, /api/teman/relasi,
+    profil publik siswa) masih baca border_aktif MENTAH tanpa sanitasi
+    -- jadi kalau ada akun siswa yang datanya somehow ke-set 'admin_dev'
+    (mis. data lama sebelum validasi di /api/profil/border ditambahkan),
+    border admin itu tetap kelihatan bocor ke siswa lain lewat 'Cari
+    Teman' walau siswa itu BUKAN akun dev. Sekarang semua endpoint yang
+    menampilkan border publik WAJIB lewat fungsi ini, satu sumber
+    kebenaran, supaya tidak ada celah yang kelewat lagi."""
+    border = u.get('border_aktif') or 'starter_pemula'
+    if border == BORDER_ID_ADMIN and u.get('username') != USERNAME_ADMIN_DEV:
+        return 'starter_pemula'
+    return border
  
 # Foto profil bawaan yang otomatis dipakai SEMUA siswa sejak awal (baik akun
 # dummy di bawah maupun akun baru lewat /register) sampai siswa yang
@@ -1830,7 +1850,7 @@ def api_teman_cari():
                 'nama': u['fullname'],
                 'kelas': u.get('kelas', '-'),
                 'status': _status_pertemanan(me, u['username']),
-                'border': u.get('border_aktif') or 'starter_pemula',
+                'border': _border_publik_aman(u),
                 # Foto profil siswa itu: kalau dia sudah pernah ganti foto sendiri
                 # lewat /api/profil/foto, itu yang dipakai (TIDAK PERNAH ditimpa
                 # di sini). Kalau belum pernah ganti sama sekali, otomatis fallback
@@ -1856,13 +1876,10 @@ def api_kelas_roster():
     hasil = []
     for u in users.values():
         if u['role'] == 'siswa' and u.get('kelas') == kelas:
-            border_terpasang = u.get('border_aktif') or 'starter_pemula'
-            # Sanitasi tambahan (jaga-jaga ada data lama sebelum validasi di
-            # /api/profil/border ditambahkan): kalau bukan akun dev asli tapi
-            # somehow border_aktif-nya 'admin_dev', jangan ikut ditampilkan
-            # sebagai admin ke Dashboard Guru -- turunkan ke starter.
-            if border_terpasang == BORDER_ID_ADMIN and u['username'] != USERNAME_ADMIN_DEV:
-                border_terpasang = 'starter_pemula'
+            # Sanitasi border dipusatkan di _border_publik_aman() (lihat
+            # definisinya di atas) -- dipakai sama di SEMUA endpoint yang
+            # menampilkan border publik, bukan cuma di sini.
+            border_terpasang = _border_publik_aman(u)
             hasil.append({
                 'username': u['username'],
                 'nama': u['fullname'],
@@ -2100,7 +2117,7 @@ def api_teman_relasi():
                 # border & foto disertakan biar dropdown 'Permintaan Pertemanan'
                 # bisa nampilin avatar+border+efek nama+title -- sama persis
                 # polanya kayak /api/teman/cari di atas.
-                'border': u.get('border_aktif') or 'starter_pemula',
+                'border': _border_publik_aman(u),
                 'foto': u.get('foto_profil') or FOTO_PROFIL_DEFAULT
             })
  
@@ -2112,7 +2129,7 @@ def api_teman_relasi():
                 'username': u['username'],
                 'nama': u['fullname'],
                 'kelas': u.get('kelas', '-'),
-                'border': u.get('border_aktif') or 'starter_pemula',
+                'border': _border_publik_aman(u),
                 'foto': u.get('foto_profil') or FOTO_PROFIL_DEFAULT
             })
  
@@ -2211,7 +2228,7 @@ def api_teman_profil(username):
         # Foto: pakai punya siswa itu sendiri kalau sudah pernah diganti, kalau
         # belum otomatis fallback ke foto_profil_default.jpg -- tidak pernah
         # menimpa foto yang sudah diganti siswa yang bersangkutan.
-        'border': u.get('border_aktif') or 'starter_pemula',
+        'border': _border_publik_aman(u),
         'foto': u.get('foto_profil') or FOTO_PROFIL_DEFAULT,
         # Sosial media yang diisi siswa itu sendiri lewat modal "Atur Sosial
         # Media" -> disimpan lewat /api/profil/sosmed di atas. Dipetakan jadi
