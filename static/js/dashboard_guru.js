@@ -1908,8 +1908,6 @@
             let hitungBelum = 0;
             const gridContainer = document.getElementById('modal-grid-bangku');
             const tbodyContainer = document.getElementById('modal-tabel-murid');
-            gridContainer.innerHTML = "";
-            tbodyContainer.innerHTML = "";
 
             // Roster murid cuma ditampilkan kalau memang terdaftar di kelas yang
             // sedang dibuka (m.kelas === namaKelas). Untuk saat ini cuma AHMAD &
@@ -1921,6 +1919,21 @@
                 gridContainer.innerHTML = `<p class="col-span-full text-center text-slate-400 italic py-6 text-sm">Belum ada data murid untuk kelas ini.</p>`;
                 tbodyContainer.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-400 italic">Belum ada data murid untuk kelas ini.</td></tr>`;
             }
+
+            // PERBAIKAN PERFORMA (PENTING, buat HP & laptop low-end): dulu di
+            // bawah ini dua kontainer (grid kursi + tabel murid) ditulis pakai
+            // `.innerHTML += ...` LANGSUNG di dalam forEach yang sama -- artinya
+            // SETIAP murid, browser membongkar ulang SEMUA kartu+baris+foto yang
+            // sudah dirender sebelumnya lalu parse ulang semua dari nol. Untuk N
+            // murid itu kerjanya ~N kali N, DAN dobel (grid maupun tabel sama-sama
+            // kena), plus tiap foto avatar ikut didekode ulang tiap kali dibongkar
+            // -- makin banyak murid di kelas, makin lama & makin nge-lag/nyendat
+            // waktu modal Denah Kelas ini dibuka (paling kerasa di HP/laptop
+            // low-end). Sekarang tiap kartu/baris cuma dikumpulkan ke array dulu,
+            // baru innerHTML di-set SEKALI di akhir loop (pola sama seperti
+            // bukaRekapPengumpulanTugas()) -- DOM & semua foto cuma dibangun 1x.
+            const potonganGridHTML = [];
+            const potonganTabelHTML = [];
 
             muridKelasIni.forEach((m) => {
                 let isCheck = m.sudahMengumpulkan;
@@ -1964,7 +1977,7 @@
                 }
 
                 // Render Denah Grid Card
-                gridContainer.innerHTML += `
+                potonganGridHTML.push(`
                     <div onclick="periksaSiswa(${m.id})" class="p-3 rounded-2xl border-2 ${cardBangkuStyle} transition-all flex flex-col justify-between space-y-2 relative group">
                         <div class="flex items-center justify-between gap-1">
                             <span class="text-[10px] font-mono font-bold text-slate-500 truncate">${m.title} ${penandaPintu}</span>
@@ -1980,7 +1993,7 @@
                             <span class="text-slate-400">Status:</span> ${statusLabelText}
                         </div>
                     </div>
-                `;
+                `);
 
                 // Render Tabel Khusus Siswa (Terhubung per siswa: Foto, Border, Nama, Efek, Title)
                 let statusBadgeTabel = "";
@@ -1999,7 +2012,7 @@
                     aksiTabelButton = `<span class="text-xs text-slate-400 font-medium italic">Tidak Ada Tugas</span>`;
                 }
 
-                tbodyContainer.innerHTML += `
+                potonganTabelHTML.push(`
                     <tr class="hover:bg-slate-50 transition-colors">
                         <td class="py-3 px-4 font-extrabold text-slate-500">Meja #${m.meja}</td>
                         <td class="py-3 px-4">
@@ -2027,8 +2040,15 @@
                             ${aksiTabelButton}
                         </td>
                     </tr>
-                `;
+                `);
             });
+
+            // Satu-satunya penulisan innerHTML untuk grid & tabel -- DOM & semua
+            // foto cuma dibangun sekali, tidak peduli berapa jumlah murid.
+            if (muridKelasIni.length > 0) {
+                gridContainer.innerHTML = potonganGridHTML.join('');
+                tbodyContainer.innerHTML = potonganTabelHTML.join('');
+            }
 
             document.getElementById('badge-count-sudah').innerText = hitungSudah;
             document.getElementById('badge-count-belum').innerText = hitungBelum;
@@ -2111,7 +2131,7 @@
                     <div class="w-full h-full overflow-y-auto p-2.5">
                         <p class="text-[10px] font-bold text-slate-500 mb-2">${daftarFoto.length} foto dikirim — klik salah satu untuk lihat ukuran penuh</p>
                         <div class="grid grid-cols-3 gap-2">
-                            ${daftarFoto.map(src => `<img src="${src}" onclick="window.open(this.src, '_blank')" class="w-full h-24 object-cover rounded-lg border border-slate-200 shadow-sm cursor-zoom-in hover:opacity-90 transition-all" alt="Tugas Siswa">`).join('')}
+                            ${daftarFoto.map(src => `<img src="${src}" onclick="window.open(this.src, '_blank')" class="w-full h-24 object-cover rounded-lg border border-slate-200 shadow-sm cursor-zoom-in hover:opacity-90 transition-all" alt="Tugas Siswa" loading="lazy" decoding="async">`).join('')}
                         </div>
                     </div>`;
             } else {
@@ -2144,7 +2164,7 @@
                     <div class="w-full h-full overflow-y-auto p-2.5">
                         <p class="text-[10px] font-bold text-slate-500 mb-2">${daftarFoto.length} foto dikirim — klik salah satu untuk lihat ukuran penuh</p>
                         <div class="grid grid-cols-3 gap-2">
-                            ${daftarFoto.map(src => `<img src="${src}" onclick="window.open(this.src, '_blank')" class="w-full h-24 object-cover rounded-lg border border-slate-200 shadow-sm cursor-zoom-in hover:opacity-90 transition-all" alt="Tugas Siswa">`).join('')}
+                            ${daftarFoto.map(src => `<img src="${src}" onclick="window.open(this.src, '_blank')" class="w-full h-24 object-cover rounded-lg border border-slate-200 shadow-sm cursor-zoom-in hover:opacity-90 transition-all" alt="Tugas Siswa" loading="lazy" decoding="async">`).join('')}
                         </div>
                     </div>`;
             } else {
@@ -2743,7 +2763,7 @@
 
                 return `
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 flex gap-4">
-                    <img src="${p.foto}" class="w-20 h-20 rounded-xl object-cover border border-slate-200 flex-shrink-0 cursor-pointer" onclick="bukaModalBuktiPrestasi('${p._kelas}', '${p.id}')" alt="Bukti prestasi">
+                    <img src="${p.foto}" class="w-20 h-20 rounded-xl object-cover border border-slate-200 flex-shrink-0 cursor-pointer" onclick="bukaModalBuktiPrestasi('${p._kelas}', '${p.id}')" alt="Bukti prestasi" loading="lazy" decoding="async">
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between gap-2 flex-wrap">
                             <div>
