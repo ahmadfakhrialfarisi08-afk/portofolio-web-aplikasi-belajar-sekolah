@@ -747,23 +747,59 @@
         // guru benar-benar menekan tombol aksi (bukan Batal / klik luar modal).
         let _callbackKonfirmasiGenerikAktif = null;
 
-        function bukaModalKonfirmasiGenerik({ judul = 'Konfirmasi', pesan = '', teksTombol = 'Ya, Lanjutkan', ikon = 'fa-triangle-exclamation', warnaTombol = 'rose', onKonfirmasi }) {
+        // FITUR TAMBAHAN: parameter `tampilkanInputKeterangan` (opsional) & `keteranganAwal`
+        // (opsional, nilai default yang sudah keisi di textarea). Kalau
+        // tampilkanInputKeterangan true, textarea #konfirmasi-generik-input-keterangan
+        // ditampilkan & WAJIB diisi sebelum tombol aksi bisa diklik (guru harus
+        // menjelaskan pelanggarannya apa -- prinsip "Harus Ada Tombol Aksi Nyata"
+        // dari sisi siswa dimulai dari sini). `onKonfirmasi` sekarang dipanggil
+        // dengan 1 argumen: teks keterangan yang diisi guru (string kosong kalau
+        // tampilkanInputKeterangan tidak dipakai sama sekali).
+        function bukaModalKonfirmasiGenerik({ judul = 'Konfirmasi', pesan = '', teksTombol = 'Ya, Lanjutkan', ikon = 'fa-triangle-exclamation', warnaTombol = 'rose', tampilkanInputKeterangan = false, keteranganAwal = '', onKonfirmasi }) {
             const modal = document.getElementById('modal-konfirmasi-generik');
-            if (!modal) { if (onKonfirmasi) onKonfirmasi(); return; }
+            if (!modal) { if (onKonfirmasi) onKonfirmasi(keteranganAwal || ''); return; }
 
             document.getElementById('konfirmasi-generik-judul').querySelector('span').textContent = judul;
             document.getElementById('konfirmasi-generik-ikon').className = `fa-solid ${ikon} text-${warnaTombol === 'rose' ? 'rose' : 'amber'}-500`;
             document.getElementById('konfirmasi-generik-pesan').textContent = pesan;
 
+            const wrapKeterangan = document.getElementById('konfirmasi-generik-wrap-keterangan');
+            const inputKeterangan = document.getElementById('konfirmasi-generik-input-keterangan');
             const btnAksi = document.getElementById('konfirmasi-generik-btn-aksi');
+
+            if (wrapKeterangan && inputKeterangan) {
+                if (tampilkanInputKeterangan) {
+                    wrapKeterangan.classList.remove('hidden');
+                    inputKeterangan.value = keteranganAwal || '';
+                    // Tombol aksi baru aktif kalau keterangan sudah diisi -- guru
+                    // tidak bisa asal klik tanpa menjelaskan pelanggarannya apa.
+                    const perbaruiStatusTombol = () => {
+                        btnAksi.disabled = !inputKeterangan.value.trim();
+                        btnAksi.classList.toggle('opacity-50', btnAksi.disabled);
+                        btnAksi.classList.toggle('cursor-not-allowed', btnAksi.disabled);
+                    };
+                    inputKeterangan.oninput = perbaruiStatusTombol;
+                    perbaruiStatusTombol();
+                    setTimeout(() => inputKeterangan.focus(), 50);
+                } else {
+                    wrapKeterangan.classList.add('hidden');
+                    inputKeterangan.value = '';
+                    inputKeterangan.oninput = null;
+                    btnAksi.disabled = false;
+                    btnAksi.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+
             btnAksi.querySelector('span').textContent = teksTombol;
             btnAksi.className = `px-6 py-2.5 bg-${warnaTombol}-600 hover:bg-${warnaTombol}-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-${warnaTombol}-500/20 flex items-center gap-2`;
 
             _callbackKonfirmasiGenerikAktif = onKonfirmasi || null;
             btnAksi.onclick = function () {
+                if (btnAksi.disabled) return;
                 const cb = _callbackKonfirmasiGenerikAktif;
+                const teksKeterangan = (tampilkanInputKeterangan && inputKeterangan) ? inputKeterangan.value.trim() : '';
                 tutupModalKonfirmasiGenerik();
-                if (cb) cb();
+                if (cb) cb(teksKeterangan);
             };
 
             modal.classList.remove('hidden');
@@ -773,6 +809,10 @@
             const modal = document.getElementById('modal-konfirmasi-generik');
             if (modal) modal.classList.add('hidden');
             _callbackKonfirmasiGenerikAktif = null;
+            const wrapKeterangan = document.getElementById('konfirmasi-generik-wrap-keterangan');
+            const inputKeterangan = document.getElementById('konfirmasi-generik-input-keterangan');
+            if (wrapKeterangan) wrapKeterangan.classList.add('hidden');
+            if (inputKeterangan) { inputKeterangan.value = ''; inputKeterangan.oninput = null; }
         }
 
         // Menampilkan toast sukses (tab kecil di pojok kanan atas) sebagai pengganti
@@ -1176,7 +1216,7 @@
         // supaya pemanggil (klikTogglePelanggaranSatuMurid dkk) bisa
         // langsung render ulang kartu tanpa nunggu -- kalau ternyata
         // requestnya GAGAL, cache dibalikin lagi & guru diberi tahu.
-        async function setPelanggaranAktifUntukUsername(username, aktif) {
+        async function setPelanggaranAktifUntukUsername(username, aktif, keterangan = '') {
             if (aktif) _cachePelanggaranAktifServer[username] = true;
             else delete _cachePelanggaranAktifServer[username];
 
@@ -1184,7 +1224,12 @@
                 const res = await fetch('/api/pelanggaran/set', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, aktif })
+                    // 'keterangan' cuma relevan waktu aktif=true (lihat api_pelanggaran_set
+                    // di app.py -- diabaikan server saat mencabut/aktif=false). Inilah teks
+                    // yang bakal ditampilkan APA ADANYA di overlay peringatan siswa, jadi
+                    // guru WAJIB mengisinya lewat modal di klikTogglePelanggaranSatuMurid()/
+                    // klikKasihPelanggaranSemuaBelumKerja() sebelum sampai ke sini.
+                    body: JSON.stringify({ username, aktif, keterangan })
                 });
                 const json = await res.json();
                 if (!json || !json.success) throw new Error((json && json.message) || 'Gagal menyimpan.');
@@ -1215,21 +1260,40 @@
         // perbaruiTombolPelanggaranDiKartu di bawah), tanpa network & tanpa
         // menyentuh kartu murid lain sama sekali -- posisi scroll & kartu
         // lain tidak lagi ke-reset/dibangun ulang.
+        // FITUR TAMBAHAN: mengaktifkan pelanggaran sekarang WAJIB lewat modal
+        // konfirmasi berisi input "Keterangan Pelanggaran" -- guru harus
+        // menjelaskan pelanggarannya apa dulu sebelum tersimpan ke server,
+        // supaya overlay siswa tidak lagi menampilkan kotak keterangan kosong.
+        // Mencabut pelanggaran (sudahAktif=true -> mau dibatalkan) TETAP instan
+        // tanpa modal, karena tidak butuh keterangan apa pun.
         function klikTogglePelanggaranSatuMurid(muridId) {
             const murid = sampleMurid30.find(m => m.id === muridId);
             if (!murid || !taskAktifDipilihUntukRekap) return;
 
             const sudahAktif = siswaPunyaPelanggaranAktif(murid.username);
-            const akanAktif = !sudahAktif;
-            setPelanggaranAktifUntukUsername(murid.username, akanAktif);
 
             if (sudahAktif) {
+                setPelanggaranAktifUntukUsername(murid.username, false);
                 tampilkanToastSuksesKirimTugas('Dibatalkan', `Status Pelanggaran Aktif untuk ${murid.nama} sudah dibatalkan.`);
-            } else {
-                tampilkanToastSuksesKirimTugas('Pelanggaran Diberikan', `${murid.nama} ditandai Pelanggaran Aktif. Overlay peringatan akan muncul saat dashboard-nya dibuka.`);
+                perbaruiTombolPelanggaranDiKartu(muridId, false);
+                return;
             }
 
-            perbaruiTombolPelanggaranDiKartu(muridId, akanAktif);
+            const task = getTasksKelas(taskAktifDipilihUntukRekap.namaKelas).find(t => t.id === taskAktifDipilihUntukRekap.taskId);
+            bukaModalKonfirmasiGenerik({
+                judul: 'Kasih Pelanggaran',
+                pesan: `Jelaskan pelanggaran ${murid.nama} secara spesifik -- teks ini akan langsung dilihat siswa di dashboard-nya.`,
+                teksTombol: 'Ya, Kasih Pelanggaran',
+                ikon: 'fa-triangle-exclamation',
+                warnaTombol: 'rose',
+                tampilkanInputKeterangan: true,
+                keteranganAwal: task ? `Belum mengerjakan tugas "${task.judul || 'tugas ini'}".` : '',
+                onKonfirmasi: function (keterangan) {
+                    setPelanggaranAktifUntukUsername(murid.username, true, keterangan);
+                    tampilkanToastSuksesKirimTugas('Pelanggaran Diberikan', `${murid.nama} ditandai Pelanggaran Aktif. Overlay peringatan akan muncul saat dashboard-nya dibuka.`);
+                    perbaruiTombolPelanggaranDiKartu(muridId, true);
+                }
+            });
         }
 
         // Update tampilan SATU tombol "Kasih Pelanggaran" langsung di DOM
@@ -1283,9 +1347,11 @@
                 teksTombol: 'Ya, Kasih Pelanggaran',
                 ikon: 'fa-triangle-exclamation',
                 warnaTombol: 'rose',
-                onKonfirmasi: function () {
+                tampilkanInputKeterangan: true,
+                keteranganAwal: `Belum mengerjakan tugas "${task.judul || 'tugas ini'}" sampai batas waktu yang ditentukan.`,
+                onKonfirmasi: function (keterangan) {
                     belumKerja.forEach(m => {
-                        setPelanggaranAktifUntukUsername(m.username, true);
+                        setPelanggaranAktifUntukUsername(m.username, true, keterangan);
                         perbaruiTombolPelanggaranDiKartu(m.id, true);
                     });
                     tampilkanToastSuksesKirimTugas('Pelanggaran Diberikan', `${belumKerja.length} murid yang belum mengerjakan tugas ini sudah ditandai Pelanggaran Aktif.`);
