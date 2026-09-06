@@ -98,8 +98,27 @@
             // sebelum muatCacheTugasSemuaKelas() di DOMContentLoaded selesai)
             // -- fallback baca localStorage SAJA, TANPA bikin request baru
             // ke server, supaya tidak balik lagi ke pola lama yang boros.
+            //
+            // PERBAIKAN PERFORMA (PENTING): sebelum ini, baris di bawah malah
+            // manggil getSync() -- yang di dalamnya pakai XMLHttpRequest
+            // SYNCHRONOUS (xhr.open(..., false)). XHR sinkron itu MEMBEKUKAN
+            // SELURUH TAB (bukan cuma fungsi ini) sampai server selesai
+            // membalas -- scroll, klik, bahkan animasi CSS ikut berhenti.
+            // Fungsi ini dipanggil tiap 5 detik lewat
+            // setInterval(cekBelJamMengajarOtomatis, 5000) untuk SETIAP kelas
+            // yang jadwalnya lagi "ONGOING" -- jadi kalau pas dipanggil
+            // _cacheTugasSemuaKelas belum sempat selesai dimuat (async, baru
+            // beres beberapa saat setelah halaman dibuka) DAN server lagi
+            // agak lambat balas (mis. PythonAnywhere free tier), tab bisa
+            // beku berkali-kali, berulang tiap 5 detik -- inilah sumber
+            // "berat"/macet yang kerasa walau modal Rekap cuma isi 7 murid.
+            // Sekarang cuma baca localStorage (instan, tanpa network sama
+            // sekali) selama cache belum siap; begitu
+            // muatCacheTugasSemuaKelas() selesai di background, pemanggilan
+            // berikutnya otomatis dapat data fresh dari cache memori.
             if (_cacheTugasSemuaKelas === null) {
-                return getSync(_kunciTugasKelas(namaKelas), []);
+                const raw = localStorage.getItem(_kunciTugasKelas(namaKelas));
+                return raw ? JSON.parse(raw) : [];
             }
             return _cacheTugasSemuaKelas[namaKelas] || [];
         }
