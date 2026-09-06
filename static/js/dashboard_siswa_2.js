@@ -771,21 +771,51 @@
         // tidak dihitung ulang dari urutan array di sini).
         let daftarGuruSekolah = [];
 
+        // Status pemuatan data guru dari server, dipakai renderListKelolaGuru()
+        // supaya bisa membedakan 3 kondisi berbeda:
+        //   'idle'    -> belum pernah dicoba fetch sama sekali
+        //   'loading' -> fetch sedang berjalan
+        //   'error'   -> fetch terakhir GAGAL (mis. 429 Too Many Requests / network)
+        //   'success' -> fetch terakhir berhasil (daftarGuruSekolah dipercaya valid,
+        //                walau isinya bisa saja memang kosong)
+        // BUG YANG DIPERBAIKI: sebelumnya tidak ada status ini sama sekali, jadi
+        // begitu fetch gagal (server rate-limit dsb), daftarGuruSekolah cuma diam
+        // di posisi [] dan modal "Kelola Guru" menampilkan "Belum ada data guru"
+        // -- padahal aslinya "gagal ambil data", bukan "memang tidak ada data".
+        let statusMuatGuru = 'idle';
+
         let filterGuruAktif = { tingkat: 'semua', jurusan: 'semua' };
 
-        async function muatDaftarGuru() {
+        async function muatDaftarGuru(percobaan = 0) {
+            statusMuatGuru = 'loading';
             try {
                 const res = await fetch('/api/guru/list');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const json = await res.json();
                 if (json.success) {
                     daftarGuruSekolah = json.guru;
+                    statusMuatGuru = 'success';
                     renderDaftarGuru();
                     // Panel "Kelola Guru" (kalau sedang terbuka, mis. abis
                     // simpan/hapus) ikut di-refresh supaya listnya juga sinkron.
                     renderListKelolaGuru();
+                } else {
+                    throw new Error('Response sukses=false dari /api/guru/list');
                 }
             } catch (e) {
                 console.error('Gagal memuat daftar guru:', e);
+                // Server (terutama hosting gratisan) kadang balas 429 Too Many
+                // Requests saat banyak fetch nyala bersamaan di awal load --
+                // coba lagi 1x dengan jeda singkat sebelum benar-benar menyerah,
+                // supaya kasus rate-limit sesaat tidak langsung dianggap "kosong".
+                if (percobaan < 2) {
+                    setTimeout(() => muatDaftarGuru(percobaan + 1), 1200 * (percobaan + 1));
+                    return;
+                }
+                statusMuatGuru = 'error';
+                // Modal "Kelola Guru" (kalau sedang terbuka) perlu tahu fetch-nya
+                // gagal total, bukan cuma diam menampilkan list lama/kosong.
+                renderListKelolaGuru();
             }
         }
 
@@ -1062,10 +1092,21 @@
         function bukaModalKelolaGuru() {
             if (!akunIniAdminDev()) return; // jaga-jaga; tombolnya memang sudah disembunyikan
             tutupFormGuru();
-            renderListKelolaGuru();
             const modal = document.getElementById('modal-kelola-guru');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            // BUG YANG DIPERBAIKI: dulu di sini cuma renderListKelolaGuru() dari
+            // cache lokal (daftarGuruSekolah) tanpa fetch ulang -- jadi kalau
+            // fetch awal saat DOMContentLoaded sempat gagal/kena rate-limit
+            // server, modal ini akan TERUS menampilkan "Belum ada data guru"
+            // walau data guru aslinya ada di server, sampai halaman di-reload.
+            // Sekarang tiap modal dibuka, data ditarik ulang dari server dulu --
+            // renderListKelolaGuru() langsung dipanggil sekali (pakai data yang
+            // ada di memori, biar modal tidak kosong-melompong nunggu network),
+            // lalu dipanggil lagi otomatis dari dalam muatDaftarGuru() begitu
+            // hasil fetch terbaru datang.
+            renderListKelolaGuru();
+            muatDaftarGuru();
         }
 
         function tutupModalKelolaGuru() {
@@ -1077,6 +1118,20 @@
         function renderListKelolaGuru() {
             const list = document.getElementById('list-kelola-guru');
             if (!list) return; // modal belum pernah dibuka / bukan akun admin
+
+            // Kalau list masih kosong TAPI itu karena fetch masih berjalan atau
+            // baru saja gagal, jangan tampilkan "Belum ada data guru" -- itu
+            // pesan yang seharusnya cuma muncul kalau server memang konfirmasi
+            // datanya kosong (statusMuatGuru === 'success' & array-nya kosong).
+            if (daftarGuruSekolah.length === 0 && statusMuatGuru === 'loading') {
+                list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> Memuat data guru\u2026</p>';
+                return;
+            }
+            if (daftarGuruSekolah.length === 0 && statusMuatGuru === 'error') {
+                list.innerHTML = '<p class="text-xs text-red-500 text-center py-4">Gagal memuat data guru dari server (koneksi/server sedang sibuk). <button type="button" onclick="muatDaftarGuru()" class="underline font-bold">Coba lagi</button></p>';
+                return;
+            }
+
             list.innerHTML = daftarGuruSekolah.map(g => {
                 const jenisProduktif = g.jenis === 'produktif';
                 const badgeJenis = jenisProduktif
