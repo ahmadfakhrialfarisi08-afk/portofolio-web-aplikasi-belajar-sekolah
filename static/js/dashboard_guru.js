@@ -1317,16 +1317,6 @@
             // mengikuti perubahan itu, bukan data lama yang nyangkut di memori.
             if (!_dariSinkron && namaKelas === 'XII TKJ 3') sinkronBorderRosterDariServer();
 
-            // Tarik status Pelanggaran Aktif TERBARU dari server (lihat catatan
-            // besar di _cachePelanggaranAktifServer di atas) tiap kali jendela ini
-            // dibuka pertama kali -- supaya tombol "Kasih Pelanggaran"/"Batalkan"
-            // tiap murid akurat walau statusnya barusan diubah dari perangkat lain.
-            if (!_dariSinkron) {
-                muatPelanggaranAktifDariServer().then(function () {
-                    bukaRekapPengumpulanTugas(namaKelas, taskId, true);
-                });
-            }
-
             const tasksKelasIni = getTasksKelas(namaKelas);
             const task = tasksKelasIni.find(t => t.id === taskId);
             if (!task) {
@@ -1335,23 +1325,17 @@
             }
 
             const muridKelasIni = sampleMurid30.filter(m => m.kelas === namaKelas);
-
-            // Tarik data pengumpulan tugas ASLI semua siswa + hasil periksa
-            // (nilai/catatan) semua siswa SEKALIGUS secara paralel -- masing-
-            // masing sudah 1 request untuk seluruh kelas (lihat catatan besar
-            // di ambilSubmisiTugasServer() & ambilHasilPeriksaBulkServer()),
-            // dan Promise.all di sini membuat keduanya jalan BARENGAN alih-alih
-            // menunggu bergantian, jadi total waktu tunggu kira-kira cuma
-            // selama request yang paling lambat, bukan jumlah keduanya.
-            const [submisiTugasHasil, hasilPeriksaBulk] = await Promise.all([
-                ambilSubmisiTugasServer(taskId),
-                ambilHasilPeriksaBulkServer(taskId, muridKelasIni.map(m => m.id))
-            ]);
-            window._cacheSubmisiTugas[taskId] = submisiTugasHasil;
-
-            const kedaluwarsa = cekStatusTugasKedaluwarsaGuru(task);
             const kelasInfo = daftarSeluruhKelasDummy.find(k => k.nama === namaKelas);
 
+            // PERBAIKAN RESPONSIVITAS (PENTING): dulu jendela ini baru KELIHATAN
+            // (classList.remove('hidden')) di paling akhir fungsi, SETELAH kedua
+            // fetch di bawah (+ fetch pelanggaran yang terpisah) selesai -- jadi
+            // dari klik sampai modal kelihatan, guru cuma lihat layar diam,
+            // padahal info kelas/tugas/deadline ini semua sudah ada di memori
+            // lokal (getTasksKelas() sudah dari cache, tidak butuh network sama
+            // sekali). Sekarang info ini + jendelanya langsung ditampilkan
+            // DULUAN (dengan skeleton loading di grid), baru status tiap murid
+            // menyusul begitu network selesai -- klik jadi terasa instan.
             document.getElementById('rekap-tugas-badge-kelas').innerText = namaKelas;
             document.getElementById('rekap-tugas-badge-tipe').innerText = task.tipe || 'Tugas';
             document.getElementById('rekap-tugas-text-dikirim').innerText = formatWaktuKirimTugasGuru(task);
@@ -1360,7 +1344,37 @@
             document.getElementById('rekap-tugas-instruksi').innerText = task.teks || '-';
 
             const gridContainer = document.getElementById('rekap-tugas-grid-bangku');
-            gridContainer.innerHTML = '';
+            if (!_dariSinkron) {
+                gridContainer.innerHTML = Array.from({ length: Math.max(muridKelasIni.length, 1) })
+                    .map(() => `<div class="p-3 rounded-2xl border-2 border-slate-200 bg-slate-100 animate-pulse h-28"></div>`)
+                    .join('');
+            }
+            document.getElementById('modal-rekap-pengumpulan-tugas').classList.remove('hidden');
+
+            // Tarik status Pelanggaran Aktif TERBARU (lihat catatan besar di
+            // _cachePelanggaranAktifServer di atas) + data pengumpulan tugas ASLI
+            // semua siswa + hasil periksa (nilai/catatan) semua siswa SEKALIGUS
+            // dalam SATU putaran Promise.all. Dulu status Pelanggaran ditarik
+            // TERPISAH lewat pemanggilan ulang seluruh fungsi ini setelah
+            // selesai -- artinya 2 putaran network BERURUTAN (nunggu 2x).
+            // Sekarang cuma 1 putaran paralel, jadi total waktu tunggu kira-kira
+            // cuma selama request yang paling lambat, bukan dua kali lipat.
+            const [, submisiTugasHasil, hasilPeriksaBulk] = await Promise.all([
+                _dariSinkron ? Promise.resolve() : muatPelanggaranAktifDariServer(),
+                ambilSubmisiTugasServer(taskId),
+                ambilHasilPeriksaBulkServer(taskId, muridKelasIni.map(m => m.id))
+            ]);
+            window._cacheSubmisiTugas[taskId] = submisiTugasHasil;
+
+            // Guard anti stale-response: kalau selagi nunggu network di atas,
+            // guru sudah keburu tutup jendela ini atau pindah buka tugas LAIN,
+            // buang saja hasilnya -- supaya data tugas lama tidak nyelonong
+            // render ke jendela yang sekarang sudah beda/tertutup.
+            if (!taskAktifDipilihUntukRekap || taskAktifDipilihUntukRekap.taskId !== taskId || taskAktifDipilihUntukRekap.namaKelas !== namaKelas) {
+                return;
+            }
+
+            const kedaluwarsa = cekStatusTugasKedaluwarsaGuru(task);
 
             let hitungSudah = 0;
             let hitungBelum = 0;
