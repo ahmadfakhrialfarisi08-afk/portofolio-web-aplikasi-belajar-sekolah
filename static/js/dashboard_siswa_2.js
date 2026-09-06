@@ -1214,7 +1214,15 @@
             pilihJenisGuru('biasa');
             resetPreviewFotoGuru();
             document.getElementById('form-kelola-guru-pesan-gagal').classList.add('hidden');
-            document.getElementById('form-kelola-guru').classList.remove('hidden');
+            const form = document.getElementById('form-kelola-guru');
+            form.classList.remove('hidden');
+            // BUG YANG DIPERBAIKI: form ini terletak SETELAH #list-kelola-guru
+            // di dalam wadah yang sama-sama bisa discroll (lihat HTML). Kalau
+            // daftar gurunya panjang, form yang baru ditampilkan ini nongol di
+            // bawah semua kartu guru -- di luar area yang kelihatan -- sehingga
+            // kelihatan seperti "form tidak muncul sama sekali" padahal cuma
+            // ketutup scroll. Scroll otomatis ke form supaya langsung kelihatan.
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function bukaFormEditGuru(idGuru) {
@@ -1234,7 +1242,11 @@
             document.getElementById('input-guru-foto').value = g.foto || '';
             tampilkanPreviewFotoGuru(g.foto || '');
             document.getElementById('form-kelola-guru-pesan-gagal').classList.add('hidden');
-            document.getElementById('form-kelola-guru').classList.remove('hidden');
+            const form = document.getElementById('form-kelola-guru');
+            form.classList.remove('hidden');
+            // Sama seperti bukaFormTambahGuru() -- form ada di bawah daftar guru
+            // yang bisa panjang, jadi scroll otomatis biar kelihatan.
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function resetPreviewFotoGuru() {
