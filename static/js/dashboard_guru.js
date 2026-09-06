@@ -1063,6 +1063,30 @@
             } catch (e) { return null; }
         }
 
+        // PERBAIKAN PERFORMA (PENTING): statusPengumpulanUntukTugas() dipanggil
+        // di dalam forEach ke SEMUA murid sekelas (lihat bukaRekapPengumpulanTugas()
+        // & klikKasihPelanggaranSemuaBelumKerja()) -- kalau tiap panggilan
+        // memicu ambilHasilPeriksaTersimpan() sendiri-sendiri, itu berarti
+        // SEBANYAK JUMLAH MURID request XHR SYNCHRONOUS (blocking, lihat
+        // getSync() di atas) berturut-turut, jadi makin banyak murid = makin
+        // lama & makin sering tab freeze -- inilah sumber utama jendela Rekap
+        // kerasa berat walau muridnya cuma segelintir.
+        // Fungsi ini menarik SEMUA kunci hasilPeriksaTugas_<taskId>_<idSiswa>
+        // sekaligus dalam SATU request lewat /api/sync/bulk (pola yang sama
+        // dengan muatCacheTugasSemuaKelas()), jadi berapa pun jumlah murid,
+        // tetap cuma 1 request non-blocking.
+        async function ambilHasilPeriksaBulkServer(taskId, daftarIdSiswa) {
+            const daftarKunci = daftarIdSiswa.map(idSiswa => kunciHasilPeriksaTugas(taskId, idSiswa));
+            try {
+                const res = await fetch(`/api/sync/bulk?kunci=${encodeURIComponent(daftarKunci.join(','))}`);
+                const json = await res.json();
+                if (json.ok) return json.data || {};
+            } catch (e) {
+                console.warn('Gagal ambil hasil periksa tugas (bulk) dari server:', taskId, e);
+            }
+            return {};
+        }
+
         /* ============================================================
            FITUR TAMBAHAN — "KASIH PELANGGARAN" dari Rekap Pengumpulan per Tugas
            SEBELUMNYA status ditulis ke localStorage browser guru (key
@@ -1153,7 +1177,7 @@
 
         // Beri pelanggaran ke SEMUA murid di kelas ini yang belum mengerjakan
         // tugas yang sedang dibuka di jendela rekap -- dalam satu klik.
-        function klikKasihPelanggaranSemuaBelumKerja() {
+        async function klikKasihPelanggaranSemuaBelumKerja() {
             if (!taskAktifDipilihUntukRekap) return;
             const { namaKelas, taskId } = taskAktifDipilihUntukRekap;
 
@@ -1163,7 +1187,10 @@
 
             const kedaluwarsa = cekStatusTugasKedaluwarsaGuru(task);
             const muridKelasIni = sampleMurid30.filter(m => m.kelas === namaKelas);
-            const belumKerja = muridKelasIni.filter(m => !statusPengumpulanUntukTugas(m, task, kedaluwarsa).submitted);
+            // PERBAIKAN PERFORMA: sama seperti di bukaRekapPengumpulanTugas() --
+            // tarik hasil periksa semua murid dalam 1 request, bukan 1 per murid.
+            const hasilPeriksaBulk = await ambilHasilPeriksaBulkServer(taskId, muridKelasIni.map(m => m.id));
+            const belumKerja = muridKelasIni.filter(m => !statusPengumpulanUntukTugas(m, task, kedaluwarsa, hasilPeriksaBulk).submitted);
 
             if (belumKerja.length === 0) {
                 tampilkanToastSuksesKirimTugas('Tidak Ada', 'Semua murid di kelas ini sudah mengerjakan tugas ini.');
@@ -1192,18 +1219,23 @@
         // Dashboard Guru. Sekarang SEMUA murid (termasuk id #1) dibaca dari data ASLI
         // hasil POST /api/tugas/submit siswa ybs -- lihat ambilSubmisiTugasServer().
         window._cacheSubmisiTugas = window._cacheSubmisiTugas || {};
-        function ambilSubmisiTugasServer(taskId) {
-            // Sinkron (XHR), sama pola dengan getSync() -- dipanggil sekali tiap
-            // rekap dibuka (lihat bukaRekapPengumpulanTugas()), hasilnya di-cache
-            // per taskId supaya statusPengumpulanUntukTugas() per-murid tidak
-            // fetch berkali-kali saat looping roster.
+        // PERBAIKAN PERFORMA (PENTING): versi lama fungsi ini pakai XMLHttpRequest
+        // SYNCHRONOUS (xhr.open(..., false)) -- itu bikin SELURUH TAB BROWSER
+        // BENAR-BENAR FREEZE (klik, animasi, render kartu murid semuanya macet)
+        // selama menunggu balasan server. Karena bukaRekapPengumpulanTugas()
+        // dipanggil ulang OTOMATIS lewat 2 callback async begitu jendela ini
+        // dibuka (muatPelanggaranAktifDariServer() & sinkronBorderRosterDariServer()
+        // di atas), freeze ini bisa terjadi berturut-turut sampai 3x tiap kali
+        // jendela dibuka -- inilah yang bikin jendela ini kerasa berat walau
+        // jumlah muridnya sedikit (bukan soal jumlah data, tapi network blocking).
+        // Sekarang pakai fetch() biasa (non-blocking, async/await) -- sama
+        // pola dengan perbaikan getSync() di Dashboard Siswa.
+        async function ambilSubmisiTugasServer(taskId) {
             try {
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', `/api/tugas/submissions/${encodeURIComponent(taskId)}`, false);
-                xhr.send(null);
-                if (xhr.status === 200) {
-                    const res = JSON.parse(xhr.responseText);
-                    if (res.success) return res.submissions || {};
+                const res = await fetch(`/api/tugas/submissions/${encodeURIComponent(taskId)}`);
+                if (res.ok) {
+                    const resJson = await res.json();
+                    if (resJson.success) return resJson.submissions || {};
                 }
             } catch (e) {
                 console.warn('Gagal ambil data pengumpulan tugas dari server:', taskId, e);
@@ -1211,8 +1243,14 @@
             return {};
         }
 
-        function statusPengumpulanUntukTugas(murid, task, kedaluwarsa) {
-            const tersimpan = ambilHasilPeriksaTersimpan(task.id, murid.id);
+        function statusPengumpulanUntukTugas(murid, task, kedaluwarsa, hasilPeriksaBulk) {
+            // hasilPeriksaBulk (opsional): kalau pemanggil sudah menarik data
+            // hasil periksa SEMUA murid sekaligus lewat ambilHasilPeriksaBulkServer()
+            // (lihat catatan besar di sana), pakai itu -- supaya TIDAK perlu
+            // panggil ambilHasilPeriksaTersimpan() (blocking) lagi per murid.
+            const tersimpan = hasilPeriksaBulk
+                ? (hasilPeriksaBulk[kunciHasilPeriksaTugas(task.id, murid.id)] || null)
+                : ambilHasilPeriksaTersimpan(task.id, murid.id);
             const submisiSemua = window._cacheSubmisiTugas[task.id] || {};
             const entri = submisiSemua[murid.username];
 
@@ -1250,7 +1288,7 @@
         }
 
         let taskAktifDipilihUntukRekap = null;
-        function bukaRekapPengumpulanTugas(namaKelas, taskId, _dariSinkron) {
+        async function bukaRekapPengumpulanTugas(namaKelas, taskId, _dariSinkron) {
             taskAktifDipilihUntukRekap = { namaKelas, taskId };
 
             // Setiap kali jendela ini dibuka (bukan pas dipanggil ulang dari callback
@@ -1277,10 +1315,20 @@
                 return;
             }
 
-            // Tarik data pengumpulan tugas ASLI semua siswa (bukan simulasi hash
-            // lama) sekali tiap rekap dibuka, di-cache per taskId -- lihat catatan
-            // besar di statusPengumpulanUntukTugas().
-            window._cacheSubmisiTugas[taskId] = ambilSubmisiTugasServer(taskId);
+            const muridKelasIni = sampleMurid30.filter(m => m.kelas === namaKelas);
+
+            // Tarik data pengumpulan tugas ASLI semua siswa + hasil periksa
+            // (nilai/catatan) semua siswa SEKALIGUS secara paralel -- masing-
+            // masing sudah 1 request untuk seluruh kelas (lihat catatan besar
+            // di ambilSubmisiTugasServer() & ambilHasilPeriksaBulkServer()),
+            // dan Promise.all di sini membuat keduanya jalan BARENGAN alih-alih
+            // menunggu bergantian, jadi total waktu tunggu kira-kira cuma
+            // selama request yang paling lambat, bukan jumlah keduanya.
+            const [submisiTugasHasil, hasilPeriksaBulk] = await Promise.all([
+                ambilSubmisiTugasServer(taskId),
+                ambilHasilPeriksaBulkServer(taskId, muridKelasIni.map(m => m.id))
+            ]);
+            window._cacheSubmisiTugas[taskId] = submisiTugasHasil;
 
             const kedaluwarsa = cekStatusTugasKedaluwarsaGuru(task);
             const kelasInfo = daftarSeluruhKelasDummy.find(k => k.nama === namaKelas);
@@ -1292,7 +1340,6 @@
             document.getElementById('rekap-tugas-judul').innerText = task.judul || (kelasInfo ? kelasInfo.mapel : '-');
             document.getElementById('rekap-tugas-instruksi').innerText = task.teks || '-';
 
-            const muridKelasIni = sampleMurid30.filter(m => m.kelas === namaKelas);
             const gridContainer = document.getElementById('rekap-tugas-grid-bangku');
             gridContainer.innerHTML = '';
 
@@ -1304,7 +1351,7 @@
             }
 
             muridKelasIni.forEach(m => {
-                const status = statusPengumpulanUntukTugas(m, task, kedaluwarsa);
+                const status = statusPengumpulanUntukTugas(m, task, kedaluwarsa, hasilPeriksaBulk);
                 if (status.submitted) hitungSudah++; else hitungBelum++;
 
                 const penandaPintu = (m.meja === 1) ? `<span class="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">Pintu</span>` : '';
