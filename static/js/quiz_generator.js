@@ -4,6 +4,19 @@
  * ==========================================================
  */
 
+// Fisher-Yates shuffle generik -- dipakai buat acak urutan SOAL (PG/Essay/
+// Susun Kata) maupun acak urutan OPSI jawaban PG. Selalu mengembalikan array
+// BARU (nggak mengubah array aslinya), jadi bank soal master tetap bersih
+// dan tiap kali generate ulang, hasil acakannya beda lagi dari nol.
+function kocokArray(arr) {
+    const hasil = [...arr];
+    for (let i = hasil.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [hasil[i], hasil[j]] = [hasil[j], hasil[i]];
+    }
+    return hasil;
+}
+
 const QuizGenerator = {
     async generateSoal(kategori, topikMateri) {
         console.log(`Memproses AI Generator untuk kategori: ${kategori} dengan topik: ${topikMateri}`);
@@ -28,24 +41,48 @@ const QuizGenerator = {
     },
 
     generateMockPilihanGanda(topik) {
-        return [
+        // Opsi disimpan POLOS dulu (tanpa label "A. "/"B. " nempel di teksnya) +
+        // indexBenarAsli, supaya urutannya bisa diacak bebas lalu label huruf &
+        // jawabanBenar-nya dihitung ULANG sesuai posisi barunya -- bukan sekadar
+        // acak array string yang labelnya sudah kepatri dari awal.
+        const bankSoal = [
             {
                 id: 1,
                 pertanyaan: `Apa komponen utama yang dibahas dalam materi ${topik}?`,
-                opsi: ["A. Protokol Jaringan", "B. Kabel UTP", "C. Switch & Router", "D. Semua Benar"],
-                jawabanBenar: "D. Semua Benar"
+                opsiPolos: ["Protokol Jaringan", "Kabel UTP", "Switch & Router", "Semua Benar"],
+                indexBenarAsli: 3
             },
             {
                 id: 2,
                 pertanyaan: `Manakah perangkat yang berfungsi meneruskan paket data pada layer network?`,
-                opsi: ["A. Hub", "B. Router", "C. Repeater", "D. NIC"],
-                jawabanBenar: "B. Router"
+                opsiPolos: ["Hub", "Router", "Repeater", "NIC"],
+                indexBenarAsli: 1
             }
         ];
+
+        // 1) Urutan SOAL diacak dulu -- soal id 2 bisa saja tampil duluan.
+        const soalTeracak = kocokArray(bankSoal);
+
+        // 2) Tiap soal, urutan OPSI-nya ikut diacak, label A/B/C/D & jawabanBenar
+        //    dihitung ulang mengikuti posisi barunya.
+        return soalTeracak.map(soal => {
+            const opsiDenganPenanda = kocokArray(
+                soal.opsiPolos.map((teks, i) => ({ teks, iniJawabanBenar: i === soal.indexBenarAsli }))
+            );
+            const opsiBerlabel = opsiDenganPenanda.map((o, i) => `${String.fromCharCode(65 + i)}. ${o.teks}`);
+            const indexBenarBaru = opsiDenganPenanda.findIndex(o => o.iniJawabanBenar);
+
+            return {
+                id: soal.id,
+                pertanyaan: soal.pertanyaan,
+                opsi: opsiBerlabel,
+                jawabanBenar: opsiBerlabel[indexBenarBaru]
+            };
+        });
     },
 
     generateMockEssay(topik) {
-        return [
+        const bankSoal = [
             {
                 id: 1,
                 pertanyaan: `Jelaskan secara singkat fungsi dan cara kerja dari ${topik} dalam sistem jaringan komputer!`,
@@ -57,21 +94,30 @@ const QuizGenerator = {
                 kunciJawaban: "Siswa memberikan contoh troubleshooting yang logis."
             }
         ];
+
+        // Urutan soal Essay ikut diacak juga, konsisten dengan PG & Susun Kata.
+        return kocokArray(bankSoal);
     },
 
     generateMockSusunKata(topik) {
-        return [
-            {
-                id: 1,
-                kalimatAsli: "Konfigurasi jaringan lokal memerlukan kabel UTP dan switch",
-                kataAcak: ["dan", "kabel", "Konfigurasi", "switch", "UTP", "jaringan", "lokal", "memerlukan"]
-            },
-            {
-                id: 2,
-                kalimatAsli: "Router berfungsi sebagai penghubung antar network berbeda",
-                kataAcak: ["antar", "sebagai", "network", "penghubung", "berbeda", "Router", "berfungsi"]
-            }
+        const bankSoal = [
+            { id: 1, kalimatAsli: "Konfigurasi jaringan lokal memerlukan kabel UTP dan switch" },
+            { id: 2, kalimatAsli: "Router berfungsi sebagai penghubung antar network berbeda" }
         ];
+
+        // Urutan soal diacak, LALU kata-kata tiap kalimat di-acak DINAMIS dari
+        // kalimatAsli-nya sendiri (bukan pakai daftar kataAcak yang dihardcode/
+        // urutannya selalu sama tiap generate).
+        return kocokArray(bankSoal).map(soal => {
+            const kataAsli = soal.kalimatAsli.split(' ');
+            let kataAcak = kocokArray(kataAsli);
+            // Jaga-jaga: kalau (jarang banget) hasil kocokan kebetulan identik
+            // dengan urutan aslinya, acak sekali lagi supaya tetap jadi teka-teki.
+            if (kataAsli.length > 1 && kataAcak.every((kata, i) => kata === kataAsli[i])) {
+                kataAcak = kocokArray(kataAsli);
+            }
+            return { id: soal.id, kalimatAsli: soal.kalimatAsli, kataAcak };
+        });
     }
 };
 
