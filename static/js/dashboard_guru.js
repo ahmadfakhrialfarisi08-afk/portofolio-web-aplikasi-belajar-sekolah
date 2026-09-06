@@ -342,12 +342,23 @@
                 if (k.jurusan === 'TKR') badgeJurusanColor = "bg-amber-50 text-amber-700 border border-amber-200";
                 if (k.jurusan === 'TAV') badgeJurusanColor = "bg-purple-50 text-purple-600 border border-purple-200";
 
+                // Tugas yang sudah lewat deadline dianggap usai -- sama seperti pola
+                // yang sudah dipakai di renderSeluruhKelas() -- supaya kartu di
+                // Beranda ini tidak terus menampilkan tugas basi yang tenggatnya
+                // sudah lama lewat. Tugas ini TIDAK dihapus dari data (masih bisa
+                // dilihat lewat "Atur Tugas"/rekap) -- cuma disembunyikan dari sini.
+                // Begitu guru mengatur ulang deadline-nya jadi ke depan lagi lewat
+                // bukaModalEditTugas() -> kirimTugasKeKelas(), fungsi ini otomatis
+                // dipanggil ulang dan tugasnya muncul lagi di kartu Beranda.
+                const cekWaktuKelasIni = new Date().getTime();
+                const tugasAktifKelasIni = tasksKelasIni.filter(t => !t.deadlineTimestamp || cekWaktuKelasIni < t.deadlineTimestamp || t.studentSubmitted);
+
                 let activeTaskHTML = "";
                 let statusBadgeTugas = `<span class="text-xs text-amber-500 font-semibold italic"><i class="fa-solid fa-clock mr-1"></i> Belum ada tugas aktif</span>`;
 
-                if (tasksKelasIni.length > 0) {
-                    statusBadgeTugas = `<span class="text-xs text-emerald-600 font-bold"><i class="fa-solid fa-circle-check mr-1"></i> ${tasksKelasIni.length} Tugas/Catatan Aktif</span>`;
-                    activeTaskHTML = tasksKelasIni.map(data => `
+                if (tugasAktifKelasIni.length > 0) {
+                    statusBadgeTugas = `<span class="text-xs text-emerald-600 font-bold"><i class="fa-solid fa-circle-check mr-1"></i> ${tugasAktifKelasIni.length} Tugas/Catatan Aktif</span>`;
+                    activeTaskHTML = tugasAktifKelasIni.map(data => `
                         <div class="mt-2 p-2.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between" onclick="event.stopPropagation()">
                             <div class="text-xs">
                                 <span class="font-bold text-blue-700 block">${data.judul || data.tipe || '📌 Tugas'}</span>
@@ -429,9 +440,15 @@
                     if (k.jurusan === 'TKR') badgeJurusanColor = "bg-amber-50 text-amber-700 border border-amber-200";
                     if (k.jurusan === 'TAV') badgeJurusanColor = "bg-purple-50 text-purple-600 border border-purple-200";
 
+                    // Sama seperti renderContainerKelasTingkat()/renderSeluruhKelas() --
+                    // tugas yang tenggatnya sudah lewat disembunyikan dari kartu
+                    // Beranda ini (tapi tetap ada di data & di "Atur Tugas").
+                    const cekWaktuKelasIniJurusan = new Date().getTime();
+                    const tugasAktifKelasIni = tasksKelasIni.filter(t => !t.deadlineTimestamp || cekWaktuKelasIniJurusan < t.deadlineTimestamp || t.studentSubmitted);
+
                     let activeTaskHTML = "";
-                    if (tasksKelasIni.length > 0) {
-                        activeTaskHTML = tasksKelasIni.map(data => `
+                    if (tugasAktifKelasIni.length > 0) {
+                        activeTaskHTML = tugasAktifKelasIni.map(data => `
                             <div class="mt-2 p-2.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between" onclick="event.stopPropagation()">
                                 <div class="text-xs">
                                     <span class="font-bold text-blue-700 block">${data.judul || data.tipe}</span>
