@@ -1275,7 +1275,7 @@
                 document.getElementById('label-guru-foto-file').textContent = file.name;
                 tampilkanPreviewFotoGuru(dataUrl);
             } catch (e) {
-                alert('Gagal membuka foto. Coba pilih file lain.');
+                tampilkanToast('Gagal membuka foto. Coba pilih file lain.', 'error');
                 event.target.value = '';
             }
         }
@@ -1345,14 +1345,14 @@
                 const res = await fetch(`/api/guru/hapus/${idGuru}`, { method: 'POST' });
                 const json = await res.json();
                 if (!json.success) {
-                    alert(json.message || 'Gagal menghapus guru.');
+                    tampilkanToast(json.message || 'Gagal menghapus guru.', 'error');
                     return;
                 }
                 await muatDaftarGuru();
                 triggerDynamicIsland(`Guru "${g.nama}" berhasil dihapus.`);
             } catch (e) {
                 console.error('Gagal menghapus guru:', e);
-                alert('Gagal menghubungi server. Coba lagi.');
+                tampilkanToast('Gagal menghubungi server. Coba lagi.', 'error');
             }
         }
 
@@ -1437,13 +1437,13 @@
             if (!_guruSaranAktif) return;
             const { penjelasan, keadilan, komunikasi } = _ratingSaranGuruAktif;
             if (!penjelasan || !keadilan || !komunikasi) {
-                alert('Silakan beri rating bintang untuk ketiga aspek (Penjelasan Materi, Keadilan Nilai, Komunikasi) terlebih dahulu.');
+                tampilkanToast('Silakan beri rating bintang untuk ketiga aspek (Penjelasan Materi, Keadilan Nilai, Komunikasi) terlebih dahulu.', 'warning');
                 return;
             }
             const inputPesan = document.getElementById('saran-guru-pesan');
             const pesan = inputPesan.value.trim();
             if (!pesan) {
-                alert('Silakan tulis pesan saran/evaluasi terlebih dahulu.');
+                tampilkanToast('Silakan tulis pesan saran/evaluasi terlebih dahulu.', 'warning');
                 inputPesan.focus();
                 return;
             }
@@ -4076,7 +4076,7 @@
             // waktu login sebagai akun lain, malah nyangkut ke akun lain itu).
             // Itu penyebab bug foto profil "gak sinkron" yang pernah dilaporkan.
             if (nama.toLowerCase() === NAMA_PEMAIN_QUIZ.trim().toLowerCase()) {
-                alert(`Nama dummy tidak boleh sama persis dengan akun yang sedang login (${NAMA_PEMAIN_QUIZ}). Pakai nama lain untuk simulasi siswa dummy.`);
+                tampilkanToast(`Nama dummy tidak boleh sama persis dengan akun yang sedang login (${NAMA_PEMAIN_QUIZ}). Pakai nama lain untuk simulasi siswa dummy.`, 'warning');
                 return;
             }
 

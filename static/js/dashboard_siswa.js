@@ -2,6 +2,79 @@
             return new Date();
         }
 
+        // ============================================================
+        // TOAST / FLOATING SNACKBAR -- PENGGANTI alert() BAWAAN BROWSER
+        // ------------------------------------------------------------
+        // Dulu SEMUA notifikasi error/sukses/peringatan (rate-limit server,
+        // gagal kirim, gagal simpan, dst) pakai alert() bawaan browser --
+        // muncul dialog BLOCKING di tengah layar dengan judul nama domain
+        // ("el0fakhri.pythonanywhere.com says") dan WAJIB diklik "OK" dulu
+        // baru bisa lanjut, walau pesannya cuma info ringan (mis. "Terlalu
+        // banyak request, coba lagi sebentar ya."). Sekarang diganti kotak
+        // notifikasi melayang (floating snackbar) di pojok kanan atas, TIDAK
+        // menutupi/mem-block layar sama sekali, dan otomatis pudar (fade out)
+        // sendiri setelah beberapa detik -- user tidak perlu klik apa pun.
+        // Beberapa toast sekaligus akan bertumpuk rapi ke bawah (bukan saling
+        // menimpa), dibungkus sendiri-sendiri supaya bisa hilang independen.
+        // ============================================================
+        function tampilkanToast(pesan, tipe, durasiMs) {
+            // tipe: 'error' (merah, default -- mayoritas pemanggilan lama
+            // alert(json.message || '...') memang kasus gagal/error),
+            // 'warning' (oranye, buat validasi ringan spt "isi dulu formnya"),
+            // 'sukses' (hijau, buat konfirmasi berhasil).
+            tipe = tipe || 'error';
+            durasiMs = durasiMs || 3500;
+
+            const gayaPerTipe = {
+                error: { bg: 'bg-rose-50', border: 'border-rose-200', teks: 'text-rose-700', ikonBg: 'bg-rose-100', ikonWarna: 'text-rose-500', ikon: 'fa-circle-exclamation' },
+                warning: { bg: 'bg-amber-50', border: 'border-amber-200', teks: 'text-amber-800', ikonBg: 'bg-amber-100', ikonWarna: 'text-amber-500', ikon: 'fa-triangle-exclamation' },
+                sukses: { bg: 'bg-emerald-50', border: 'border-emerald-200', teks: 'text-emerald-700', ikonBg: 'bg-emerald-100', ikonWarna: 'text-emerald-500', ikon: 'fa-circle-check' }
+            };
+            const gaya = gayaPerTipe[tipe] || gayaPerTipe.error;
+
+            let wadah = document.getElementById('wadah-toast-notifikasi');
+            if (!wadah) {
+                wadah = document.createElement('div');
+                wadah.id = 'wadah-toast-notifikasi';
+                // pointer-events-none di wadah supaya area kosong di sekitar
+                // toast tidak ikut memblokir klik ke elemen di bawahnya --
+                // tiap toast individual dikembalikan jadi pointer-events-auto.
+                wadah.className = 'fixed top-4 right-4 z-[9999] flex flex-col items-end gap-2 pointer-events-none w-[calc(100%-2rem)] sm:w-auto';
+                document.body.appendChild(wadah);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto flex items-start gap-2.5 w-full sm:w-80 ${gaya.bg} border ${gaya.border} rounded-xl shadow-lg px-3.5 py-3 opacity-0 -translate-y-2 sm:translate-y-0 sm:translate-x-4 transition-all duration-300 ease-out`;
+            toast.innerHTML = `
+                <div class="w-7 h-7 shrink-0 rounded-full ${gaya.ikonBg} ${gaya.ikonWarna} flex items-center justify-center text-xs">
+                    <i class="fa-solid ${gaya.ikon}"></i>
+                </div>
+                <p class="text-xs font-semibold ${gaya.teks} leading-snug pt-0.5 flex-1">${pesan}</p>
+                <button type="button" class="shrink-0 ${gaya.teks} opacity-50 hover:opacity-100 transition-opacity text-xs mt-0.5" aria-label="Tutup">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            `;
+            wadah.appendChild(toast);
+
+            let sudahDitutup = false;
+            const tutupToastIni = () => {
+                if (sudahDitutup) return;
+                sudahDitutup = true;
+                toast.classList.add('opacity-0');
+                toast.classList.add(window.innerWidth < 640 ? '-translate-y-2' : 'translate-x-4');
+                setTimeout(() => toast.remove(), 300);
+            };
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('opacity-0', '-translate-y-2', 'sm:translate-x-4');
+            });
+
+            const tombolTutup = toast.querySelector('button');
+            if (tombolTutup) tombolTutup.onclick = tutupToastIni;
+
+            setTimeout(tutupToastIni, durasiMs);
+        }
+
         function triggerDynamicIsland(messageText) {
             const notifIsland = document.getElementById('dynamic-notification-island');
             const notifText = document.getElementById('island-notification-text');
@@ -176,7 +249,7 @@
             const textSaran = inputSaran.value.trim();
 
             if (!textSaran) {
-                alert('Silakan ketik saran atau masukan terlebih dahulu!');
+                tampilkanToast('Silakan ketik saran atau masukan terlebih dahulu!', 'warning');
                 return;
             }
 
@@ -211,7 +284,7 @@
 
             inputSaran.value = '';
             if (checkboxAnonim) checkboxAnonim.checked = false;
-            alert('Terima kasih! Saran Anda telah berhasil dikirim ke sistem.');
+            tampilkanToast('Terima kasih! Saran Anda telah berhasil dikirim ke sistem.', 'sukses');
             triggerDynamicIsland("Saran berhasil dikirim!");
             renderDaftarSaranAdmin(daftarSaran);
         }
@@ -522,7 +595,7 @@
                     reader.readAsDataURL(file);
                 });
             } catch (err) {
-                alert('Gagal membuka foto. Coba pilih file lain.');
+                tampilkanToast('Gagal membuka foto. Coba pilih file lain.', 'error');
                 inputEl.value = '';
                 return;
             }
@@ -533,7 +606,7 @@
                 bukaModalCropFoto(img);
             };
             img.onerror = () => {
-                alert('Gagal memuat gambar. Coba pilih file lain.');
+                tampilkanToast('Gagal memuat gambar. Coba pilih file lain.', 'error');
                 inputEl.value = '';
             };
             img.src = dataUrl;
@@ -1545,7 +1618,7 @@
                 });
                 const json = await res.json();
                 if (!json.success) {
-                    alert(json.message || 'Gagal menanggapi permintaan pertemanan.');
+                    tampilkanToast(json.message || 'Gagal menanggapi permintaan pertemanan.', 'error');
                 }
             } catch (e) {
                 console.error('Gagal menanggapi permintaan pertemanan:', e);
@@ -1768,7 +1841,7 @@
                     body: JSON.stringify({ token })
                 });
                 const json = await res.json();
-                if (!json.success) alert(json.message || 'Gagal memproses perangkat.');
+                if (!json.success) tampilkanToast(json.message || 'Gagal memproses perangkat.', 'error');
             } catch (e) {
                 console.error('Gagal menanggapi perangkat:', e);
             }
@@ -1928,7 +2001,7 @@
                     // muat ulang hasil pencarian biar status ikut sinkron ke kondisi terbaru.
                     btnEl.disabled = false;
                     btnEl.classList.remove('opacity-60', 'cursor-wait');
-                    alert(json.message || 'Gagal mengirim permintaan pertemanan.');
+                    tampilkanToast(json.message || 'Gagal mengirim permintaan pertemanan.', 'error');
                     const inputCari = document.getElementById('input-cari-teman');
                     if (inputCari && inputCari.value.trim()) jalankanPencarianTeman(inputCari.value.trim());
                     return;
@@ -1983,7 +2056,7 @@
                 const res = await fetch(`/api/teman/profil/${encodeURIComponent(username)}`);
                 const json = await res.json();
                 if (!json.success) {
-                    alert(json.message || 'Gagal memuat statistik siswa.');
+                    tampilkanToast(json.message || 'Gagal memuat statistik siswa.', 'error');
                     return;
                 }
                 renderIdCardTeman(json.profil);
@@ -3946,7 +4019,7 @@
             }
 
             if (isExpired) {
-                alert('Gagal! Batas waktu pengumpulan ("' + batasWaktuTugas + '") sudah lewat. Tugas otomatis terkunci.');
+                tampilkanToast('Gagal! Batas waktu pengumpulan ("' + batasWaktuTugas + '") sudah lewat. Tugas otomatis terkunci.', 'error');
                 renderLiveTaskContent();
                 return;
             }
@@ -3956,7 +4029,7 @@
             // Pelanggaran Aktif, cek ulang di sini juga supaya tugas TIDAK bisa
             // kekirim lewat cara apa pun selama statusnya masih aktif.
             if ((typeof window.pelanggaranSiswaSedangAktif === 'function') && window.pelanggaranSiswaSedangAktif()) {
-                alert('Gagal! Tugas ini terkunci karena kamu masih berstatus Pelanggaran Aktif. Selesaikan dulu dengan guru/wali kelas.');
+                tampilkanToast('Gagal! Tugas ini terkunci karena kamu masih berstatus Pelanggaran Aktif. Selesaikan dulu dengan guru/wali kelas.', 'error');
                 renderLiveTaskContent();
                 return;
             }
@@ -4128,7 +4201,7 @@
                 .then(hasil => {
                     if (btnKirim) btnKirim.disabled = false;
                     if (!hasil || !hasil.success) {
-                        alert('Gagal mengirim tugas: ' + ((hasil && hasil.message) || 'terjadi kesalahan di server.'));
+                        tampilkanToast('Gagal mengirim tugas: ' + ((hasil && hasil.message) || 'terjadi kesalahan di server.'), 'error');
                         return;
                     }
 
@@ -4146,7 +4219,7 @@
                         images: imagesArray
                     };
 
-                    alert('Tugas berhasil dikirim pada pukul ' + jamDetail + '!');
+                    tampilkanToast('Tugas berhasil dikirim pada pukul ' + jamDetail + '!', 'sukses');
                     triggerDynamicIsland("Tugas Berhasil Dikirim!");
 
                     // Bersihkan foto sementara di memori setelah berhasil terkirim.
@@ -4157,7 +4230,7 @@
                 .catch(err => {
                     if (btnKirim) btnKirim.disabled = false;
                     console.error('Gagal mengirim tugas ke server:', err);
-                    alert('Gagal mengirim tugas. Cek koneksi lalu coba lagi.');
+                    tampilkanToast('Gagal mengirim tugas. Cek koneksi lalu coba lagi.', 'error');
                 });
         }
 
