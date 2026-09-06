@@ -1350,6 +1350,19 @@
                 gridContainer.innerHTML = `<p class="col-span-full text-center text-slate-400 italic py-6 text-sm">Belum ada data murid untuk kelas ini.</p>`;
             }
 
+            // PERBAIKAN PERFORMA (PENTING): sebelumnya di sini pakai
+            // `gridContainer.innerHTML += ...` LANGSUNG di dalam forEach --
+            // itu artinya SETIAP iterasi, browser membongkar ulang SEMUA
+            // kartu yang sudah dirender (termasuk foto yang sudah ada),
+            // lalu parse ULANG semuanya dari nol + kartu baru. Untuk N murid,
+            // itu kerjanya ~N kali N (bukan cuma N), dan tiap foto (base64)
+            // ikut di-decode ulang tiap kali dibongkar -- inilah sumber utama
+            // jendela Rekap kerasa berat & scroll patah-patah, apalagi makin
+            // banyak murid di kelas. Sekarang tiap kartu cuma dikumpulkan ke
+            // array dulu, baru innerHTML di-set SEKALI di akhir (lihat bawah)
+            // -- DOM & semua foto cuma dibangun 1x, bukan N kali.
+            const potonganKartuHTML = [];
+
             muridKelasIni.forEach(m => {
                 const status = statusPengumpulanUntukTugas(m, task, kedaluwarsa, hasilPeriksaBulk);
                 if (status.submitted) hitungSudah++; else hitungBelum++;
@@ -1388,7 +1401,7 @@
                     `;
                 }
 
-                gridContainer.innerHTML += `
+                potonganKartuHTML.push(`
                     <div ${bisaDiperiksa ? `onclick="bukaPeriksaTugasDariRekap(${m.id})"` : ''} class="kartu-rekap-tugas-siswa ${bisaDiperiksa ? 'bisa-diperiksa' : ''} p-3 rounded-2xl border-2 ${cardBangkuStyle} ${bisaDiperiksa ? 'cursor-pointer' : ''} transition-all flex flex-col justify-between space-y-2 relative group overflow-hidden">
                         <div class="flex items-center justify-between gap-1">
                             <span class="text-[10px] font-mono font-bold text-slate-500 truncate">${m.title} ${penandaPintu}</span>
@@ -1411,8 +1424,14 @@
                             </span>
                         </div>` : ''}
                     </div>
-                `;
+                `);
             });
+
+            // Satu-satunya penulisan innerHTML untuk seluruh grid -- DOM &
+            // semua foto cuma dibangun sekali, tidak peduli berapa jumlah murid.
+            if (muridKelasIni.length > 0) {
+                gridContainer.innerHTML = potonganKartuHTML.join('');
+            }
 
             document.getElementById('rekap-tugas-badge-sudah').innerText = hitungSudah;
             document.getElementById('rekap-tugas-badge-belum').innerText = hitungBelum;
@@ -2105,7 +2124,7 @@
             if (m.border === 'border_emas') {
                 return `
                     <div class="border-emas-avatar ${sizeClass}">
-                        <img src="${m.foto}" alt="Foto ${m.nama}">
+                        <img src="${m.foto}" alt="Foto ${m.nama}" loading="lazy" decoding="async">
                     </div>`;
             }
             const genericBorderMap = {
@@ -2117,7 +2136,7 @@
                 "Border Gradasi Api": "ring-2 ring-orange-400"
             };
             const ring = genericBorderMap[m.border] || "ring-2 ring-slate-300";
-            return `<img src="${m.foto}" class="${sizeClass} rounded-full object-cover shadow-sm ${ring} flex-shrink-0" alt="Foto ${m.nama}">`;
+            return `<img src="${m.foto}" class="${sizeClass} rounded-full object-cover shadow-sm ${ring} flex-shrink-0" alt="Foto ${m.nama}" loading="lazy" decoding="async">`;
         }
 
         function namaEfekHTML(m) {
