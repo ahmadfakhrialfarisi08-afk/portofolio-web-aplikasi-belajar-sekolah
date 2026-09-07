@@ -128,7 +128,7 @@
 
     <div class="flex-1 flex flex-col h-screen overflow-y-auto" id="main-scroll-container">
         
-        <header class="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30">
+        <header id="header-utama-guru" class="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30">
             <div class="flex items-center gap-3 min-w-0">
                 <button id="btn-toggle-sidebar" onclick="toggleSidebarMobile()" title="Buka menu" class="md:hidden p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all flex-shrink-0 guru-desktop-only-inline">
                     <i class="fa-solid fa-bars"></i>
@@ -143,10 +143,10 @@
 
                 <!-- Identitas guru khusus tampilan HP: avatar + nama + jabatan, gantiin search bar -->
                 <div class="guru-mobile-only-flex items-center gap-2.5 min-w-0">
-                    <img id="header-user-avatar-guru-mobile" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=120" class="w-10 h-10 rounded-xl object-cover border-2 border-blue-600 shadow-sm flex-shrink-0" alt="Avatar Guru">
+                    <img id="header-user-avatar-guru-mobile" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=120" class="w-10 h-10 rounded-full object-cover border-2 border-white/60 shadow-sm flex-shrink-0" alt="Avatar Guru">
                     <div class="min-w-0">
-                        <h4 class="text-sm font-bold text-slate-900 leading-snug truncate">Pak Ahmad, S.T.</h4>
-                        <p class="text-[11px] text-slate-400 truncate">Guru Produktif TKR / TKJ / TAV</p>
+                        <h4 class="text-sm font-bold text-white leading-snug truncate">Pak Ahmad, S.T. <span aria-hidden="true">👋</span></h4>
+                        <p class="text-[11px] text-blue-200/80 truncate">Guru Produktif TKR / TKJ / TAV</p>
                     </div>
                 </div>
             </div>
@@ -161,7 +161,7 @@
 
             <div class="flex items-center gap-4">
                 <!-- Tombol lonceng: khusus HP, buka menu sidebar (notifikasi & navigasi) -->
-                <button onclick="toggleSidebarMobile()" title="Menu" class="guru-mobile-only-flex items-center justify-center w-10 h-10 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all flex-shrink-0">
+                <button onclick="toggleSidebarMobile()" title="Menu" class="guru-mobile-only-flex items-center justify-center w-10 h-10 rounded-full border border-white/20 bg-white/15 text-white hover:bg-white/25 transition-all flex-shrink-0">
                     <i class="fa-regular fa-bell"></i>
                 </button>
 
@@ -211,20 +211,24 @@
 
         <!-- Bar jam & tanggal realtime khusus tampilan HP, nempel di bawah header -->
         <div class="guru-mobile-clock-bar">
-            <i class="fa-regular fa-clock text-blue-600 text-[11px] animate-pulse"></i>
-            <span id="header-realtime-clock-mobile" class="font-extrabold text-slate-800 text-xs tracking-wider font-mono">00:00:00 WIB</span>
-            <span class="text-slate-300 text-xs">&bull;</span>
-            <span id="header-realtime-date-mobile" class="text-[11px] font-semibold text-slate-500">Memuat tanggal...</span>
+            <span class="guru-jam-chip">
+                <i class="fa-regular fa-clock text-white text-[11px] animate-pulse"></i>
+                <span id="header-realtime-clock-mobile" class="font-extrabold text-white text-xs tracking-wider font-mono">00:00:00 WIB</span>
+            </span>
+            <span id="header-realtime-date-mobile" class="text-[11px] font-semibold text-blue-200/80">Memuat tanggal...</span>
         </div>
 
         <main class="p-4 sm:p-8 space-y-6 sm:space-y-8">
             
             <section id="tab-beranda" class="tab-content space-y-8">
                 
-                <div class="relative rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 p-5 sm:p-8 text-white overflow-hidden shadow-xl">
+                <div id="banner-selamat-datang-guru" class="relative rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 p-5 sm:p-8 text-white overflow-hidden shadow-xl">
                     <div class="max-w-xl relative z-10">
                         <span class="bg-blue-500/30 border border-blue-400/30 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 inline-block text-blue-200">Semester Ganjil 2026/2027</span>
-                        <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">Selamat Datang, Pak Ahmad, S.T! 👋</h2>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">
+                            <span class="guru-desktop-only-inline">Selamat Datang, Pak Ahmad, S.T! 👋</span>
+                            <span class="guru-mobile-only-flex">Selamat Datang!</span>
+                        </h2>
                         <p class="text-slate-300 text-sm leading-relaxed">Kelola tugas, jadwal, dan disiplin siswa secara akurat dan realtime dari semua tingkat kelas.</p>
                     </div>
                     <i class="fa-solid fa-chalkboard-user absolute -right-6 -bottom-6 text-white/5 text-9xl"></i>
@@ -242,8 +246,8 @@
                     </div>
 
                     <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold">
-                            <i class="fa-solid fa-chalkboard"></i>
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">
+                            <i class="fa-solid fa-book-open"></i>
                         </div>
                         <div>
                             <p class="text-xs font-medium text-slate-400">Kelas Diajar</p>
@@ -262,34 +266,36 @@
                     </div>
 
                     <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        <div class="w-12 h-12 rounded-xl bg-violet-50 text-blue-600 flex items-center justify-center text-xl font-bold">
+                            <i class="fa-regular fa-clock"></i>
                         </div>
                         <div>
-                            <p class="text-xs font-medium text-slate-400">Jam Mengajar / Minggu</p>
+                            <p class="text-xs font-medium text-slate-400">Jam Mengajar<span class="guru-desktop-only-inline"> / Minggu</span></p>
                             <h3 class="text-xl font-black text-slate-900 mt-0.5">24 <span class="text-xs font-normal text-slate-400">JAM</span></h3>
                         </div>
                     </div>
                 </div>
 
-                <div class="sticky top-20 z-20 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
+                <div id="wrapper-filter-cepat-beranda" class="sticky top-20 z-20 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
+                    <span class="guru-mobile-only-flex w-full text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Filter Cepat</span>
                     <div class="flex items-center gap-2 filter-cepat-wrap">
                         <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider mr-2 guru-desktop-only-inline"><i class="fa-solid fa-filter text-blue-600"></i> Filter Cepat:</span>
                         <button onclick="filterBerandaCepat('ALL')" id="btn-fast-ALL" class="btn-fast-filter px-4 py-2 rounded-xl text-xs font-extrabold bg-blue-600 text-white shadow-md transition-all">
-                            Semua (21 Kelas)
+                            Semua (21<span class="guru-desktop-only-inline"> Kelas</span>)
                         </button>
                         <button onclick="filterBerandaCepat('X')" id="btn-fast-X" class="btn-fast-filter px-4 py-2 rounded-xl text-xs font-extrabold bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-all">
-                            Tingkat X (7 Kelas)
+                            Tingkat X (7<span class="guru-desktop-only-inline"> Kelas</span>)
                         </button>
                         <button onclick="filterBerandaCepat('XI')" id="btn-fast-XI" class="btn-fast-filter px-4 py-2 rounded-xl text-xs font-extrabold bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-all">
-                            Tingkat XI (7 Kelas)
+                            Tingkat XI (7<span class="guru-desktop-only-inline"> Kelas</span>)
                         </button>
                         <button onclick="filterBerandaCepat('XII')" id="btn-fast-XII" class="btn-fast-filter px-4 py-2 rounded-xl text-xs font-extrabold bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-all">
-                            Tingkat XII (7 Kelas)
+                            Tingkat XII (7<span class="guru-desktop-only-inline"> Kelas</span>)
                         </button>
                     </div>
 
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <div class="flex items-center gap-2 w-full sm:w-auto relative">
+                        <i class="fa-solid fa-table-cells guru-mobile-only-flex absolute left-3.5 top-1/2 -translate-y-1/2 text-blue-600 text-sm pointer-events-none z-10"></i>
                         <select id="select-fast-jurusan" onchange="filterBerandaCepatByJurusan(this.value)" class="w-full sm:w-auto bg-slate-100 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 focus:outline-none">
                             <option value="ALL">Semua Jurusan (TKJ, TKR, TAV)</option>
                             <option value="TKJ">Hanya TKJ (1, 2, 3)</option>
