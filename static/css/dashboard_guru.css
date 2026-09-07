@@ -430,6 +430,14 @@
         .kartu-kelas-sisa-wrapper { display: contents; }
         .kartu-kelas-sisa-wrapper.kartu-kelas-tersembunyi { display: none; }
 
+        /* Di laptop/desktop, semua kartu kelas langsung tampil tanpa perlu
+           menekan "Tampilkan N Kelas Lainnya" -- tombolnya cuma relevan di
+           HP supaya beranda nggak numpuk. */
+        @media (min-width: 640px) {
+            .kartu-kelas-sisa-wrapper.kartu-kelas-tersembunyi { display: contents; }
+            [id$="-tombol"] { display: none; }
+        }
+
         /* ============================================================
            FALLBACK WARNA TEKS HEADER MOBILE (fix: tanggal & subtitle
            "Guru Produktif ..." tidak kelihatan di HP).
