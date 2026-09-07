@@ -459,9 +459,9 @@
            tetap dipaksa 1 baris (grid-cols-12) jadi teksnya kepotong.
            Rule di bawah ini bikin di HP: (1) tombol ganti tampilan
            kelihatan lagi & full-width di bawah judul kelas, (2) badge
-           hijau/merah disembunyikan biar header nggak sesak, (3) baris
-           Pintu Masuk & Papan Tulis ditumpuk 1 kolom penuh (Papan Tulis
-           duluan, baru Pintu Masuk), sama persis kayak mockup HP.
+           hijau/merah disembunyikan biar header nggak sesak, (3) label
+           "Pintu Masuk" dihapus (disembunyikan) di HP, jadi cuma baris
+           "Papan Tulis & Meja Guru" yang tampil, full-width.
            ============================================================ */
         @media (max-width: 639px) {
             .kelas-hero-banner {
@@ -494,5 +494,7 @@
                 width: 100%;
             }
             .denah-papan-tulis { order: 1; }
-            .denah-pintu-masuk { order: 2; }
+            .denah-pintu-masuk {
+                display: none !important;
+            }
         }
