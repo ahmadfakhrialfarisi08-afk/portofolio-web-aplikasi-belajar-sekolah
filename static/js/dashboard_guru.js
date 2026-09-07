@@ -1125,6 +1125,74 @@
         }
 
         // ============================================================
+        // CARD BERANDA "Perlu Dinilai": dulu angkanya statis "0" (hardcode
+        // di HTML, tidak pernah diisi apa pun). Sekarang dihubungkan ke
+        // data pengumpulan ASLI di SEMUA Rekap Tugas (semua kelas & semua
+        // tugas) -- setiap tugas yang sudah dikumpulkan siswa (kapan pun,
+        // selama dikumpulkan sebelum/sesuai batas waktu -- lihat catatan di
+        // ambilSubmisiTugasServer/statusPengumpulanUntukTugas soal ini) TAPI
+        // belum diberi nilai, dihitung 1. Jadi makin banyak siswa yang
+        // mengumpulkan, angka ini otomatis makin banyak -- dan berkurang
+        // lagi begitu guru memberi nilai (lihat pemanggilan ulang fungsi ini
+        // di simpanNilaiSiswa()).
+        //
+        // Sengaja HANYA melihat kelas yang di sampleMurid30 benar-benar
+        // punya murid ASLI (sekarang cuma "XII TKJ 3", lihat SISWA_KELAS_INI)
+        // -- kelas lain di daftarSeluruhKelasDummy belum tersambung ke akun
+        // siswa sungguhan, jadi tidak ada "pengumpulan" nyata yang bisa
+        // dihitung di sana. Begitu roster kelas lain disambungkan ke akun
+        // asli (pola yang sama seperti komentar di sampleMurid30), fungsi
+        // ini otomatis ikut menghitung kelas itu juga tanpa perlu diubah.
+        async function hitungDanTampilkanPerluDinilai() {
+            const elBadge = document.getElementById('stat-perlu-dinilai');
+            if (!elBadge) return;
+
+            const kelasDenganMuridAsli = [...new Set(sampleMurid30.map(m => m.kelas))];
+            const semuaTugasRelevan = [];
+            kelasDenganMuridAsli.forEach(namaKelas => {
+                getTasksKelas(namaKelas).forEach(task => {
+                    semuaTugasRelevan.push({ namaKelas, task });
+                });
+            });
+
+            if (semuaTugasRelevan.length === 0) {
+                elBadge.innerHTML = `0 <span class="text-xs font-normal text-slate-400">Berkas</span>`;
+                return;
+            }
+
+            let totalPerluDinilai = 0;
+
+            // Semua tugas dicek PARALEL (Promise.all), bukan satu-satu berurutan
+            // -- sama seperti perbaikan performa di ambilHasilPeriksaBulkServer
+            // & muatCacheTugasSemuaKelas -- supaya tidak lambat walau tugasnya
+            // banyak, dan tidak memblokir render lain di halaman.
+            await Promise.all(semuaTugasRelevan.map(async ({ namaKelas, task }) => {
+                const submisi = await ambilSubmisiTugasServer(task.id);
+                window._cacheSubmisiTugas[task.id] = submisi;
+
+                const muridKelasIni = sampleMurid30.filter(m => m.kelas === namaKelas);
+                const idSudahKumpul = muridKelasIni
+                    .filter(m => submisi[m.username] && submisi[m.username].submitted)
+                    .map(m => m.id);
+                if (idSudahKumpul.length === 0) return;
+
+                const hasilPeriksaBulk = await ambilHasilPeriksaBulkServer(task.id, idSudahKumpul);
+
+                muridKelasIni.forEach(m => {
+                    const entri = submisi[m.username];
+                    if (!entri || !entri.submitted) return;
+                    const tersimpan = hasilPeriksaBulk[kunciHasilPeriksaTugas(task.id, m.id)] || null;
+                    const sudahDinilai =
+                        (entri.nilai !== undefined && entri.nilai !== null && entri.nilai !== '') ||
+                        (tersimpan && tersimpan.nilai !== undefined && tersimpan.nilai !== null && tersimpan.nilai !== '');
+                    if (!sudahDinilai) totalPerluDinilai++;
+                });
+            }));
+
+            elBadge.innerHTML = `${totalPerluDinilai} <span class="text-xs font-normal text-slate-400">Berkas</span>`;
+        }
+
+        // ============================================================
         // MODAL "Rekap Pengumpulan per Tugas" (dibuka dari badge klik-able
         // di kolom "Pengumpulan Siswa" pada tabel Rekap Semua Tugas).
         // ============================================================
@@ -2282,6 +2350,7 @@
                 alert(`✅ Nilai (${nilaiVal}) berhasil disimpan${catatanVal ? ' beserta pesan untuk siswa' : ''}.`);
                 tutupPeriksaSiswa();
                 bukaRekapPengumpulanTugas(namaKelas, taskId, true);
+                hitungDanTampilkanPerluDinilai();
                 return;
             }
 
@@ -2301,6 +2370,7 @@
             alert(`Nilai Berhasil Disimpan! Siswa telah diberi nilai ${nilaiVal}.`);
             tutupPeriksaSiswa();
             bukaanganUlangDetailKelas();
+            hitungDanTampilkanPerluDinilai();
         }
 
         function bukaanganUlangDetailKelas() {
@@ -3501,6 +3571,13 @@
             await muatCacheTugasSemuaKelas();
             renderBerandaKelasBerurutan();
             renderSeluruhKelas();
+            hitungDanTampilkanPerluDinilai();
+            // Polling ringan (bukan tiap detik) supaya angka "Perlu Dinilai" di
+            // Beranda otomatis naik sendiri kalau ada siswa lain yang baru saja
+            // mengumpulkan tugas dari perangkatnya -- tanpa guru perlu reload
+            // manual. Dihentikan saat tab browser sedang tidak aktif, sama
+            // seperti pola renderTeacherSchedule() di bawah, biar tidak boros.
+            setInterval(() => { if (!document.hidden) hitungDanTampilkanPerluDinilai(); }, 30000);
 
             renderTeacherSchedule();
             // PERBAIKAN TRAFFIC: hentikan polling saat tab sedang tidak
