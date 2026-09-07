@@ -449,3 +449,50 @@
                 color: rgba(191, 219, 254, 0.85) !important; /* setara text-blue-200/85 */
             }
         }
+
+        /* ============================================================
+           TAMPILAN KHUSUS HP untuk modal "Denah Kelas" (detail kelas)
+           & modal "Rekap Pengumpulan Tugas per Tugas". Sebelumnya di HP
+           tombol "Denah Kelas / Tabel Siswa" ke-hidden total (class
+           Tailwind `hidden sm:flex`), badge hijau/merah numpuk mepet ke
+           tombol tutup (X), dan baris "Pintu Masuk" + "Papan Tulis"
+           tetap dipaksa 1 baris (grid-cols-12) jadi teksnya kepotong.
+           Rule di bawah ini bikin di HP: (1) tombol ganti tampilan
+           kelihatan lagi & full-width di bawah judul kelas, (2) badge
+           hijau/merah disembunyikan biar header nggak sesak, (3) baris
+           Pintu Masuk & Papan Tulis ditumpuk 1 kolom penuh (Papan Tulis
+           duluan, baru Pintu Masuk), sama persis kayak mockup HP.
+           ============================================================ */
+        @media (max-width: 639px) {
+            .kelas-hero-banner {
+                height: auto !important;
+                padding-bottom: 1.1rem;
+            }
+            #modal-kelas-header-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.65rem;
+            }
+            #modal-kelas-header-row > div:first-child {
+                width: 100%;
+            }
+            .kelas-header-badge-count {
+                display: none !important;
+            }
+            .kelas-view-toggle-wrap {
+                width: 100%;
+            }
+            .kelas-view-toggle-wrap button {
+                flex: 1 1 0%;
+            }
+            .denah-top-row {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .denah-top-row > div {
+                width: 100%;
+            }
+            .denah-papan-tulis { order: 1; }
+            .denah-pintu-masuk { order: 2; }
+        }

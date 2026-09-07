@@ -650,7 +650,7 @@
     <div id="modal-detail-kelas" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 flex items-center justify-center p-4 hidden">
         <div class="bg-white w-full max-w-6xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
             
-            <div class="relative h-40 bg-slate-900 flex items-end p-6 text-white overflow-hidden flex-shrink-0">
+            <div class="relative h-40 bg-slate-900 flex items-end p-6 text-white overflow-hidden flex-shrink-0 kelas-hero-banner">
                 <img id="modal-img-kelas" src="" class="absolute inset-0 w-full h-full object-cover opacity-40">
                 <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
 
@@ -658,7 +658,7 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
 
-                <div class="absolute top-4 right-16 z-20 flex items-center gap-2">
+                <div class="absolute top-4 right-16 z-20 flex items-center gap-2 kelas-header-badge-count">
                     <div class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/90 backdrop-blur-md text-white rounded-xl shadow-lg text-xs font-black tracking-wide border border-emerald-400/30" title="Sudah Mengumpulkan">
                         <i class="fa-solid fa-check text-sm"></i>
                         <span id="badge-count-sudah">0</span>
@@ -669,7 +669,7 @@
                     </div>
                 </div>
 
-                <div class="relative z-10 w-full flex items-end justify-between">
+                <div id="modal-kelas-header-row" class="relative z-10 w-full flex items-end justify-between">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
                             <span id="modal-badge-jurusan" class="px-2.5 py-0.5 bg-blue-600 text-white rounded-full text-[10px] font-extrabold uppercase">TKJ</span>
@@ -679,7 +679,7 @@
                         <p id="modal-mapel" class="text-xs text-slate-300 mt-0.5">Administrasi Infrastruktur Jaringan</p>
                     </div>
 
-                    <div class="hidden sm:flex bg-white/10 backdrop-blur-md border border-white/20 p-1 rounded-xl gap-1">
+                    <div class="flex kelas-view-toggle-wrap bg-white/10 backdrop-blur-md border border-white/20 p-1 rounded-xl gap-1">
                         <button onclick="setModeView('denah')" id="btn-view-denah" class="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow">
                             <i class="fa-solid fa-border-all mr-1"></i> Denah Kelas
                         </button>
@@ -693,11 +693,11 @@
             <div class="p-6 overflow-y-auto flex-1 bg-slate-50/50">
                 
                 <div id="view-denah-container" class="space-y-6">
-                    <div class="grid grid-cols-12 gap-3 items-center">
-                        <div class="col-span-3 py-2.5 bg-amber-500/10 border-2 border-dashed border-amber-500 text-amber-700 rounded-xl text-center text-xs font-extrabold uppercase flex items-center justify-center gap-1.5">
+                    <div class="grid grid-cols-12 gap-3 items-center denah-top-row">
+                        <div class="col-span-3 py-2.5 bg-amber-500/10 border-2 border-dashed border-amber-500 text-amber-700 rounded-xl text-center text-xs font-extrabold uppercase flex items-center justify-center gap-1.5 denah-pintu-masuk">
                             <i class="fa-solid fa-door-open text-sm"></i> PINTU MASUK (KIRI)
                         </div>
-                        <div class="col-span-9 py-2.5 bg-slate-800 text-white rounded-xl text-center text-xs font-extrabold tracking-widest uppercase shadow-sm border border-slate-700 flex items-center justify-center gap-2">
+                        <div class="col-span-9 py-2.5 bg-slate-800 text-white rounded-xl text-center text-xs font-extrabold tracking-widest uppercase shadow-sm border border-slate-700 flex items-center justify-center gap-2 denah-papan-tulis">
                             <i class="fa-solid fa-chalkboard"></i> PAPAN TULIS & MEJA GURU (DEPAN KELAS)
                         </div>
                     </div>
@@ -762,7 +762,7 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
 
-                <div class="absolute top-4 right-16 z-20 flex items-center gap-2">
+                <div class="absolute top-4 right-16 z-20 flex items-center gap-2 kelas-header-badge-count">
                     <div class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/90 backdrop-blur-md text-white rounded-xl shadow-lg text-xs font-black tracking-wide border border-emerald-400/30" title="Sudah Mengumpulkan">
                         <i class="fa-solid fa-check text-sm"></i>
                         <span id="rekap-tugas-badge-sudah">0</span>
@@ -788,11 +788,11 @@
             </div>
 
             <div class="p-6 overflow-y-auto flex-1 bg-slate-50/50">
-                <div class="grid grid-cols-12 gap-3 items-center mb-6">
-                    <div class="col-span-3 py-2.5 bg-amber-500/10 border-2 border-dashed border-amber-500 text-amber-700 rounded-xl text-center text-xs font-extrabold uppercase flex items-center justify-center gap-1.5">
+                <div class="grid grid-cols-12 gap-3 items-center mb-6 denah-top-row">
+                    <div class="col-span-3 py-2.5 bg-amber-500/10 border-2 border-dashed border-amber-500 text-amber-700 rounded-xl text-center text-xs font-extrabold uppercase flex items-center justify-center gap-1.5 denah-pintu-masuk">
                         <i class="fa-solid fa-door-open text-sm"></i> PINTU MASUK (KIRI)
                     </div>
-                    <div class="col-span-9 py-2.5 bg-slate-800 text-white rounded-xl text-center text-xs font-extrabold tracking-widest uppercase shadow-sm border border-slate-700 flex items-center justify-center gap-2">
+                    <div class="col-span-9 py-2.5 bg-slate-800 text-white rounded-xl text-center text-xs font-extrabold tracking-widest uppercase shadow-sm border border-slate-700 flex items-center justify-center gap-2 denah-papan-tulis">
                         <i class="fa-solid fa-chalkboard"></i> PAPAN TULIS &amp; MEJA GURU (DEPAN KELAS)
                     </div>
                 </div>
