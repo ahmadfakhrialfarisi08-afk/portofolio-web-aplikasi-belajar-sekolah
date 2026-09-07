@@ -429,3 +429,23 @@
            container induknya (bukan bikin grid baru yang bersarang). */
         .kartu-kelas-sisa-wrapper { display: contents; }
         .kartu-kelas-sisa-wrapper.kartu-kelas-tersembunyi { display: none; }
+
+        /* ============================================================
+           FALLBACK WARNA TEKS HEADER MOBILE (fix: tanggal & subtitle
+           "Guru Produktif ..." tidak kelihatan di HP).
+           Elemen ini mengandalkan class Tailwind `text-blue-200/80`,
+           tapi karena Tailwind sekarang di-build jadi file statis
+           (tailwind_compiled_guru.css), class itu bisa hilang kalau
+           build terakhir belum sempat men-scan class ini -> teksnya
+           jatuh ke warna default gelap & nyaris tak terlihat di atas
+           header gradasi gelap. Rule di bawah ini kasih warna terang
+           langsung lewat CSS murni, jadi tetap kebaca APAPUN status
+           build Tailwind-nya (idealnya tetap rebuild juga file
+           tailwind_compiled_guru.css, ini cuma jaring pengaman).
+           ============================================================ */
+        @media (max-width: 639px) {
+            #header-utama-guru .guru-mobile-only-flex p,
+            #header-realtime-date-mobile {
+                color: rgba(191, 219, 254, 0.85) !important; /* setara text-blue-200/85 */
+            }
+        }
