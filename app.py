@@ -261,6 +261,15 @@ users = {
         # +62xx), otomatis dirapikan ke format internasional saat dipakai.
         'whatsapp': '081234567890'
     },
+    'guru': {
+            'username': 'pak joel', 
+            'password': 'joel123', 
+            'role': 'guru',
+            'email': 'joel@sekolah.sch.id',
+            'fullname': 'PAK JOEL',
+            'identity_number': '198501901210011001',
+            'whatsapp': '081234567890'
+    },
     'siswa': {
         'username': 'siswa', 
         'password': 'siswa123', 
