@@ -334,13 +334,20 @@
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
             const seconds = String(now.getSeconds()).padStart(2, '0');
+            const jamText = `${hours}:${minutes}:${seconds} WIB`;
             const clockEl = document.getElementById('header-realtime-clock');
-            if (clockEl) clockEl.innerText = `${hours}:${minutes}:${seconds} WIB`;
-            
+            if (clockEl) clockEl.innerText = jamText;
+
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             const dateStr = now.toLocaleDateString('id-ID', options);
             const dateEl = document.getElementById('header-realtime-date');
             if (dateEl) dateEl.innerText = dateStr;
+
+            // Duplikat ke bar jam khusus tampilan HP (di bawah header)
+            const clockElMobile = document.getElementById('header-realtime-clock-mobile');
+            if (clockElMobile) clockElMobile.innerText = jamText;
+            const dateElMobile = document.getElementById('header-realtime-date-mobile');
+            if (dateElMobile) dateElMobile.innerText = dateStr;
         }
 
         function renderBerandaKelasBerurutan() {
@@ -349,73 +356,125 @@
             renderContainerKelasTingkat('XII', 'container-beranda-XII');
         }
 
-        function renderContainerKelasTingkat(tingkat, containerId) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            container.innerHTML = "";
-            const filtered = daftarSeluruhKelasDummy.filter(k => k.tingkat === tingkat);
-            
-            filtered.forEach(k => {
-                const tasksKelasIni = getTasksKelas(k.nama);
-                let badgeJurusanColor = "bg-blue-50 text-blue-700 border border-blue-200";
-                if (k.jurusan === 'TKR') badgeJurusanColor = "bg-amber-50 text-amber-700 border border-amber-200";
-                if (k.jurusan === 'TAV') badgeJurusanColor = "bg-purple-50 text-purple-600 border border-purple-200";
+        // Jumlah kartu kelas yang langsung tampil di Beranda sebelum guru perlu
+        // menekan "Tampilkan N Kelas Lainnya" -- biar di HP nggak numpuk banyak
+        // kartu di atas "Jadwal Mengajar Hari Ini".
+        const BATAS_AWAL_KARTU_KELAS_BERANDA = 4;
 
-                // Tugas yang sudah lewat deadline dianggap usai -- sama seperti pola
-                // yang sudah dipakai di renderSeluruhKelas() -- supaya kartu di
-                // Beranda ini tidak terus menampilkan tugas basi yang tenggatnya
-                // sudah lama lewat. Tugas ini TIDAK dihapus dari data (masih bisa
-                // dilihat lewat "Atur Tugas"/rekap) -- cuma disembunyikan dari sini.
-                // Begitu guru mengatur ulang deadline-nya jadi ke depan lagi lewat
-                // bukaModalEditTugas() -> kirimTugasKeKelas(), fungsi ini otomatis
-                // dipanggil ulang dan tugasnya muncul lagi di kartu Beranda.
-                const cekWaktuKelasIni = new Date().getTime();
-                const tugasAktifKelasIni = tasksKelasIni.filter(t => !t.deadlineTimestamp || cekWaktuKelasIni < t.deadlineTimestamp || t.studentSubmitted);
+        // Dipakai bareng oleh renderContainerKelasTingkat() & filterBerandaCepatByJurusan()
+        // supaya markup kartu kelas di Beranda selalu konsisten satu sumber.
+        function buildKartuKelasBerandaHTML(k) {
+            const tasksKelasIni = getTasksKelas(k.nama);
+            let badgeJurusanColor = "bg-blue-50 text-blue-700 border border-blue-200";
+            if (k.jurusan === 'TKR') badgeJurusanColor = "bg-rose-50 text-rose-700 border border-rose-200";
+            if (k.jurusan === 'TAV') badgeJurusanColor = "bg-purple-50 text-purple-600 border border-purple-200";
 
-                let activeTaskHTML = "";
-                let statusBadgeTugas = `<span class="text-xs text-amber-500 font-semibold italic"><i class="fa-solid fa-clock mr-1"></i> Belum ada tugas aktif</span>`;
+            // Tugas yang sudah lewat deadline dianggap usai -- sama seperti pola
+            // yang sudah dipakai di renderSeluruhKelas() -- supaya kartu di
+            // Beranda ini tidak terus menampilkan tugas basi yang tenggatnya
+            // sudah lama lewat. Tugas ini TIDAK dihapus dari data (masih bisa
+            // dilihat lewat "Atur Tugas"/rekap) -- cuma disembunyikan dari sini.
+            // Begitu guru mengatur ulang deadline-nya jadi ke depan lagi lewat
+            // bukaModalEditTugas() -> kirimTugasKeKelas(), fungsi ini otomatis
+            // dipanggil ulang dan tugasnya muncul lagi di kartu Beranda.
+            const cekWaktuKelasIni = new Date().getTime();
+            const tugasAktifKelasIni = tasksKelasIni.filter(t => !t.deadlineTimestamp || cekWaktuKelasIni < t.deadlineTimestamp || t.studentSubmitted);
 
-                if (tugasAktifKelasIni.length > 0) {
-                    statusBadgeTugas = `<span class="text-xs text-emerald-600 font-bold"><i class="fa-solid fa-circle-check mr-1"></i> ${tugasAktifKelasIni.length} Tugas/Catatan Aktif</span>`;
-                    activeTaskHTML = tugasAktifKelasIni.map(data => `
-                        <div class="mt-2 p-2.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between" onclick="event.stopPropagation()">
-                            <div class="text-xs">
-                                <span class="font-bold text-blue-700 block">${data.judul || data.tipe || '📌 Tugas'}</span>
-                                <span class="text-[10px] text-slate-500 block">${data.teks ? data.teks.substring(0, 20) + '...' : 'Instruksi Suara'}</span>
-                                <span class="text-[9px] font-bold text-amber-600 block mt-0.5">Tenggat: ${data.deadline || '-'}</span>
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <button onclick="bukaModalEditTugas('${k.nama}', '${data.id}'); event.stopPropagation();" class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-bold transition-all shadow" title="Atur/Ubah Waktu">
-                                    <i class="fa-solid fa-clock"></i>
-                                </button>
-                                <button onclick="hapusTugasByID('${k.nama}', '${data.id}'); event.stopPropagation();" class="px-2 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-[10px] font-bold transition-all shadow" title="Hapus Tugas">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </div>
+            let activeTaskHTML = "";
+            if (tugasAktifKelasIni.length > 0) {
+                activeTaskHTML = tugasAktifKelasIni.map(data => `
+                    <div class="mt-2 p-2.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between" onclick="event.stopPropagation()">
+                        <div class="text-xs">
+                            <span class="font-bold text-blue-700 block">${data.judul || data.tipe || '📌 Tugas'}</span>
+                            <span class="text-[10px] text-slate-500 block">${data.teks ? data.teks.substring(0, 20) + '...' : 'Instruksi Suara'}</span>
+                            <span class="text-[9px] font-bold text-amber-600 block mt-0.5">Tenggat: ${data.deadline || '-'}</span>
                         </div>
-                    `).join('');
-                }
-
-                container.innerHTML += `
-                    <div onclick="bukaDetailKelas('${k.nama}', '${k.jurusan}', '${k.mapel}', '${k.jurusan}', '${k.img}')" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between space-y-3 group">
-                        <div>
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="px-2.5 py-1 font-extrabold text-[11px] rounded-lg ${badgeJurusanColor}">${k.jurusan}</span>
-                                <span class="text-xs text-slate-400 font-medium">30 Siswa</span>
-                            </div>
-                            <h4 class="font-extrabold text-slate-900 text-base group-hover:text-blue-600 transition-colors">${k.nama}</h4>
-                            <p class="text-xs text-slate-500 mt-0.5">${k.mapel}</p>
-                            ${activeTaskHTML}
-                        </div>
-                        <div class="pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
-                            <span class="text-slate-400">Wali: <b class="text-slate-700">${k.wali}</b></span>
-                            <button onclick="bukaModalBeriTugas('${k.nama}'); event.stopPropagation();" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all shadow-sm">
-                                <i class="fa-solid fa-plus mr-1"></i> Beri Tugas
+                        <div class="flex items-center gap-1">
+                            <button onclick="bukaModalEditTugas('${k.nama}', '${data.id}'); event.stopPropagation();" class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-bold transition-all shadow" title="Atur/Ubah Waktu">
+                                <i class="fa-solid fa-clock"></i>
+                            </button>
+                            <button onclick="hapusTugasByID('${k.nama}', '${data.id}'); event.stopPropagation();" class="px-2 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-[10px] font-bold transition-all shadow" title="Hapus Tugas">
+                                <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
                     </div>
-                `;
-            });
+                `).join('');
+            }
+
+            return `
+                <div onclick="bukaDetailKelas('${k.nama}', '${k.jurusan}', '${k.mapel}', '${k.jurusan}', '${k.img}')" class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between space-y-3 group">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-2.5 py-1 font-extrabold text-[11px] rounded-lg ${badgeJurusanColor}">${k.jurusan}</span>
+                            <span class="text-xs text-slate-400 font-medium">30 Siswa</span>
+                        </div>
+                        <h4 class="font-extrabold text-slate-900 text-base group-hover:text-blue-600 transition-colors">${k.nama}</h4>
+                        <p class="text-xs text-slate-500 mt-0.5">${k.mapel}</p>
+                        ${activeTaskHTML}
+                    </div>
+                    <div class="pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                        <span class="text-slate-400">Wali: <b class="text-slate-700">${k.wali}</b></span>
+                        <button onclick="bukaModalBeriTugas('${k.nama}'); event.stopPropagation();" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all shadow-sm">
+                            <i class="fa-solid fa-plus mr-1"></i> Beri Tugas
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render daftar kartu kelas ke containerId, dengan BATAS_AWAL_KARTU_KELAS_BERANDA
+        // kartu pertama langsung tampil dan sisanya disembunyikan dulu di balik tombol
+        // "Tampilkan N Kelas Lainnya" (ditaruh di elemen sibling `${containerId}-tombol`).
+        function renderKelasListWithCollapse(containerId, filtered) {
+            const container = document.getElementById(containerId);
+            const tombolWrap = document.getElementById(containerId + '-tombol');
+            if (!container) return;
+
+            const tampil = filtered.slice(0, BATAS_AWAL_KARTU_KELAS_BERANDA);
+            const sisanya = filtered.slice(BATAS_AWAL_KARTU_KELAS_BERANDA);
+
+            let html = tampil.map(k => buildKartuKelasBerandaHTML(k)).join('');
+
+            const idSisa = containerId + '-sisa';
+            if (sisanya.length > 0) {
+                html += `<div id="${idSisa}" class="kartu-kelas-sisa-wrapper kartu-kelas-tersembunyi">${sisanya.map(k => buildKartuKelasBerandaHTML(k)).join('')}</div>`;
+            }
+            container.innerHTML = html;
+
+            if (tombolWrap) {
+                if (sisanya.length > 0) {
+                    tombolWrap.innerHTML = `
+                        <button id="${idSisa}-btn" onclick="tampilkanSisaKelasBeranda('${idSisa}')" class="mt-4 w-full py-2.5 rounded-xl border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 text-xs font-bold transition-all">
+                            <i class="fa-solid fa-chevron-down mr-1"></i> Tampilkan ${sisanya.length} Kelas Lainnya
+                        </button>
+                    `;
+                } else {
+                    tombolWrap.innerHTML = "";
+                }
+            }
+        }
+
+        function tampilkanSisaKelasBeranda(idSisa) {
+            const el = document.getElementById(idSisa);
+            const btn = document.getElementById(idSisa + '-btn');
+            if (el) el.classList.remove('kartu-kelas-tersembunyi');
+            if (btn) btn.remove();
+        }
+
+        // Dipicu tombol "Lihat Semua" di header tiap section tingkat Beranda --
+        // pindah ke tab "Kelola Kelas" dengan filter tingkat yang sesuai.
+        function bukaSemuaKelasTingkat(tingkat) {
+            switchTab('kelas');
+            const selTingkat = document.getElementById('filter-tingkat');
+            const selJurusan = document.getElementById('filter-jurusan');
+            if (selTingkat) selTingkat.value = tingkat;
+            if (selJurusan) selJurusan.value = 'ALL';
+            renderSeluruhKelas();
+        }
+
+        function renderContainerKelasTingkat(tingkat, containerId) {
+            const filtered = daftarSeluruhKelasDummy.filter(k => k.tingkat === tingkat);
+            renderKelasListWithCollapse(containerId, filtered);
         }
 
         function filterBerandaCepat(tingkat) {
@@ -440,67 +499,12 @@
         }
 
         function filterBerandaCepatByJurusan(jurusan) {
-            const containerX = document.getElementById('container-beranda-X');
-            const containerXI = document.getElementById('container-beranda-XI');
-            const containerXII = document.getElementById('container-beranda-XII');
-            
-            [containerX, containerXI, containerXII].forEach((container, idx) => {
-                if(!container) return;
-                const tingkat = idx === 0 ? 'X' : (idx === 1 ? 'XI' : 'XII');
-                container.innerHTML = "";
+            ['X', 'XI', 'XII'].forEach((tingkat) => {
                 let filtered = daftarSeluruhKelasDummy.filter(k => k.tingkat === tingkat);
                 if (jurusan !== 'ALL') {
                     filtered = filtered.filter(k => k.jurusan === jurusan);
                 }
-                
-                filtered.forEach(k => {
-                    const tasksKelasIni = getTasksKelas(k.nama);
-                    let badgeJurusanColor = "bg-blue-50 text-blue-700 border border-blue-200";
-                    if (k.jurusan === 'TKR') badgeJurusanColor = "bg-amber-50 text-amber-700 border border-amber-200";
-                    if (k.jurusan === 'TAV') badgeJurusanColor = "bg-purple-50 text-purple-600 border border-purple-200";
-
-                    // Sama seperti renderContainerKelasTingkat()/renderSeluruhKelas() --
-                    // tugas yang tenggatnya sudah lewat disembunyikan dari kartu
-                    // Beranda ini (tapi tetap ada di data & di "Atur Tugas").
-                    const cekWaktuKelasIniJurusan = new Date().getTime();
-                    const tugasAktifKelasIni = tasksKelasIni.filter(t => !t.deadlineTimestamp || cekWaktuKelasIniJurusan < t.deadlineTimestamp || t.studentSubmitted);
-
-                    let activeTaskHTML = "";
-                    if (tugasAktifKelasIni.length > 0) {
-                        activeTaskHTML = tugasAktifKelasIni.map(data => `
-                            <div class="mt-2 p-2.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between" onclick="event.stopPropagation()">
-                                <div class="text-xs">
-                                    <span class="font-bold text-blue-700 block">${data.judul || data.tipe}</span>
-                                    <span class="text-[10px] text-slate-500 block">${data.teks ? data.teks.substring(0, 20) + '...' : 'Instruksi Suara'}</span>
-                                </div>
-                                <div class="flex items-center gap-1">
-                                    <button onclick="bukaModalEditTugas('${k.nama}', '${data.id}'); event.stopPropagation();" class="px-2 py-1 bg-amber-500 text-white rounded-lg text-[10px] font-bold"><i class="fa-solid fa-clock"></i></button>
-                                    <button onclick="hapusTugasByID('${k.nama}', '${data.id}'); event.stopPropagation();" class="px-2 py-1 bg-rose-500 text-white rounded-lg text-[10px] font-bold"><i class="fa-solid fa-trash-can"></i></button>
-                                </div>
-                            </div>
-                        `).join('');
-                    }
-
-                    container.innerHTML += `
-                        <div onclick="bukaDetailKelas('${k.nama}', '${k.jurusan}', '${k.mapel}', '${k.jurusan}', '${k.img}')" class="bg-white p-5 rounded-2xl border border-slate-200/85 shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between space-y-3 group">
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="px-2.5 py-1 font-extrabold text-[11px] rounded-lg ${badgeJurusanColor}">${k.jurusan}</span>
-                                    <span class="text-xs text-slate-400 font-medium">30 Siswa</span>
-                                </div>
-                                <h4 class="font-extrabold text-slate-900 text-base group-hover:text-blue-600">${k.nama}</h4>
-                                <p class="text-xs text-slate-500 mt-0.5">${k.mapel}</p>
-                                ${activeTaskHTML}
-                            </div>
-                            <div class="pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
-                                <span class="text-slate-400">Wali: <b class="text-slate-700">${k.wali}</b></span>
-                                <button onclick="bukaModalBeriTugas('${k.nama}'); event.stopPropagation();" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-sm">
-                                    <i class="fa-solid fa-plus mr-1"></i> Beri Tugas
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                });
+                renderKelasListWithCollapse(`container-beranda-${tingkat}`, filtered);
             });
         }
 
@@ -518,7 +522,7 @@
             filtered.forEach(k => {
                 const tasksKelasIni = getTasksKelas(k.nama);
                 let badgeJurusanColor = "bg-blue-50 text-blue-700";
-                if (k.jurusan === 'TKR') badgeJurusanColor = "bg-amber-50 text-amber-700 border border-amber-200";
+                if (k.jurusan === 'TKR') badgeJurusanColor = "bg-rose-50 text-rose-700 border border-rose-200";
                 if (k.jurusan === 'TAV') badgeJurusanColor = "bg-purple-50 text-purple-600";
 
                 // Tugas yang sudah lewat deadline dianggap usai (lihat catatan yang
@@ -2637,8 +2641,10 @@
             localStorage.setItem('guru_profile_photo', base64Image);
 
             const headerAvatar = document.getElementById('header-user-avatar-guru');
+            const headerAvatarMobile = document.getElementById('header-user-avatar-guru-mobile');
             const dropdownAvatar = document.getElementById('dropdown-user-avatar-guru');
             if (headerAvatar) headerAvatar.src = base64Image;
+            if (headerAvatarMobile) headerAvatarMobile.src = base64Image;
             if (dropdownAvatar) dropdownAvatar.src = base64Image;
 
             document.getElementById('modal-atur-foto-guru').classList.add('hidden');
@@ -2649,8 +2655,10 @@
             const savedPhoto = localStorage.getItem('guru_profile_photo');
             if (savedPhoto) {
                 const headerAvatar = document.getElementById('header-user-avatar-guru');
+                const headerAvatarMobile = document.getElementById('header-user-avatar-guru-mobile');
                 const dropdownAvatar = document.getElementById('dropdown-user-avatar-guru');
                 if (headerAvatar) headerAvatar.src = savedPhoto;
+                if (headerAvatarMobile) headerAvatarMobile.src = savedPhoto;
                 if (dropdownAvatar) dropdownAvatar.src = savedPhoto;
             }
         }

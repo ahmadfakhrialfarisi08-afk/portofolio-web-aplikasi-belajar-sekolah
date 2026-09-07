@@ -322,3 +322,54 @@
         @keyframes masukDashboardTitikJalan {
             0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } 100% { content: ''; }
         }
+
+        /* ============================================================
+           TAMPILAN KHUSUS HP (mobile) untuk Beranda Guru — dibuat pakai
+           CSS murni + media query (bukan nambah kelas Tailwind baru),
+           supaya nggak bergantung ke stylesheet Tailwind hasil build
+           yang cuma berisi kelas-kelas yang SUDAH dipakai di file ini.
+           ============================================================ */
+
+        /* Elemen yang cuma boleh tampil di layar HP (di bawah breakpoint sm/640px) */
+        .guru-mobile-only-flex { display: none; }
+        @media (max-width: 639px) {
+            .guru-mobile-only-flex { display: flex; }
+            .guru-desktop-only-inline { display: none !important; }
+        }
+
+        /* Bar jam & tanggal realtime khusus HP, nempel rapi di bawah header */
+        .guru-mobile-clock-bar {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: #ffffff;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            padding: 0.55rem 1rem;
+        }
+        @media (max-width: 639px) {
+            .guru-mobile-clock-bar { display: flex; }
+        }
+
+        /* Filter Cepat: di HP dibuat scroll ke samping (bukan wrap numpuk ke bawah) */
+        @media (max-width: 639px) {
+            .filter-cepat-wrap {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                padding-bottom: 2px;
+                margin: 0 -0.25rem;
+                padding-left: 0.25rem;
+                padding-right: 0.25rem;
+            }
+            .filter-cepat-wrap::-webkit-scrollbar { display: none; }
+            .filter-cepat-wrap .btn-fast-filter { flex-shrink: 0; }
+        }
+
+        /* Kartu-kartu kelas "lainnya" yang belum ditampilkan (sebelum tombol
+           "Tampilkan N Kelas Lainnya" ditekan). Pakai display:contents supaya
+           begitu dimunculkan, kartunya tetap ikut grid 2 kolom milik
+           container induknya (bukan bikin grid baru yang bersarang). */
+        .kartu-kelas-sisa-wrapper { display: contents; }
+        .kartu-kelas-sisa-wrapper.kartu-kelas-tersembunyi { display: none; }
