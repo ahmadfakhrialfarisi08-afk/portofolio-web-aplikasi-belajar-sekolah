@@ -365,9 +365,9 @@
         // supaya markup kartu kelas di Beranda selalu konsisten satu sumber.
         function buildKartuKelasBerandaHTML(k) {
             const tasksKelasIni = getTasksKelas(k.nama);
-            let badgeJurusanColor = "bg-blue-50 text-blue-700 border border-blue-200";
-            if (k.jurusan === 'TKR') badgeJurusanColor = "bg-rose-50 text-rose-700 border border-rose-200";
-            if (k.jurusan === 'TAV') badgeJurusanColor = "bg-purple-50 text-purple-600 border border-purple-200";
+            let badgeJurusanColor = "bg-blue-50 text-blue-600";
+            if (k.jurusan === 'TKR') badgeJurusanColor = "bg-orange-50 text-orange-600";
+            if (k.jurusan === 'TAV') badgeJurusanColor = "bg-purple-50 text-purple-600";
 
             // Tugas yang sudah lewat deadline dianggap usai -- sama seperti pola
             // yang sudah dipakai di renderSeluruhKelas() -- supaya kartu di
@@ -414,7 +414,7 @@
                     </div>
                     <div class="pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
                         <span class="text-slate-400">Wali: <b class="text-slate-700">${k.wali}</b></span>
-                        <button onclick="bukaModalBeriTugas('${k.nama}'); event.stopPropagation();" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all shadow-sm">
+                        <button onclick="bukaModalBeriTugas('${k.nama}'); event.stopPropagation();" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs transition-all shadow-sm">
                             <i class="fa-solid fa-plus mr-1"></i> Beri Tugas
                         </button>
                     </div>
@@ -444,8 +444,8 @@
             if (tombolWrap) {
                 if (sisanya.length > 0) {
                     tombolWrap.innerHTML = `
-                        <button id="${idSisa}-btn" onclick="tampilkanSisaKelasBeranda('${idSisa}')" class="mt-4 w-full py-2.5 rounded-xl border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 text-xs font-bold transition-all">
-                            <i class="fa-solid fa-chevron-down mr-1"></i> Tampilkan ${sisanya.length} Kelas Lainnya
+                        <button id="${idSisa}-btn" onclick="tampilkanSisaKelasBeranda('${idSisa}')" class="mt-4 w-full py-2.5 rounded-2xl border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 text-xs font-bold transition-all">
+                            <i class="fa-solid fa-plus mr-1"></i> Tampilkan ${sisanya.length} Kelas Lainnya
                         </button>
                     `;
                 } else {
@@ -1868,29 +1868,31 @@
             const namaHari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"][now.getDay()];
             const dayBadge = document.getElementById('current-day-badge');
             if(dayBadge) dayBadge.innerText = namaHari;
+            const daySubtitle = document.getElementById('current-day-subtitle');
+            if(daySubtitle) daySubtitle.innerText = `Hari ${namaHari} (Aktif)`;
             container.innerHTML = "";
 
             jadwalMengajar.forEach(item => {
                 const status = getScheduleStatus(item.start, item.end);
                 let cardStyle = "", badgeStyle = "", statusLabel = "";
                 if (status === "ONGOING") {
-                    cardStyle = "border-emerald-400 bg-emerald-500/10 ring-2 ring-emerald-500/30 shadow-md";
-                    badgeStyle = "bg-emerald-600 text-white font-extrabold shadow-sm animate-pulse";
-                    statusLabel = `<span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">Sedang Berlangsung</span>`;
+                    cardStyle = "border-emerald-200 bg-emerald-50";
+                    badgeStyle = "bg-emerald-100 text-emerald-700 font-extrabold";
+                    statusLabel = `<span class="text-[10px] font-extrabold uppercase text-emerald-700">Sedang Berlangsung</span>`;
                 } else if (status === "FINISHED") {
-                    cardStyle = "border-slate-200 bg-white shadow-sm opacity-75";
+                    cardStyle = "border-slate-200 bg-white opacity-75";
                     badgeStyle = "bg-slate-100 text-slate-500 font-bold";
-                    statusLabel = `<span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-500"><i class="fa-solid fa-check mr-1"></i> Selesai</span>`;
+                    statusLabel = `<span class="text-[10px] font-extrabold uppercase text-slate-400"><i class="fa-solid fa-check mr-1"></i> Selesai</span>`;
                 } else {
-                    cardStyle = "border-slate-200/80 bg-slate-50/70 shadow-sm";
+                    cardStyle = "border-slate-200 bg-white";
                     badgeStyle = "bg-blue-50 text-blue-600 font-bold";
-                    statusLabel = `<span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-50 text-blue-600">Akan Datang</span>`;
+                    statusLabel = `<span class="text-[10px] font-extrabold uppercase text-slate-500">Akan Datang</span>`;
                 }
 
                 container.innerHTML += `
                     <div class="p-3.5 rounded-xl border ${cardStyle} transition-all space-y-1.5">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-mono font-bold ${badgeStyle} px-2 py-0.5 rounded">${item.jam}</span>
+                            <span class="text-xs font-mono font-bold ${badgeStyle} px-2.5 py-1 rounded-lg">${item.jam}</span>
                             ${statusLabel}
                         </div>
                         <h4 class="font-bold text-slate-900 text-sm">${item.kelas}</h4>

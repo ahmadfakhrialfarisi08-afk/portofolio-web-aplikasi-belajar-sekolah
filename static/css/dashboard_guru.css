@@ -341,14 +341,38 @@
         .guru-mobile-clock-bar {
             display: none;
             align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
+            justify-content: flex-start;
+            gap: 0.6rem;
             background: #ffffff;
             border-bottom: 1px solid rgba(226, 232, 240, 0.8);
             padding: 0.55rem 1rem;
         }
         @media (max-width: 639px) {
             .guru-mobile-clock-bar { display: flex; }
+        }
+        /* Bar jam & tanggal HP kini jadi bagian dari panel biru (nyambung
+           visual dengan header & banner "Selamat Datang" di bawahnya). */
+        @media (max-width: 639px) {
+            #header-utama-guru {
+                background: linear-gradient(120deg, #0f172a 0%, #1e1b4b 50%, #1e3a8a 100%);
+                border-bottom: none;
+                box-shadow: none;
+            }
+            .guru-mobile-clock-bar {
+                background: linear-gradient(120deg, #1e1b4b 0%, #1e3a8a 100%);
+                border-bottom: none;
+                padding: 0.5rem 1rem 1rem;
+            }
+        }
+        .guru-jam-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 9999px;
+            padding: 0.3rem 0.75rem;
+            flex-shrink: 0;
         }
 
         /* Filter Cepat: di HP dibuat scroll ke samping (bukan wrap numpuk ke bawah) */
@@ -365,6 +389,38 @@
             }
             .filter-cepat-wrap::-webkit-scrollbar { display: none; }
             .filter-cepat-wrap .btn-fast-filter { flex-shrink: 0; }
+        }
+
+        /* Banner "Selamat Datang" khusus HP: ditarik naik & dilebarkan penuh
+           (full-bleed) supaya nyambung tanpa celah dengan header + bar jam
+           gelap di atasnya, jadi terlihat sebagai satu panel biru utuh.
+           Sudut atas dibikin siku (nyambung ke bar jam), sudut bawah tetap
+           membulat seperti aslinya (rounded-3xl = 1.5rem). */
+        @media (max-width: 639px) {
+            #banner-selamat-datang-guru {
+                margin: -1rem -1rem 0 -1rem;
+                border-top-left-radius: 0;
+                border-top-right-radius: 0;
+                border-bottom-left-radius: 1.5rem;
+                border-bottom-right-radius: 1.5rem;
+                box-shadow: none;
+            }
+        }
+
+        /* Filter Cepat & dropdown jurusan khusus HP: tombol jadi pil bulat
+           penuh, dan dropdown jurusan diberi ikon grid di kiri + tampilan
+           kartu putih, meniru desain di mockup. */
+        @media (max-width: 639px) {
+            .btn-fast-filter {
+                border-radius: 9999px;
+            }
+            #select-fast-jurusan {
+                background: #ffffff;
+                border-color: #f1f5f9;
+                border-radius: 1rem;
+                padding-left: 2.5rem;
+                box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+            }
         }
 
         /* Kartu-kartu kelas "lainnya" yang belum ditampilkan (sebelum tombol
