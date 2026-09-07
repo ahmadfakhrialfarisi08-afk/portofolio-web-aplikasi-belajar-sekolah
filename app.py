@@ -251,7 +251,7 @@ users = {
         'password': 'guru123', 
         'role': 'guru',
         'email': 'guru@sekolah.sch.id',
-        'fullname': 'Guru Pengajar',
+        'fullname': 'Ahmad, S.T',
         'identity_number': '198501012010011001',
         # GANTI KE NOMOR WA ASLI GURU/GURU PIKET YANG BERSANGKUTAN --
         # dipakai tombol "Ajukan Banding" di overlay peringatan pelanggaran
