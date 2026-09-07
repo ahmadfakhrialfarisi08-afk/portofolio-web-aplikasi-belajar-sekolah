@@ -267,7 +267,7 @@ users = {
             'role': 'guru',
             'email': 'joel@sekolah.sch.id',
             'fullname': 'PAK JOEL',
-            'identity_number': '198501901210011001',
+            'identity_number': '198532001876011001',
             'whatsapp': '081234567890'
     },
     'siswa': {
