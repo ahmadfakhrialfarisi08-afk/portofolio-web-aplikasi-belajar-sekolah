@@ -261,7 +261,7 @@ users = {
         # +62xx), otomatis dirapikan ke format internasional saat dipakai.
         'whatsapp': '081234567890'
     },
-    'guru': {
+    'pak joel': {
             'username': 'pak joel', 
             'password': 'joel123', 
             'role': 'guru',
