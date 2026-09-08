@@ -751,26 +751,31 @@
                     </div>
                 </div>
 
+                <!-- ============================================================
+                     TABEL SISWA -- versi kartu bertumpuk (BUKAN <table> lebar
+                     kotak-kotak lagi), supaya enak dibaca di HP: satu daftar
+                     PANJANG KE BAWAH tanpa dipecah per "Foto Meja X-Y", dan
+                     "#" nomor urut diganti foto profil + border siswa yang
+                     lagi dipakai (bukan cuma teks angka). Semua styling ada
+                     di dashboard_guru.css (class tsm-*) supaya nggak
+                     bergantung kelas Tailwind baru yang belum ke-compile.
+                     ============================================================ -->
                 <div id="view-tabel-container" class="hidden">
-                    <div class="mb-4 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-xl text-xs font-bold flex items-center justify-between">
-                        <span><i class="fa-solid fa-circle-info mr-2"></i> Tabel Khusus Kelas 12 TKJ 3 / TAV: Terhubung per siswa (Foto, Border, Nama, Efek, & Title)</span>
-                        <span class="bg-blue-600 text-white px-2.5 py-1 rounded-lg text-[10px]">Realtime Data</span>
+                    <div class="tsm-card">
+                        <div class="tsm-card-header">
+                            <div class="tsm-card-header-text">
+                                <h4 id="tsm-mini-nama-kelas">XII TKJ 3</h4>
+                                <p id="tsm-mini-mapel">Administrasi Infrastruktur Jaringan</p>
+                            </div>
+                            <span id="tsm-mini-badge" class="tsm-mini-badge">Belum Ditentukan</span>
+                        </div>
+                        <div class="tsm-col-labels">
+                            <span>Nama Murid</span>
+                            <span>Status</span>
+                        </div>
+                        <div id="modal-tabel-murid" class="tsm-list">
+                        </div>
                     </div>
-                    <table class="w-full text-left border-collapse bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200/80">
-                        <thead>
-                            <tr class="border-b border-slate-200 text-[11px] uppercase tracking-wider text-slate-400 font-bold bg-slate-50">
-                                <th class="py-3 px-4">No / Meja</th>
-                                <th class="py-3 px-4">Foto & Border Siswa</th>
-                                <th class="py-3 px-4">Nama Murid</th>
-                                <th class="py-3 px-4">Title / Gelar</th>
-                                <th class="py-3 px-4">Efek Visual</th>
-                                <th class="py-3 px-4 text-center">Status Disiplin</th>
-                                <th class="py-3 px-4 text-right">Aksi & Periksa</th>
-                            </tr>
-                        </thead>
-                        <tbody id="modal-tabel-murid" class="divide-y divide-slate-100 text-sm">
-                        </tbody>
-                    </table>
                 </div>
 
             </div>

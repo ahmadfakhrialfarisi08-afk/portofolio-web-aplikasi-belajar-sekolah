@@ -2127,6 +2127,14 @@
             document.getElementById('modal-badge-jurusan').innerText = jurusan;
             document.getElementById('modal-img-kelas').src = imgUrl;
 
+            // Mini header di dalam kartu "Tabel Siswa" (versi kartu bertumpuk) --
+            // dibikin terpisah dari header utama modal supaya konteks kelas/mapel
+            // tetap kebaca meski guru sudah scroll jauh ke bawah daftar murid.
+            const tsmMiniNama = document.getElementById('tsm-mini-nama-kelas');
+            if (tsmMiniNama) tsmMiniNama.innerText = namaKelas;
+            const tsmMiniMapel = document.getElementById('tsm-mini-mapel');
+            if (tsmMiniMapel) tsmMiniMapel.innerText = mapel;
+
             const tasksKelasIni = getTasksKelas(namaKelas);
             let deadlineText = "Belum Ditentukan";
             let deadlineTimestamp = null;
@@ -2184,6 +2192,8 @@
             }
 
             document.getElementById('modal-text-tenggat').innerText = deadlineText;
+            const tsmMiniBadge = document.getElementById('tsm-mini-badge');
+            if (tsmMiniBadge) tsmMiniBadge.innerText = deadlineText;
             const currentTime = new Date().getTime();
             const isExpired = (deadlineTimestamp && currentTime >= deadlineTimestamp);
 
@@ -2226,7 +2236,7 @@
 
             if (muridKelasIni.length === 0) {
                 gridContainer.innerHTML = `<p class="col-span-full text-center text-slate-400 italic py-6 text-sm">Belum ada data murid untuk kelas ini.</p>`;
-                tbodyContainer.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-400 italic">Belum ada data murid untuk kelas ini.</td></tr>`;
+                tbodyContainer.innerHTML = `<p class="text-center text-slate-400 italic py-6 text-sm">Belum ada data murid untuk kelas ini.</p>`;
             }
 
             // PERBAIKAN PERFORMA (PENTING, buat HP & laptop low-end): dulu di
@@ -2304,51 +2314,45 @@
                     </div>
                 `);
 
-                // Render Tabel Khusus Siswa (Terhubung per siswa: Foto, Border, Nama, Efek, Title)
-                let statusBadgeTabel = "";
-                let aksiTabelButton = "";
+                // Render Tabel Khusus Siswa -- versi kartu bertumpuk (tsm-row).
+                // "#" nomor urut TIDAK dipakai lagi di sini -- diganti foto profil
+                // + border siswa yang sedang dipakai (avatarWrapperHTML), nomor
+                // meja cuma jadi badge kecil nempel di sudut foto biar tetap ada
+                // infonya tanpa jadi elemen utama. Satu tugas = satu status
+                // singkat, dan seluruh baris bisa diklik langsung buka
+                // periksaSiswa() (gantiin tombol "Periksa & Nilai" yang panjang).
+                let statusPillTabel = "";
                 if (isCheck) {
-                    statusBadgeTabel = `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-100 text-emerald-700 text-xs font-black shadow-sm"><i class="fa-solid fa-circle-check text-emerald-600"></i> ${nilaiSiswa ? 'Selesai (Nilai: ' + nilaiSiswa + ')' : 'Terkumpul Tepat Waktu'}</span>`;
-                    aksiTabelButton = `<button onclick="periksaSiswa(${m.id})" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all shadow-sm">Periksa & Nilai</button>`;
+                    statusPillTabel = `<span class="tsm-status-pill tsm-status-hijau"><i class="fa-solid fa-circle-check"></i> ${nilaiSiswa ? 'Nilai ' + nilaiSiswa : 'Terkumpul'}</span>`;
                 } else if (isExpired) {
-                    statusBadgeTabel = `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-rose-100 text-rose-700 text-xs font-black shadow-sm"><i class="fa-solid fa-circle-xmark text-rose-600"></i> Terlambat / Terkunci</span>`;
-                    aksiTabelButton = `<span class="text-xs text-rose-500 font-bold italic"><i class="fa-solid fa-lock mr-1"></i> Tidak Mengumpulkan</span>`;
+                    statusPillTabel = `<span class="tsm-status-pill tsm-status-merah"><i class="fa-solid fa-circle-xmark"></i> Terlambat</span>`;
                 } else if (hasActiveTask) {
-                    statusBadgeTabel = `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-100 text-blue-700 text-xs font-black shadow-sm"><i class="fa-solid fa-spinner fa-spin text-blue-600"></i> Sedang Mengerjakan</span>`;
-                    aksiTabelButton = `<span class="text-xs text-blue-600 font-semibold italic">Menunggu Pengiriman...</span>`;
+                    statusPillTabel = `<span class="tsm-status-pill tsm-status-biru"><i class="fa-solid fa-spinner fa-spin"></i> Mengerjakan</span>`;
                 } else {
-                    statusBadgeTabel = `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-100 text-amber-800 text-xs font-black shadow-sm"><i class="fa-solid fa-info-circle text-amber-600"></i> Belum Ada Tugas</span>`;
-                    aksiTabelButton = `<span class="text-xs text-slate-400 font-medium italic">Tidak Ada Tugas</span>`;
+                    statusPillTabel = `<span class="tsm-status-pill tsm-status-kuning"><i class="fa-solid fa-info-circle"></i> Belum Ada Tugas</span>`;
                 }
 
+                const lencanaEkstra = [];
+                if (m.title === 'DEV') lencanaEkstra.push(`<span class="tsm-badge-dev badge-dev"><i class="fa-solid fa-crown"></i> DEV</span>`);
+                if (m.meja === 1) lencanaEkstra.push(`<span class="tsm-badge-pintu">Pintu</span>`);
+                if (m.efek === 'gold-name') lencanaEkstra.push(`<span class="tsm-badge-efek"><i class="fa-solid fa-wand-magic-sparkles"></i> Emas</span>`);
+
                 potonganTabelHTML.push(`
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="py-3 px-4 font-extrabold text-slate-500">Meja #${m.meja}</td>
-                        <td class="py-3 px-4">
-                            <div class="flex items-center gap-2">
-                                <div class="relative">
-                                    ${avatarWrapperHTML(m, 'w-10 h-10')}
-                                </div>
-                                <span class="text-[11px] px-2 py-0.5 bg-indigo-50 text-indigo-700 font-bold rounded-lg border border-indigo-100">${labelBorder(m)}</span>
-                            </div>
-                        </td>
-                        <td class="py-3 px-4">
-                            <div class="font-bold">${namaEfekHTML(m)}</div>
-                            <div class="text-[10px] text-slate-400 font-mono">ID: MURID-${m.id}</div>
-                        </td>
-                        <td class="py-3 px-4">
-                            ${titleBadgeHTML(m)}
-                        </td>
-                        <td class="py-3 px-4">
-                            <span class="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs font-bold border border-purple-100"><i class="fa-solid fa-wand-magic-sparkles mr-1 text-purple-500"></i>${labelEfek(m)}</span>
-                        </td>
-                        <td class="py-3 px-4 text-center">
-                            ${statusBadgeTabel}
-                        </td>
-                        <td class="py-3 px-4 text-right">
-                            ${aksiTabelButton}
-                        </td>
-                    </tr>
+                    <div class="tsm-row" onclick="periksaSiswa(${m.id})">
+                        <div class="tsm-avatar-wrap">
+                            ${avatarWrapperHTML(m, 'w-10 h-10')}
+                            <span class="tsm-meja-badge" title="Meja ${m.meja}">${m.meja}</span>
+                        </div>
+                        <div class="tsm-main">
+                            ${lencanaEkstra.length ? `<div class="tsm-badges">${lencanaEkstra.join('')}</div>` : ''}
+                            <div class="tsm-nama">${namaEfekHTML(m)}</div>
+                            <div class="tsm-id">MURID-${m.id}</div>
+                        </div>
+                        <div class="tsm-status">
+                            ${statusPillTabel}
+                        </div>
+                        <i class="fa-solid fa-chevron-right tsm-chevron"></i>
+                    </div>
                 `);
             });
 
