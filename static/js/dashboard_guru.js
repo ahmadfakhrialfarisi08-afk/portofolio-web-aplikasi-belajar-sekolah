@@ -3559,6 +3559,65 @@
             }).join('');
         }
 
+        // ===== Deteksi "Sesi Berubah" (akun lain login di tab/perangkat
+        // lain pada browser yang sama) =====
+        // Flask cuma punya 1 cookie session per BROWSER, bukan per tab.
+        // Jadi kalau tab ini login sebagai Guru A, lalu di tab lain
+        // (browser sama) login sebagai Guru B, cookie session browser
+        // berubah jadi milik Guru B untuk SEMUA tab -- tapi tab ini (yang
+        // sudah lebih dulu ter-render) tidak otomatis ikut berubah
+        // tampilannya sampai di-refresh, jadi kelihatan seperti "akun A
+        // dan B jadi satu". USERNAME_LOGIN_SAAT_TAB_INI_DIBUKA merekam
+        // username asli yang login SAAT halaman ini pertama kali
+        // dirender (dikirim server lewat data-login-username di <body>),
+        // lalu dibandingkan berkala ke /api/sesi/whoami yang selalu
+        // membaca session AKTUAL saat itu juga.
+        const USERNAME_LOGIN_SAAT_TAB_INI_DIBUKA = document.body.dataset.loginUsername || '';
+        let sesiTabIniSudahDitandaiBeda = false;
+
+        async function pengecekSesiBerubahGuru() {
+            // Sekali ketahuan beda & modalnya sudah tampil, tidak perlu
+            // terus-terusan cek lagi -- guru tinggal klik "Muat Ulang".
+            if (sesiTabIniSudahDitandaiBeda) return;
+            try {
+                const res = await fetch('/api/sesi/whoami');
+                const json = await res.json();
+                if (!json.success) return;
+                const sesiMasihSama = json.logged_in && json.username === USERNAME_LOGIN_SAAT_TAB_INI_DIBUKA;
+                if (!sesiMasihSama) {
+                    sesiTabIniSudahDitandaiBeda = true;
+                    tampilkanModalSesiBerubahGuru(json.logged_in ? json.nama : null);
+                }
+            } catch (e) {
+                // Koneksi lagi bermasalah -- jangan ganggu guru dengan
+                // modal palsu, biar dicoba lagi di pengecekan berikutnya.
+                console.warn('Gagal cek status sesi login:', e);
+            }
+        }
+
+        function tampilkanModalSesiBerubahGuru(namaAkunYangSekarangAktif) {
+            const modal = document.getElementById('modal-sesi-berubah');
+            const pesan = document.getElementById('sesi-berubah-pesan');
+            if (pesan) {
+                pesan.textContent = namaAkunYangSekarangAktif
+                    ? `Sepertinya akun "${namaAkunYangSekarangAktif}" baru saja login di tab atau perangkat lain pada browser ini. Muat ulang halaman ini supaya tampilan & datanya sesuai akun yang benar-benar aktif sekarang.`
+                    : 'Sesi login Anda di browser ini sudah berakhir (kemungkinan logout dari tab lain). Muat ulang halaman untuk masuk kembali.';
+            }
+            if (modal) {
+                modal.classList.remove('hidden');
+            } else {
+                // Fallback kalau markup modalnya entah kenapa belum ada di
+                // halaman -- tetap kasih tahu & langsung reload, jangan
+                // biarkan guru diam-diam lanjut di tab yang sudah basi.
+                alert('Sesi login di browser ini sudah berubah. Halaman akan dimuat ulang.');
+                location.reload();
+            }
+        }
+
+        function muatUlangKarenaSesiBerubah() {
+            location.reload();
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             updateHeaderClock();
             setInterval(updateHeaderClock, 1000);
@@ -3595,4 +3654,16 @@
             // kecuali saat tab sedang tidak aktif).
             cekBelJamMengajarOtomatis();
             setInterval(() => { if (!document.hidden) cekBelJamMengajarOtomatis(); }, 5000);
+
+            // Cek sesi tiap 15 detik selama tab ini kebuka (kecuali tab
+            // sedang tidak aktif/di-minimize, biar tidak boros)...
+            setInterval(() => { if (!document.hidden) pengecekSesiBerubahGuru(); }, 15000);
+            // ...dan langsung cek ULANG begitu guru balik lagi ke tab ini
+            // (mis. abis buka tab lain buat login sebagai guru lain, terus
+            // balik ke tab ini) -- supaya ketahuan LEBIH CEPAT daripada
+            // nunggu interval 15 detik berikutnya.
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') pengecekSesiBerubahGuru();
+            });
+            window.addEventListener('focus', pengecekSesiBerubahGuru);
         });

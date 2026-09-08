@@ -10,7 +10,7 @@ import threading
 from collections import defaultdict, deque
 from functools import wraps
 from email.mime.text import MIMEText
-from datetime import datetime, timedelta
+from datetime import datetime, timedeltaA
 from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response, jsonify, send_from_directory
  
 # Muat variabel dari file .env jika tersedia (opsional, untuk kemudahan development).
@@ -2437,7 +2437,48 @@ def dashboard_siswa():
 def dashboard_guru():
     if 'user' not in session or session['user']['role'] != 'guru':
         return redirect(url_for('login'))
-    return render_template('dashboard_guru.html', username=session['user']['nama'])
+    return render_template(
+        'dashboard_guru.html',
+        username=session['user']['nama'],
+        # Dikirim terpisah dari 'username' (yang isinya fullname buat
+        # ditampilkan) -- ini KHUSUS buat dibandingkan sama username akun
+        # asli di /api/sesi/whoami lewat JS (lihat pengecekSesiBerubahGuru()
+        # di dashboard_guru.js), supaya tab ini bisa tahu kalau cookie
+        # session browser sudah pindah ke akun guru lain (mis. gara-gara
+        # login akun baru di tab/perangkat lain pada browser yang sama --
+        # lihat juga catatan _cek_sesi_masih_cocok soal ini).
+        login_username=session['user']['username']
+    )
+
+
+@app.route('/api/sesi/whoami')
+def api_sesi_whoami():
+    """Endpoint ringan buat cek akun APA yang SEBENARNYA sedang aktif di
+    balik cookie session browser ini SAAT INI -- dipanggil berkala oleh
+    dashboard_guru.html (lihat pengecekSesiBerubahGuru() di
+    dashboard_guru.js) buat mendeteksi tab yang sudah "basi": layarnya
+    masih nampilin akun lama, padahal di baliknya cookie session sudah
+    berubah jadi akun lain.
+
+    Ini bisa kejadian karena Flask cuma punya SATU cookie session per
+    BROWSER, bukan per tab -- persis seperti yang sudah dijelaskan di
+    komentar _cek_sesi_masih_cocok(): kalau tab A login sebagai Guru 1,
+    lalu tab B (browser sama) login sebagai Guru 2, session browser itu
+    ikut berubah jadi milik Guru 2 untuk SEMUA tab, tapi tab A yang sudah
+    lebih dulu ter-render tidak otomatis ikut berubah tampilannya sampai
+    di-refresh. Dulu ini cuma dijaga di level API tertentu (mis. simpan
+    quiz), sekarang halaman dashboard guru sendiri juga aktif mengecek
+    supaya guru langsung dikasih tahu & diarahkan reload, bukan diam-diam
+    lanjut kerja di tab yang datanya sudah tidak sesuai."""
+    if 'user' not in session:
+        return jsonify(success=True, logged_in=False)
+    return jsonify(
+        success=True,
+        logged_in=True,
+        username=session['user']['username'],
+        role=session['user']['role'],
+        nama=session['user']['nama']
+    )
  
 @app.route('/dashboard/staf')
 def dashboard_staf():

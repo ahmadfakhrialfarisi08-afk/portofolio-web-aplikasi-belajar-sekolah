@@ -26,7 +26,7 @@
 
     <link rel="stylesheet" href="../static/css/dashboard_guru.css">
 </head>
-<body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden">
+<body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden" data-login-username="{{ login_username }}">
     <!-- Layar transisi masuk dashboard: gelap -> terang, mirip halaman login -->
     <div id="layar-masuk-dashboard" aria-hidden="true">
         <div class="masuk-dashboard-lencana"><i class="fa-solid fa-chalkboard-user"></i></div>
@@ -1058,6 +1058,30 @@
                 </button>
                 <button id="konfirmasi-generik-btn-aksi" class="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-rose-500/20 flex items-center gap-2">
                     <i class="fa-solid fa-trash-can"></i> <span>Ya, Lanjutkan</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal "Sesi Berubah" -- muncul kalau JS (pengecekSesiBerubahGuru()
+         di dashboard_guru.js) mendeteksi cookie session browser ini sudah
+         pindah ke akun guru lain (mis. gara-gara login akun lain di
+         tab/perangkat lain pada browser yang sama), supaya guru tidak
+         terus kerja di tab yang datanya sudah tidak sesuai akun aktif.
+         Sengaja TANPA tombol "Batal"/silang -- satu-satunya aksi yang
+         aman di sini cuma muat ulang. -->
+    <div id="modal-sesi-berubah" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[90] flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="p-5 flex flex-col items-center text-center gap-3">
+                <div class="w-14 h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-2xl">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h4 class="font-bold text-slate-900 text-sm">Sesi Login Sudah Berubah</h4>
+                <p id="sesi-berubah-pesan" class="text-xs text-slate-500 leading-relaxed"></p>
+            </div>
+            <div class="p-4 border-t border-slate-100 bg-slate-50">
+                <button onclick="muatUlangKarenaSesiBerubah()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> <span>Muat Ulang Halaman</span>
                 </button>
             </div>
         </div>
