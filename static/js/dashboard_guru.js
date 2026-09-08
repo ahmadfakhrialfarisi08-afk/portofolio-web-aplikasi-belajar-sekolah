@@ -2912,6 +2912,54 @@
             let startX = 0, startY = 0;   // posisi jari saat pertama menyentuh
             let lastX = 0, lastY = 0;     // posisi jari terakhir yg diketahui
 
+            // ---- Ghost visual: kloning kartu yang beneran NEMPEL & IKUT JARI ----
+            // Sebelumnya efek "terpilih" cuma pindah-pindah class highlight ke
+            // kartu di bawah jari -- kartunya sendiri diam di tempat, cuma
+            // outline-nya yang loncat. Sekarang begitu long-press terbukti,
+            // kita bikin klon kartu awal, taruh melayang (position: fixed) di
+            // atas semua elemen lain, lalu translate klon itu persis mengikuti
+            // pergeseran jari (dx, dy dari titik sentuh awal) tiap touchmove --
+            // jadi kelihatan benar-benar "kebawa" jari naik/turun, bukan diam.
+            let ghostEl = null;
+            let ghostOffsetX = 0, ghostOffsetY = 0; // posisi awal ghost relatif ke titik sentuh
+
+            function buatGhost(kartu, x, y) {
+                const rect = kartu.getBoundingClientRect();
+                ghostOffsetX = x - rect.left;
+                ghostOffsetY = y - rect.top;
+                ghostEl = kartu.cloneNode(true);
+                ghostEl.classList.add('kartu-ghost-drag');
+                ghostEl.style.position = 'fixed';
+                ghostEl.style.left = rect.left + 'px';
+                ghostEl.style.top = rect.top + 'px';
+                ghostEl.style.width = rect.width + 'px';
+                ghostEl.style.height = rect.height + 'px';
+                ghostEl.style.margin = '0';
+                ghostEl.style.zIndex = '9999';
+                ghostEl.style.pointerEvents = 'none';
+                ghostEl.style.opacity = '0.92';
+                ghostEl.style.boxShadow = '0 12px 28px rgba(0,0,0,0.28)';
+                ghostEl.style.transform = 'scale(1.04)';
+                ghostEl.style.transition = 'none';
+                ghostEl.style.willChange = 'transform';
+                document.body.appendChild(ghostEl);
+                gerakkanGhost(x, y);
+            }
+
+            function gerakkanGhost(x, y) {
+                if (!ghostEl) return;
+                const dx = x - ghostOffsetX;
+                const dy = y - ghostOffsetY;
+                ghostEl.style.transform = `translate(${dx - parseFloat(ghostEl.style.left)}px, ${dy - parseFloat(ghostEl.style.top)}px) scale(1.04)`;
+            }
+
+            function hapusGhost() {
+                if (ghostEl) {
+                    ghostEl.remove();
+                    ghostEl = null;
+                }
+            }
+
             function lepaskanHighlight() {
                 if (kartuTersentuh) {
                     kartuTersentuh.classList.remove('kartu-tersentuh');
@@ -2929,6 +2977,7 @@
             function resetSemua() {
                 batalkanTimerTahan();
                 lepaskanHighlight();
+                hapusGhost();
                 kartuAwalSentuh = null;
                 modeDragAktif = false;
             }
@@ -2988,6 +3037,7 @@
                     if (!kartuAwalSentuh) return;
                     modeDragAktif = true;
                     tandaiKartuDiTitik(lastX, lastY);
+                    buatGhost(kartuAwalSentuh, lastX, lastY);
                 }, HOLD_DELAY_MS);
             }, { passive: true });
 
@@ -3017,6 +3067,7 @@
                 // persis drag-select foto di galeri HP.
                 e.preventDefault();
                 tandaiKartuDiTitik(t.clientX, t.clientY);
+                gerakkanGhost(t.clientX, t.clientY);
             }, { passive: false });
 
             document.addEventListener('touchend', () => {
