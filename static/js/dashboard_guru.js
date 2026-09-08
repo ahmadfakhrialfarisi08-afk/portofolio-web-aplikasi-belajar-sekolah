@@ -458,7 +458,7 @@
             }
 
             return `
-                <div onclick="bukaDetailKelas('${k.nama}', '${k.jurusan}', '${k.mapel}', '${k.jurusan}', '${k.img}')" class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between space-y-3 group">
+                <div onclick="bukaDetailKelas('${k.nama}', '${k.jurusan}', '${k.mapel}', '${k.jurusan}', '${k.img}')" class="kartu-kelas-beranda bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between space-y-3 group">
                     <div>
                         <div class="flex items-center justify-between mb-2">
                             <span class="px-2.5 py-1 font-extrabold text-[11px] rounded-lg ${badgeJurusanColor}">${k.jurusan}</span>
@@ -2861,6 +2861,62 @@
                 }, { passive: true });
                 viewport.addEventListener('touchend', endDrag);
             });
+        })();
+
+        /* ================================================================
+           EFEK "TERANGKAT/DIPILIH" MENGIKUTI JARI DI KARTU KELAS BERANDA
+           Sebelumnya, di HP, kartu yang ditekan kelihatan "nyangkut" seolah
+           terpilih (efek hover CSS yang nempel). Sekarang begitu jari
+           MULAI menekan salah satu .kartu-kelas-beranda, efek terangkatnya
+           akan otomatis PINDAH ke kartu lain yang ada di bawah jari setiap
+           kali jari digeser naik/turun -- tanpa perlu dilepas dulu --
+           persis seperti drag-highlight di galeri foto HP. Begitu jari
+           dilepas/dibatalkan, efeknya hilang lalu tap normal tetap jalan
+           seperti biasa (bukaDetailKelas), karena di sini TIDAK ada
+           preventDefault/stopPropagation sama sekali -- scroll & klik asli
+           browser tetap utuh.
+           ================================================================ */
+        (function setupHighlightSentuhKartuKelasBeranda() {
+            let kartuTersentuh = null;
+
+            function lepaskanHighlight() {
+                if (kartuTersentuh) {
+                    kartuTersentuh.classList.remove('kartu-tersentuh');
+                    kartuTersentuh = null;
+                }
+            }
+
+            function perbaruiHighlightDiTitik(x, y) {
+                const elDiBawahJari = document.elementFromPoint(x, y);
+                const kartuBaru = elDiBawahJari ? elDiBawahJari.closest('.kartu-kelas-beranda') : null;
+                if (kartuBaru === kartuTersentuh) return;
+                lepaskanHighlight();
+                if (kartuBaru) {
+                    kartuBaru.classList.add('kartu-tersentuh');
+                    kartuTersentuh = kartuBaru;
+                }
+            }
+
+            document.addEventListener('touchstart', (e) => {
+                const t = e.touches[0];
+                if (!t) return;
+                // Cuma mulai "mode drag-highlight" ini kalau sentuhan memang
+                // dimulai dari salah satu kartu kelas beranda -- supaya
+                // sentuhan di bagian lain halaman tidak ikut terpengaruh.
+                const kartuAwal = e.target.closest ? e.target.closest('.kartu-kelas-beranda') : null;
+                if (!kartuAwal) return;
+                perbaruiHighlightDiTitik(t.clientX, t.clientY);
+            }, { passive: true });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!kartuTersentuh) return;
+                const t = e.touches[0];
+                if (!t) return;
+                perbaruiHighlightDiTitik(t.clientX, t.clientY);
+            }, { passive: true });
+
+            document.addEventListener('touchend', lepaskanHighlight, { passive: true });
+            document.addEventListener('touchcancel', lepaskanHighlight, { passive: true });
         })();
 
         function batalAturFotoGuru() {

@@ -1,6 +1,25 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         html { scroll-behavior: smooth; }
 
+        /* ============================================================
+           EFEK "TERANGKAT" KARTU KELAS BERANDA SAAT DISENTUH DI HP
+           Dulu efek terangkat cuma bisa muncul lewat CSS hover:shadow-xl
+           hover:-translate-y-1 -- di HP itu nyangkut/aneh (nempel di
+           kartu terakhir ditekan). Sekarang classlist .kartu-tersentuh
+           ini yang ditoggle langsung lewat JS (lihat IIFE highlight
+           sentuh kartu beranda di dashboard_guru.js) supaya efeknya
+           SELALU ngikutin jari, termasuk pas jari ditahan lalu digeser
+           naik/turun ke kartu lain tanpa dilepas.
+           ============================================================ */
+        .kartu-kelas-beranda {
+            -webkit-tap-highlight-color: transparent;
+        }
+        .kartu-kelas-beranda.kartu-tersentuh {
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            transform: translateY(-4px);
+            border-color: #93c5fd;
+        }
+
         /* PERBAIKAN PERFORMA SCROLL: container utama (#main-scroll-container
            di dashboard_guru.html) adalah area yang benar-benar di-scroll guru
            (bukan <body>, lihat overflow-y-auto di situ). Tambahan ini bikin
