@@ -2944,6 +2944,33 @@
                 }
             }
 
+            let sudahPasangListenerScroll = false;
+
+            function pasangPembatalSaatScrollNyata() {
+                if (sudahPasangListenerScroll) return;
+                sudahPasangListenerScroll = true;
+                // PERBAIKAN UTAMA: sebelumnya kita menebak "ini scroll atau
+                // bukan" dari jarak & waktu geser jari (touchmove) secara
+                // manual -- ternyata tetap meleset, baik pas scroll pelan
+                // maupun kencang, karena timing touchmove tidak selalu pas.
+                // Sekarang kita dengarkan langsung event 'scroll' BAWAAN
+                // BROWSER pada #main-scroll-container (event ini tidak
+                // nge-bubble ke document, makanya dipasang dengan
+                // { capture: true } di FASE CAPTURING supaya tetap
+                // tertangkap dari elemen manapun di dalamnya).
+                // Begitu event ini muncul, artinya browser SENDIRI sudah
+                // memutuskan ini gesture scroll (bukan tebakan kita lagi)
+                // -- jadi gesture "tertahan" langsung dibatalkan SAAT ITU
+                // JUGA, sebelum sempat mengunci apa pun, baik scroll-nya
+                // pelan maupun kencang.
+                document.addEventListener('scroll', () => {
+                    if (kartuAwalSentuh && !modeDragAktif) {
+                        resetSemua();
+                    }
+                }, true);
+            }
+            pasangPembatalSaatScrollNyata();
+
             document.addEventListener('touchstart', (e) => {
                 const t = e.touches[0];
                 if (!t) return;
