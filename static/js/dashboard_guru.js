@@ -1651,6 +1651,12 @@
         }
 
         let taskAktifDipilihUntukRekap = null;
+        // Cache status pengumpulan tiap murid YANG SEDANG TAMPIL di grid kartu
+        // rekap ini saat ini -- diisi ulang tiap kali grid dirender (lihat
+        // bukaRekapPengumpulanTugas() di bawah), dipakai oleh
+        // bukaPreviewStatusSiswaRekap() supaya klik kartu tidak perlu fetch
+        // ulang ke server (datanya sudah ada dari render barusan).
+        let _statusRekapPerMuridSaatIni = {};
         async function bukaRekapPengumpulanTugas(namaKelas, taskId, _dariSinkron) {
             taskAktifDipilihUntukRekap = { namaKelas, taskId };
 
@@ -1740,9 +1746,16 @@
             // -- DOM & semua foto cuma dibangun 1x, bukan N kali.
             const potonganKartuHTML = [];
 
+            // Reset cache status per murid tiap kali grid ini dirender ulang,
+            // supaya bukaPreviewStatusSiswaRekap() (dipicu klik kartu) selalu
+            // baca data yang sesuai dengan tugas/kelas yang SEDANG dibuka --
+            // bukan data basi dari jendela rekap sebelumnya.
+            _statusRekapPerMuridSaatIni = {};
+
             muridKelasIni.forEach(m => {
                 const status = statusPengumpulanUntukTugas(m, task, kedaluwarsa, hasilPeriksaBulk);
                 if (status.submitted) hitungSudah++; else hitungBelum++;
+                _statusRekapPerMuridSaatIni[m.id] = { murid: m, status };
 
                 const penandaPintu = (m.meja === 1) ? `<span class="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">Pintu</span>` : '';
                 let cardBangkuStyle, badgeStatusBangku, statusLabelText;
@@ -1761,6 +1774,15 @@
                     statusLabelText = `<span class="text-blue-600 font-semibold italic">Belum Kumpul</span>`;
                 }
 
+                // PERUBAHAN: dulu cuma kartu murid yang SUDAH kumpul yang bisa
+                // diklik (langsung ke modal grading modal-periksa); murid yang
+                // belum kumpul kartunya "mati" (tidak ada aksi apa pun kalau
+                // diklik). Sekarang SEMUA kartu bisa diklik lewat
+                // bukaPreviewStatusSiswaRekap() -- fungsi itu sendiri yang
+                // membedakan tampilannya: popup info singkat kalau belum ada
+                // tugas, atau pratinjau (nama + badge + foto) kalau sudah
+                // kumpul. Jadi variabel ini sekarang cuma dipakai buat teks
+                // overlay hover, bukan buat syarat bisa-klik-atau-tidak lagi.
                 const bisaDiperiksa = status.submitted;
 
                 // FITUR TAMBAHAN: tombol "Kasih Pelanggaran" -- cuma ditampilkan
@@ -1768,6 +1790,8 @@
                 // aktif "Belum Kumpul" maupun yang sudah lewat "Tidak Kumpul").
                 // Warna & teks tombol berubah kalau status pelanggarannya sudah aktif,
                 // supaya guru bisa lihat sekilas & batalkan lagi kalau perlu.
+                // stopPropagation tetap dipertahankan supaya klik tombol ini
+                // tidak ikut memicu onclick kartu (buka modal preview).
                 let tombolPelanggaranHTML = '';
                 if (!status.submitted) {
                     const sudahPelanggaranAktif = siswaPunyaPelanggaranAktif(m.username);
@@ -1779,7 +1803,7 @@
                 }
 
                 potonganKartuHTML.push(`
-                    <div ${bisaDiperiksa ? `onclick="bukaPeriksaTugasDariRekap(${m.id})"` : ''} class="kartu-rekap-tugas-siswa ${bisaDiperiksa ? 'bisa-diperiksa' : ''} p-3 rounded-2xl border-2 ${cardBangkuStyle} ${bisaDiperiksa ? 'cursor-pointer' : ''} transition-all flex flex-col justify-between space-y-2 relative group overflow-hidden">
+                    <div onclick="bukaPreviewStatusSiswaRekap(${m.id})" class="kartu-rekap-tugas-siswa bisa-diperiksa p-3 rounded-2xl border-2 ${cardBangkuStyle} cursor-pointer transition-all flex flex-col justify-between space-y-2 relative group overflow-hidden">
                         <div class="flex items-center justify-between gap-1">
                             <span class="text-[10px] font-mono font-bold text-slate-500 truncate">${m.title} ${penandaPintu}</span>
                             ${badgeStatusBangku}
@@ -1794,12 +1818,11 @@
                             <span class="text-slate-400">${status.submitted ? 'Kumpul:' : 'Status:'}</span> ${statusLabelText}
                         </div>
                         ${tombolPelanggaranHTML}
-                        ${bisaDiperiksa ? `
                         <div class="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/5 flex items-end justify-center pb-2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none">
                             <span class="text-[9px] font-bold text-white bg-slate-900/85 px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
-                                <i class="fa-solid fa-image"></i> Lihat Foto & Beri Nilai
+                                <i class="fa-solid ${bisaDiperiksa ? 'fa-image' : 'fa-circle-info'}"></i> ${bisaDiperiksa ? 'Lihat Foto & Bukti' : 'Lihat Info'}
                             </span>
-                        </div>` : ''}
+                        </div>
                     </div>
                 `);
             });
@@ -1821,6 +1844,101 @@
             // di background (dipicu waktu jendela ini dibuka) tidak membuka ulang
             // jendela ini begitu selesai -- sama seperti pola di tutupDetailKelas().
             taskAktifDipilihUntukRekap = null;
+        }
+
+        // ============================================================
+        // MODAL "Preview Status Pengumpulan Siswa" -- KHUSUS dipakai di
+        // dalam grid kartu murid pada jendela "Rekap Pengumpulan per
+        // Tugas" (yang dibuka dari tab "Rekap Semua Tugas"). Markup
+        // modalnya sengaja dibangun lewat JS (bukan ditaruh statis di
+        // HTML) supaya fitur ini mandiri -- tidak perlu ubah file HTML
+        // terpisah, cukup file JS ini saja.
+        //
+        // Satu modal, DUA tampilan berbeda tergantung status:
+        // - Belum ada tugas / belum kumpul  -> popup info singkat: ikon
+        //   peringatan, nama siswa, teks status, 1 tombol "Tutup".
+        // - Sudah dikerjakan / mengumpulkan -> pratinjau: nama siswa,
+        //   badge hijau "Terkumpul", & foto/bukti tugas yang dikirim
+        //   (bisa diklik buat diperbesar di tab baru). Ditambah tombol
+        //   "Beri Nilai" buat lanjut ke form penilaian penuh
+        //   (modal-periksa / bukaPeriksaTugasDariRekap) kalau guru mau
+        //   menilai dari sini juga.
+        // ============================================================
+        function _pastikanModalPreviewStatusSiswaAda() {
+            if (document.getElementById('modal-preview-status-siswa')) return;
+            const wrap = document.createElement('div');
+            wrap.id = 'modal-preview-status-siswa';
+            wrap.className = 'hidden fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm';
+            // Klik di luar kotak putih (area backdrop) menutup modal, sama
+            // seperti pola modal lain di dashboard ini; klik di DALAM kotak
+            // putih di-stopPropagation supaya tidak ikut menutup.
+            wrap.innerHTML = `<div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" onclick="event.stopPropagation()"><div id="preview-status-siswa-isi" class="p-5"></div></div>`;
+            wrap.addEventListener('click', tutupPreviewStatusSiswa);
+            document.body.appendChild(wrap);
+        }
+
+        function tutupPreviewStatusSiswa() {
+            const modal = document.getElementById('modal-preview-status-siswa');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function bukaPreviewStatusSiswaRekap(idSiswa) {
+            // Data diambil dari cache hasil render grid barusan (lihat
+            // _statusRekapPerMuridSaatIni di bukaRekapPengumpulanTugas), bukan
+            // fetch ulang ke server -- supaya modal ini kebuka instan tanpa
+            // jeda loading tiap kali kartu diklik.
+            const data = _statusRekapPerMuridSaatIni[idSiswa];
+            if (!data) return;
+            const { murid, status } = data;
+            const task = taskAktifDipilihUntukRekap
+                ? getTasksKelas(taskAktifDipilihUntukRekap.namaKelas).find(t => t.id === taskAktifDipilihUntukRekap.taskId)
+                : null;
+            const kedaluwarsa = task ? cekStatusTugasKedaluwarsaGuru(task) : false;
+
+            _pastikanModalPreviewStatusSiswaAda();
+            const isi = document.getElementById('preview-status-siswa-isi');
+
+            if (!status.submitted) {
+                const teksStatus = kedaluwarsa
+                    ? `${murid.nama} tidak mengumpulkan tugas ini (sudah lewat batas waktu).`
+                    : `${murid.nama} belum ada tugas.`;
+                isi.innerHTML = `
+                    <div class="flex flex-col items-center text-center gap-3 py-2">
+                        <div class="w-14 h-14 rounded-full ${kedaluwarsa ? 'bg-rose-50 text-rose-500' : 'bg-amber-50 text-amber-500'} flex items-center justify-center text-2xl">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-extrabold text-slate-800 text-sm">${namaEfekHTML(murid)}</h4>
+                            <p class="text-xs text-slate-500 mt-1">${teksStatus}</p>
+                        </div>
+                        <button onclick="tutupPreviewStatusSiswa()" class="mt-2 w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all">Tutup</button>
+                    </div>
+                `;
+            } else {
+                const daftarFoto = status.fotoTugasList || [];
+                const isiFoto = daftarFoto.length > 0
+                    ? `<div class="grid grid-cols-3 gap-2 mt-3">${daftarFoto.map(src => `<img src="${src}" onclick="window.open(this.src, '_blank')" class="w-full h-20 object-cover rounded-lg border border-slate-200 shadow-sm cursor-zoom-in hover:opacity-90 transition-all" alt="Bukti Tugas ${murid.nama}" loading="lazy" decoding="async">`).join('')}</div>`
+                    : `<p class="text-xs text-slate-400 italic mt-3">File dikirim dalam bentuk teks/dokumen digital.</p>`;
+
+                isi.innerHTML = `
+                    <div class="flex flex-col gap-1">
+                        <div class="flex items-center gap-3">
+                            ${avatarWrapperHTML(murid, 'w-11 h-11')}
+                            <div class="min-w-0">
+                                <h4 class="font-extrabold text-slate-800 text-sm truncate">${namaEfekHTML(murid)}</h4>
+                                <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 font-bold text-[10px] rounded-lg"><i class="fa-solid fa-check"></i> Terkumpul</span>
+                            </div>
+                        </div>
+                        ${isiFoto}
+                        <div class="flex gap-2 mt-4">
+                            <button onclick="tutupPreviewStatusSiswa()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all">Tutup</button>
+                            <button onclick="tutupPreviewStatusSiswa(); bukaPeriksaTugasDariRekap(${murid.id})" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all">Beri Nilai</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('modal-preview-status-siswa').classList.remove('hidden');
         }
 
         function renderAbsensiSiswa() {
