@@ -158,6 +158,28 @@
             return NAMA_GURU_LOGIN_SAAT_TAB_INI_DIBUKA || cariNamaGuruKelas(namaKelasFallback);
         }
 
+        // PERMINTAAN: guru A tidak boleh utak-atik (edit/hapus/atur waktu) tugas
+        // yang dibuat guru B, begitu juga sebaliknya -- siapa pun cuma boleh
+        // ngutak-ngatik tugas buatannya sendiri. Guru lain tetap BOLEH lihat
+        // tugas itu, tapi cuma lewat "Denah Kelas" (bukaDetailKelas -> render di
+        // list-tugas-aktif-kelas, sudah read-only dari awal, tanpa tombol aksi).
+        // Dipakai dua tempat: (1) nyaring tombol edit/hapus di kartu ringkas
+        // Beranda supaya tidak nongol buat tugas guru lain, (2) jaga-jaga di
+        // dalam bukaModalEditTugas() & hapusTugasByID() sendiri, andai suatu
+        // saat ada tombol lain yang manggil fungsi itu tanpa lewat filter kartu.
+        function tugasIniMilikGuruLogin(data) {
+            if (!data) return false;
+            const namaGuruLogin = NAMA_GURU_LOGIN_SAAT_TAB_INI_DIBUKA.trim().toLowerCase();
+            if (!namaGuruLogin) return false;
+            // Tugas lama (dibuat sebelum perbaikan atribusi namaGuru) mungkin
+            // belum punya field namaGuru sama sekali -- supaya tugas lama itu
+            // tidak "terkunci" tak bisa diapa-apakan siapa pun, anggap
+            // pemiliknya wali kelas tsb (perilaku lama, sebelum ada Pak Joel
+            // dkk. yang bisa kirim tugas ke kelas orang lain).
+            const namaGuruTugas = (data.namaGuru || cariNamaGuruKelas(data.kelas)).trim().toLowerCase();
+            return namaGuruTugas === namaGuruLogin;
+        }
+
         const daftarSeluruhKelasDummy = [
             { nama: 'X TKJ 1', jurusan: 'TKJ', tingkat: 'X', mapel: 'Dasar-Dasar TKI', wali: 'Hendra, S.Kom', img: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&q=80&w=800' },
             { nama: 'X TKJ 2', jurusan: 'TKJ', tingkat: 'X', mapel: 'Dasar-Dasar TKI', wali: 'Siti, S.T', img: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&q=80&w=800' },
@@ -397,7 +419,17 @@
 
             let activeTaskHTML = "";
             if (tugasAktifKelasIni.length > 0) {
-                activeTaskHTML = tugasAktifKelasIni.map(data => `
+                // PERMINTAAN: kartu ringkas di Beranda ini TIDAK BOLEH jadi
+                // tempat guru A ngutak-ngatik (atur waktu/hapus) tugas buatan
+                // guru B. Jadi tugas dipilah dua: milik guru yang sedang login
+                // (tampil lengkap + tombol aksi, seperti sebelumnya), dan milik
+                // guru lain (cuma ditandai ringkas "ada tugas dari guru lain",
+                // TANPA judul/isi/tombol apa pun -- guru harus buka "Denah
+                // Kelas" kalau mau lihat detailnya, dan di sana pun read-only).
+                const tugasMilikSendiri = tugasAktifKelasIni.filter(t => tugasIniMilikGuruLogin(t));
+                const jumlahTugasGuruLain = tugasAktifKelasIni.length - tugasMilikSendiri.length;
+
+                activeTaskHTML = tugasMilikSendiri.map(data => `
                     <div class="mt-2 p-2.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between" onclick="event.stopPropagation()">
                         <div class="text-xs">
                             <span class="font-bold text-blue-700 block">${data.judul || data.tipe || '📌 Tugas'}</span>
@@ -414,6 +446,15 @@
                         </div>
                     </div>
                 `).join('');
+
+                if (jumlahTugasGuruLain > 0) {
+                    activeTaskHTML += `
+                        <div class="mt-2 p-2.5 bg-slate-50 border border-dashed border-slate-300 rounded-xl flex items-center gap-2 text-[10px] text-slate-500 italic">
+                            <i class="fa-solid fa-lock text-slate-400"></i>
+                            ${jumlahTugasGuruLain} tugas dari guru lain -- klik kartu ini untuk lihat lewat Denah Kelas
+                        </div>
+                    `;
+                }
             }
 
             return `
@@ -612,6 +653,13 @@
             const tasks = getTasksKelas(namaKelas);
             const data = tasks.find(t => t.id === taskId);
             if (!data) { bukaModalBeriTugas(namaKelas); return; }
+
+            // JAGA-JAGA (selain kartu Beranda yang sudah menyaring tombolnya):
+            // tugas buatan guru lain tidak boleh dibuka lewat form edit ini.
+            if (!tugasIniMilikGuruLogin(data)) {
+                alert(`Tugas ini dibuat oleh ${data.namaGuru || cariNamaGuruKelas(namaKelas)}, jadi Anda tidak bisa mengatur/mengubahnya. Anda cuma bisa mengatur tugas yang Anda buat sendiri.`);
+                return;
+            }
 
             document.getElementById('target-kelas-nama').innerText = namaKelas;
             document.getElementById('modal-tugas-title').innerText = "Edit / Atur Waktu Tugas Ini";
@@ -965,6 +1013,15 @@
         }
 
         function hapusTugasByID(namaKelas, taskId) {
+            // JAGA-JAGA (selain kartu Beranda yang sudah menyaring tombolnya):
+            // guru cuma boleh hapus/tarik tugas buatannya sendiri.
+            const tasksCek = getTasksKelas(namaKelas);
+            const tugasCek = tasksCek.find(t => t.id === taskId);
+            if (tugasCek && !tugasIniMilikGuruLogin(tugasCek)) {
+                alert(`Tugas ini dibuat oleh ${tugasCek.namaGuru || cariNamaGuruKelas(namaKelas)}, jadi Anda tidak bisa menghapus/menariknya. Anda cuma bisa menghapus tugas yang Anda buat sendiri.`);
+                return;
+            }
+
             bukaModalKonfirmasiGenerik({
                 judul: 'Tarik / Hapus Tugas?',
                 pesan: `Apakah Anda yakin ingin menarik/menghapus tugas ini dari kelas ${namaKelas}?`,
@@ -1118,6 +1175,15 @@
                     // status tugas sengaja stopPropagation supaya tidak ikut kebuka.
                     const badgePengumpulanKlikable = `<span class="inline-flex items-center gap-1.5">${badgePengumpulan}<i class="fa-solid fa-chevron-right text-[9px] text-slate-300"></i></span>`;
 
+                    // PERMINTAAN: tombol Atur/Hapus di rekap ini juga cuma boleh
+                    // nongol buat tugas buatan guru yang sedang login sendiri --
+                    // tugas guru lain cukup kelihatan datanya di rekap (read-only),
+                    // tapi tidak bisa diutak-atik dari sini.
+                    const tombolAksiTugas = tugasIniMilikGuruLogin(data)
+                        ? `<button onclick="bukaModalEditTugas('${k.nama}', '${data.id}')" class="px-3 py-1 bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-bold transition-all mr-1">Atur</button>
+                           <button onclick="hapusTugasByID('${k.nama}', '${data.id}')" class="px-3 py-1 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg text-xs font-bold transition-all">Hapus</button>`
+                        : `<span class="text-[11px] text-slate-400 italic" title="Cuma ${data.namaGuru || 'guru pembuatnya'} yang bisa mengatur/menghapus tugas ini"><i class="fa-solid fa-lock mr-1"></i>Milik guru lain</span>`;
+
                     tbody.innerHTML += `
                         <tr onclick="bukaRekapPengumpulanTugas('${k.nama}', '${data.id}')" class="hover:bg-blue-50/60 cursor-pointer transition-colors" title="Klik untuk lihat rekap pengumpulan tiap siswa">
                             <td class="py-3.5 px-6 font-extrabold text-blue-600">${k.nama}</td>
@@ -1129,8 +1195,7 @@
                             <td class="py-3.5 px-6" onclick="event.stopPropagation()">${badgeStatusTugas}</td>
                             <td class="py-3.5 px-6">${badgePengumpulanKlikable}</td>
                             <td class="py-3.5 px-6 text-right" onclick="event.stopPropagation()">
-                                <button onclick="bukaModalEditTugas('${k.nama}', '${data.id}')" class="px-3 py-1 bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-bold transition-all mr-1">Atur</button>
-                                <button onclick="hapusTugasByID('${k.nama}', '${data.id}')" class="px-3 py-1 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg text-xs font-bold transition-all">Hapus</button>
+                                ${tombolAksiTugas}
                             </td>
                         </tr>
                     `;
