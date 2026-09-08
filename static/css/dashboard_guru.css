@@ -1,6 +1,17 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         html { scroll-behavior: smooth; }
 
+        /* PERBAIKAN PERFORMA SCROLL: container utama (#main-scroll-container
+           di dashboard_guru.html) adalah area yang benar-benar di-scroll guru
+           (bukan <body>, lihat overflow-y-auto di situ). Tambahan ini bikin
+           momentum scroll di HP (terutama iOS/Safari) lebih halus, dan
+           overscroll-behavior mencegah "efek pantul" ikut menggerakkan
+           halaman di baliknya saat mentok atas/bawah. */
+        #main-scroll-container {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+        }
+
         /* Scroll halus & ringan buat area konten modal (mis. modal Beri Tugas)
            supaya gak berasa 'kasar'/basic pas di-scroll, termasuk di HP. */
         .modal-scroll-smooth {

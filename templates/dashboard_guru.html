@@ -128,7 +128,15 @@
 
     <div class="flex-1 flex flex-col h-screen overflow-y-auto" id="main-scroll-container">
         
-        <header id="header-utama-guru" class="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30">
+        <!-- PERBAIKAN PERFORMA SCROLL: sebelumnya header ini "bg-white/80
+             backdrop-blur-md" -- transparan + blur PADAHAL statusnya sticky
+             (nempel di atas layar). Kombinasi sticky + backdrop-blur bikin
+             browser menghitung ULANG efek blur dari konten yang lewat di
+             baliknya, di SETIAP frame, selama scroll berlangsung -- inilah
+             yang bikin scroll kerasa berat/patah-patah, apalagi di HP/laptop
+             GPU lemah. Sekarang latar dibikin SOLID (bg-white, tanpa blur),
+             tampilan tetap rapi tapi tidak ada penghitungan ulang tiap frame. -->
+        <header id="header-utama-guru" class="h-20 bg-white border-b border-slate-200/80 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30">
             <div class="flex items-center gap-3 min-w-0">
                 <button id="btn-toggle-sidebar" onclick="toggleSidebarMobile()" title="Buka menu" class="md:hidden p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all flex-shrink-0 guru-desktop-only-inline">
                     <i class="fa-solid fa-bars"></i>
@@ -276,7 +284,12 @@
                     </div>
                 </div>
 
-                <div id="wrapper-filter-cepat-beranda" class="sticky top-20 z-20 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
+                <!-- PERBAIKAN PERFORMA SCROLL: sama seperti header di atas --
+                     bar ini sticky (top-20) dan sebelumnya transparan+blur.
+                     Karena letaknya PERSIS di bawah header yang JUGA sticky,
+                     dulu ada 2 lapis blur sticky bertumpuk yang dihitung ulang
+                     tiap frame scroll -- dobel beratnya. Sekarang solid juga. -->
+                <div id="wrapper-filter-cepat-beranda" class="sticky top-20 z-20 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
                     <span class="guru-mobile-only-flex w-full text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Filter Cepat</span>
                     <div class="flex items-center gap-2 filter-cepat-wrap">
                         <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider mr-2 guru-desktop-only-inline"><i class="fa-solid fa-filter text-blue-600"></i> Filter Cepat:</span>
