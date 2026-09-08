@@ -217,7 +217,7 @@
             { id: 4, username: 'fadzri', nama: 'MUHAMMAD FADZRI' },
             { id: 5, username: 'setiawan', nama: 'SETIAWAN SAPUTRA' },
             { id: 6, username: 'jibril', nama: 'MUHAMMAD JIBRIL AL MANAFI' },
-            { id: 7, username: 'afrizal', nama: 'AFRIZAL MUSTAQIM' }
+            { id: 7, username: 'afrizalmustaqim', nama: 'AFRIZAL MUSTAQIM' }
         ];
 
         const sampleMurid30 = SISWA_KELAS_INI.map((s, index) => {
