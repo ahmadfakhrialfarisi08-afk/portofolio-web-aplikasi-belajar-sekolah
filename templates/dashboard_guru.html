@@ -347,7 +347,7 @@
                     </div>
 
                     <div class="space-y-6">
-                        <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm sticky top-40">
+                        <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
                             <div class="flex items-center justify-between mb-6">
                                 <div>
                                     <h3 class="font-bold text-lg text-slate-900">Jadwal Mengajar Hari Ini</h3>
@@ -357,6 +357,23 @@
                             </div>
                             
                             <div id="today-teacher-schedule" class="space-y-3">
+                            </div>
+                        </div>
+
+                        <!-- Aktivitas Tugas Terbaru: rekam siapa (guru mana) yang baru saja
+                             ngasih tugas/catatan ke kelas mana -- supaya kalau Guru A login
+                             lalu lihat Beranda, dia bisa lihat jelas "Guru B baru saja ngasih
+                             tugas X ke kelas Y", bukan cuma keliatan nambah ke daftar tugas
+                             tanpa jelas siapa pemberinya. Sumber datanya sama seperti Rekap
+                             Semua Tugas (field namaGuru & waktuKirimGuru yang sudah tersimpan
+                             tiap tugas dibuat/diubah), cuma di sini diurutkan dari yang paling
+                             baru & dibatasi beberapa saja biar ringkas. -->
+                        <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-lg text-slate-900">Aktivitas Tugas Terbaru</h3>
+                                <i class="fa-solid fa-clock-rotate-left text-slate-300"></i>
+                            </div>
+                            <div id="list-aktivitas-tugas-terbaru" class="space-y-3">
                             </div>
                         </div>
                     </div>
@@ -406,6 +423,7 @@
                         <thead>
                             <tr class="border-b border-slate-200 text-[11px] uppercase tracking-wider text-slate-400 font-bold bg-slate-50">
                                 <th class="py-3.5 px-6">Kelas</th>
+                                <th class="py-3.5 px-6">Guru Pemberi</th>
                                 <th class="py-3.5 px-6">Jenis / Tipe</th>
                                 <th class="py-3.5 px-6">Judul Tugas</th>
                                 <th class="py-3.5 px-6">Isi Instruksi Tugas</th>
@@ -691,7 +709,21 @@
             </div>
 
             <div class="p-6 overflow-y-auto flex-1 bg-slate-50/50">
-                
+
+                <!-- Daftar tugas aktif kelas ini, lengkap dengan GURU PEMBERI-nya --
+                     supaya begitu kelas ini diklik, guru manapun yang lagi buka
+                     (bukan cuma yang bikin tugasnya) langsung lihat jelas tugas
+                     apa dari guru siapa, bukan cuma angka ringkasan "X tugas
+                     aktif" di header. Diisi oleh bukaDetailKelas() di
+                     dashboard_guru.js tiap kali jendela ini dibuka. -->
+                <div id="wrapper-daftar-tugas-kelas" class="mb-6">
+                    <h4 class="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-blue-500"></i> Tugas Aktif di Kelas Ini
+                    </h4>
+                    <div id="list-tugas-aktif-kelas" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    </div>
+                </div>
+
                 <div id="view-denah-container" class="space-y-6">
                     <div class="grid grid-cols-12 gap-3 items-center denah-top-row">
                         <div class="col-span-3 py-2.5 bg-amber-500/10 border-2 border-dashed border-amber-500 text-amber-700 rounded-xl text-center text-xs font-extrabold uppercase flex items-center justify-center gap-1.5 denah-pintu-masuk">

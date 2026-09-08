@@ -945,6 +945,7 @@
                 renderBerandaKelasBerurutan();
                 renderSeluruhKelas();
                 renderRekapSemuaTugas();
+                renderAktivitasTugasTerbaruBeranda();
             });
         }
 
@@ -969,6 +970,7 @@
                     renderBerandaKelasBerurutan();
                     renderSeluruhKelas();
                     renderRekapSemuaTugas();
+                    renderAktivitasTugasTerbaruBeranda();
                 }
             });
         }
@@ -1104,6 +1106,7 @@
                     tbody.innerHTML += `
                         <tr onclick="bukaRekapPengumpulanTugas('${k.nama}', '${data.id}')" class="hover:bg-blue-50/60 cursor-pointer transition-colors" title="Klik untuk lihat rekap pengumpulan tiap siswa">
                             <td class="py-3.5 px-6 font-extrabold text-blue-600">${k.nama}</td>
+                            <td class="py-3.5 px-6 font-semibold text-slate-600">${data.namaGuru || 'Guru Mata Pelajaran'}</td>
                             <td class="py-3.5 px-6 font-semibold text-slate-700">${data.tipe}</td>
                             <td class="py-3.5 px-6 font-bold text-slate-900">${data.judul || '-'}</td>
                             <td class="py-3.5 px-6 text-slate-600">${data.teks}</td>
@@ -1120,8 +1123,71 @@
             });
 
             if (totalTugasAktif === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400 italic">Belum ada tugas atau catatan yang dikirimkan ke kelas manapun.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 italic">Belum ada tugas atau catatan yang dikirimkan ke kelas manapun.</td></tr>`;
             }
+        }
+
+        // ============================================================
+        // CARD BERANDA "Aktivitas Tugas Terbaru": daftar ringkas siapa
+        // (guru mana) yang PALING BARU ngasih tugas/catatan ke kelas mana,
+        // diurutkan dari yang paling baru (waktuKirimGuru). Tujuannya
+        // supaya guru yang login (mis. Ahmad, S.T) langsung lihat jelas
+        // kalau tugas terbaru itu dikirim OLEH GURU LAIN (mis. PAK JOEL)
+        // ke kelasnya sendiri -- bukan seolah-olah tercatat sebagai
+        // aktivitas akun yang sedang login.
+        // ============================================================
+        function formatWaktuRelatifSingkat(timestamp) {
+            if (!timestamp) return '';
+            const detik = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+            if (detik < 60) return 'Baru saja';
+            const menit = Math.floor(detik / 60);
+            if (menit < 60) return `${menit} menit lalu`;
+            const jam = Math.floor(menit / 60);
+            if (jam < 24) return `${jam} jam lalu`;
+            const hari = Math.floor(jam / 24);
+            return `${hari} hari lalu`;
+        }
+
+        function renderAktivitasTugasTerbaruBeranda() {
+            const container = document.getElementById('list-aktivitas-tugas-terbaru');
+            if (!container) return;
+
+            // Kumpulkan tugas dari SEMUA kelas jadi satu daftar rata (flat),
+            // masing-masing dilengkapi nama kelasnya, lalu urutkan dari yang
+            // paling baru dikirim/diubah.
+            let semuaAktivitas = [];
+            daftarSeluruhKelasDummy.forEach(k => {
+                const tasksKelasIni = getTasksKelas(k.nama);
+                tasksKelasIni.forEach(data => {
+                    semuaAktivitas.push({ ...data, kelas: k.nama });
+                });
+            });
+            semuaAktivitas.sort((a, b) => (b.waktuKirimGuru || 0) - (a.waktuKirimGuru || 0));
+            semuaAktivitas = semuaAktivitas.slice(0, 5);
+
+            if (semuaAktivitas.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-4">Belum ada tugas yang dikirimkan.</p>`;
+                return;
+            }
+
+            container.innerHTML = semuaAktivitas.map(item => {
+                const namaGuru = item.namaGuru || 'Guru Mata Pelajaran';
+                const inisial = namaGuru.trim().charAt(0).toUpperCase() || 'G';
+                return `
+                    <div class="flex items-start gap-3 pb-3 border-b border-slate-100 last:border-b-0 last:pb-0">
+                        <div class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-extrabold text-xs flex-shrink-0">${inisial}</div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs text-slate-700 leading-snug">
+                                <span class="font-bold text-slate-900">${namaGuru}</span>
+                                memberi <span class="font-semibold">${item.tipe || 'tugas'}</span>
+                                untuk <span class="font-bold text-blue-600">${item.kelas}</span>
+                            </p>
+                            <p class="text-[11px] text-slate-500 truncate mt-0.5" title="${item.judul || ''}">${item.judul || '(tanpa judul)'}</p>
+                            <p class="text-[10px] text-slate-400 mt-1"><i class="fa-regular fa-clock mr-1"></i>${formatWaktuRelatifSingkat(item.waktuKirimGuru)}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         // ============================================================
@@ -2043,6 +2109,32 @@
             document.getElementById('modal-text-tenggat').innerText = deadlineText;
             const currentTime = new Date().getTime();
             const isExpired = (deadlineTimestamp && currentTime >= deadlineTimestamp);
+
+            // Isi daftar tugas aktif kelas ini (guru pemberi + judul + deadline)
+            // -- tugasRelevan di atas sudah difilter cuma yang masih aktif/belum
+            // expired (atau sudah dikumpulkan), jadi ini persis daftar yang
+            // relevan buat guru lihat "siapa ngasih apa" di kelas ini.
+            const containerTugasAktif = document.getElementById('list-tugas-aktif-kelas');
+            if (containerTugasAktif) {
+                if (tugasRelevan.length === 0) {
+                    containerTugasAktif.innerHTML = `<p class="sm:col-span-2 text-xs text-slate-400 italic py-2">Belum ada tugas aktif di kelas ini.</p>`;
+                } else {
+                    containerTugasAktif.innerHTML = tugasRelevan.map(t => {
+                        const namaGuruTugas = t.namaGuru || 'Guru Mata Pelajaran';
+                        const sudahLewat = t.deadlineTimestamp && cekMasihExpiredSaatIni >= t.deadlineTimestamp && !t.studentSubmitted;
+                        return `
+                            <div class="bg-white border border-slate-200 rounded-xl p-3">
+                                <p class="text-[10px] font-extrabold text-blue-600 uppercase tracking-wide"><i class="fa-solid fa-chalkboard-user mr-1"></i>${namaGuruTugas}</p>
+                                <p class="text-sm font-bold text-slate-900 mt-1 truncate" title="${t.judul || ''}">${t.judul || '(tanpa judul)'}</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5">${t.tipe || 'Tugas'}</p>
+                                <p class="text-[11px] font-mono mt-1.5 ${sudahLewat ? 'text-rose-600 font-bold' : 'text-amber-600 font-bold'}">
+                                    <i class="fa-regular fa-clock mr-1"></i>${t.deadline || 'Belum Ditentukan'}
+                                </p>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
 
             let hitungSudah = 0;
             let hitungBelum = 0;
@@ -3637,6 +3729,29 @@
             // manual. Dihentikan saat tab browser sedang tidak aktif, sama
             // seperti pola renderTeacherSchedule() di bawah, biar tidak boros.
             setInterval(() => { if (!document.hidden) hitungDanTampilkanPerluDinilai(); }, 30000);
+
+            // Sama halnya: refresh berkala card "Aktivitas Tugas Terbaru" di
+            // Beranda, supaya kalau GURU LAIN (login di perangkat/tab lain)
+            // baru saja ngasih tugas, itu ikut muncul di sini tanpa guru yang
+            // sedang lihat Beranda ini perlu reload manual.
+            renderAktivitasTugasTerbaruBeranda();
+            setInterval(() => { if (!document.hidden) renderAktivitasTugasTerbaruBeranda(); }, 30000);
+
+            // Refresh berkala "Daftar Kelas X/XI/XII" di Beranda & grid di tab
+            // "Kelola Kelas" -- sebelumnya cache tugas (_cacheTugasSemuaKelas)
+            // cuma dimuat SEKALI pas halaman dibuka, jadi kalau guru lain
+            // kirim tugas baru ke kelas yang lagi ditampilkan di sini, kartu
+            // kelasnya nggak ikut update sampai di-reload manual. Sekarang
+            // cache-nya ditarik ulang dari server tiap 30 detik (bareng
+            // muatCacheTugasSemuaKelas()), baru dirender ulang -- sama pola
+            // "berhenti kalau tab lagi tidak aktif" seperti polling lain di
+            // atas, biar tidak boros request.
+            setInterval(async () => {
+                if (document.hidden) return;
+                await muatCacheTugasSemuaKelas();
+                renderBerandaKelasBerurutan();
+                renderSeluruhKelas();
+            }, 30000);
 
             renderTeacherSchedule();
             // PERBAIKAN TRAFFIC: hentikan polling saat tab sedang tidak
