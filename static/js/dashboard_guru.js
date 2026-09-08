@@ -143,6 +143,21 @@
             return (k && k.wali) ? k.wali : 'Guru Mata Pelajaran';
         }
 
+        // PERBAIKAN BUG: sebelumnya tugas/catatan BARU yang dikirim guru selalu
+        // dicatat atas nama "wali" statis kelas tsb (lihat cariNamaGuruKelas di
+        // atas) -- padahal wali kelas ITU BUKAN berarti dialah yang login &
+        // menekan tombol kirim. Akibatnya kalau guru LAIN (mis. Pak Joel) yang
+        // login dan mengirim tugas ke kelas XII TKJ 3 (wali: Ahmad, S.T), tugas
+        // itu tetap tercatat & tampil sebagai "Ahmad, S.T" -- bukan "Pak Joel"
+        // yang sebenarnya mengirim. Sekarang nama guru diambil dari akun yang
+        // BENAR-BENAR sedang login (dikirim server lewat data-nama-guru-login
+        // di <body>, sama seperti pola data-login-username), baru fallback ke
+        // wali kelas kalau karena suatu hal data login itu kosong.
+        const NAMA_GURU_LOGIN_SAAT_TAB_INI_DIBUKA = document.body.dataset.namaGuruLogin || '';
+        function namaGuruYangSedangLogin(namaKelasFallback) {
+            return NAMA_GURU_LOGIN_SAAT_TAB_INI_DIBUKA || cariNamaGuruKelas(namaKelasFallback);
+        }
+
         const daftarSeluruhKelasDummy = [
             { nama: 'X TKJ 1', jurusan: 'TKJ', tingkat: 'X', mapel: 'Dasar-Dasar TKI', wali: 'Hendra, S.Kom', img: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&q=80&w=800' },
             { nama: 'X TKJ 2', jurusan: 'TKJ', tingkat: 'X', mapel: 'Dasar-Dasar TKI', wali: 'Siti, S.T', img: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&q=80&w=800' },
@@ -895,7 +910,7 @@
                             hasVN: !!audioBlob,
                             audioDataUrl: audioBlob ? (audioDataUrl || tasks[idx].audioDataUrl || null) : null,
                             teacherImage: teacherImageBase64 || null,
-                            namaGuru: cariNamaGuruKelas(selectedKelasBeriTugas),
+                            namaGuru: namaGuruYangSedangLogin(selectedKelasBeriTugas),
                         };
 
                         // Kalau deadline barunya lebih MUNDUR/lama dari sebelumnya, berarti
@@ -925,7 +940,7 @@
                         hasVN: !!audioBlob,
                         audioDataUrl: audioBlob ? audioDataUrl : null,
                         teacherImage: teacherImageBase64 || null,
-                        namaGuru: cariNamaGuruKelas(selectedKelasBeriTugas),
+                        namaGuru: namaGuruYangSedangLogin(selectedKelasBeriTugas),
                         waktuKirimGuru: Date.now(),
                         isViewedByStudent: false,
                         studentSubmitted: false,
