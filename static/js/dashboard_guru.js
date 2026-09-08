@@ -2881,15 +2881,53 @@
            lewat jalur click asli seperti biasa.
            ================================================================ */
         (function setupDragHighlightKartuKelasBeranda() {
+            // PERBAIKAN: dulu efek "terpilih" ini aktif begitu ada GERAKAN
+            // sedikit saja setelah jari menyentuh kartu (touchmove pertama
+            // langsung mengunci scroll). Akibatnya scroll biasa yang mulai
+            // dari atas sebuah kartu ikut kekunci & keanggap gesture pilih
+            // kartu -- baik discroll pelan maupun kencang.
+            // Sekarang aturannya dibalik: efek ini HANYA aktif kalau jari
+            // benar-benar DITAHAN DIAM dulu di kartu selama HOLD_DELAY_MS
+            // (long-press). Kalau sebelum durasi itu jari sudah bergerak
+            // (dianggap niat scroll, bukan menahan), gesture ini langsung
+            // dibatalkan total dan scroll native tetap jalan normal -- tidak
+            // ada preventDefault sama sekali dalam kasus itu.
+            const HOLD_DELAY_MS = 450;   // lama tahan sebelum dianggap "long-press"
+            const AMBANG_GESER_PX = 6;   // toleransi geser kecil sebelum dianggap scroll
+            // Catatan: ambang ini SENGAJA dibuat kecil (bukan besar) supaya
+            // gerakan sekecil apapun -- termasuk scroll yang PELAN -- tetap
+            // cepat terdeteksi sebagai "niat scroll" dan langsung membatalkan
+            // mode tertahan. Kalau ambangnya dibuat besar, scroll pelan bisa
+            // keburu belum melewati ambang saat HOLD_DELAY_MS habis, jadi
+            // malah kepilih sebagai kartu meski jari sebenarnya sedang
+            // digeser scroll (bukan didiamkan).
+
             let kartuAwalSentuh = null;   // kartu tempat jari pertama kali menyentuh
             let kartuTersentuh = null;    // kartu yang sedang "terpilih" saat ini
-            let modeDragAktif = false;    // baru true begitu jari terbukti digeser
+            let modeDragAktif = false;    // baru true begitu long-press terbukti (bukan sekadar gerak)
+            let timerTahan = null;        // id setTimeout penanda "tertahan"
+            let startX = 0, startY = 0;   // posisi jari saat pertama menyentuh
+            let lastX = 0, lastY = 0;     // posisi jari terakhir yg diketahui
 
             function lepaskanHighlight() {
                 if (kartuTersentuh) {
                     kartuTersentuh.classList.remove('kartu-tersentuh');
                     kartuTersentuh = null;
                 }
+            }
+
+            function batalkanTimerTahan() {
+                if (timerTahan) {
+                    clearTimeout(timerTahan);
+                    timerTahan = null;
+                }
+            }
+
+            function resetSemua() {
+                batalkanTimerTahan();
+                lepaskanHighlight();
+                kartuAwalSentuh = null;
+                modeDragAktif = false;
             }
 
             function tandaiKartuDiTitik(x, y) {
@@ -2906,22 +2944,47 @@
             document.addEventListener('touchstart', (e) => {
                 const t = e.touches[0];
                 if (!t) return;
+                resetSemua();
                 kartuAwalSentuh = e.target.closest ? e.target.closest('.kartu-kelas-beranda') : null;
-                modeDragAktif = false;
-                // Belum menandai apa-apa & belum mengunci scroll di sini --
-                // baru dipastikan begitu touchmove pertama membuktikan jari
-                // memang digeser (lihat listener touchmove di bawah).
+                if (!kartuAwalSentuh) return;
+                startX = lastX = t.clientX;
+                startY = lastY = t.clientY;
+                // Mulai hitung mundur "tertahan". Kalau sampai durasi ini
+                // jari belum digeser jauh, BARU mode drag-highlight
+                // diaktifkan (kartu langsung ditandai terpilih di posisi
+                // jari saat ini).
+                timerTahan = setTimeout(() => {
+                    timerTahan = null;
+                    if (!kartuAwalSentuh) return;
+                    modeDragAktif = true;
+                    tandaiKartuDiTitik(lastX, lastY);
+                }, HOLD_DELAY_MS);
             }, { passive: true });
 
             document.addEventListener('touchmove', (e) => {
                 if (!kartuAwalSentuh) return;
                 const t = e.touches[0];
                 if (!t) return;
-                // Begitu terbukti ada gerakan sambil jari masih ditahan dari
-                // kartu, kunci scroll halaman (preventDefault) & mulai mode
-                // drag-highlight. Ini listener HARUS { passive: false } biar
-                // preventDefault-nya benar-benar mempan.
-                modeDragAktif = true;
+                lastX = t.clientX;
+                lastY = t.clientY;
+
+                if (!modeDragAktif) {
+                    // Long-press belum terbukti. Kalau jari sudah bergeser
+                    // melewati ambang toleransi SEBELUM waktu tahan
+                    // terpenuhi, ini niatnya SCROLL (pelan ataupun kencang)
+                    // -- batalkan total gesture ini, jangan preventDefault,
+                    // biarkan scroll native jalan seperti biasa.
+                    const dx = Math.abs(t.clientX - startX);
+                    const dy = Math.abs(t.clientY - startY);
+                    if (dx > AMBANG_GESER_PX || dy > AMBANG_GESER_PX) {
+                        resetSemua();
+                    }
+                    return;
+                }
+
+                // Sudah terbukti "ditahan" (long-press) -- baru dari sini
+                // scroll dikunci & kartu di bawah jari mengikuti gerakan,
+                // persis drag-select foto di galeri HP.
                 e.preventDefault();
                 tandaiKartuDiTitik(t.clientX, t.clientY);
             }, { passive: false });
@@ -2933,15 +2996,11 @@
                 if (modeDragAktif && kartuTersentuh) {
                     kartuTersentuh.click();
                 }
-                lepaskanHighlight();
-                kartuAwalSentuh = null;
-                modeDragAktif = false;
+                resetSemua();
             }, { passive: true });
 
             document.addEventListener('touchcancel', () => {
-                lepaskanHighlight();
-                kartuAwalSentuh = null;
-                modeDragAktif = false;
+                resetSemua();
             }, { passive: true });
         })();
 
