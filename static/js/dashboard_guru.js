@@ -919,6 +919,66 @@
             setTimeout(() => toast.remove(), 300);
         }
 
+        // Toast "Sedang Mengerjakan" -- dipakai waktu guru klik kartu murid di
+        // Denah Kelas tapi murid itu belum mengumpulkan PADAHAL ada tugas aktif
+        // di kelas itu (baik dari guru yang sedang login MAUPUN dari guru lain).
+        // Sengaja dibuat toast terpisah (bukan pakai alert() polos) supaya guru
+        // langsung tahu nama mata pelajaran & judul tugasnya, bukan cuma "belum
+        // mengumpulkan" yang bisa disalahartikan seolah murid tidak mengerjakan
+        // apa-apa. Ikon & warnanya sengaja biru (bukan hijau seperti toast sukses
+        // kirim tugas) supaya beda maknanya sekilas -- ini "sedang berjalan",
+        // bukan "sudah selesai".
+        function tampilkanToastSedangMengerjakan(namaSiswa, mapel, judulTugas) {
+            const container = document.getElementById('toast-sukses-container');
+            if (!container) return;
+
+            const idToast = 'toast-info-' + Date.now();
+            const toast = document.createElement('div');
+            toast.id = idToast;
+            toast.className = 'toast-sukses-kirim';
+            const teksJudulTugas = judulTugas ? ` "${judulTugas}"` : '';
+            toast.innerHTML = `
+                <span class="w-9 h-9 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 animate-pulse">
+                    <i class="fa-solid fa-pen"></i>
+                </span>
+                <div class="flex-1 min-w-0">
+                    <p class="toast-teks-judul">Sedang Mengerjakan</p>
+                    <p class="toast-teks-pesan">${namaSiswa} sedang mengerjakan tugas${teksJudulTugas} (${mapel || 'Mapel'}).</p>
+                </div>
+                <button class="toast-btn-tutup" onclick="tutupToastSuksesKirimTugas('${idToast}')">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => tutupToastSuksesKirimTugas(idToast), 5000);
+        }
+
+        // Ambil status tugas aktif kelas untuk keperluan notifikasi kartu murid
+        // (klik murid yang belum mengumpulkan di Denah Kelas) -- dipisah jadi
+        // fungsi sendiri (bukan cuma dihitung sekali di dalam bukaDetailKelas)
+        // supaya bisa dipanggil lagi dari periksaSiswa() tanpa gantung ke
+        // variabel lokal punya bukaDetailKelas yang sudah keluar dari scope.
+        function infoStatusTugasAktifKelas(namaKelas) {
+            const tasksKelasIni = getTasksKelas(namaKelas);
+            const sekarang = new Date().getTime();
+            const tugasRelevan = tasksKelasIni.filter(t => {
+                if (t.studentSubmitted) return true;
+                if (!t.deadlineTimestamp) return true;
+                return sekarang < t.deadlineTimestamp;
+            });
+            const belum = tugasRelevan.filter(t => !t.studentSubmitted);
+            const timestampsBelum = belum.map(t => t.deadlineTimestamp).filter(Boolean);
+            const deadlineTerdekat = timestampsBelum.length ? Math.min(...timestampsBelum) : null;
+            const kelasInfo = daftarSeluruhKelasDummy.find(k => k.nama === namaKelas);
+            return {
+                hasActiveTask: belum.length > 0,
+                isExpired: !!(deadlineTerdekat && sekarang >= deadlineTerdekat),
+                judul: belum.length > 0 ? (belum[0].judul || belum[0].tipe || '') : '',
+                mapel: kelasInfo ? kelasInfo.mapel : ''
+            };
+        }
+
         function kirimTugasKeKelas() {
             const judul = document.getElementById('input-judul-tugas').value.trim();
             const teks = document.getElementById('input-konten-tugas').value;
@@ -2577,7 +2637,19 @@
             const siswa = sampleMurid30.find(s => s.id === idSiswa);
             if (!siswa) return;
             if (!siswa.sudahMengumpulkan) {
-                alert(`⚠️ INFO: ${siswa.nama} belum/tidak mengumpulkan tugas.`);
+                // Sebelum ini cuma alert() generik "belum/tidak mengumpulkan tugas"
+                // buat SEMUA kondisi -- padahal bisa jadi muridnya sedang aktif
+                // mengerjakan tugas (dari guru manapun, termasuk guru lain) yang
+                // deadline-nya belum lewat. Sekarang dibedakan supaya guru yang
+                // klik kartu murid ini langsung tahu statusnya yang sebenarnya.
+                const info = infoStatusTugasAktifKelas(kelasAktifDipilih);
+                if (info.hasActiveTask && !info.isExpired) {
+                    tampilkanToastSedangMengerjakan(siswa.nama, info.mapel, info.judul);
+                } else if (info.isExpired) {
+                    alert(`⚠️ INFO: ${siswa.nama} tidak mengumpulkan tugas ini (sudah lewat batas waktu).`);
+                } else {
+                    alert(`⚠️ INFO: ${siswa.nama} belum ada tugas.`);
+                }
                 return;
             }
             siswaAktifDiPeriksa = siswa;
