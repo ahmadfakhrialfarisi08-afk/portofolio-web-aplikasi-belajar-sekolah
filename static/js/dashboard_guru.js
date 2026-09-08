@@ -2341,7 +2341,6 @@
                     <div class="tsm-row" onclick="periksaSiswa(${m.id})">
                         <div class="tsm-avatar-wrap">
                             ${avatarWrapperHTML(m, 'w-10 h-10')}
-                            <span class="tsm-meja-badge" title="Meja ${m.meja}">${m.meja}</span>
                         </div>
                         <div class="tsm-main">
                             ${lencanaEkstra.length ? `<div class="tsm-badges">${lencanaEkstra.join('')}</div>` : ''}

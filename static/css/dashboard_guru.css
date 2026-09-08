@@ -616,24 +616,6 @@
             flex-shrink: 0;
             line-height: 0;
         }
-        .tsm-meja-badge {
-            position: absolute;
-            bottom: -3px;
-            right: -3px;
-            min-width: 17px;
-            height: 17px;
-            padding: 0 3px;
-            border-radius: 9999px;
-            background: #0f172a;
-            color: #ffffff;
-            font-size: 0.55rem;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #ffffff;
-            line-height: 1;
-        }
         .tsm-main {
             flex: 1 1 auto;
             min-width: 0;
