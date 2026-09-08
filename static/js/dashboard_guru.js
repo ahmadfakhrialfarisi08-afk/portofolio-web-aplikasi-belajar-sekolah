@@ -1491,6 +1491,18 @@
         // supaya pemanggil (klikTogglePelanggaranSatuMurid dkk) bisa
         // langsung render ulang kartu tanpa nunggu -- kalau ternyata
         // requestnya GAGAL, cache dibalikin lagi & guru diberi tahu.
+        // PERBAIKAN: dulu fungsi ini tidak mengembalikan apa-apa (pemanggil
+        // langsung anggap "sukses" tanpa nunggu hasil fetch beneran selesai
+        // -- lihat catatan di klikTogglePelanggaranSatuMurid()). Sekarang
+        // fungsi ini me-return { ok: boolean, pesanError? } supaya pemanggil
+        // WAJIB `await` dan baru menampilkan toast SETELAH tahu hasil asli
+        // dari server -- bukan optimis duluan.
+        //
+        // Juga: pesan error dari server (json.message) & alasan network asli
+        // (e.message) sekarang dipakai/di-log -- sebelumnya error asli
+        // ditelan begitu saja dan user cuma lihat pesan generik terus,
+        // padahal penyebabnya bisa macam-macam (session habis, server error,
+        // dsb) dan itu penting buat didiagnosis.
         async function setPelanggaranAktifUntukUsername(username, aktif, keterangan = '') {
             if (aktif) _cachePelanggaranAktifServer[username] = true;
             else delete _cachePelanggaranAktifServer[username];
@@ -1506,17 +1518,36 @@
                     // klikKasihPelanggaranSemuaBelumKerja() sebelum sampai ke sini.
                     body: JSON.stringify({ username, aktif, keterangan })
                 });
-                const json = await res.json();
-                if (!json || !json.success) throw new Error((json && json.message) || 'Gagal menyimpan.');
+
+                let json = null;
+                try {
+                    json = await res.json();
+                } catch (parseErr) {
+                    // Respons bukan JSON valid -- biasanya berarti server balikin
+                    // halaman error HTML (mis. 500 Internal Server Error, atau
+                    // 401/redirect ke halaman login kalau session sudah habis).
+                    // res.status di sini yang jadi petunjuk asli penyebabnya.
+                    throw new Error(`Server membalas status ${res.status} (bukan JSON) -- kemungkinan session habis atau error di server.`);
+                }
+
+                if (!res.ok || !json || !json.success) {
+                    throw new Error((json && json.message) || `Server menolak (status ${res.status}).`);
+                }
+
+                return { ok: true };
             } catch (e) {
                 // Server menolak/gagal -- balikin cache lokal ke keadaan semula
                 // supaya tampilan guru tidak "bohong" bilang sudah tersimpan.
                 if (aktif) delete _cachePelanggaranAktifServer[username];
                 else _cachePelanggaranAktifServer[username] = true;
-                tampilkanToastSuksesKirimTugas('Gagal Tersimpan', 'Perubahan status pelanggaran gagal disimpan ke server. Coba lagi.');
+                // Dicatat ke console supaya gampang di-cek lewat DevTools kalau
+                // masih terjadi lagi -- pesan toast sengaja tetap ringkas buat guru,
+                // tapi detail teknisnya harus tetap bisa ditelusuri.
+                console.error('Gagal menyimpan status pelanggaran:', e);
                 if (taskAktifDipilihUntukRekap) {
                     bukaRekapPengumpulanTugas(taskAktifDipilihUntukRekap.namaKelas, taskAktifDipilihUntukRekap.taskId, true);
                 }
+                return { ok: false, pesanError: e.message || 'Gagal menyimpan.' };
             }
         }
 
@@ -1548,9 +1579,18 @@
             const sudahAktif = siswaPunyaPelanggaranAktif(murid.username);
 
             if (sudahAktif) {
-                setPelanggaranAktifUntukUsername(murid.username, false);
-                tampilkanToastSuksesKirimTugas('Dibatalkan', `Status Pelanggaran Aktif untuk ${murid.nama} sudah dibatalkan.`);
-                perbaruiTombolPelanggaranDiKartu(muridId, false);
+                // PERBAIKAN: dulu toast "Dibatalkan" & update tombol langsung
+                // jalan tanpa nunggu hasil fetch (lihat catatan besar di
+                // setPelanggaranAktifUntukUsername) -- sekarang di-await dulu,
+                // toast sukses cuma muncul kalau memang beneran tersimpan.
+                setPelanggaranAktifUntukUsername(murid.username, false).then(function (hasil) {
+                    if (hasil.ok) {
+                        tampilkanToastSuksesKirimTugas('Dibatalkan', `Status Pelanggaran Aktif untuk ${murid.nama} sudah dibatalkan.`);
+                        perbaruiTombolPelanggaranDiKartu(muridId, false);
+                    } else {
+                        tampilkanToastSuksesKirimTugas('Gagal Tersimpan', `Gagal membatalkan pelanggaran ${murid.nama}: ${hasil.pesanError}`);
+                    }
+                });
                 return;
             }
 
@@ -1563,10 +1603,21 @@
                 warnaTombol: 'rose',
                 tampilkanInputKeterangan: true,
                 keteranganAwal: task ? `Belum mengerjakan tugas "${task.judul || 'tugas ini'}".` : '',
-                onKonfirmasi: function (keterangan) {
-                    setPelanggaranAktifUntukUsername(murid.username, true, keterangan);
-                    tampilkanToastSuksesKirimTugas('Pelanggaran Diberikan', `${murid.nama} ditandai Pelanggaran Aktif. Overlay peringatan akan muncul saat dashboard-nya dibuka.`);
-                    perbaruiTombolPelanggaranDiKartu(muridId, true);
+                // PERBAIKAN UTAMA: onKonfirmasi sekarang `async` dan meng-`await`
+                // setPelanggaranAktifUntukUsername() SEBELUM menampilkan toast
+                // apa pun. Sebelumnya toast "Pelanggaran Diberikan" & update
+                // tombol langsung jalan begitu tombol modal diklik, padahal
+                // fetch ke server belum tentu selesai/berhasil -- itu sebabnya
+                // toast sukses & toast gagal bisa muncul beruntun/tumpang
+                // tindih walau permintaan sebenarnya gagal tersimpan.
+                onKonfirmasi: async function (keterangan) {
+                    const hasil = await setPelanggaranAktifUntukUsername(murid.username, true, keterangan);
+                    if (hasil.ok) {
+                        tampilkanToastSuksesKirimTugas('Pelanggaran Diberikan', `${murid.nama} ditandai Pelanggaran Aktif. Overlay peringatan akan muncul saat dashboard-nya dibuka.`);
+                        perbaruiTombolPelanggaranDiKartu(muridId, true);
+                    } else {
+                        tampilkanToastSuksesKirimTugas('Gagal Tersimpan', `Pelanggaran ${murid.nama} gagal disimpan ke server: ${hasil.pesanError}. Coba lagi.`);
+                    }
                 }
             });
         }
@@ -1624,12 +1675,28 @@
                 warnaTombol: 'rose',
                 tampilkanInputKeterangan: true,
                 keteranganAwal: `Belum mengerjakan tugas "${task.judul || 'tugas ini'}" sampai batas waktu yang ditentukan.`,
-                onKonfirmasi: function (keterangan) {
-                    belumKerja.forEach(m => {
-                        setPelanggaranAktifUntukUsername(m.username, true, keterangan);
-                        perbaruiTombolPelanggaranDiKartu(m.id, true);
-                    });
-                    tampilkanToastSuksesKirimTugas('Pelanggaran Diberikan', `${belumKerja.length} murid yang belum mengerjakan tugas ini sudah ditandai Pelanggaran Aktif.`);
+                // PERBAIKAN: sama seperti klikTogglePelanggaranSatuMurid() --
+                // dulu toast sukses & update tombol jalan untuk SEMUA murid
+                // tanpa nunggu hasil fetch masing-masing, jadi kalau salah
+                // satu (atau semua) gagal tersimpan, guru tetap dikasih tahu
+                // "sudah ditandai" padahal belum tentu. Sekarang tiap request
+                // di-await, dihitung berapa yang beneran sukses vs gagal, baru
+                // toast akhirnya mencerminkan hasil sebenarnya.
+                onKonfirmasi: async function (keterangan) {
+                    const hasilSemua = await Promise.all(belumKerja.map(async (m) => {
+                        const hasil = await setPelanggaranAktifUntukUsername(m.username, true, keterangan);
+                        if (hasil.ok) perbaruiTombolPelanggaranDiKartu(m.id, true);
+                        return hasil.ok;
+                    }));
+                    const jumlahSukses = hasilSemua.filter(Boolean).length;
+                    const jumlahGagal = hasilSemua.length - jumlahSukses;
+                    if (jumlahGagal === 0) {
+                        tampilkanToastSuksesKirimTugas('Pelanggaran Diberikan', `${jumlahSukses} murid yang belum mengerjakan tugas ini sudah ditandai Pelanggaran Aktif.`);
+                    } else if (jumlahSukses === 0) {
+                        tampilkanToastSuksesKirimTugas('Gagal Tersimpan', `Semua (${jumlahGagal}) pelanggaran gagal disimpan ke server. Coba lagi.`);
+                    } else {
+                        tampilkanToastSuksesKirimTugas('Sebagian Gagal', `${jumlahSukses} berhasil ditandai, tapi ${jumlahGagal} gagal disimpan ke server. Coba lagi untuk yang gagal.`);
+                    }
                 }
             });
         }
