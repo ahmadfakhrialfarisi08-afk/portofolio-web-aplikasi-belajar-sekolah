@@ -1146,10 +1146,15 @@
             tbody.innerHTML = "";
             let totalTugasAktif = 0;
 
-            // Setiap tugas yang pernah dikirim ke kelas manapun dicatat sebagai barisnya
-            // sendiri di rekap ini — tugas baru MENAMBAH baris, bukan menimpa baris lama.
+            // PERBAIKAN: "Rekap Semua Tugas" itu artinya "semua tugas YANG SAYA
+            // KASIH", bukan tugas satu sekolah dicampur jadi satu. Jadi rekap
+            // guru A dan rekap guru B dipisah -- masing-masing cuma lihat
+            // baris tugas yang DIA sendiri yang buat/kirim (pembatasan
+            // edit/hapus di kartu ringkas Beranda TIDAK berlaku di sini,
+            // karena di sini semua baris yang tampil memang sudah pasti
+            // miliknya sendiri).
             daftarSeluruhKelasDummy.forEach(k => {
-                const tasksKelasIni = getTasksKelas(k.nama);
+                const tasksKelasIni = getTasksKelas(k.nama).filter(t => tugasIniMilikGuruLogin(t));
                 tasksKelasIni.forEach(data => {
                     totalTugasAktif++;
 
@@ -1175,15 +1180,6 @@
                     // status tugas sengaja stopPropagation supaya tidak ikut kebuka.
                     const badgePengumpulanKlikable = `<span class="inline-flex items-center gap-1.5">${badgePengumpulan}<i class="fa-solid fa-chevron-right text-[9px] text-slate-300"></i></span>`;
 
-                    // PERMINTAAN: tombol Atur/Hapus di rekap ini juga cuma boleh
-                    // nongol buat tugas buatan guru yang sedang login sendiri --
-                    // tugas guru lain cukup kelihatan datanya di rekap (read-only),
-                    // tapi tidak bisa diutak-atik dari sini.
-                    const tombolAksiTugas = tugasIniMilikGuruLogin(data)
-                        ? `<button onclick="bukaModalEditTugas('${k.nama}', '${data.id}')" class="px-3 py-1 bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-bold transition-all mr-1">Atur</button>
-                           <button onclick="hapusTugasByID('${k.nama}', '${data.id}')" class="px-3 py-1 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg text-xs font-bold transition-all">Hapus</button>`
-                        : `<span class="text-[11px] text-slate-400 italic" title="Cuma ${data.namaGuru || 'guru pembuatnya'} yang bisa mengatur/menghapus tugas ini"><i class="fa-solid fa-lock mr-1"></i>Milik guru lain</span>`;
-
                     tbody.innerHTML += `
                         <tr onclick="bukaRekapPengumpulanTugas('${k.nama}', '${data.id}')" class="hover:bg-blue-50/60 cursor-pointer transition-colors" title="Klik untuk lihat rekap pengumpulan tiap siswa">
                             <td class="py-3.5 px-6 font-extrabold text-blue-600">${k.nama}</td>
@@ -1195,7 +1191,8 @@
                             <td class="py-3.5 px-6" onclick="event.stopPropagation()">${badgeStatusTugas}</td>
                             <td class="py-3.5 px-6">${badgePengumpulanKlikable}</td>
                             <td class="py-3.5 px-6 text-right" onclick="event.stopPropagation()">
-                                ${tombolAksiTugas}
+                                <button onclick="bukaModalEditTugas('${k.nama}', '${data.id}')" class="px-3 py-1 bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-bold transition-all mr-1">Atur</button>
+                                <button onclick="hapusTugasByID('${k.nama}', '${data.id}')" class="px-3 py-1 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg text-xs font-bold transition-all">Hapus</button>
                             </td>
                         </tr>
                     `;
@@ -1203,7 +1200,7 @@
             });
 
             if (totalTugasAktif === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 italic">Belum ada tugas atau catatan yang dikirimkan ke kelas manapun.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 italic">Anda belum mengirimkan tugas atau catatan ke kelas manapun.</td></tr>`;
             }
         }
 
