@@ -482,6 +482,19 @@
            "Pintu Masuk" dihapus (disembunyikan) di HP, jadi cuma baris
            "Papan Tulis & Meja Guru" yang tampil, full-width.
            ============================================================ */
+
+        /* Label "Pintu Masuk" dihilangkan total di SEMUA ukuran layar
+           (laptop & HP), jadi baris denah cuma nampilin "Papan Tulis &
+           Meja Guru" saja, full-width. */
+        .denah-top-row .denah-pintu-masuk {
+            display: none !important;
+        }
+        .denah-top-row .denah-papan-tulis {
+            width: 100% !important;
+            flex: 1 1 100% !important;
+            grid-column: 1 / -1 !important;
+        }
+
         @media (max-width: 639px) {
             .kelas-hero-banner {
                 height: auto !important;
