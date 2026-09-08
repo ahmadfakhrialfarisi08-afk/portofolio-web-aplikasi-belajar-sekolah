@@ -2892,15 +2892,18 @@
             // (dianggap niat scroll, bukan menahan), gesture ini langsung
             // dibatalkan total dan scroll native tetap jalan normal -- tidak
             // ada preventDefault sama sekali dalam kasus itu.
-            const HOLD_DELAY_MS = 450;   // lama tahan sebelum dianggap "long-press"
-            const AMBANG_GESER_PX = 6;   // toleransi geser kecil sebelum dianggap scroll
-            // Catatan: ambang ini SENGAJA dibuat kecil (bukan besar) supaya
-            // gerakan sekecil apapun -- termasuk scroll yang PELAN -- tetap
-            // cepat terdeteksi sebagai "niat scroll" dan langsung membatalkan
-            // mode tertahan. Kalau ambangnya dibuat besar, scroll pelan bisa
-            // keburu belum melewati ambang saat HOLD_DELAY_MS habis, jadi
-            // malah kepilih sebagai kartu meski jari sebenarnya sedang
-            // digeser scroll (bukan didiamkan).
+            const HOLD_DELAY_MS = 650;   // lama tahan sebelum dianggap "long-press"
+            const AMBANG_GESER_PX = 8;   // toleransi geser kecil sebelum dianggap scroll
+            // Catatan soal angka-angka ini: masalah yang sering muncul adalah
+            // scroll yang PELAN (jari bergerak sangat perlahan) punya
+            // perpindahan jarak yang kecil per satuan waktu -- jadi kalau
+            // HOLD_DELAY_MS terlalu singkat, timer keburu "nyala" duluan
+            // SEBELUM jari sempat membuktikan dirinya sedang bergerak/scroll,
+            // padahal niatnya scroll (bukan menahan diam). Makin lama
+            // HOLD_DELAY_MS, makin banyak waktu diberikan ke jari untuk
+            // membuktikan gerakannya sebelum dianggap "tertahan" -- jadi
+            // scroll pelan sekalipun biasanya sudah keburu melewati
+            // AMBANG_GESER_PX duluan sebelum durasi ini habis.
 
             let kartuAwalSentuh = null;   // kartu tempat jari pertama kali menyentuh
             let kartuTersentuh = null;    // kartu yang sedang "terpilih" saat ini
