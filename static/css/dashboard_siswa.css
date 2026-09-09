@@ -3029,3 +3029,27 @@
                    supaya garisnya tidak putih terang di atas latar gelap. --- */
             html:not(.dark) .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #E8E8EF; }
         }
+
+        /* ---------- Badge titik notifikasi lonceng (#badge-bell-dot) ----------
+           Perbaikan tampilan: dipaksa jadi lingkaran SEMPURNA (lebar & tinggi
+           sama persis, bukan oval/pil kayak sebelumnya -- sebelumnya lebarnya
+           ngikutin isi teks angkanya jadi tidak simetris), dan posisinya
+           dipindah ke pojok KIRI atas tombol lonceng (bukan kanan seperti
+           sebelumnya, yang kepotong/ketutupan tombol lain di sebelahnya).
+           Pakai !important supaya override class Tailwind apapun yang sudah
+           ada di HTML tanpa perlu ubah HTML-nya. */
+        #badge-bell-dot {
+            top: -4px !important;
+            left: -4px !important;
+            right: auto !important;
+            bottom: auto !important;
+            width: 18px !important;
+            height: 18px !important;
+            min-width: 18px !important;
+            max-width: none !important;
+            padding: 0 !important;
+            border-radius: 9999px !important;
+            line-height: 1 !important;
+            font-size: 10px !important;
+            box-sizing: border-box !important;
+        }
