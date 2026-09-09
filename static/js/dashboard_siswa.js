@@ -4011,7 +4011,7 @@
                 teacherImageHTML = `
                     <div class="mt-3">
                         <p class="text-[11px] font-semibold text-slate-500 mb-1"><i class="fa-solid fa-image mr-1"></i> Lampiran Soal dari Guru:</p>
-                        <img loading="lazy" decoding="async" src="${data.teacherImage}" class="max-h-64 rounded-xl border border-slate-200 object-contain shadow-sm" alt="Lampiran Guru">
+                        <img loading="lazy" decoding="async" src="${data.teacherImage}" onclick="bukaZoomFotoPrestasi(this.src, 'Lampiran Soal dari Guru')" class="max-h-64 rounded-xl border border-slate-200 object-contain shadow-sm cursor-zoom-in" alt="Lampiran Guru">
                     </div>
                 `;
             }
