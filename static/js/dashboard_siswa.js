@@ -3358,6 +3358,15 @@
             const adaDraftFoto = window._fotoTugasSementara && Array.isArray(window._fotoTugasSementara[data.id]) && window._fotoTugasSementara[data.id].length > 0;
             if (adaDraftFoto) return 'draft';
 
+            // FITUR: begitu siswa BENAR-BENAR sudah membuka/melihat detail tugas ini
+            // (isViewedByStudent, ditandai oleh tandaiTugasDibukaJikaPerlu() pas kartu
+            // tugas dirender), tugas langsung dianggap "Sedang Dikerjakan" walau belum
+            // ada foto draft yang diunggah -- selaras dengan status yang juga berubah
+            // di Dashboard Guru dari "Belum Dikerjakan" -> "Sedang Dikerjakan".
+            const sudahDibukaSiswa = !!(data.isViewedByStudent ||
+                (window._statusTugasSendiri && window._statusTugasSendiri[data.id] && window._statusTugasSendiri[data.id].dilihat));
+            if (sudahDibukaSiswa) return 'draft';
+
             return 'belum';
         }
 
@@ -3666,20 +3675,30 @@
                 const batasWaktu = data.deadline || data.deadlineDate || '-';
                 const namaGuruTugas = data.namaGuru || data.guru || data.teacher || data.pengajar || 'Guru Mata Pelajaran';
 
+                // Kartu "Tugas Terdekat" di beranda ini ikut disamakan dengan status
+                // di tab Tugas & di Dashboard Guru -- kalau tugas SUDAH pernah dibuka
+                // siswa (isViewedByStudent) tapi belum dikirim, tampilkan "Sedang
+                // Dikerjakan" (biru), bukan tetap "Belum Dikerjakan" (amber).
+                const sudahDibukaSiswaTerdekat = !!(data.isViewedByStudent ||
+                    (window._statusTugasSendiri && window._statusTugasSendiri[data.id] && window._statusTugasSendiri[data.id].dilihat));
+                const warnaTerdekat = sudahDibukaSiswaTerdekat
+                    ? { bgCard: 'bg-blue-50', borderCard: 'border-blue-200', bgIcon: 'bg-blue-500', badgeText: 'text-blue-700', badgeBg: 'bg-blue-100', btnBg: 'bg-blue-600 hover:bg-blue-700', icon: 'fa-pen', label: 'Sedang Dikerjakan' }
+                    : { bgCard: 'bg-amber-50', borderCard: 'border-amber-200', bgIcon: 'bg-amber-500', badgeText: 'text-amber-700', badgeBg: 'bg-amber-100', btnBg: 'bg-amber-600 hover:bg-amber-700', icon: 'fa-book-open', label: 'Belum Dikerjakan' };
+
                 container.innerHTML = `
-                    <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between">
+                    <div class="p-4 ${warnaTerdekat.bgCard} border ${warnaTerdekat.borderCard} rounded-2xl flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold">
-                                <i class="fa-solid fa-book-open text-lg"></i>
+                            <div class="w-10 h-10 rounded-xl ${warnaTerdekat.bgIcon} text-white flex items-center justify-center font-bold">
+                                <i class="fa-solid ${warnaTerdekat.icon} text-lg"></i>
                             </div>
                             <div>
-                                <span class="text-[10px] font-bold text-amber-700 uppercase tracking-wider bg-amber-100 px-2 py-0.5 rounded">Belum Dikerjakan</span>
+                                <span class="text-[10px] font-bold ${warnaTerdekat.badgeText} uppercase tracking-wider ${warnaTerdekat.badgeBg} px-2 py-0.5 rounded">${warnaTerdekat.label}</span>
                                 <h4 class="font-bold text-slate-800 text-xs mt-0.5">${judulTugas}</h4>
                                 <p class="text-[11px] text-slate-500">Dari: ${namaGuruTugas} • Batas: ${batasWaktu} WIB</p>
                                 ${jumlahTugasLain > 0 ? `<p class="text-[10px] text-amber-600 font-bold mt-0.5">+${jumlahTugasLain} tugas lain menunggu</p>` : ''}
                             </div>
                         </div>
-                        <button onclick="switchTab('tugas')" class="px-3 py-1.5 bg-amber-600 text-white font-bold text-xs rounded-xl hover:bg-amber-700">Kerjakan</button>
+                        <button onclick="switchTab('tugas')" class="px-3 py-1.5 ${warnaTerdekat.btnBg} text-white font-bold text-xs rounded-xl">Kerjakan</button>
                     </div>`;
                 return;
             }
@@ -3991,8 +4010,8 @@
                     ${teacherImageHTML}
                     ${voiceNoteHTML}
                     <div class="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-blue-100 gap-3">
-                        <span class="text-xs font-bold ${data.studentSubmitted || data.sudahMengumpulkan ? 'text-emerald-600' : (isExpired ? 'text-rose-600' : (pelanggaranAktifSekarang ? 'text-rose-600' : 'text-amber-600'))}">
-                            Status: ${data.studentSubmitted || data.sudahMengumpulkan ? 'Sudah Dikirim' : (isExpired ? 'Kedaluwarsa (Tidak Dikerjakan)' : (pelanggaranAktifSekarang ? 'Terkunci (Pelanggaran Aktif)' : 'Belum Dikerjakan'))}
+                        <span class="text-xs font-bold ${data.studentSubmitted || data.sudahMengumpulkan ? 'text-emerald-600' : (isExpired ? 'text-rose-600' : (pelanggaranAktifSekarang ? 'text-rose-600' : (data.isViewedByStudent ? 'text-blue-600' : 'text-amber-600')))}">
+                            Status: ${data.studentSubmitted || data.sudahMengumpulkan ? 'Sudah Dikirim' : (isExpired ? 'Kedaluwarsa (Tidak Dikerjakan)' : (pelanggaranAktifSekarang ? 'Terkunci (Pelanggaran Aktif)' : (data.isViewedByStudent ? 'Sedang Dikerjakan' : 'Belum Dikerjakan')))}
                         </span>
                         ${statusActionHTML}
                     </div>
