@@ -26,22 +26,23 @@
            renderKartuTugas()/kirimTugasSiswa() jauh di atas).
 
            ------------------------------------------------------------
-           TAMBAHAN: "Harus Ada Tombol Aksi Nyata" + "Sekali Tampil dan
-           Dicatat". Overlay ini sekarang:
+           TAMBAHAN: "Harus Ada Tombol Aksi Nyata" + "Tampil Tiap Login".
+           Overlay ini sekarang:
              1) Menampilkan KETERANGAN pelanggaran yang sebenarnya (diisi
                 guru saat "Kasih Pelanggaran", bukan cuma pesan generik).
              2) Punya 2 tombol aksi nyata: "Saya Mengerti" (tutup overlay,
                 tugas tetap terkunci sampai guru mencabut) & "Ajukan
                 Banding" (buka chat WhatsApp guru yang menandai
                 pelanggaran ini, nomor & pesan sudah otomatis terisi).
-             3) BARU tercatat sebagai "sudah dilihat" (acknowledge) ke
-                server TEPAT SAAT salah satu tombol itu diklik -- BUKAN
-                otomatis begitu overlay tampil. Jadi kalau siswa menutup
-                tab tanpa klik apa pun, overlay ini akan tampil LAGI di
-                sesi berikutnya sampai dia benar-benar menekan salah satu
-                tombol aksi. Ini yang membuat "Dicatat" di sini berarti
-                "tercatat siswa sudah membaca & bertindak", bukan sekadar
-                "pernah ditampilkan ke layar".
+             3) Overlay tampil SEKALI SETIAP SESI/LOGIN (bukan cuma sekali
+                sampai diklik lalu tidak pernah lagi) selama status
+                pelanggarannya masih AKTIF -- jadi siswa tetap diingatkan
+                tiap kali login/refresh, dan overlay ini otomatis berhenti
+                muncul begitu guru MENCABUT pelanggarannya (bukan begitu
+                siswa klik tombol). Klik tombol tetap dicatat ke server
+                (/api/pelanggaran/dilihat) untuk arsip guru, tapi catatan
+                itu TIDAK LAGI dipakai untuk menyembunyikan overlay di
+                login berikutnya.
 
            CATATAN MARKUP HTML YANG DIPERLUKAN (lihat overview jawaban):
            file ini butuh beberapa elemen baru di modal overlay pada
@@ -80,9 +81,17 @@
             // belum). Kalau guru menandai pelanggaran BARU (lihat reset
             // dilihat_at=None di /api/pelanggaran/set), siklus "tampil
             // sekali" ini mulai dari nol lagi.
-            var _statusSudahDilihatCache = false; // salinan lokal dari 'sudah_dilihat' hasil poll terakhir
+            var _statusSudahDilihatCache = false; // salinan lokal dari 'sudah_dilihat' hasil poll terakhir (masih dicatat ke server utk arsip guru, tidak lagi dipakai buat gating tampil)
             var _sedangMencatatDilihat = false;   // guard biar tidak POST dobel selagi request pertama masih jalan
             var _detailPelanggaranTerakhir = null; // {keterangan, oleh, oleh_whatsapp, updated_at} dari poll terakhir
+
+            // GANTI PERILAKU: overlay sekarang tampil SEKALI SETIAP SESI/LOGIN
+            // (bukan lagi menunggu 'sudah_dilihat' dari server) selama status
+            // masih aktif -- jadi siswa tetap diingatkan tiap kali dia login,
+            // dan otomatis berhenti muncul begitu guru mencabut pelanggarannya.
+            // Flag ini di memori JS saja (reset tiap kali halaman dimuat ulang
+            // alias "login"/refresh baru), TIDAK disimpan ke localStorage/server.
+            var _sudahTampilkanOverlaySesiIni = false;
 
             function statusPelanggaranSedangAktif() {
                 return _statusPelanggaranAktifCache;
@@ -145,21 +154,31 @@
                         if (!_statusPelanggaranAktifCache) {
                             // Tidak/tidak lagi aktif -- tutup overlay kalau kebetulan
                             // lagi kebuka (guru baru saja mencabutnya), buka kunci
-                            // tugas. Tidak ada apa pun yang perlu "dicatat" di sini.
+                            // tugas. Reset juga flag "sudah tampil sesi ini" supaya
+                            // KALAU nanti guru kasih pelanggaran baru lagi selagi
+                            // siswa masih di sesi/tab yang sama, overlay-nya tetap
+                            // muncul (bukan dianggap "sudah pernah tampil sesi ini").
                             if (sebelumnyaAktif) {
                                 tutupOverlayPelanggaranAktif();
                                 try { if (typeof renderLiveTaskContent === 'function') renderLiveTaskContent(); } catch (e) {}
                             }
+                            _sudahTampilkanOverlaySesiIni = false;
                             return;
                         }
 
                         // Aktif -- tugas ikut terkunci otomatis lewat
                         // pelanggaranSiswaSedangAktif() di renderKartuTugas()/
                         // kirimTugasSiswa(), terlepas dari modal ditampilkan atau
-                        // tidak. Modalnya sendiri CUMA muncul kalau server bilang
-                        // siswa belum pernah klik tombol aksi utk pelanggaran ini
-                        // (prinsip "Sekali Tampil dan Dicatat").
-                        if (!_statusSudahDilihatCache) {
+                        // tidak. Modalnya sendiri tampil SEKALI PER SESI/LOGIN
+                        // (bukan lagi menunggu 'sudah_dilihat' dari server) --
+                        // begitu halaman ini dimuat (login/refresh) dan pelanggaran
+                        // masih aktif, overlay langsung tampil sekali; setelah itu
+                        // (dalam sesi yang sama) tidak dipaksa muncul ulang tiap
+                        // tick poll supaya tidak mengganggu siswa yang sudah
+                        // menutupnya. Login/refresh berikutnya akan memicu tampil
+                        // lagi selama pelanggarannya belum dicabut guru.
+                        if (!_sudahTampilkanOverlaySesiIni) {
+                            _sudahTampilkanOverlaySesiIni = true;
                             tampilkanOverlayPelanggaranAktif(_detailPelanggaranTerakhir);
                         }
                         if (!sebelumnyaAktif) {
