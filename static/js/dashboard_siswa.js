@@ -1414,12 +1414,40 @@
             updateBadgeLonceng();
         }
 
+        // Titik merah di menu "Tugas & Catatan" (sidebar) sengaja dibuat TERPISAH
+        // dari isViewedByStudent (status per-tugas yang dipakai Dashboard Guru
+        // buat status "Sedang Dikerjakan" -- lihat catatan di switchTab()).
+        // Titik merah ini cuma nandain "ada tugas yang belum sempat dilihat
+        // daftarnya", jadi cukup HILANG begitu siswa membuka tab Tugas &
+        // Catatan (diklik), tanpa perlu buka tugasnya satu-satu.
+        const KEY_BADGE_TUGAS_DILIHAT = `badge_tugas_dilihat_${ID_SISWA_AKTIF}`;
+
+        function getIdTugasBadgeDilihat() {
+            const raw = localStorage.getItem(KEY_BADGE_TUGAS_DILIHAT);
+            return raw ? JSON.parse(raw) : [];
+        }
+
+        // Dipanggil begitu tab "Tugas & Catatan" dibuka -- tandai SEMUA tugas
+        // yang ada sekarang sebagai "sudah dilihat daftarnya" supaya titik
+        // merah langsung hilang. Kalau nanti ada tugas baru lagi (id baru yang
+        // belum ada di daftar ini), titik merah otomatis muncul lagi.
+        function tandaiBadgeTugasDilihat() {
+            try {
+                const idSemuaTugas = getTasksSiswa().map(t => t.id);
+                localStorage.setItem(KEY_BADGE_TUGAS_DILIHAT, JSON.stringify(idSemuaTugas));
+            } catch (err) {
+                console.warn('Gagal menandai badge tugas sudah dilihat:', err);
+            }
+            checkTaskBadgeStatus();
+        }
+
         function checkTaskBadgeStatus() {
             const tasks = getTasksSiswa();
             const badgeEl = document.getElementById('badge-tugas-baru');
             if (!badgeEl) return;
 
-            const adaYangBelumDilihat = tasks.some(t => !t.isViewedByStudent);
+            const idSudahDilihat = new Set(getIdTugasBadgeDilihat());
+            const adaYangBelumDilihat = tasks.some(t => !idSudahDilihat.has(t.id));
             if (adaYangBelumDilihat) {
                 badgeEl.classList.remove('hidden');
             } else {
@@ -2975,6 +3003,11 @@
             }
 
             if (tabName === 'tugas') {
+                // Titik merah di sidebar (badge-tugas-baru) hilang begitu tab ini
+                // dibuka/diklik -- lihat catatan di tandaiBadgeTugasDilihat().
+                // Ini TIDAK sama dengan penandaan isViewedByStudent per-tugas di
+                // bawah (yang memang sengaja baru per-tugas, bukan blanket).
+                tandaiBadgeTugasDilihat();
                 try {
                     // CATATAN PERUBAHAN: dulu SEMUA tugas otomatis ditandai
                     // isViewedByStudent = true begitu tab ini dibuka (blanket mark),
