@@ -4401,15 +4401,16 @@
             cekBelJamMengajarOtomatis();
             setInterval(() => { if (!document.hidden) cekBelJamMengajarOtomatis(); }, 5000);
 
-            // Cek sesi tiap 15 detik selama tab ini kebuka (kecuali tab
-            // sedang tidak aktif/di-minimize, biar tidak boros)...
-            setInterval(() => { if (!document.hidden) pengecekSesiBerubahGuru(); }, 15000);
-            // ...dan langsung cek ULANG begitu guru balik lagi ke tab ini
-            // (mis. abis buka tab lain buat login sebagai guru lain, terus
-            // balik ke tab ini) -- supaya ketahuan LEBIH CEPAT daripada
-            // nunggu interval 15 detik berikutnya.
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') pengecekSesiBerubahGuru();
-            });
-            window.addEventListener('focus', pengecekSesiBerubahGuru);
+            // NONAKTIF: pengecekan "sesi berubah" sengaja dimatikan (modal
+            // "Sesi Login Sudah Berubah" dulu suka muncul & minta reload
+            // padahal guru tidak login ganda / tidak ganti akun). Fungsi
+            // pengecekSesiBerubahGuru() & tampilkanModalSesiBerubahGuru()
+            // di atas TETAP ada (tidak dihapus) kalau suatu saat mau
+            // diaktifkan lagi -- cukup un-comment 3 baris di bawah ini.
+            //
+            // setInterval(() => { if (!document.hidden) pengecekSesiBerubahGuru(); }, 15000);
+            // document.addEventListener('visibilitychange', () => {
+            //     if (document.visibilityState === 'visible') pengecekSesiBerubahGuru();
+            // });
+            // window.addEventListener('focus', pengecekSesiBerubahGuru);
         });
