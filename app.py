@@ -990,6 +990,12 @@ def api_tugas_submit():
         'waktu_iso': waktu_utc.isoformat(),
         'nilai': lama.get('nilai'),
         'catatan': lama.get('catatan'),
+        # Mengirim tugas otomatis berarti sudah dibaca -- kalau sebelumnya
+        # belum pernah tercatat 'dibaca' (mis. siswa langsung kirim tanpa
+        # sempat ke-detect oleh tandaiTugasDibukaJikaPerlu()), catat juga
+        # di sini supaya statusPengerjaan tidak pernah nyangkut di 'belum'.
+        'dilihat': True,
+        'dilihat_at': lama.get('dilihat_at') or waktu_utc.isoformat(),
     }
     _simpan_tugas_submission_store()
     return jsonify(success=True, waktu=tugas_submission_store[task_id][username]['waktu'])
@@ -1013,12 +1019,63 @@ def api_tugas_submission_diri_sendiri(task_id):
     """Siswa cek status pengumpulan tugas MILIKNYA SENDIRI (per akun),
     dipakai Dashboard Siswa supaya status 'Sudah Dikirim' tidak lagi
     kebawa/ketuker ke siswa lain di kelas yang sama seperti skema lama
-    (tasks_<KELAS> yang satu flag dibagi sekelas)."""
+    (tasks_<KELAS> yang satu flag dibagi sekelas). 'dilihat' disertakan
+    juga di sini (lihat api_tugas_dibaca() di bawah) supaya kartu tugas
+    bisa langsung tahu status "Sedang Dikerjakan"-nya sendiri."""
     if 'user' not in session or session['user']['role'] != 'siswa':
         return jsonify(success=False, message='Belum login sebagai siswa.'), 401
     username = session['user']['username']
     entri = tugas_submission_store.get(task_id, {}).get(username)
-    return jsonify(success=True, data=entri or {'submitted': False})
+    return jsonify(success=True, data=entri or {'submitted': False, 'dilihat': False})
+
+
+@app.route('/api/tugas/dibaca', methods=['POST'])
+@batasi('umum')
+def api_tugas_dibaca():
+    """Siswa menandai SATU tugas sebagai 'sudah dibuka/dibaca' oleh dirinya
+    sendiri, TEPAT SAAT konten lengkapnya benar-benar ditampilkan (lihat
+    tandaiTugasDibukaJikaPerlu() di dashboard_siswa.js) -- dipakai Dashboard
+    Guru supaya status tugas siswa ybs otomatis pindah dari "Belum
+    Dikerjakan" ke "Sedang Dikerjakan" (lihat sinkronkanSubmissionAsliSiswaID1()
+    & renderPenilaianTugas() di dashboard_guru.js), lintas perangkat.
+
+    Disimpan di tugas_submission_store -- skema SAMA PERSIS dengan status
+    pengumpulan (per-siswa per-tugas), BUKAN lagi field isViewedByStudent
+    yang dulu ikut ditulis ke tasks_<KELAS> yang dibagi SEKELAS. Skema lama
+    itu berisiko: siswa yang menyimpan balik status "dibuka"-nya bisa
+    menimpa daftar tugas sekelas dengan salinan yang sudah basi (kalau ada
+    tugas baru dari guru masuk di antara waktu siswa fetch & simpan ulang),
+    berpotensi bikin tugas baru itu hilang dari Dashboard Siswa lain.
+    Endpoint ini TIDAK PERNAH menyentuh tasks_<KELAS> sama sekali, jadi
+    risiko itu tidak ada lagi. Idempotent: dipanggil berkali-kali aman,
+    tidak menimpa 'dilihat_at' yang sudah tercatat."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login sebagai siswa.'), 401
+    body = request.get_json(silent=True) or {}
+    task_id = (body.get('task_id') or '').strip()
+    if not task_id:
+        return jsonify(success=False, message='task_id kosong.'), 400
+
+    username = session['user']['username']
+    tugas_submission_store.setdefault(task_id, {})
+    entri = tugas_submission_store[task_id].get(username)
+    if not entri:
+        tugas_submission_store[task_id][username] = {
+            'submitted': False,
+            'images': [],
+            'waktu': None,
+            'waktu_iso': None,
+            'nilai': None,
+            'catatan': None,
+            'dilihat': True,
+            'dilihat_at': datetime.utcnow().isoformat(),
+        }
+        _simpan_tugas_submission_store()
+    elif not entri.get('dilihat'):
+        entri['dilihat'] = True
+        entri['dilihat_at'] = datetime.utcnow().isoformat()
+        _simpan_tugas_submission_store()
+    return jsonify(success=True)
 
 
 @app.route('/api/tugas/nilai', methods=['POST'])

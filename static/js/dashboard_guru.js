@@ -359,7 +359,15 @@
             }
             if (tabId === 'rekap-tugas') renderRekapSemuaTugas();
             if (tabId === 'absensi') renderAbsensiSiswa();
-            if (tabId === 'nilai') renderPenilaianTugas();
+            if (tabId === 'nilai') {
+                // Render instan dulu pakai cache yang ada (supaya tidak blank),
+                // lalu segarkan window._cacheSubmisiTugas dari server dan render
+                // ulang -- sama pola dengan hitungDanTampilkanPerluDinilai() --
+                // supaya status "Sedang Dikerjakan"/"Sudah Dikerjakan" akurat
+                // begitu guru membuka tab ini, bukan cuma dari cache 30 detik lalu.
+                renderPenilaianTugas();
+                hitungDanTampilkanPerluDinilai().then(renderPenilaianTugas);
+            }
             if (tabId === 'prestasi') renderKonfirmasiPrestasi();
             if (tabId === 'evaluasi') renderEvaluasiGuru();
             const mainContainer = document.getElementById('main-scroll-container');
@@ -2101,9 +2109,20 @@
 
         // Supaya foto tugas yang sudah dikirim siswa TETAP bisa dilihat guru kapan saja
         // (bukan cuma pas baru dikirim), data submission asli (khusus siswa ID#1, yang
-        // memang tersambung ke Dashboard Siswa lewat localStorage) selalu ditarik ulang
-        // dari tugas yang sungguhan tersimpan, bukan dari data dummy awal. Diambil tugas
-        // TERBARU yang sudah dikumpulkan, dicari lintas semua kelas.
+        // memang tersambung ke Dashboard Siswa lewat akun login sungguhan) selalu ditarik
+        // ulang dari tugas yang sungguhan tersimpan, bukan dari data dummy awal. Diambil
+        // tugas TERBARU yang sudah dikumpulkan, dicari lintas semua kelas.
+        //
+        // PERBAIKAN: versi sebelumnya baca t.studentSubmitted/t.isViewedByStudent dari
+        // getTasksKelas() (tasks_<KELAS>) -- field itu TIDAK PERNAH benar-benar diisi
+        // data asli (kirimTugasSiswa() menyimpan pengumpulan lewat /api/tugas/submit,
+        // BUKAN ke tasks_<KELAS>), jadi status di sini selalu basi. Sekarang dibaca dari
+        // window._cacheSubmisiTugas -- cache ASLI dari server (/api/tugas/submissions/<id>,
+        // lihat ambilSubmisiTugasServer() & hitungDanTampilkanPerluDinilai() yang
+        // menghangatkannya tiap load halaman + tiap 30 detik, dan sekarang juga tiap kali
+        // tab "Nilai" dibuka -- lihat switchTab()) -- skema SAMA yang sudah dipakai benar
+        // di "Rekap Pengumpulan per Tugas"/"Perlu Dinilai", termasuk field 'dilihat' baru
+        // (lihat /api/tugas/dibaca di app.py) untuk status "Sedang Dikerjakan".
         function sinkronkanSubmissionAsliSiswaID1() {
             const m = sampleMurid30.find(s => s.id === 1);
             if (!m) return;
@@ -2113,7 +2132,7 @@
             let nilaiTerbaru = null;
             let fotoTerbaru = [];
             let penandaTerbaru = -Infinity;
-            // Kalau ada minimal 1 tugas aktif yang sudah DIBUKA siswa (isViewedByStudent)
+            // Kalau ada minimal 1 tugas aktif yang sudah DIBUKA siswa ('dilihat')
             // tapi belum dikirim, berarti tugas itu berstatus "Sedang Dikerjakan" --
             // dipakai renderPenilaianTugas()/bukaIDCardSiswa() untuk status 3-tahap.
             let adaYangSedangDikerjakan = false;
@@ -2121,21 +2140,18 @@
             daftarSeluruhKelasDummy.forEach(k => {
                 const tasks = getTasksKelas(k.nama);
                 tasks.forEach(t => {
-                    if (t.isViewedByStudent && !t.studentSubmitted) adaYangSedangDikerjakan = true;
-                    if (!t.studentSubmitted) return;
+                    const submisiEntri = (window._cacheSubmisiTugas[t.id] || {})[m.username];
+                    const sudahDibuka = !!(submisiEntri && submisiEntri.dilihat);
+                    const sudahKirim = !!(submisiEntri && submisiEntri.submitted);
+                    if (sudahDibuka && !sudahKirim) adaYangSedangDikerjakan = true;
+                    if (!sudahKirim) return;
                     const penanda = t.waktuKirimGuru || 0;
                     if (penanda >= penandaTerbaru) {
                         penandaTerbaru = penanda;
                         ketemu = true;
-                        waktuKirimTerbaru = t.waktuKirim || t.studentTime || null;
-                        nilaiTerbaru = t.grade || null;
-                        if (Array.isArray(t.studentImages) && t.studentImages.length > 0) {
-                            fotoTerbaru = t.studentImages;
-                        } else if (t.studentImage) {
-                            fotoTerbaru = [t.studentImage];
-                        } else {
-                            fotoTerbaru = [];
-                        }
+                        waktuKirimTerbaru = submisiEntri.waktu || null;
+                        nilaiTerbaru = submisiEntri.nilai || null;
+                        fotoTerbaru = Array.isArray(submisiEntri.images) ? submisiEntri.images : [];
                     }
                 });
             });
@@ -4311,6 +4327,15 @@
                 renderBerandaKelasBerurutan();
                 renderSeluruhKelas();
             }, 30000);
+
+            // Refresh berkala tab "Nilai" (tabel status 3-tahap Belum/Sedang/Sudah
+            // Dikerjakan) SELAMA tab itu yang sedang dibuka guru -- supaya begitu
+            // siswa membuka/mengirim tugas dari perangkat lain, badge statusnya
+            // ikut berubah otomatis tanpa guru perlu pindah tab lalu balik lagi.
+            setInterval(() => {
+                if (document.hidden || activeTab !== 'nilai') return;
+                hitungDanTampilkanPerluDinilai().then(renderPenilaianTugas);
+            }, 15000);
 
             renderTeacherSchedule();
             // PERBAIKAN TRAFFIC: hentikan polling saat tab sedang tidak

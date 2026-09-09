@@ -3600,20 +3600,34 @@
         // ini di Dashboard Guru berubah dari "Belum Dikerjakan" -> "Sedang Dikerjakan"
         // persis pas siswa benar-benar melihat instruksinya, baik lewat kartu
         // langsung (kalau <=2 tugas) maupun lewat modal ikon bulat (kalau >2 tugas).
+        //
+        // PERBAIKAN: versi sebelumnya menulis isViewedByStudent=true dengan
+        // memanggil ulang saveTasksSiswa(tasks) -- yaitu MENIMPA SELURUH
+        // daftar tugas sekelas (tasks_<KELAS>) dengan salinan gabungan milik
+        // akun ini. Itu berisiko: kalau ada tugas BARU dari guru masuk di
+        // antara waktu tasks di sini diambil & disimpan ulang, tugas baru
+        // itu bisa ikut hilang/tertimpa. Sekarang dipindah ke server, per
+        // siswa-per-tugas (skema SAMA seperti status pengumpulan tugas di
+        // /api/tugas/submit) lewat /api/tugas/dibaca -- TIDAK PERNAH
+        // menyentuh tasks_<KELAS> sama sekali.
         function tandaiTugasDibukaJikaPerlu(data) {
             if (!data || !data.id) return;
             if (data.studentSubmitted || data.sudahMengumpulkan) return; // sudah selesai, tak perlu diubah
             if (data.isViewedByStudent) return; // sudah pernah ditandai terbuka sebelumnya
+            data.isViewedByStudent = true; // optimistic (di objek yang lagi dipegang render) + cegah POST dobel
+            window._statusTugasSendiri = window._statusTugasSendiri || {};
+            window._statusTugasSendiri[data.id] = Object.assign(
+                {}, window._statusTugasSendiri[data.id], { dilihat: true }
+            );
+            fetch('/api/tugas/dibaca', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task_id: data.id })
+            }).catch(e => console.warn('Gagal menandai tugas sebagai dibuka:', data.id, e));
             try {
-                const tasks = getTasksSiswa();
-                const idx = tasks.findIndex(t => t.id === data.id);
-                if (idx === -1) return;
-                tasks[idx].isViewedByStudent = true;
-                data.isViewedByStudent = true; // supaya objek yang lagi dipegang render ikut sinkron
-                saveTasksSiswa(tasks);
                 if (typeof checkTaskBadgeStatus === 'function') checkTaskBadgeStatus();
             } catch (e) {
-                console.error('Gagal menandai tugas sebagai dibuka:', e);
+                console.error('Gagal memperbarui badge status tugas:', e);
             }
         }
 
@@ -4237,6 +4251,10 @@
         // Ambil status pengumpulan tugas MILIK SENDIRI dari server (per akun,
         // bukan flag sekelas) dan "timpakan" ke objek tugas sebelum dirender,
         // supaya kartu tugas menampilkan status ASLI akun yang sedang login.
+        // Sekarang ikut menyertakan 'dilihat' (isViewedByStudent) -- lihat
+        // tandaiTugasDibukaJikaPerlu() & /api/tugas/dibaca -- supaya status
+        // "Sedang Dikerjakan" juga akurat & bertahan lintas refresh/perangkat,
+        // bukan cuma status "Sudah Dikirim" seperti sebelumnya.
         window._statusTugasSendiri = window._statusTugasSendiri || {};
         function mergeStatusTugasSendiri(tasks) {
             return tasks.map(t => {
@@ -4247,23 +4265,35 @@
                         sudahMengumpulkan: true,
                         waktuKirim: cache.waktu,
                         studentImages: cache.images,
-                        studentImage: cache.images && cache.images[0]
+                        studentImage: cache.images && cache.images[0],
+                        isViewedByStudent: true // sudah kirim otomatis berarti sudah pernah dibaca
+                    });
+                }
+                if (cache && cache.dilihat) {
+                    // Sudah pernah dibuka tapi belum dikirim -> "Sedang Dikerjakan".
+                    return Object.assign({}, t, {
+                        studentSubmitted: false,
+                        sudahMengumpulkan: false,
+                        studentImages: undefined,
+                        studentImage: undefined,
+                        isViewedByStudent: true
                     });
                 }
                 // Belum ada cache di memori -> tanya server di BACKGROUND (bukan
                 // sinkron/blocking lagi -- lihat catatan besar di getSync() soal
                 // kenapa XHR synchronous berbahaya). Fungsi ini tetap balik nilai
-                // "belum dikumpulkan" SEKARANG JUGA (instan, tidak menunggu),
-                // dan kalau ternyata server bilang sudah pernah dikumpulkan,
-                // hasilnya disimpan ke cache + dashboard di-render ulang sekali
-                // begitu datanya sampai -- jadi tetap akurat, cuma tidak nge-freeze.
+                // "belum dikumpulkan/belum dibuka" SEKARANG JUGA (instan, tidak
+                // menunggu), dan kalau ternyata server bilang sudah pernah
+                // dikumpulkan ATAU dibuka, hasilnya disimpan ke cache + dashboard
+                // di-render ulang sekali begitu datanya sampai -- jadi tetap
+                // akurat, cuma tidak nge-freeze.
                 if (!window._sedangCekStatusTugas) window._sedangCekStatusTugas = {};
                 if (!window._sedangCekStatusTugas[t.id]) {
                     window._sedangCekStatusTugas[t.id] = true;
                     fetch(`/api/tugas/submission/${encodeURIComponent(t.id)}`)
                         .then(res => res.ok ? res.json() : null)
                         .then(res => {
-                            if (res && res.ok !== false && res.data && res.data.submitted) {
+                            if (res && res.ok !== false && res.data && (res.data.submitted || res.data.dilihat)) {
                                 window._statusTugasSendiri[t.id] = res.data;
                                 try { if (typeof renderLiveTaskContent === 'function') renderLiveTaskContent(); } catch (e) {}
                             }
@@ -4271,13 +4301,15 @@
                         .catch(e => console.warn('Gagal cek status pengumpulan tugas milik sendiri:', t.id, e))
                         .finally(() => { delete window._sedangCekStatusTugas[t.id]; });
                 }
-                // Belum pernah dikirim akun ini -> pastikan tidak kebawa flag lama
-                // dari skema sekelas (tasks_<KELAS>) yang mungkin masih ada di data.
+                // Belum pernah dikirim/dibuka akun ini -> pastikan tidak kebawa
+                // flag lama dari skema sekelas (tasks_<KELAS>) yang mungkin
+                // masih ada di data.
                 return Object.assign({}, t, {
                     studentSubmitted: false,
                     sudahMengumpulkan: false,
                     studentImages: undefined,
-                    studentImage: undefined
+                    studentImage: undefined,
+                    isViewedByStudent: false
                 });
             });
         }
