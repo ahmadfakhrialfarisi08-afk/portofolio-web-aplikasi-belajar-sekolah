@@ -3800,6 +3800,12 @@
                 const batasWaktu = data.deadline || data.deadlineDate || '-';
                 const namaGuruTugas = data.namaGuru || data.guru || data.teacher || data.pengajar || 'Guru Mata Pelajaran';
 
+                // FITUR: kalau tugas aktif dari guru LEBIH DARI SATU, tugas ke-2 dst
+                // disimpan di sini (window._tugasAktifTerdekat) supaya ikon "+N" di
+                // sebelah ikon utama (lihat markup di bawah) bisa langsung membuka
+                // tugas itu dari beranda -- lihat bukaTugasTerdekatLain().
+                window._tugasAktifTerdekat = tugasAktif;
+
                 // Kartu "Tugas Terdekat" di beranda ini ikut disamakan dengan status
                 // di tab Tugas & di Dashboard Guru -- kalau tugas SUDAH pernah dibuka
                 // siswa (isViewedByStudent) tapi belum dikirim, tampilkan "Sedang
@@ -3810,11 +3816,28 @@
                     ? { bgCard: 'bg-blue-50', borderCard: 'border-blue-200', bgIcon: 'bg-blue-500', badgeText: 'text-blue-700', badgeBg: 'bg-blue-100', btnBg: 'bg-blue-600 hover:bg-blue-700', icon: 'fa-pen', label: 'Sedang Dikerjakan' }
                     : { bgCard: 'bg-amber-50', borderCard: 'border-amber-200', bgIcon: 'bg-amber-500', badgeText: 'text-amber-700', badgeBg: 'bg-amber-100', btnBg: 'bg-amber-600 hover:bg-amber-700', icon: 'fa-book-open', label: 'Belum Dikerjakan' };
 
+                // Ikon ke-2 ("+N") di samping ikon utama -- HANYA muncul kalau tugas
+                // aktif dari guru lebih dari satu (jumlahTugasLain > 0). Ketuk ikon
+                // ini untuk langsung buka tugas berikutnya (indeks ke-1 di
+                // tugasAktif) lewat modal yang sama dipakai ikon bulat di tab Tugas
+                // & Catatan -- lihat bukaTugasTerdekatLain(), yang otomatis
+                // memindahkan status tugas itu ke "Sedang Dikerjakan" persis saat
+                // kartunya ditampilkan (sama seperti tugas utama di sebelahnya).
+                const ikonTugasKedua = jumlahTugasLain > 0
+                    ? `<button type="button" onclick="bukaTugasTerdekatLain(1)" title="Buka tugas berikutnya"
+                            class="relative w-10 h-10 -ml-3 rounded-xl bg-slate-700 hover:bg-slate-800 text-white flex items-center justify-center font-bold text-xs shadow-sm ring-2 ring-white transition-transform active:scale-90 focus:outline-none">
+                            +${jumlahTugasLain}
+                        </button>`
+                    : '';
+
                 container.innerHTML = `
                     <div class="p-4 ${warnaTerdekat.bgCard} border ${warnaTerdekat.borderCard} rounded-2xl flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl ${warnaTerdekat.bgIcon} text-white flex items-center justify-center font-bold">
-                                <i class="fa-solid ${warnaTerdekat.icon} text-lg"></i>
+                            <div class="flex items-center">
+                                <div class="relative z-10 w-10 h-10 rounded-xl ${warnaTerdekat.bgIcon} text-white flex items-center justify-center font-bold">
+                                    <i class="fa-solid ${warnaTerdekat.icon} text-lg"></i>
+                                </div>
+                                ${ikonTugasKedua}
                             </div>
                             <div>
                                 <span class="text-[10px] font-bold ${warnaTerdekat.badgeText} uppercase tracking-wider ${warnaTerdekat.badgeBg} px-2 py-0.5 rounded">${warnaTerdekat.label}</span>
@@ -3858,6 +3881,41 @@
                     <i class="fa-solid fa-calendar-check text-2xl mb-1 text-slate-300"></i>
                     <p class="text-xs font-medium">Belum ada tugas terdekat. Semua aman!</p>
                 </div>`;
+        }
+
+        // Dipanggil saat siswa ketuk ikon "+N" di sebelah ikon utama kartu
+        // "Tugas Terdekat" di beranda (lihat renderTugasTerdekat() -- ikon ini
+        // cuma muncul kalau tugas aktif dari guru LEBIH DARI SATU). "index"
+        // menunjuk ke posisi tugas di window._tugasAktifTerdekat -- dipanggil
+        // dengan 1 dari markup supaya yang kebuka tugas AKTIF BERIKUTNYA
+        // setelah yang sudah tampil sebagai kartu utama (index 0).
+        //
+        // Kartu detailnya ditampilkan lewat modal statis #modal-bulat-tugas --
+        // modal YANG SAMA dipakai ikon bulat di tab "Tugas & Catatan" (lihat
+        // bukaBulatTugas()) -- supaya tampilan & perilakunya konsisten di
+        // seluruh dashboard, bukan modal baru yang terpisah.
+        function bukaTugasTerdekatLain(index) {
+            const daftar = window._tugasAktifTerdekat || [];
+            const data = daftar[index];
+            const overlay = document.getElementById('modal-bulat-tugas');
+            const isi = document.getElementById('modal-bulat-tugas-isi');
+            if (!data || !overlay || !isi) return;
+
+            // renderKartuTugas() di dalamnya memanggil tandaiTugasDibukaJikaPerlu()
+            // -- jadi tepat saat kartu tugas ke-2 ini ditampilkan, statusnya
+            // otomatis berubah dari "Belum Dikerjakan" -> "Sedang Dikerjakan"
+            // (di dashboard siswa maupun di Dashboard Guru), sama seperti tugas
+            // utama & ikon bulat di tab Tugas & Catatan.
+            isi.innerHTML = renderKartuTugas(data);
+
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('modal-bulat-tugas--tampil')));
+
+            // Render ulang kartu "Tugas Terdekat" di belakang modal supaya badge
+            // status & label "+N tugas lain menunggu" ikut update begitu status
+            // tugas ke-2 ini berubah jadi "Sedang Dikerjakan".
+            renderTugasTerdekat();
         }
 
         const jadwalPelajaran = {
