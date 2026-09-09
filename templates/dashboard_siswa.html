@@ -2421,13 +2421,19 @@
          sempat jalan sama sekali, supaya penguncian tugas efektif SEJAK
          HALAMAN INI DIMUAT, tanpa jeda yang bisa "diakali" siswa lewat
          reload/login berulang. Lihat dashboard_siswa() di app.py utk isi
-         datanya. Sengaja dipisah jadi tag <script type="application/json">
-         TERSENDIRI (bukan langsung jadi nilai variabel di <script> JS di
+         datanya. Sengaja dipisah jadi tag script type application/json
+         TERSENDIRI (bukan langsung jadi nilai variabel di script JS di
          atas) supaya editor/linter tidak salah baca placeholder Jinja
-         "{{ ... }}" di dalamnya sebagai kode JavaScript (type="application/json"
+         di dalamnya sebagai kode JavaScript (type application/json
          membuat isinya dianggap murni data teks, tidak pernah dieksekusi
          atau divalidasi sebagai JS oleh browser maupun oleh editor) --
-         dibaca lewat JSON.parse() di dashboard_siswa_pelanggaran.js. -->
+         dibaca lewat JSON.parse() di dashboard_siswa_pelanggaran.js.
+         PENTING: JANGAN taruh tanda kurung-kurawal-ganda Jinja (kurawal
+         buka dua kali lalu titik-titik lalu kurawal tutup dua kali) di
+         dalam komentar HTML manapun di file ini -- Jinja2 tetap membaca &
+         mengeksekusinya sebagai ekspresi walau ada di dalam komentar HTML,
+         dan kalau isinya bukan ekspresi valid (mis. cuma titik-titik),
+         Flask langsung 500 TemplateSyntaxError begitu halaman ini diakses. -->
     <script id="data-pelanggaran-awal" type="application/json">{{ pelanggaran_awal | tojson }}</script>
     <script src="../static/js/dashboard_siswa.js?v=20260909"></script>
 
