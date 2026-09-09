@@ -78,7 +78,7 @@ BATAS_RATE_LIMIT = {
     'umum':   (60, 60),    # API umum (baca/tulis data ringan)
     'berat':  (20, 60),    # endpoint yang baca banyak data / komputasi berat
     'upload': (10, 60),    # upload foto/tugas
-    'burst':  (10, 10),    # jaga-jaga lonjakan beruntun dalam waktu singkat
+    'burst':  (20, 10),    # jaga-jaga lonjakan beruntun dalam waktu singkat -- dinaikkan dari 10 supaya pemuatan awal dashboard (banyak widget independen fetch bersamaan) tidak ikut kena, tapi lonjakan beruntun/bug loop tetap kena batasi
 }
 
 

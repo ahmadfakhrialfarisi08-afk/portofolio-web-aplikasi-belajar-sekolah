@@ -4313,12 +4313,25 @@
                 // dikumpulkan ATAU dibuka, hasilnya disimpan ke cache + dashboard
                 // di-render ulang sekali begitu datanya sampai -- jadi tetap
                 // akurat, cuma tidak nge-freeze.
+                // PERBAIKAN EFISIENSI REQUEST: sebelumnya hasil "belum dikumpulkan/
+                // belum dibuka" tidak pernah disimpan, jadi tugas yang sama ditanyakan
+                // ULANG ke server tiap kali fungsi ini dipanggil (termasuk tiap tick
+                // polling 8 detik) selama tugasnya belum dikerjakan siswa -- ini sumber
+                // utama banjir request /api/tugas/submission/<id> yang bikin 429.
+                // Sekarang dikasih jeda minimum JEDA_CEK_ULANG_STATUS_TUGAS_MS antar
+                // pengecekan buat tugas ID yang sama, TIDAK mengubah hasil/logika status
+                // yang ditampilkan -- cuma menunda seberapa sering server ditanya ulang.
                 if (!window._sedangCekStatusTugas) window._sedangCekStatusTugas = {};
-                if (!window._sedangCekStatusTugas[t.id]) {
+                if (!window._terakhirCekStatusTugas) window._terakhirCekStatusTugas = {};
+                const JEDA_CEK_ULANG_STATUS_TUGAS_MS = 60000;
+                const terakhirDicekTugasIni = window._terakhirCekStatusTugas[t.id] || 0;
+                const barusanDicekTugasIni = (Date.now() - terakhirDicekTugasIni) < JEDA_CEK_ULANG_STATUS_TUGAS_MS;
+                if (!window._sedangCekStatusTugas[t.id] && !barusanDicekTugasIni) {
                     window._sedangCekStatusTugas[t.id] = true;
                     fetch(`/api/tugas/submission/${encodeURIComponent(t.id)}`)
                         .then(res => res.ok ? res.json() : null)
                         .then(res => {
+                            window._terakhirCekStatusTugas[t.id] = Date.now();
                             if (res && res.ok !== false && res.data && (res.data.submitted || res.data.dilihat)) {
                                 window._statusTugasSendiri[t.id] = res.data;
                                 try { if (typeof renderLiveTaskContent === 'function') renderLiveTaskContent(); } catch (e) {}

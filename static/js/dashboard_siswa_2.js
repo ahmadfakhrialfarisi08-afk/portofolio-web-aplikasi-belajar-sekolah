@@ -1662,6 +1662,21 @@
         }
 
 
+        // PERBAIKAN EFISIENSI REQUEST: dulu semua fungsi yang fetch ke server di
+        // DOMContentLoaded ditembak SERENTAK begitu halaman dibuka -- gampang tembus
+        // jatah rate-limit "burst" (lihat _cek_dan_catat_rate_limit('burst') di app.py)
+        // yang dicek buat SEMUA endpoint sekaligus, sebelum siswa sempat klik apa-apa.
+        // jalankanBertahap() cuma menunda EKSEKUSI fungsi-fungsi itu beberapa ratus ms
+        // berurutan (bukan mengubah apa yang dipanggil atau hasilnya) supaya request-nya
+        // nyebar dalam ~1-2 detik, bukan numpuk di milidetik yang sama.
+        function jalankanBertahap(daftarFungsi, jedaMs = 250) {
+            daftarFungsi.forEach((fn, i) => {
+                setTimeout(() => {
+                    try { fn(); } catch (e) { console.error('Gagal jalankan fungsi bertahap:', e); }
+                }, i * jedaMs);
+            });
+        }
+
         /* ================= INIT ================= */
         document.addEventListener('DOMContentLoaded', () => {
             terapkanIdentitasEfektif();
@@ -1669,7 +1684,6 @@
             loadDarkModePreference();
             loadAksenTemaPreference();
             loadBioSiswa();
-            muatDaftarGuru();
             // Tombol "+ Kelola Guru" cuma boleh kelihatan buat akun Admin/Developer
             // asli -- endpoint tambah/edit/hapus di server juga sudah menggerbangi
             // hal yang sama, jadi ini cuma soal kerapian UI (siswa biasa memang
@@ -1692,24 +1706,31 @@
                 if (wrapperDummyLeaderboard) wrapperDummyLeaderboard.classList.remove('hidden');
             }
             backfillRiwayatJikaPerlu();
-            sinkronkanRiwayatDenganTugasAktif();
-            catatRiwayatTugasKedaluwarsaJikaPerlu();
             renderRiwayatPengumpulan();
             renderLiveTaskContent(); // render awal: langsung munculin status tugas terdekat saat halaman baru dibuka
             checkTaskBadgeStatus();
-            renderPermintaanTeman(); // sekalian isi badge dropdown pertemanan dari server saat halaman dibuka
-            renderDaftarTeman(); // isi daftar teman yang sudah saling add di bawah search bar "Cari Teman"
-            renderPerangkat(); // isi badge & tabel perangkat dari server saat halaman dibuka
             updateBerandaPoinQuiz();
-            sinkronkanQuizDenganServer(); // tarik progress & leaderboard akun ini dari server
-            sinkronkanPrestasiDenganServer(); // tarik & gabung pengajuan prestasi kelas ini dari server (endpoint terpisah, lihat catatan di app.py)
             renderPanelDummyLeaderboard();
             pastikanBaselineSeenIdsQuiz();
             pastikanBaselineSeenIdsQuizEssay();
             terapkanBorderKeAvatar();
-            sinkronkanBorderAktifDariServer(); // tarik ulang border aktif dari server -- biar sinkron kalau baru diganti dari perangkat lain
-            cekPembaruanTugasRealtime(); // set snapshot awal sebagai baseline
             updateGlobalCountdown();
+            // Fungsi-fungsi di bawah ini SEMUA fetch ke server -- disebar bertahap
+            // (jeda 250ms per fungsi) supaya tidak numpuk jadi satu ledakan request
+            // di detik yang sama pas halaman baru dibuka. Daftar & urutan fungsinya
+            // SAMA PERSIS seperti sebelumnya, cuma waktu eksekusinya yang disebar.
+            jalankanBertahap([
+                muatDaftarGuru,
+                sinkronkanRiwayatDenganTugasAktif,
+                catatRiwayatTugasKedaluwarsaJikaPerlu,
+                renderPermintaanTeman, // sekalian isi badge dropdown pertemanan dari server saat halaman dibuka
+                renderDaftarTeman, // isi daftar teman yang sudah saling add di bawah search bar "Cari Teman"
+                renderPerangkat, // isi badge & tabel perangkat dari server saat halaman dibuka
+                sinkronkanQuizDenganServer, // tarik progress & leaderboard akun ini dari server
+                sinkronkanPrestasiDenganServer, // tarik & gabung pengajuan prestasi kelas ini dari server (endpoint terpisah, lihat catatan di app.py)
+                sinkronkanBorderAktifDariServer, // tarik ulang border aktif dari server -- biar sinkron kalau baru diganti dari perangkat lain
+                cekPembaruanTugasRealtime // set snapshot awal sebagai baseline
+            ], 250);
             setInterval(updateGlobalCountdown, 1000);
             // NAIKKAN INTERVAL POLLING: sebelumnya tiap 3 detik. Dinaikkan jadi
             // 8 detik -- data di sini (badge pertemanan/perangkat, notif tugas)
