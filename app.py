@@ -2482,12 +2482,36 @@ def dashboard_siswa():
     # supaya tidak pernah kosong.
     u = users.get(session['user']['username'], {})
     foto_profil = u.get('foto_profil') or FOTO_PROFIL_DEFAULT
+
+    # FITUR (tutup celah "akal-akalan" siswa via reload/login berulang):
+    # status Pelanggaran Aktif siswa ini disematkan LANGSUNG di HTML pertama
+    # yang dikirim ke browser -- BUKAN cuma lewat /api/pelanggaran/status
+    # yang baru kepanggil belakangan dari JS (dashboard_siswa_pelanggaran.js
+    # membaca window.PELANGGARAN_AWAL di bawah SEBELUM fetch/polling apa pun
+    # sempat jalan). Sebelumnya ada jeda singkat di awal tiap load/login
+    # (nunggu event 'load' + delay + waktu fetch pertama) di mana penguncian
+    # tugas belum efektif karena cache di JS masih default false -- siswa
+    # yang paham ini bisa coba kirim tugas atau reload/login berkali-kali
+    # berharap "keburu" di jeda itu. Sekarang datanya sudah ikut terkirim di
+    # response HTML ini juga, jadi TIDAK ADA jeda tereksploitasi lagi, mau
+    # login/reload berapa kali pun.
+    entri_pelanggaran = pelanggaran_store.get(session['user']['username']) or {}
+    pelanggaran_awal = {
+        'aktif': bool(entri_pelanggaran.get('aktif')),
+        'sudah_dilihat': bool(entri_pelanggaran.get('dilihat_at')),
+        'keterangan': entri_pelanggaran.get('keterangan') or '',
+        'oleh': entri_pelanggaran.get('oleh') or '',
+        'oleh_whatsapp': entri_pelanggaran.get('oleh_whatsapp') or '',
+        'updated_at': entri_pelanggaran.get('updated_at') or ''
+    }
+
     return render_template(
         'dashboard_siswa.html',
         username=session['user']['nama'],
         nama=session['user']['nama'],
         login_username=session['user']['username'],
-        foto_profil=foto_profil
+        foto_profil=foto_profil,
+        pelanggaran_awal=pelanggaran_awal
     )
  
 @app.route('/dashboard/guru')

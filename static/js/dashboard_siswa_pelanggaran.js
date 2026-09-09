@@ -66,7 +66,38 @@
             // guru menandai, tapi memangkas ~3x jumlah request ke server.
             var JEDA_POLL_PELANGGARAN_MS = 15000; // cek ke server tiap 15 detik
 
-            var _statusPelanggaranAktifCache = false; // salinan lokal, diupdate tiap poll
+            // TUTUP CELAH "AKAL-AKALAN" RELOAD/LOGIN BERULANG: status awal
+            // sekarang diambil dari tag <script id="data-pelanggaran-awal"
+            // type="application/json"> yang sudah disematkan SERVER langsung
+            // di HTML (lihat dashboard_siswa.html & dashboard_siswa() di
+            // app.py) -- BUKAN lagi menunggu default false sampai fetch
+            // /api/pelanggaran/status pertama selesai. Sebelumnya ada jeda
+            // (700ms + nunggu event 'load' + waktu network) di mana cache
+            // ini masih false walau siswa sebenarnya sedang Pelanggaran
+            // Aktif, sehingga tugas TIDAK ikut terkunci selama jeda itu --
+            // siswa yang paham bisa coba kirim tugas / reload / login ulang
+            // berkali-kali berharap "keburu" di jeda itu tiap kali. Sekarang
+            // nilainya sudah PASTI benar sejak baris ini jalan (bagian dari
+            // HTML pertama yang sampai ke browser), jadi tidak ada jeda
+            // tereksploitasi lagi, mau login/reload berapa kali pun.
+            //
+            // Datanya sengaja ditaruh di tag <script type="application/json">
+            // terpisah (bukan langsung jadi nilai variabel JS) supaya
+            // placeholder Jinja "{{ ... }}" di dalamnya tidak dianggap
+            // syntax error oleh editor/linter -- makanya di sini perlu
+            // JSON.parse() dulu, dibungkus try/catch berjaga-jaga kalau
+            // tag-nya belum ada di markup lama / isinya kosong.
+            var _dataAwalPelanggaran = null;
+            try {
+                var _elDataAwalPelanggaran = document.getElementById('data-pelanggaran-awal');
+                if (_elDataAwalPelanggaran && _elDataAwalPelanggaran.textContent.trim()) {
+                    _dataAwalPelanggaran = JSON.parse(_elDataAwalPelanggaran.textContent);
+                }
+            } catch (e) {
+                _dataAwalPelanggaran = null; // markup belum ada / data korup -- aman, fallback ke perilaku lama (poll pertama yang nentuin)
+            }
+
+            var _statusPelanggaranAktifCache = !!(_dataAwalPelanggaran && _dataAwalPelanggaran.aktif); // benar sejak awal, tidak lagi menunggu poll pertama
             // PRINSIP "SEKALI TAMPIL DAN DICATAT": modal/overlay peringatan cuma
             // BOLEH tampil SEKALI per pelanggaran -- begitu siswa login dan
             // ternyata punya pelanggaran aktif yang belum pernah dia ACC
@@ -81,9 +112,14 @@
             // belum). Kalau guru menandai pelanggaran BARU (lihat reset
             // dilihat_at=None di /api/pelanggaran/set), siklus "tampil
             // sekali" ini mulai dari nol lagi.
-            var _statusSudahDilihatCache = false; // salinan lokal dari 'sudah_dilihat' hasil poll terakhir (masih dicatat ke server utk arsip guru, tidak lagi dipakai buat gating tampil)
+            var _statusSudahDilihatCache = !!(_dataAwalPelanggaran && _dataAwalPelanggaran.sudah_dilihat); // salinan lokal, ikut diisi dari data awal server (masih dicatat ke server utk arsip guru, tidak lagi dipakai buat gating tampil)
             var _sedangMencatatDilihat = false;   // guard biar tidak POST dobel selagi request pertama masih jalan
-            var _detailPelanggaranTerakhir = null; // {keterangan, oleh, oleh_whatsapp, updated_at} dari poll terakhir
+            var _detailPelanggaranTerakhir = _dataAwalPelanggaran ? { // {keterangan, oleh, oleh_whatsapp, updated_at} -- awalnya dari data server, lalu diperbarui tiap poll
+                keterangan: _dataAwalPelanggaran.keterangan || '',
+                oleh: _dataAwalPelanggaran.oleh || '',
+                oleh_whatsapp: _dataAwalPelanggaran.oleh_whatsapp || '',
+                updated_at: _dataAwalPelanggaran.updated_at || ''
+            } : null;
 
             // GANTI PERILAKU: overlay sekarang tampil SEKALI SETIAP SESI/LOGIN
             // (bukan lagi menunggu 'sudah_dilihat' dari server) selama status
@@ -345,15 +381,46 @@
                 }
             }
 
-            // Poll PERTAMA sengaja ditunda dulu (biar tidak tumpang tindih sama
-            // animasi transisi masuk dashboard yang butuh ~450-650ms -- lihat
-            // IIFE "layar transisi masuk dashboard" tepat di atas) -- kalau
-            // hasilnya aktif=true, tampilkanOverlayPelanggaranAktif() otomatis
-            // dipanggil dari dalam cekStatusPelanggaranKeServer() di atas.
-            // Setelah itu, polling jalan terus tiap JEDA_POLL_PELANGGARAN_MS
-            // via setInterval -- inilah yang bikin "Kasih Pelanggaran"/
-            // "Batalkan" dari guru (di perangkat manapun) kelihatan di sini
-            // dalam hitungan detik, TANPA siswa perlu reload manual.
+            // TAMPILKAN OVERLAY AWAL (kalau memang aktif) berdasarkan data yang
+            // SUDAH DISEMATKAN SERVER di atas -- bukan lagi menunggu jawaban
+            // fetch pertama. Jeda kecil di bawah ini SEKARANG murni cuma buat
+            // urusan TAMPILAN (biar tidak tabrakan visual sama animasi
+            // transisi masuk dashboard yang butuh ~450-650ms -- lihat IIFE
+            // "layar transisi masuk dashboard" tepat di atas), BUKAN karena
+            // menunggu kepastian status pelanggarannya -- itu sudah pasti
+            // benar sejak _statusPelanggaranAktifCache diisi di atas tadi.
+            // Penguncian tugas sendiri (pelanggaranSiswaSedangAktif(), dipakai
+            // renderKartuTugas()/kirimTugasSiswa()) SUDAH efektif dari detik
+            // ini juga, terlepas dari overlay-nya sudah kelihatan atau belum.
+            //
+            // Jeda ini jauh lebih pendek drpd sebelumnya (dulu: nunggu event
+            // 'load' selesai + 700ms + waktu fetch pertama, bisa >1 detik).
+            // Kalau nanti poll PERTAMA (di bawah) ternyata sudah keburu
+            // selesai lebih cepat dari jeda ini, overlay-nya otomatis
+            // ditampilkan dari sana duluan (guard `_sudahTampilkanOverlaySesiIni`
+            // mencegah tampil dobel) -- jadi overlay bisa muncul SECEPAT
+            // fetch pertama itu selesai kalau jaringan lagi bagus.
+            var JEDA_TAMPIL_OVERLAY_AWAL_MS = 500;
+            if (_statusPelanggaranAktifCache) {
+                setTimeout(function () {
+                    if (_sudahTampilkanOverlaySesiIni || !_statusPelanggaranAktifCache) return;
+                    _sudahTampilkanOverlaySesiIni = true;
+                    tampilkanOverlayPelanggaranAktif(_detailPelanggaranTerakhir);
+                }, JEDA_TAMPIL_OVERLAY_AWAL_MS);
+            }
+
+            // Polling tetap jalan seperti biasa -- gunanya SEKARANG murni
+            // memantau PERUBAHAN LANJUTAN dari guru selagi siswa masih di
+            // tab/sesi yang sama (guru mencabut atau baru menandai pelanggaran
+            // BARU tanpa siswa perlu reload) -- inilah yang bikin "Kasih
+            // Pelanggaran"/"Batalkan" dari guru (di perangkat manapun)
+            // kelihatan di sini dalam hitungan detik. Polling ini TIDAK LAGI
+            // jadi satu-satunya sumber kebenaran status di awal (itu tugas
+            // window.PELANGGARAN_AWAL di atas), jadi TIDAK PERLU LAGI ditunda
+            // 700ms/nunggu event 'load' -- langsung jalan begitu script ini
+            // selesai diparse, supaya kalaupun ada pelanggaran BARU yang
+            // sempat masuk tepat di detik-detik terakhir sebelum render HTML
+            // ini, tetap langsung ketahuan secepat mungkin juga.
             function mulaiPollingStatusPelanggaran() {
                 cekStatusPelanggaranKeServer();
                 setInterval(cekStatusPelanggaranKeServer, JEDA_POLL_PELANGGARAN_MS);
@@ -362,11 +429,5 @@
                 });
             }
 
-            if (document.readyState === 'complete') {
-                setTimeout(mulaiPollingStatusPelanggaran, 700);
-            } else {
-                window.addEventListener('load', function () {
-                    setTimeout(mulaiPollingStatusPelanggaran, 700);
-                });
-            }
+            mulaiPollingStatusPelanggaran();
         })();
