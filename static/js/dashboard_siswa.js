@@ -3993,6 +3993,60 @@
             renderTugasTerdekat();
         }
 
+        // Bangun markup satu ubin foto lampiran guru di dalam galeri. `overlaySisa`
+        // (kalau diisi angka > 0) menaruh lapisan gelap + teks "+N" di atas foto --
+        // dipakai khusus untuk ubin terakhir yang terlihat saat foto > 4.
+        function ubinGaleriFotoGuruTugas(taskId, idx, src, kelasTinggi, overlaySisa) {
+            const overlayHTML = (overlaySisa && overlaySisa > 0)
+                ? `<div class="absolute inset-0 bg-slate-900/60 flex items-center justify-center"><span class="text-white text-lg font-extrabold">+${overlaySisa}</span></div>`
+                : '';
+            return `
+                <div class="relative rounded-xl overflow-hidden border border-slate-200 shadow-sm cursor-zoom-in ${kelasTinggi}" onclick="bukaGaleriFotoGuruTugas('${taskId}', ${idx})">
+                    <img loading="lazy" decoding="async" src="${src}" class="w-full h-full object-cover" alt="Lampiran Guru ${idx + 1}">
+                    ${overlayHTML}
+                </div>
+            `;
+        }
+
+        // Render galeri foto lampiran guru mengikuti pola tampilan WhatsApp:
+        // 1 foto penuh, 2 foto berdampingan, 3 foto (1 besar + 2 kecil),
+        // 4 foto grid 2x2, dan >4 foto grid 2x2 dengan ubin terakhir diberi
+        // badge "+N" (N = sisa foto yang tidak terlihat di grid).
+        function renderGaleriFotoGuruTugas(taskId, images) {
+            const total = images.length;
+
+            if (total === 1) {
+                return `<img loading="lazy" decoding="async" src="${images[0]}" onclick="bukaGaleriFotoGuruTugas('${taskId}', 0)" class="max-h-64 rounded-xl border border-slate-200 object-contain shadow-sm cursor-zoom-in" alt="Lampiran Guru">`;
+            }
+
+            if (total === 2) {
+                return `
+                    <div class="grid grid-cols-2 gap-1.5 h-40">
+                        ${ubinGaleriFotoGuruTugas(taskId, 0, images[0], 'h-full')}
+                        ${ubinGaleriFotoGuruTugas(taskId, 1, images[1], 'h-full')}
+                    </div>`;
+            }
+
+            if (total === 3) {
+                return `
+                    <div class="grid grid-cols-2 grid-rows-2 gap-1.5 h-48">
+                        ${ubinGaleriFotoGuruTugas(taskId, 0, images[0], 'row-span-2')}
+                        ${ubinGaleriFotoGuruTugas(taskId, 1, images[1], '')}
+                        ${ubinGaleriFotoGuruTugas(taskId, 2, images[2], '')}
+                    </div>`;
+            }
+
+            // 4 foto, atau >4 foto (ubin ke-4 dikasih badge "+N" berisi sisanya)
+            const sisaTidakTerlihat = total > 4 ? (total - 4) : 0;
+            return `
+                <div class="grid grid-cols-2 grid-rows-2 gap-1.5 h-48">
+                    ${ubinGaleriFotoGuruTugas(taskId, 0, images[0], '')}
+                    ${ubinGaleriFotoGuruTugas(taskId, 1, images[1], '')}
+                    ${ubinGaleriFotoGuruTugas(taskId, 2, images[2], '')}
+                    ${ubinGaleriFotoGuruTugas(taskId, 3, images[3], '', sisaTidakTerlihat)}
+                </div>`;
+        }
+
         function renderKartuTugas(data) {
             // Kartu ini adalah tempat KONTEN LENGKAP tugas benar-benar ditampilkan ke
             // siswa (baik dirender langsung kalau <=2 tugas, atau di dalam modal ikon
@@ -4006,12 +4060,30 @@
             const judulTugas = data.judul || 'Instruksi Tugas Pembelajaran';
             const namaGuruTugas = data.namaGuru || data.guru || data.teacher || data.pengajar || 'Guru Mata Pelajaran';
 
+            // FITUR TAMBAHAN: galeri foto lampiran guru ala WhatsApp -- 1 foto
+            // tetap tampil penuh seperti sebelumnya (kompatibel dgn data lama
+            // "teacherImage" tunggal), tapi kalau guru melampirkan BANYAK foto
+            // ("teacherImages", array -- urutan sesuai urutan guru unggah/susun,
+            // TIDAK diacak lagi di sini), tampilannya menyesuaikan jumlah foto:
+            // 2 foto -> berdampingan, 3 foto -> 1 besar + 2 kecil, 4 foto -> grid
+            // 2x2, >4 foto -> grid 2x2 dengan foto ke-4 diberi overlay "+N" berisi
+            // sisa jumlah foto yang belum kelihatan. Klik foto manapun membuka
+            // galeri (lihat bukaGaleriFotoGuruTugas & bukaZoomGaleriFoto di
+            // dashboard_siswa_2.js) yang bisa digeser maju/mundur mengikuti
+            // urutan foto yang sama, mulai dari foto yang diklik.
             let teacherImageHTML = '';
-            if (data.teacherImage) {
+            const teacherImages = Array.isArray(data.teacherImages) && data.teacherImages.length > 0
+                ? data.teacherImages
+                : (data.teacherImage ? [data.teacherImage] : []);
+
+            if (teacherImages.length > 0) {
+                window._galeriFotoGuruTugas = window._galeriFotoGuruTugas || {};
+                window._galeriFotoGuruTugas[data.id] = teacherImages;
+
                 teacherImageHTML = `
                     <div class="mt-3">
-                        <p class="text-[11px] font-semibold text-slate-500 mb-1"><i class="fa-solid fa-image mr-1"></i> Lampiran Soal dari Guru:</p>
-                        <img loading="lazy" decoding="async" src="${data.teacherImage}" onclick="bukaZoomFotoPrestasi(this.src, 'Lampiran Soal dari Guru')" class="max-h-64 rounded-xl border border-slate-200 object-contain shadow-sm cursor-zoom-in" alt="Lampiran Guru">
+                        <p class="text-[11px] font-semibold text-slate-500 mb-1"><i class="fa-solid fa-image mr-1"></i> Lampiran Soal dari Guru${teacherImages.length > 1 ? ` (${teacherImages.length} foto)` : ''}:</p>
+                        ${renderGaleriFotoGuruTugas(data.id, teacherImages)}
                     </div>
                 `;
             }

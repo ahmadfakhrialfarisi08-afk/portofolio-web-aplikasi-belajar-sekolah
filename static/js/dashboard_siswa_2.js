@@ -5655,20 +5655,64 @@
         /* ================= ZOOM FOTO BUKTI PRESTASI ================= */
         let _zoomFotoState = { scale: 1, x: 0, y: 0, dragging: false, mulaiX: 0, mulaiY: 0 };
 
+        // FITUR TAMBAHAN: modal zoom ini sekarang bisa juga menampilkan GALERI
+        // (dipakai utk lampiran foto tugas dari guru yang lebih dari 1 foto --
+        // lihat renderGaleriFotoGuruTugas() & bukaGaleriFotoGuruTugas() di
+        // dashboard_siswa.js). `bukaZoomFotoPrestasi` lama TETAP dipertahankan
+        // apa adanya (dipakai di banyak tempat utk foto tunggal) -- di dalamnya
+        // cuma didelegasikan ke bukaZoomGaleriFoto() dengan galeri isi 1 foto,
+        // supaya tidak ada perilaku yang berubah utk pemanggil lama.
+        let _galeriFotoState = { images: [], index: 0 };
+
         function bukaZoomFotoPrestasi(url, judul) {
+            bukaZoomGaleriFoto([url], 0, judul);
+        }
+
+        // images: array URL/base64 foto sesuai urutan aslinya (mis. urutan guru
+        // menyusun/mengunggah lampiran). startIndex: foto mana yang langsung
+        // ditampilkan pertama (biasanya ubin yang diklik siswa di grid).
+        function bukaZoomGaleriFoto(images, startIndex, judul) {
             const modal = document.getElementById('modal-zoom-foto-prestasi');
             const img = document.getElementById('img-zoom-foto-prestasi');
             const labelJudul = document.getElementById('judul-zoom-foto-prestasi');
-            if (!modal || !img) return;
+            if (!modal || !img || !Array.isArray(images) || images.length === 0) return;
 
-            img.src = url;
+            _galeriFotoState = {
+                images,
+                index: Math.min(Math.max(startIndex || 0, 0), images.length - 1)
+            };
             if (labelJudul) labelJudul.innerText = judul || '';
+            tampilkanFotoGaleriZoomSaatIni();
+
             _zoomFotoState = { scale: 1, x: 0, y: 0, dragging: false, mulaiX: 0, mulaiY: 0 };
             terapkanTransformZoomPrestasi();
+
+            const navWrap = document.getElementById('nav-galeri-zoom-foto');
+            if (navWrap) navWrap.classList.toggle('hidden', images.length <= 1);
 
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             document.body.style.overflow = 'hidden';
+        }
+
+        function tampilkanFotoGaleriZoomSaatIni() {
+            const img = document.getElementById('img-zoom-foto-prestasi');
+            const counter = document.getElementById('counter-galeri-zoom-foto');
+            if (!img || _galeriFotoState.images.length === 0) return;
+            img.src = _galeriFotoState.images[_galeriFotoState.index];
+            if (counter) counter.innerText = `${_galeriFotoState.index + 1} / ${_galeriFotoState.images.length}`;
+        }
+
+        // delta: -1 (mundur/sebelumnya) atau +1 (maju/berikutnya), muter balik ke
+        // ujung lain kalau sudah di foto pertama/terakhir (looping ala WhatsApp).
+        function navigasiGaleriZoomFoto(delta) {
+            const total = _galeriFotoState.images.length;
+            if (total <= 1) return;
+            _galeriFotoState.index = (_galeriFotoState.index + delta + total) % total;
+            tampilkanFotoGaleriZoomSaatIni();
+            // Reset zoom/geser tiap pindah foto supaya tidak kebawa dari foto sebelumnya.
+            _zoomFotoState = { scale: 1, x: 0, y: 0, dragging: false, mulaiX: 0, mulaiY: 0 };
+            terapkanTransformZoomPrestasi();
         }
 
         function tutupZoomFotoPrestasi() {
@@ -5677,7 +5721,27 @@
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             document.body.style.overflow = '';
+            _galeriFotoState = { images: [], index: 0 };
         }
+
+        // Dipanggil dari ubin foto di grid lampiran guru (dashboard_siswa.js) --
+        // taskId dipakai buat ambil daftar foto lengkap tugas itu dari
+        // window._galeriFotoGuruTugas, startIndex = ubin mana yang diklik.
+        function bukaGaleriFotoGuruTugas(taskId, startIndex) {
+            const images = (window._galeriFotoGuruTugas && window._galeriFotoGuruTugas[taskId]) || [];
+            if (images.length === 0) return;
+            bukaZoomGaleriFoto(images, startIndex, 'Lampiran Soal dari Guru');
+        }
+
+        // Navigasi galeri pakai tombol panah kiri/kanan di keyboard, hanya aktif
+        // kalau modal zoom sedang terbuka (tidak mengganggu shortcut lain).
+        document.addEventListener('keydown', (e) => {
+            const modal = document.getElementById('modal-zoom-foto-prestasi');
+            if (!modal || modal.classList.contains('hidden')) return;
+            if (e.key === 'ArrowRight') navigasiGaleriZoomFoto(1);
+            else if (e.key === 'ArrowLeft') navigasiGaleriZoomFoto(-1);
+            else if (e.key === 'Escape') tutupZoomFotoPrestasi();
+        });
 
         function terapkanTransformZoomPrestasi() {
             const img = document.getElementById('img-zoom-foto-prestasi');

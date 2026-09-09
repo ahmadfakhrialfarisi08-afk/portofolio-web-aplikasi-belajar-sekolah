@@ -1864,6 +1864,22 @@
         <div id="viewport-zoom-foto-prestasi" class="w-full h-full flex items-center justify-center overflow-hidden">
             <img id="img-zoom-foto-prestasi" src="" draggable="false" alt="Bukti Prestasi" class="max-w-[92vw] max-h-[78vh] object-contain select-none rounded-lg shadow-2xl">
         </div>
+
+        <!-- FITUR TAMBAHAN: navigasi galeri (dipakai saat modal ini menampilkan
+             lebih dari 1 foto, mis. lampiran soal guru yang berisi banyak foto --
+             lihat bukaZoomGaleriFoto() di dashboard_siswa_2.js). Default hidden,
+             baru dimunculkan oleh JS kalau jumlah fotonya > 1, jadi tidak mengubah
+             tampilan zoom foto tunggal yang sudah ada. -->
+        <div id="nav-galeri-zoom-foto" class="hidden">
+            <button onclick="navigasiGaleriZoomFoto(-1)" title="Foto sebelumnya" class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center z-10">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button onclick="navigasiGaleriZoomFoto(1)" title="Foto berikutnya" class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center z-10">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+            <span id="counter-galeri-zoom-foto" class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-white/10 text-white text-xs font-bold"></span>
+        </div>
+
         <p id="judul-zoom-foto-prestasi" class="absolute bottom-5 left-0 right-0 text-center text-white/80 text-xs font-semibold px-4 pointer-events-none"></p>
         <p class="absolute bottom-1 left-0 right-0 text-center text-white/40 text-[10px] pointer-events-none">Scroll / cubit untuk zoom &middot; geser untuk memindahkan &middot; dobel klik untuk reset</p>
     </div>
