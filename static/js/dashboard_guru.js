@@ -712,17 +712,64 @@
             document.getElementById('modal-beri-tugas').classList.add('hidden');
         }
 
-        function handleUploadFotoTugasGuru(event) {
+        // PERFORMANCE OPTIMIZATION: foto lampiran tugas dari guru dulu disimpan
+        // MENTAH-MENTAH dari FileReader.readAsDataURL(file) tanpa kompresi sama
+        // sekali -- kalau diambil langsung dari kamera HP bisa 3000-4000px &
+        // beberapa MB, padahal foto ini ikut disimpan di data tugas yang
+        // di-download ULANG oleh SETIAP siswa di kelas tiap kali mereka polling
+        // tugas (lihat getTasksSiswa() di dashboard_siswa.js). Sekarang dikompres
+        // dulu lewat kompresGambarUntukTugasGuru() -- pola & angka kompresinya
+        // (sisi terpanjang 1600px, JPEG kualitas 0.85) SENGAJA disamakan persis
+        // dengan kompresGambarUntukTugas() di sisi siswa (foto bukti kumpul
+        // tugas) supaya konsisten, resolusi/kualitasnya masih cukup tinggi buat
+        // teks/instruksi di foto tetap kebaca jelas, cuma ukuran filenya yang
+        // jauh mengecil dibanding foto asli kamera HP.
+        function kompresGambarUntukTugasGuru(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const SISI_MAKS = 1600;
+                        let { width, height } = img;
+                        if (width > SISI_MAKS || height > SISI_MAKS) {
+                            if (width >= height) {
+                                height = Math.round(height * (SISI_MAKS / width));
+                                width = SISI_MAKS;
+                            } else {
+                                width = Math.round(width * (SISI_MAKS / height));
+                                height = SISI_MAKS;
+                            }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.85));
+                    };
+                    img.onerror = () => reject(new Error('Gagal memuat gambar'));
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => reject(new Error('Gagal membaca file'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleUploadFotoTugasGuru(event) {
             const file = event.target.files[0];
+            event.target.value = '';
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                teacherImageBase64 = e.target.result;
+            try {
+                teacherImageBase64 = await kompresGambarUntukTugasGuru(file);
                 document.getElementById('foto-tugas-preview').src = teacherImageBase64;
                 document.getElementById('foto-tugas-preview-container').classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
-            event.target.value = '';
+            } catch (e) {
+                console.error('Gagal memproses foto tugas:', e);
+                alert('Gagal memproses foto. Coba pilih foto lain.');
+            }
         }
 
         function hapusFotoTugasGuru() {
