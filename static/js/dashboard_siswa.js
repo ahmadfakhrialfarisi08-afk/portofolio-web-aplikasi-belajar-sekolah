@@ -1156,6 +1156,13 @@
         const _lastFetchAtSync = {};
         const _pendingFetchSync = {};
         const JEDA_MIN_REFRESH_SYNC_MS = 8000;
+        // PERFORMANCE OPTIMIZATION: 'tasks_<KELAS>' & 'notif_tugas_<KELAS>' HAMPIR
+        // SELALU dibutuhkan bareng dalam tick yang sama (lihat
+        // jalankanSinkronisasiBerkalaDashboard di dashboard_siswa_2.js), jadi
+        // digabung jadi SATU request lewat /api/sync/bulk alih-alih 2 request
+        // /api/sync/<kunci> terpisah. Kunci lain (di luar 2 ini) TIDAK disentuh,
+        // tetap lewat jalur fetch satuan seperti semula.
+        const KUNCI_BULK_TUGAS = [`tasks_${KELAS_AKTIF_SISWA}`, `notif_tugas_${KELAS_AKTIF_SISWA}`];
         function getSync(kunci, fallback) {
             _refreshSyncDiBackground(kunci, fallback);
             if (kunci in _cacheSync) return _cacheSync[kunci];
@@ -1168,6 +1175,16 @@
             if (_pendingFetchSync[kunci]) return; // masih ada fetch kunci ini yang berjalan, jangan tumpuk lagi
             const terakhirDifetch = _lastFetchAtSync[kunci] || 0;
             if (Date.now() - terakhirDifetch < JEDA_MIN_REFRESH_SYNC_MS) return; // masih terlalu baru, skip dulu
+
+            // PERFORMANCE OPTIMIZATION: kunci yang termasuk grup KUNCI_BULK_TUGAS
+            // dialihkan ke _refreshSyncBulkTugasDiBackground() (pakai
+            // /api/sync/bulk, gabung 1 request) -- TTL 8 detik, _pendingFetchSync,
+            // & _lastFetchAtSync tetap dihormati PER-KUNCI persis seperti jalur
+            // fetch satuan di bawah, cuma network request-nya yang digabung.
+            if (KUNCI_BULK_TUGAS.includes(kunci)) {
+                _refreshSyncBulkTugasDiBackground();
+                return;
+            }
 
             _pendingFetchSync[kunci] = true;
             fetch(`/api/sync/${encodeURIComponent(kunci)}`)
@@ -1182,6 +1199,52 @@
                 .finally(() => {
                     _lastFetchAtSync[kunci] = Date.now();
                     _pendingFetchSync[kunci] = false;
+                });
+        }
+        // PERFORMANCE OPTIMIZATION: versi /api/sync/bulk dari
+        // _refreshSyncDiBackground() di atas, khusus untuk KUNCI_BULK_TUGAS.
+        // Cuma minta kunci yang memang BENAR-BENAR sedang due (belum pending &
+        // sudah lewat JEDA_MIN_REFRESH_SYNC_MS) -- kalau kedua kunci due
+        // bareng (kasus paling umum, dipanggil beruntun dari getTasksSiswa() &
+        // getNotifTugasDitarik() dalam tick yang sama), keduanya ketarik dalam
+        // 1 request. Kalau cuma satu yang due, tetap 1 request tapi cuma
+        // minta kunci itu -- tidak pernah memaksa fetch kunci yang belum due
+        // (jadi TTL & jeda per-kunci tetap persis seperti sebelumnya, fallback
+        // aman kalau format response tidak sesuai dugaan).
+        let _pendingFetchBulkTugas = false;
+        function _refreshSyncBulkTugasDiBackground() {
+            if (_pendingFetchBulkTugas) return; // request bulk sebelumnya masih berjalan
+            const kunciPerluDifetch = KUNCI_BULK_TUGAS.filter(k => {
+                if (_pendingFetchSync[k]) return false;
+                const terakhir = _lastFetchAtSync[k] || 0;
+                return (Date.now() - terakhir) >= JEDA_MIN_REFRESH_SYNC_MS;
+            });
+            if (kunciPerluDifetch.length === 0) return;
+
+            _pendingFetchBulkTugas = true;
+            kunciPerluDifetch.forEach(k => { _pendingFetchSync[k] = true; });
+
+            fetch(`/api/sync/bulk?kunci=${kunciPerluDifetch.map(encodeURIComponent).join(',')}`)
+                .then(res => res.ok ? res.json() : null)
+                .then(res => {
+                    // Jaga-jaga kalau response tidak sesuai format yang diharapkan
+                    // (mis. server lama/belum update) -- jangan sampai error,
+                    // biarkan saja data lokal/cache lama yang tetap dipakai.
+                    if (!res || !res.ok || !res.data || typeof res.data !== 'object') return;
+                    kunciPerluDifetch.forEach(k => {
+                        const nilaiServer = res.data[k];
+                        const data = (nilaiServer === null || nilaiServer === undefined) ? [] : nilaiServer;
+                        _cacheSync[k] = data;
+                        localStorage.setItem(k, JSON.stringify(data));
+                    });
+                })
+                .catch(e => console.warn('Gagal ambil data bulk tugas dari server, pakai cadangan lokal:', e))
+                .finally(() => {
+                    kunciPerluDifetch.forEach(k => {
+                        _lastFetchAtSync[k] = Date.now();
+                        _pendingFetchSync[k] = false;
+                    });
+                    _pendingFetchBulkTugas = false;
                 });
         }
         function setSync(kunci, data) {
@@ -2950,6 +3013,13 @@
             // permintaan pertemanan di sesi/tab lain -- langsung kelihatan).
             if (tabName === 'cari-teman') {
                 try {
+                    // PERFORMANCE OPTIMIZATION: renderPermintaanTeman() dulu cuma
+                    // dipanggil sekali di initial load (dashboard_siswa_2.js).
+                    // Sekarang digabung ke sini, jalan bareng renderDaftarTeman()
+                    // tiap kali tab Cari Teman dibuka -- badge/titik merah
+                    // permintaan pertemanan tetap ke-update dalam <=8 detik lewat
+                    // sinkronisasi berkala walau tab ini belum pernah dibuka.
+                    renderPermintaanTeman();
                     renderDaftarTeman();
                 } catch (err) {
                     console.error('Gagal memuat daftar teman:', err);
@@ -3051,8 +3121,16 @@
                 });
         }
 
-        function updateTaskCounter() {
-            const tasks = getTasksSiswa();
+        function updateTaskCounter(tasksInput) {
+            // PERFORMANCE OPTIMIZATION: tasks yang sudah diambil di sini
+            // diteruskan ke renderStreakTugas()/hitungStreakTugas() supaya
+            // tidak panggil getTasksSiswa() lagi (dulu dipanggil 2x dalam satu
+            // tick lewat updateTaskCounter -> renderStreakTugas ->
+            // hitungStreakTugas). Parameter opsional -- kalau dipanggil tanpa
+            // argumen (semua pemanggil lama di file ini), tetap ambil sendiri
+            // lewat getTasksSiswa() seperti sebelumnya, jadi tidak ada
+            // pemanggil lama yang perlu diubah.
+            const tasks = tasksInput || getTasksSiswa();
             const elPending = document.getElementById('count-pending-tasks');
             const elCompleted = document.getElementById('count-completed-tasks');
 
@@ -3069,7 +3147,7 @@
             if (elPendingProfil) elPendingProfil.innerText = String(pending);
             if (elCompletedProfil) elCompletedProfil.innerText = String(completed);
 
-            renderStreakTugas();
+            renderStreakTugas(tasks);
         }
 
         /* ================= STREAK TUGAS (menggantikan "Kehadiran Bulan Ini") =================
@@ -3078,8 +3156,12 @@
            belum dikumpulkan (bolong) memutus streak di titik itu. Tugas yang belum
            jatuh tempo (masih berjalan) dilewati saja -- tidak menambah atau memutus,
            karena belum bisa dinilai berhasil/gagalnya. */
-        function hitungStreakTugas() {
-            const tasks = getTasksSiswa();
+        function hitungStreakTugas(tasksInput) {
+            // PERFORMANCE OPTIMIZATION: terima tasks dari pemanggil (lihat
+            // renderStreakTugas()) kalau ada, supaya tidak panggil
+            // getTasksSiswa() ulang. Parameter opsional -- fallback ambil
+            // sendiri kalau dipanggil tanpa argumen, sama seperti sebelumnya.
+            const tasks = tasksInput || getTasksSiswa();
             const now = getAccurateNow();
 
             const daftar = tasks.map(t => {
@@ -3120,13 +3202,16 @@
             return { tier: 4, label: 'Beruntun', sub: 'Legend! Streak-mu sedang membara-bara 🔥' };
         }
 
-        function renderStreakTugas() {
+        function renderStreakTugas(tasksInput) {
             const kartu = document.getElementById('kartu-streak-tugas');
             const elJumlah = document.getElementById('streak-jumlah');
             const elLabelBawah = document.getElementById('streak-label-bawah');
             if (!kartu || !elJumlah || !elLabelBawah) return;
 
-            const streak = hitungStreakTugas();
+            // PERFORMANCE OPTIMIZATION: teruskan tasks yang sudah diambil
+            // updateTaskCounter() (kalau ada) ke hitungStreakTugas(), supaya
+            // getTasksSiswa() tidak dipanggil ulang untuk data yang sama.
+            const streak = hitungStreakTugas(tasksInput);
             const info = getStreakTierInfo(streak);
 
             for (let i = 0; i <= 4; i++) kartu.classList.remove(`streak-tier-${i}`);

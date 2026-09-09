@@ -1543,15 +1543,55 @@
                 renderRiwayatPengumpulan();
             }
             if (tabName === 'guru') {
-                renderDaftarGuru();
+                // PERFORMANCE OPTIMIZATION: muatDaftarGuru() (fetch ke server)
+                // cuma dijalankan SEKALI, pas tab Guru pertama kali dibuka --
+                // muatDaftarGuru() sendiri sudah otomatis memanggil
+                // renderDaftarGuru() begitu datanya sukses didapat. Buka tab
+                // Guru berikutnya cukup renderDaftarGuru() ulang dari cache
+                // (daftarGuruSekolah) yang sudah ada di memori, tanpa fetch lagi.
+                if (!_sudahMuatTabGuru) {
+                    _sudahMuatTabGuru = true;
+                    muatDaftarGuru();
+                } else {
+                    renderDaftarGuru();
+                }
             }
             if (tabName === 'akademik') {
+                // PERFORMANCE OPTIMIZATION: sinkronkanPrestasiDenganServer() &
+                // sinkronkanBorderAktifDariServer() cuma dijalankan SEKALI, pas
+                // tab Akademik pertama kali dibuka -- keduanya sudah otomatis
+                // memanggil renderKoleksiBorder()/renderJourneyPrestasi() sendiri
+                // begitu selesai. renderKoleksiBorder() di bawah ini tetap
+                // dipanggil setiap kali tab dibuka (perilaku lama, render dari
+                // data yang sudah ada di memori/localStorage, bukan fetch baru).
+                if (!_sudahSinkronTabAkademik) {
+                    _sudahSinkronTabAkademik = true;
+                    sinkronkanPrestasiDenganServer();
+                    sinkronkanBorderAktifDariServer();
+                }
                 renderKoleksiBorder();
             }
             if (tabName === 'quiz') {
+                // PERFORMANCE OPTIMIZATION: sinkronkanQuizDenganServer() (tarik
+                // progress & leaderboard dari server) cuma dijalankan SEKALI, pas
+                // tab Quiz pertama kali dibuka. bukaQuizDariAwal() di bawah tetap
+                // dipanggil setiap kali tab dibuka seperti semula (behavior lama,
+                // termasuk cek lanjutkan/mulai baru quiz yang terputus -- TIDAK diubah).
+                if (!_sudahSinkronTabQuiz) {
+                    _sudahSinkronTabQuiz = true;
+                    sinkronkanQuizDenganServer();
+                }
                 bukaQuizDariAwal();
                 const badge = document.getElementById('badge-quiz-ditikung');
                 if (badge) badge.classList.add('hidden');
+            }
+            if (tabName === 'perangkat') {
+                // PERFORMANCE OPTIMIZATION: renderPerangkat() dulu cuma dipanggil
+                // sekali di initial load. Sekarang dipanggil di sini, tiap kali
+                // tab Perangkat dibuka (pola sama seperti renderDaftarTeman() di
+                // tab Cari Teman -- datanya memang perlu selalu segar karena
+                // status approve/tolak perangkat bisa berubah dari sisi lain).
+                renderPerangkat();
             }
         };
 
@@ -1677,6 +1717,20 @@
             });
         }
 
+        // PERFORMANCE OPTIMIZATION: flag "sudah dimuat sekali" untuk data non-Beranda
+        // (Guru, Cari Teman/Permintaan Teman, Perangkat, Quiz, Prestasi, Border aktif).
+        // Dulu semua ini di-fetch SERENTAK saat dashboard pertama kali dibuka lewat
+        // jalankanBertahap() di bawah, walau tab-nya belum tentu pernah dibuka siswa
+        // sama sekali. Sekarang fetch pertamanya dipindah ke switchTab() (lihat
+        // _origSwitchTab di bawah) -- baru jalan saat tab terkait BENAR-BENAR dibuka
+        // untuk pertama kali. Sesudah itu, flag ini mencegah fetch ulang tiap kali
+        // tab yang sama dibuka lagi (kecuali tab itu memang sudah punya mekanisme
+        // refresh-tiap-buka sendiri sebelumnya, seperti Cari Teman/Perangkat --
+        // itu SENGAJA tidak diubah, tetap refresh tiap dibuka seperti semula).
+        let _sudahMuatTabGuru = false;
+        let _sudahSinkronTabQuiz = false;
+        let _sudahSinkronTabAkademik = false;
+
         /* ================= INIT ================= */
         document.addEventListener('DOMContentLoaded', () => {
             terapkanIdentitasEfektif();
@@ -1717,18 +1771,21 @@
             updateGlobalCountdown();
             // Fungsi-fungsi di bawah ini SEMUA fetch ke server -- disebar bertahap
             // (jeda 250ms per fungsi) supaya tidak numpuk jadi satu ledakan request
-            // di detik yang sama pas halaman baru dibuka. Daftar & urutan fungsinya
-            // SAMA PERSIS seperti sebelumnya, cuma waktu eksekusinya yang disebar.
+            // di detik yang sama pas halaman baru dibuka.
+            // PERFORMANCE OPTIMIZATION: muatDaftarGuru, renderPermintaanTeman,
+            // renderDaftarTeman, renderPerangkat, sinkronkanQuizDenganServer,
+            // sinkronkanPrestasiDenganServer, & sinkronkanBorderAktifDariServer
+            // SENGAJA DIKELUARKAN dari daftar initial load ini -- ketujuhnya cuma
+            // dibutuhkan begitu tab terkait (Guru/Cari Teman/Perangkat/Quiz/
+            // Akademik) benar-benar dibuka siswa, jadi sekarang dipanggil lazy
+            // dari switchTab() (lihat _origSwitchTab di bawah) saat tab itu
+            // pertama kali dibuka, bukan dipaksa fetch di awal walau tabnya
+            // belum tentu pernah disentuh. Badge notifikasi terkait (permintaan
+            // teman, perangkat pending) tetap ke-update dalam <=8 detik lewat
+            // jalankanSinkronisasiBerkalaDashboard() di bawah, jadi tidak hilang.
             jalankanBertahap([
-                muatDaftarGuru,
                 sinkronkanRiwayatDenganTugasAktif,
                 catatRiwayatTugasKedaluwarsaJikaPerlu,
-                renderPermintaanTeman, // sekalian isi badge dropdown pertemanan dari server saat halaman dibuka
-                renderDaftarTeman, // isi daftar teman yang sudah saling add di bawah search bar "Cari Teman"
-                renderPerangkat, // isi badge & tabel perangkat dari server saat halaman dibuka
-                sinkronkanQuizDenganServer, // tarik progress & leaderboard akun ini dari server
-                sinkronkanPrestasiDenganServer, // tarik & gabung pengajuan prestasi kelas ini dari server (endpoint terpisah, lihat catatan di app.py)
-                sinkronkanBorderAktifDariServer, // tarik ulang border aktif dari server -- biar sinkron kalau baru diganti dari perangkat lain
                 cekPembaruanTugasRealtime // set snapshot awal sebagai baseline
             ], 250);
             setInterval(updateGlobalCountdown, 1000);
