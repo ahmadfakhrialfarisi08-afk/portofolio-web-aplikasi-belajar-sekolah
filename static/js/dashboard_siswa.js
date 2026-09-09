@@ -1428,8 +1428,15 @@
         function updateBadgeLonceng() {
             const badge = document.getElementById('badge-bell-dot');
             if (!badge) return;
-            const adaBelumDilihat = getDaftarNotifikasiLonceng().some(n => !n.dilihat);
-            badge.classList.toggle('hidden', !adaBelumDilihat);
+            const jumlahBelumDilihat = getDaftarNotifikasiLonceng().filter(n => !n.dilihat).length;
+            if (jumlahBelumDilihat > 0) {
+                badge.innerText = jumlahBelumDilihat > 9 ? '9+' : String(jumlahBelumDilihat);
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+            } else {
+                badge.classList.add('hidden');
+                badge.classList.remove('flex');
+            }
         }
 
         function renderBellDropdown() {
