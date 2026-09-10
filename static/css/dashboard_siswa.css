@@ -2690,6 +2690,32 @@
            gestur scroll biasa. */
         #sidebar-menu { touch-action: none; }
 
+        /* ================= BOTTOM SHEET "MENU LAINNYA" (HP) - DRAG-TO-CLOSE =================
+           Easing dibikin sedikit "decelerating" (mirip bottom sheet native
+           iOS/Android) menggantikan ease-in-out bawaan Tailwind di HTML --
+           durasi (duration-300) TIDAK diubah, masih di rentang 250-350ms.
+           Cuma berlaku di lebar mobile (di bawah breakpoint md Tailwind =
+           768px); di desktop sidebar statis jadi tidak kepakai.
+           #menu-lainnya-drag-handle & #menu-lainnya-drag-header dikasih
+           touch-action:none supaya browser tidak buru-buru menganggap swipe
+           di situ sebagai scroll halaman biasa -- biar gesture drag-to-close
+           (lihat setupDragTutupMenuLainnya di JS) yang ambil alih. Area ini
+           sengaja dipisah dari #sidebar-menu (daftar menu) supaya tidak
+           bentrok dengan gestur picker yang sudah ada di sana & supaya
+           scroll daftar menu tetap seperti semula. */
+        @media (max-width: 767.98px) {
+            #sidebar-utama {
+                transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+            }
+            #sidebar-utama.menu-lainnya-dragging {
+                transition: none !important;
+            }
+            #menu-lainnya-drag-handle,
+            #menu-lainnya-drag-header {
+                touch-action: none;
+            }
+        }
+
         /* --- ANIMASI "SEOLAH DIPILIH" SAAT BOTTOM NAV DITAHAN + DIGESER JARI
            (tanpa dilepas), mirip picker-wheel di sidebar tapi arahnya
            horizontal mengikuti posisi jari di sepanjang bottom nav. Ikon yang

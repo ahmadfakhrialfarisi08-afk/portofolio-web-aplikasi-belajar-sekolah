@@ -2580,6 +2580,9 @@
             sidebar.classList.toggle('translate-y-full');
             overlay.classList.toggle('hidden');
             if (tombolLainnya) tombolLainnya.setAttribute('aria-expanded', String(!sedangTerbuka));
+            // Kunci scroll halaman belakang selama bottom sheet mobile terbuka
+            // (background tidak ikut geser waktu user scroll/drag di dalam sheet).
+            document.body.style.overflow = sedangTerbuka ? '' : 'hidden';
         }
 
         function closeSidebarMobile() {
@@ -2590,6 +2593,7 @@
             sidebar.classList.add('translate-y-full');
             overlay.classList.add('hidden');
             if (tombolLainnya) tombolLainnya.setAttribute('aria-expanded', 'false');
+            document.body.style.overflow = '';
         }
 
         /* ================= ANIMASI "SEOLAH KEPILIH" SAAT SCROLL SIDEBAR DI HP =================
@@ -2815,10 +2819,95 @@
             });
         })();
 
+        /* ================= DRAG-TO-CLOSE BOTTOM SHEET "MENU LAINNYA" (HP) =================
+           User bisa tarik ke bawah dari handle (grip kecil) atau header (judul
+           + tombol X) buat menutup sheet -- panel mengikuti jari secara
+           real-time (transform: translateY), lalu snap-back kalau tarikannya
+           belum cukup jauh/cepat, atau lanjut slide-down menutup kalau sudah
+           melewati ambang batas. Sengaja HANYA dipasang di handle & header
+           (BUKAN di seluruh isi #sidebar-menu) supaya:
+           1) tidak bentrok dengan gestur tahan+geser punya
+              setupAnimasiPickerMenuLainnya di atas (yang sudah pakai
+              pointer events + touch-action:none di #sidebar-menu), dan
+           2) scroll daftar menu (kalau isinya lebih tinggi dari layar) tetap
+              berjalan seperti semula, tidak mungkin ke-trigger jadi
+              drag-to-close secara tidak sengaja. */
+        (function setupDragTutupMenuLainnya() {
+            const sidebar = document.getElementById('sidebar-utama');
+            const handle = document.getElementById('menu-lainnya-drag-handle');
+            const header = document.getElementById('menu-lainnya-drag-header');
+            if (!sidebar || (!handle && !header)) return;
+
+            const AMBANG_PERSEN_TINGGI = 0.3; // tarik > ~30% tinggi panel -> dianggap CLOSE
+            const AMBANG_KECEPATAN = 0.5; // px/ms ke bawah -> swipe cepat juga dianggap CLOSE
+
+            let drag = null;
+
+            function pasangZonaDrag(zona) {
+                zona.addEventListener('pointerdown', (e) => {
+                    if (window.innerWidth >= 768) return; // fitur ini cuma untuk tampilan HP, desktop tidak kepakai
+                    drag = {
+                        startY: e.clientY,
+                        tinggiPanel: sidebar.offsetHeight,
+                        lastY: e.clientY,
+                        lastT: e.timeStamp,
+                        kecepatan: 0,
+                        deltaYTerakhir: 0
+                    };
+                    sidebar.classList.add('menu-lainnya-dragging');
+                    zona.setPointerCapture(e.pointerId);
+                });
+
+                zona.addEventListener('pointermove', (e) => {
+                    if (!drag) return;
+                    let deltaY = e.clientY - drag.startY;
+                    if (deltaY < 0) deltaY = 0; // hanya izinkan drag ke arah BAWAH
+                    sidebar.style.transform = `translateY(${deltaY}px)`;
+
+                    const deltaT = e.timeStamp - drag.lastT;
+                    if (deltaT > 0) drag.kecepatan = (e.clientY - drag.lastY) / deltaT;
+                    drag.lastY = e.clientY;
+                    drag.lastT = e.timeStamp;
+                    drag.deltaYTerakhir = deltaY;
+                });
+
+                const selesaiDrag = () => {
+                    if (!drag) return;
+                    const { deltaYTerakhir, tinggiPanel, kecepatan } = drag;
+                    const harusTutup = deltaYTerakhir > tinggiPanel * AMBANG_PERSEN_TINGGI || kecepatan > AMBANG_KECEPATAN;
+                    drag = null;
+
+                    requestAnimationFrame(() => {
+                        sidebar.classList.remove('menu-lainnya-dragging');
+                        void sidebar.offsetHeight; // paksa reflow biar transition kepasang sebelum transform berubah
+                        if (harusTutup) {
+                            sidebar.style.transform = 'translateY(100%)';
+                            const onSelesaiAnimasi = (ev) => {
+                                if (ev.target !== sidebar || ev.propertyName !== 'transform') return;
+                                sidebar.removeEventListener('transitionend', onSelesaiAnimasi);
+                                sidebar.style.transform = '';
+                                closeSidebarMobile();
+                            };
+                            sidebar.addEventListener('transitionend', onSelesaiAnimasi);
+                        } else {
+                            sidebar.style.transform = ''; // snap-back ke posisi semula
+                        }
+                    });
+                };
+
+                zona.addEventListener('pointerup', selesaiDrag);
+                zona.addEventListener('pointercancel', selesaiDrag);
+            }
+
+            if (handle) pasangZonaDrag(handle);
+            if (header) pasangZonaDrag(header);
+        })();
+
         // Kalau layar di-resize jadi ukuran desktop, pastikan overlay & state mobile ke-reset
         window.addEventListener('resize', () => {
             if (window.innerWidth >= 768) {
                 document.getElementById('sidebar-overlay')?.classList.add('hidden');
+                document.body.style.overflow = '';
             }
         });
 
