@@ -8,7 +8,7 @@
         // Dulu SEMUA notifikasi error/sukses/peringatan (rate-limit server,
         // gagal kirim, gagal simpan, dst) pakai alert() bawaan browser --
         // muncul dialog BLOCKING di tengah layar dengan judul nama domain
-        // ("el0fakhri.pythonanywhere.com says") dan WAJIB diklik "OK" dulu
+        // ("el0fakhri.pythonanywheQre.com says") dan WAJIB diklik "OK" dulu
         // baru bisa lanjut, walau pesannya cuma info ringan (mis. "Terlalu
         // banyak request, coba lagi sebentar ya."). Sekarang diganti kotak
         // notifikasi melayang (floating snackbar) di pojok kanan atas, TIDAK
@@ -2819,13 +2819,22 @@
             });
         })();
 
-        /* ================= DRAG-TO-CLOSE BOTTOM SHEET "MENU LAINNYA" (HP) =================
+        /* ================= DRAG-TO-CLOSE + RUBBER-BAND BOTTOM SHEET "MENU LAINNYA" (HP) =================
            User bisa tarik ke bawah dari handle (grip kecil) atau header (judul
            + tombol X) buat menutup sheet -- panel mengikuti jari secara
            real-time (transform: translateY), lalu snap-back kalau tarikannya
            belum cukup jauh/cepat, atau lanjut slide-down menutup kalau sudah
-           melewati ambang batas. Sengaja HANYA dipasang di handle & header
-           (BUKAN di seluruh isi #sidebar-menu) supaya:
+           melewati ambang batas.
+
+           Kalau jari ditarik ke ATAS (panel sudah di posisi paling atas),
+           panel TETAP ikut bergerak tapi dengan "tahanan" (rubber-band, mirip
+           overscroll bounce native iOS/Android) -- makin ditarik makin berat,
+           bukan langsung mandek kaku di posisi 0. Waktu dilepas, panel balik
+           ke posisi semula pakai easing spring/bounce (bukan easing
+           decelerating biasa yang dipakai buat animasi buka/tutup).
+
+           Sengaja HANYA dipasang di handle & header (BUKAN di seluruh isi
+           #sidebar-menu) supaya:
            1) tidak bentrok dengan gestur tahan+geser punya
               setupAnimasiPickerMenuLainnya di atas (yang sudah pakai
               pointer events + touch-action:none di #sidebar-menu), dan
@@ -2840,6 +2849,14 @@
 
             const AMBANG_PERSEN_TINGGI = 0.3; // tarik > ~30% tinggi panel -> dianggap CLOSE
             const AMBANG_KECEPATAN = 0.5; // px/ms ke bawah -> swipe cepat juga dianggap CLOSE
+            const KONSTANTA_KARET = 0.55; // makin kecil = makin "berat"/kaku tahanannya (formula rubber-band standar iOS)
+
+            // Formula rubber-band (dipakai UIScrollView iOS): efeknya tarikan
+            // awal masih kerasa ringan, lalu makin jauh ditarik makin berat
+            // & mendekati batas asimtot -- tidak akan lari jauh tak terbatas.
+            function efekKaret(jarakTarik, dimensiPanel, konstanta) {
+                return (jarakTarik * dimensiPanel * konstanta) / (dimensiPanel + konstanta * jarakTarik);
+            }
 
             let drag = null;
 
@@ -2854,14 +2871,21 @@
                         kecepatan: 0,
                         deltaYTerakhir: 0
                     };
+                    sidebar.classList.remove('menu-lainnya-snapback');
                     sidebar.classList.add('menu-lainnya-dragging');
                     zona.setPointerCapture(e.pointerId);
                 });
 
                 zona.addEventListener('pointermove', (e) => {
                     if (!drag) return;
-                    let deltaY = e.clientY - drag.startY;
-                    if (deltaY < 0) deltaY = 0; // hanya izinkan drag ke arah BAWAH
+                    const rawDeltaY = e.clientY - drag.startY;
+                    let deltaY;
+                    if (rawDeltaY >= 0) {
+                        deltaY = rawDeltaY; // tarik ke bawah: ikut jari 1:1 seperti biasa
+                    } else {
+                        // tarik ke atas: jangan mandek di 0, kasih efek karet/elastis
+                        deltaY = -efekKaret(-rawDeltaY, drag.tinggiPanel, KONSTANTA_KARET);
+                    }
                     sidebar.style.transform = `translateY(${deltaY}px)`;
 
                     const deltaT = e.timeStamp - drag.lastT;
@@ -2890,7 +2914,17 @@
                             };
                             sidebar.addEventListener('transitionend', onSelesaiAnimasi);
                         } else {
-                            sidebar.style.transform = ''; // snap-back ke posisi semula
+                            // Snap-back (baik dari tarikan ke bawah yang kurang jauh,
+                            // maupun dari tarikan ke atas/karet) -- pakai easing
+                            // spring/bounce sebentar biar kerasa lentur, bukan kaku.
+                            sidebar.classList.add('menu-lainnya-snapback');
+                            sidebar.style.transform = '';
+                            const bersihkanSnapback = (ev) => {
+                                if (ev.target !== sidebar || ev.propertyName !== 'transform') return;
+                                sidebar.removeEventListener('transitionend', bersihkanSnapback);
+                                sidebar.classList.remove('menu-lainnya-snapback');
+                            };
+                            sidebar.addEventListener('transitionend', bersihkanSnapback);
                         }
                     });
                 };

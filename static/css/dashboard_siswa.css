@@ -2710,6 +2710,16 @@
             #sidebar-utama.menu-lainnya-dragging {
                 transition: none !important;
             }
+            /* Dipakai sesaat waktu panel balik ke posisi semula (baik dari
+               tarikan ke bawah yang kurang jauh, maupun dari efek karet waktu
+               ditarik ke atas) -- kurva "back-ease" ini sengaja overshoot
+               dikit lalu settle, kerasa seperti pegas/spring, beda dari
+               easing decelerating polos yang dipakai buat animasi buka/tutup
+               beneran (biar tidak mantul waktu memang mau menutup). */
+            #sidebar-utama.menu-lainnya-snapback {
+                transition-duration: 320ms;
+                transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
             #menu-lainnya-drag-handle,
             #menu-lainnya-drag-header {
                 touch-action: none;
