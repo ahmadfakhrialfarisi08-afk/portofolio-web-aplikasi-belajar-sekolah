@@ -486,28 +486,44 @@
         } catch (e) { return false; }
     }
     function bustUrl(u) { return u + (u.indexOf('?') < 0 ? '?' : '&') + 'r=' + Date.now(); }
+    // Cek apakah file itu SEKARANG bisa diambil. File yang memang tidak ada di server (404)
+    // bukan korban internet putus, jadi tidak boleh dipulihkan / memicu reload.
+    function cekBisaDimuat(u) {
+        const f = fetchAsli || (typeof window.fetch === 'function' ? window.fetch.bind(window) : null);
+        if (!f) return Promise.resolve(false);
+        let sama = false;
+        try { sama = new URL(u, location.href).origin === location.origin; } catch (e) { sama = false; }
+        return f(u, { method: 'GET', cache: 'no-store', mode: sama ? 'same-origin' : 'no-cors', credentials: sama ? 'same-origin' : 'omit' })
+            .then(res => (sama ? res.ok : true))
+            .catch(() => false);
+    }
     function pulihkanAset() {
         if (!gagalAset.length) return;
-        const daftar = gagalAset.splice(0, gagalAset.length);
-        let perluReload = false;
-        daftar.forEach(el => {
-            try {
-                if (el.tagName === 'SCRIPT') { perluReload = true; return; }   // JS tidak bisa dieksekusi ulang dengan aman
-                if (el.tagName === 'IMG') { el.src = bustUrl(el.src); return; }
-                if (el.tagName === 'LINK') {
-                    const baru = document.createElement('link');
-                    baru.rel = 'stylesheet';
-                    baru.href = bustUrl(el.href);
-                    baru.onload = () => { try { el.remove(); } catch (e) { /* abaikan */ } };
-                    baru.onerror = () => { gagalAset.push(el); };
-                    el.parentNode && el.parentNode.insertBefore(baru, el.nextSibling);
-                }
-            } catch (e) { /* abaikan */ }
+        const daftar = gagalAset.splice(0, gagalAset.length).filter(el => !el.__pkCoba);
+        daftar.forEach(el => { el.__pkCoba = true; });          // tiap elemen hanya dicoba sekali
+        if (!daftar.length) return;
+        Promise.all(daftar.map(el => cekBisaDimuat(urlAset(el)).then(ok => (ok ? el : null)))).then(hasil => {
+            const pulih = hasil.filter(Boolean);
+            if (!pulih.length) return;                         // semuanya 404/permanen -> diam saja
+            let perluReload = false;
+            pulih.forEach(el => {
+                try {
+                    if (el.tagName === 'SCRIPT') { perluReload = true; return; }   // JS tidak bisa dieksekusi ulang dengan aman
+                    if (el.tagName === 'IMG') { el.src = bustUrl(el.src); return; }
+                    if (el.tagName === 'LINK') {
+                        const baru = document.createElement('link');
+                        baru.rel = 'stylesheet';
+                        baru.href = bustUrl(el.href);
+                        baru.onload = () => { try { el.remove(); } catch (e) { /* abaikan */ } };
+                        el.parentNode && el.parentNode.insertBefore(baru, el.nextSibling);
+                    }
+                } catch (e) { /* abaikan */ }
+            });
+            if (perluReload && bolehMuatUlang()) {
+                tampil({ mode: 'lebar', ikon: 'kirim', teks: 'Memulihkan halaman\u2026', tahanMs: 2500 });
+                setTimeout(() => location.reload(), 700);
+            }
         });
-        if (perluReload && bolehMuatUlang()) {
-            tampil({ mode: 'lebar', ikon: 'kirim', teks: 'Memulihkan halaman\u2026', tahanMs: 2500 });
-            setTimeout(() => location.reload(), 700);
-        }
     }
 
     /* ---------------- deteksi koneksi ---------------- */
