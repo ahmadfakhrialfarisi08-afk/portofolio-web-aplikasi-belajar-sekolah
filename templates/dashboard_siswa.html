@@ -517,7 +517,6 @@
 
         @media (max-width: 639px) {
             #tab-beranda.tab-content > :not([hidden]) ~ :not([hidden]) { margin-top: 20px !important; }
-            #tab-beranda #widget-poin-keamanan:empty { display: none; }
             #tab-beranda .fg-lower { gap: 20px; }
 
             /* Radius seragam (menimpa variasi 18px/13px nth-of-type di css lama) */
@@ -1342,8 +1341,6 @@
                         <path d="M40 260C60 220 60 190 30 170" stroke="rgba(255,255,255,0.10)" stroke-width="1.2" stroke-linecap="round"/>
                     </svg>
                 </div>
-
-                <div id="widget-poin-keamanan" style="margin-bottom: 1.5rem;"></div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-5 gap-4 items-stretch">
                     <button type="button" class="fg-poin sm:col-span-2 text-left bento-stat-card bento-stat-card--accent flex flex-col justify-between p-6 rounded-[16px] cursor-pointer transition-all duration-200" onclick="switchTab('quiz')">
@@ -3512,6 +3509,5 @@
     <script src="../static/js/dashboard_siswa_intro.js?v=20260909"></script>
     <script src="../static/js/dashboard_siswa_pelanggaran.js?v=20260909"></script>
     <script src="../static/js/release_notes.js?v=20260925"></script>
-    <script src="../static/js/poin_keamanan_siswa.js"></script>
 </body>
 </html>
