@@ -2116,7 +2116,9 @@
 
         // Kalau server tidak punya route /api/perangkat/list (404), berhenti polling endpoint ini
         // -- dulu 404 diulang tiap putaran polling selamanya (request sia-sia + error di console).
-        let _endpointPerangkatAda = true;
+        // false = route /api/perangkat/* belum ada di app.py, jadi polling badge ini dimatikan.
+        // Ubah ke true kalau route-nya sudah dibuat di server.
+        let _endpointPerangkatAda = false;
         async function updateBadgePerangkatNavSaja() {
             if (!_endpointPerangkatAda) return;
             // Versi ringan dari renderPerangkat(): cuma update titik merah di
