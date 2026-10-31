@@ -177,9 +177,31 @@
     const JARAK_BAWAH_HEADER = 10;
     const JARAK_DARI_ITEM = 12;
     const RUANG_MIN = 96;                  // ruang minimal agar pil kompak "Offline" muat
+    // MODE TENGAH (header siswa: #header-utama + #header-right-group): jam di kiri, ikon kontrol di kanan,
+    // pil koneksi TERPUSAT tepat di tengah header (bukan tengah sisa ruang) dan TIDAK ikut menjadi anak
+    // flex di baris header, jadi jam & grup ikon kanan tidak pernah bergeser saat pil muncul/menciut.
+    // Header lain (mis. guru) tetap memakai perilaku lama.
+    function modeTengah() {
+        const h = document.querySelector(HEADER_SELECTOR);
+        return !!(h && h.id === 'header-utama' && h.querySelector('#header-right-group'));
+    }
+    function hitungRuangTengah(header) {
+        const kiriEl = header.querySelector('#header-left-group');
+        const kananEl = header.querySelector('#header-right-group');
+        if (!kiriEl || !kananEl) return null;
+        const hr = header.getBoundingClientRect();
+        if (hr.height <= 0 || hr.bottom > window.innerHeight * 0.5) return null;
+        const kr = kiriEl.getBoundingClientRect(), nr = kananEl.getBoundingClientRect();
+        const cx = hr.left + hr.width / 2;
+        // setengah lebar yang tersedia, simetris terhadap pusat header
+        const setengah = Math.min(cx - kr.right, nr.left - cx) - JARAK_DARI_ITEM;
+        if (setengah * 2 < RUANG_MIN) return null;
+        return { kiri: cx - setengah, lebar: setengah * 2, atas: hr.top, tinggi: hr.height };
+    }
     function hitungRuang() {
         // -> {kiri, lebar} dalam px layar, atau null kalau tidak ada ruang di header
         const header = document.querySelector(HEADER_SELECTOR);
+        if (header && modeTengah()) return hitungRuangTengah(header);
         const jam = document.querySelector(JAM_SELECTOR);
         if (!header || !jam) return null;
         const hr = header.getBoundingClientRect(), jr = jam.getBoundingClientRect();
@@ -281,6 +303,7 @@
     // Tempat pil INLINE: tepat setelah item jam di baris header (flex) -> jam bergeser ke kiri,
     // lonceng dkk ke kanan saat pil melebar. null kalau struktur header tidak memungkinkan.
     function cariTempatInline() {
+        if (modeTengah()) return null;     // header siswa: pil terpusat (fixed), tidak masuk baris flex
         const jam = cariJam();
         if (!jam) return null;
         const header = document.querySelector(HEADER_SELECTOR);
@@ -374,7 +397,8 @@
         window.addEventListener('resize', posisikan);
         if (window.ResizeObserver) {
             const ro = new ResizeObserver(posisikan);
-            [HEADER_SELECTOR, SIDEBAR_SELECTOR, JAM_SELECTOR].forEach(sel => { const el = document.querySelector(sel); if (el) ro.observe(el); });
+            // #header-right-group ikut diamati: lebarnya berubah saat ikon WiFi muncul/hilang -> ruang tengah dihitung ulang
+            [HEADER_SELECTOR, SIDEBAR_SELECTOR, JAM_SELECTOR, '#header-right-group'].forEach(sel => { const el = document.querySelector(sel); if (el) ro.observe(el); });
         }
         return true;
     }
@@ -438,6 +462,9 @@
         return terbaik;
     }
     function rapatkanPojok(aktif) {
+        // Header siswa (mode tengah): pil tidak berebut ruang dengan ikon, jadi ikon kanan TIDAK boleh
+        // dirapatkan / digeser. Posisi & jarak control group harus sama di semua status koneksi.
+        if (modeTengah()) return;
         try {
             try { const h = document.querySelector(HEADER_SELECTOR); if (h) h.classList.toggle('pk-aktif', !!aktif); } catch (x) { /* abaikan */ }
             if (aktif) {

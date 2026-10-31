@@ -608,25 +608,70 @@
         }
     </style>
     <style id="css-header-mobile">
-        /* HEADER HP (<640px): ukuran tombol ikon (lonceng, matahari, titik tiga) dibiarkan NORMAL
-           seperti bawaan; yang diubah cuma jarak antar tombol (lebih lega, nyaman ditekan) +
-           tinggi header sedikit (56px -> 60px) supaya kotak jam tidak kependekan.
-           Layar sm+ TIDAK berubah. Pakai !important karena kelas Tailwind bawaan. */
+        /* HEADER HP (<640px): tinggi header 56px -> 60px supaya kotak jam tidak kependekan, dan
+           control group kanan (WiFi, lonceng, matahari, titik tiga) dibuat seragam: kotak tap 36px,
+           jarak antar ikon 8px, padding kanan sama dengan padding kiri.
+           Ukuran glyph ikon TIDAK diubah. Layar sm+ tidak berubah. Pakai !important karena kelas Tailwind bawaan. */
         @media (max-width: 639px) {
-            /* padding-right dikecilkan (0.875rem -> 0.25rem) supaya grup ikon kanan
-               (wifi, lonceng, matahari, titik tiga) lebih mepet ke ujung kanan layar */
-            #header-utama { height: 3.75rem !important; padding-left: 0.875rem !important; padding-right: 0.5rem !important; }
+            #header-utama { height: 3.75rem !important; padding-left: 0.875rem !important; padding-right: 0.875rem !important; }
             #header-utama #header-clock-container { padding: 0.4rem 0.75rem !important; }
-            #header-utama #header-right-group { gap: 0.75rem !important; margin-left: auto !important; }
-            /* Wrapper palet warna kosong di HP (tombolnya disembunyikan, pindah ke menu titik tiga)
-               tapi masih kena gap -> bikin ruang kosong di kanan titik tiga. Gap-nya dibatalkan di sini. */
-            #header-utama #wrapper-btn-aksen-tema { margin-left: -0.75rem !important; width: 0 !important; }
+            #header-utama #header-right-group { gap: 0.5rem !important; }
+            #header-utama #btn-bell,
+            #header-utama #btn-dark-mode-toggle,
+            #header-utama #btn-more-header,
+            #header-utama #pk-ikon-hdr { min-width: 2.25rem; min-height: 2.25rem; box-sizing: border-box; }
+            /* Wrapper palet warna: di HP tombolnya disembunyikan (pindah ke menu titik tiga), jadi wrapper
+               kosong ini tidak boleh ikut jadi item flex (kalau ikut, gap menyisakan ruang kosong di kanan
+               titik tiga). Dikeluarkan dari alur layout; panelnya tetap terbuka tepat di bawah header, rata kanan. */
+            #header-utama #wrapper-btn-aksen-tema { position: absolute !important; right: 0.875rem; top: 100%; width: 0; height: 0; }
+        }
+    </style>
+    <style id="css-header-layout">
+        /* LAYOUT HEADER (semua ukuran layar): tiga area.
+           KIRI  = jam + tanggal (#header-left-group)
+           TENGAH = Dynamic Island, terpusat ABSOLUT di tengah header -> tidak ikut ruang sisa jam/ikon
+           KANAN = control group (WiFi -> lonceng -> tema -> menu), rata kanan (flex-end), menempel ke pojok kanan.
+           Karena grup kanan menempel ke tepi kanan, ikon WiFi yang muncul/hilang hanya memanjangkan grup ke KIRI;
+           lonceng, matahari, dan titik tiga tidak pernah bergeser. */
+        #header-utama #header-left-group { flex: 0 0 auto; }
+        #header-utama #header-right-group { flex: 0 0 auto; margin-left: auto; justify-content: flex-end; }
+        /* Ikon WiFi (disisipkan status_koneksi.js): jarak antar ikon hanya dari gap grup, tanpa margin tambahan */
+        #header-utama #header-right-group > #pk-ikon-hdr { margin: 0 !important; }
+        /* Dynamic Island: pusat = tengah header. Pakai properti `translate` (terpisah dari `transform`) supaya
+           animasi expand/collapse yang memakai transform tidak bentrok. Lebar dibatasi ruang simetris di antara
+           jam dan control group (--pulau-maks, dihitung skrip di bawah header); teks dipotong "…" bila sempit. */
+        #header-utama > #dynamic-notification-island {
+            position: absolute !important; left: 50% !important; top: 50% !important; right: auto !important; bottom: auto !important;
+            translate: -50% -50%; margin: 0 !important;
+            max-width: var(--pulau-maks, 100%); box-sizing: border-box; z-index: 1;
+        }
+        /* Header padat (dipasang skrip di bawah header kalau jam + control group + slot WiFi tidak muat, mis. tablet):
+           padding samping & jarak antar ikon dirapatkan. Ukuran ikon tidak berubah, dan keputusan ini TIDAK
+           bergantung pada status WiFi, jadi posisi ikon sama saat online maupun offline. */
+        #header-utama[data-header-padat] { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+        #header-utama[data-header-padat] #header-right-group { gap: 0.375rem !important; }
+        @media (max-width: 639px) {
+            /* HP sangat sempit (mis. 320px): kotak ikon 36px -> 32px, tetap seragam untuk semua ikon */
+            #header-utama[data-header-padat] #btn-bell,
+            #header-utama[data-header-padat] #btn-dark-mode-toggle,
+            #header-utama[data-header-padat] #btn-more-header,
+            #header-utama[data-header-padat] #pk-ikon-hdr { min-width: 2rem; min-height: 2rem; }
+        }
+        @media (min-width: 640px) {
+            /* Tablet sempit: label teks "Rahasia" disembunyikan (jadi ikon saja; tombol tetap punya title & aria-label) */
+            #header-utama[data-header-padat] #btn-rahasia-jurusan > span { display: none !important; }
+            /* ...dan blok nama/kelas di menu profil dibatasi lebarnya (nama dipotong "…") */
+            #header-utama[data-header-padat] #profile-menu-trigger > div:last-child { max-width: 110px !important; }
+        }
+        /* Layar sempit (ruang simetris < 96px): island turun, terpusat tepat di bawah header, tidak menimpa jam/ikon */
+        #header-utama[data-pulau-turun] > #dynamic-notification-island {
+            top: calc(100% + 8px) !important; translate: -50% 0; max-width: calc(100% - 24px);
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden">
     <!-- Island status koneksi (online/offline/antrian) -- dimuat paling awal -->
-    <script src="../static/js/status_koneksi.js?v=20261031b"></script>
+    <script src="../static/js/status_koneksi.js?v=20261031c"></script>
     <!-- Layar transisi masuk dashboard: gelap -> terang, mirip halaman login -->
     <div id="layar-masuk-dashboard" aria-hidden="true">
         <div class="masuk-dashboard-lencana"><i class="fa-solid fa-graduation-cap"></i></div>
@@ -1196,6 +1241,60 @@
                 </div>
             </div>
         </header>
+
+        <!-- Hitung ruang SIMETRIS di tengah header (antara jam di kiri & control group di kanan) untuk
+             Dynamic Island: --pulau-maks = lebar maksimum island yang tetap terpusat tanpa menimpa jam/ikon.
+             Kalau ruangnya < 96px (HP sempit), header diberi atribut data-pulau-turun -> island turun ke bawah
+             header (lihat #css-header-layout). Dihitung ulang saat resize, ikon WiFi muncul/hilang, dll. -->
+        <script>
+        (function () {
+            var header = document.getElementById('header-utama');
+            var kiri = document.getElementById('header-left-group');
+            var kanan = document.getElementById('header-right-group');
+            if (!header || !kiri || !kanan) return;
+            var JARAK = 12, RUANG_MIN = 96, JARAK_MIN = 8, antre = 0;
+            // Header terlalu sempit untuk jam + control group? Slot ikon WiFi SELALU dianggap ada (walau sedang
+            // tersembunyi), supaya keputusan "padat" sama saat online maupun offline -> posisi ikon tidak berubah
+            // ketika WiFi muncul/hilang. Mode padat (data-header-padat) hanya merapatkan padding & jarak (lihat CSS).
+            function sempit() {
+                var wifi = kanan.querySelector('#pk-ikon-hdr');
+                var slot = 0;
+                if (!wifi || wifi.hidden || !wifi.offsetWidth) {
+                    var bell = document.getElementById('btn-bell');
+                    slot = (bell ? bell.offsetWidth : 38) + (parseFloat(getComputedStyle(kanan).columnGap) || 0);
+                }
+                return kanan.getBoundingClientRect().left - slot < kiri.getBoundingClientRect().right + JARAK_MIN ||
+                    header.scrollWidth > header.clientWidth + 1;
+            }
+            function hitung() {
+                antre = 0;
+                try {
+                    var hr = header.getBoundingClientRect();
+                    if (hr.width <= 0) return;
+                    header.removeAttribute('data-header-padat');          // ukur dulu dalam keadaan normal
+                    if (sempit()) header.setAttribute('data-header-padat', '');
+                    var cx = hr.left + hr.width / 2;
+                    var setengah = Math.min(cx - kiri.getBoundingClientRect().right, kanan.getBoundingClientRect().left - cx) - JARAK;
+                    var lebar = Math.max(0, Math.floor(setengah * 2));
+                    header.style.setProperty('--pulau-maks', lebar + 'px');
+                    if (lebar < RUANG_MIN) header.setAttribute('data-pulau-turun', '');
+                    else header.removeAttribute('data-pulau-turun');
+                } catch (e) { /* abaikan */ }
+            }
+            function jadwalkan() { if (!antre) antre = requestAnimationFrame(hitung); }
+            window.addEventListener('resize', jadwalkan);
+            window.addEventListener('load', jadwalkan);
+            if (document.fonts && document.fonts.ready) document.fonts.ready.then(jadwalkan);
+            if (window.ResizeObserver) {
+                var ro = new ResizeObserver(jadwalkan);
+                ro.observe(header); ro.observe(kiri); ro.observe(kanan);
+            }
+            if (window.MutationObserver) {
+                new MutationObserver(jadwalkan).observe(kanan, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class', 'style'] });
+            }
+            hitung();
+        })();
+        </script>
 
         <main id="main-content" class="p-5 sm:p-7 lg:p-8 space-y-6 pb-24 sm:pb-7 lg:pb-8">
 
