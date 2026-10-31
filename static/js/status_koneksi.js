@@ -27,6 +27,11 @@
    antrian_sync_guru.js (guru) lewat setAntrian(); keduanya otomatis
    kembali ke pil oranye lama kalau file ini tidak dimuat.
    Muat file ini PALING AWAL di HTML (sebelum script lain).
+ 
+   PEMULIH HALAMAN: file CSS/JS/gambar yang gagal dimuat (internet putus
+   di tengah loading) dicatat. Begitu koneksi terbukti pulih, gambar &
+   CSS dimuat ulang di tempat; kalau ada JS yang gagal, halaman di-reload
+   otomatis (maks 2x per menit supaya tidak looping).
    ============================================================ */
 (function () {
     'use strict';
@@ -374,6 +379,7 @@
                 S.gagal = ok ? 0 : S.gagal + 1;
                 setOnline(ok);
                 jadwalkan();
+                if (ok) pulihkanAset();
                 return ok;
             });
         return S.probe;
@@ -444,6 +450,59 @@
         });
     }
  
+    /* ---------------- pemulih aset yang gagal dimuat ---------------- */
+    const gagalAset = [];                      // elemen <link>/<script>/<img> yang gagal dimuat
+    function urlAset(el) { return el.tagName === 'LINK' ? el.href : el.src; }
+    function asetPenting(el) {
+        if (!el || !el.tagName || el === window) return false;
+        if (el.closest && el.closest('#pulau-koneksi')) return false;
+        const u = urlAset(el);
+        if (!u || /^(data|blob):/i.test(u)) return false;
+        if (el.tagName === 'LINK') return /stylesheet/i.test(el.rel || '');
+        return el.tagName === 'SCRIPT' || el.tagName === 'IMG';
+    }
+    // fase capture: error load resource tidak bubbling, jadi harus ditangkap di window
+    window.addEventListener('error', e => {
+        const el = e.target;
+        if (el && el !== window && asetPenting(el) && gagalAset.indexOf(el) < 0) gagalAset.push(el);
+    }, true);
+    function bolehMuatUlang() {
+        try {
+            const sekarang = Date.now();
+            let n = parseInt(sessionStorage.getItem('pk_reload_n'), 10) || 0;
+            const t = parseInt(sessionStorage.getItem('pk_reload_t'), 10) || 0;
+            if (sekarang - t > 60000) n = 0;
+            if (n >= 2) return false;
+            sessionStorage.setItem('pk_reload_n', String(n + 1));
+            sessionStorage.setItem('pk_reload_t', String(sekarang));
+            return true;
+        } catch (e) { return false; }
+    }
+    function bustUrl(u) { return u + (u.indexOf('?') < 0 ? '?' : '&') + 'r=' + Date.now(); }
+    function pulihkanAset() {
+        if (!gagalAset.length) return;
+        const daftar = gagalAset.splice(0, gagalAset.length);
+        let perluReload = false;
+        daftar.forEach(el => {
+            try {
+                if (el.tagName === 'SCRIPT') { perluReload = true; return; }   // JS tidak bisa dieksekusi ulang dengan aman
+                if (el.tagName === 'IMG') { el.src = bustUrl(el.src); return; }
+                if (el.tagName === 'LINK') {
+                    const baru = document.createElement('link');
+                    baru.rel = 'stylesheet';
+                    baru.href = bustUrl(el.href);
+                    baru.onload = () => { try { el.remove(); } catch (e) { /* abaikan */ } };
+                    baru.onerror = () => { gagalAset.push(el); };
+                    el.parentNode && el.parentNode.insertBefore(baru, el.nextSibling);
+                }
+            } catch (e) { /* abaikan */ }
+        });
+        if (perluReload && bolehMuatUlang()) {
+            tampil({ mode: 'lebar', ikon: 'kirim', teks: 'Memulihkan halaman\u2026', tahanMs: 2500 });
+            setTimeout(() => location.reload(), 700);
+        }
+    }
+ 
     /* ---------------- deteksi koneksi ---------------- */
     function sameOrigin(input) {
         try {
@@ -480,6 +539,7 @@
         setAntrian: setAntrian,
         laporJaringan: laporJaringan,
         periksa: () => periksaKoneksi(true),
+        pulihkan: pulihkanAset,
         status: () => ({ online: S.online, mode: S.mode, teks: S.teks, antrian: total() })
     };
 })();
