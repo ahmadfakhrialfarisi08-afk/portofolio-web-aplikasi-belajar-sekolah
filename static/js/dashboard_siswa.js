@@ -2695,6 +2695,21 @@
             return new Date(detik * 1000).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
         }
 
+        function avatarCadanganKarya(nama) {
+            return `https://ui-avatars.com/api/?name=${encodeURIComponent(nama || '?')}&background=fef3c7&color=92400e&size=80`;
+        }
+        // Foto komentator: pakai foto dari server kalau ada; kalau komentar milik akun yang
+        // sedang login, pakai foto profil yang sedang dipakai (sama dengan header); selain itu inisial.
+        function fotoKomentarKarya(c) {
+            if (c && c.foto) return c.foto;
+            const sayaSendiri = c && ((c.username && c.username === USERNAME_SISWA_AKTIF) || c.milik_sendiri || c.boleh_hapus);
+            if (sayaSendiri) {
+                const h = document.getElementById('header-user-avatar');
+                if (h && h.src) return h.src;
+            }
+            return avatarCadanganKarya(c && c.nama);
+        }
+
         function bukaKaryaIdCard(idx) {
             const k = KARYA_ID_CARD_SAAT_INI[idx];
             if (!k || !k.id || document.getElementById('modal-post-karya')) return;
@@ -2704,6 +2719,9 @@
             const link = urlKaryaAman(k.url);
             const dasar = '/api/karya/' + encodeURIComponent(pemilik) + '/' + encodeURIComponent(k.id);
             let komentar = [];
+            let balasKe = null;   // id komentar yang sedang dibalas (null = komentar baru)
+            const terbuka = new Set();   // id komentar yang daftar balasannya dibuka
+            const fotoPemilikKarya = (document.getElementById('idcard-avatar-foto') || {}).src || avatarCadanganKarya(namaPemilik);
 
             // Layout dihitung lewat inline style (kelas Tailwind arbitrary tidak tentu ada di CSS yang dikompilasi):
             // layar lebar = foto kiri + panel kanan 340px; HP = foto atas, panel bawah.
@@ -2719,7 +2737,7 @@
                     </div>
                     <div class="flex flex-col min-h-0" style="max-height:92vh;${lebar ? 'width:340px;flex:none' : 'width:100%'}">
                         <div class="flex items-center gap-2 px-3 py-2.5 border-b border-slate-100">
-                            <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 text-xs font-extrabold flex items-center justify-center flex-none">${escKarya((namaPemilik || '?').trim().charAt(0).toUpperCase())}</div>
+                            <img src="${escKarya(fotoPemilikKarya)}" alt="" class="w-8 h-8 rounded-full object-cover flex-none bg-amber-100" onerror="this.onerror=null;this.src='${escKarya(avatarCadanganKarya(namaPemilik))}'">
                             <p class="text-xs font-bold text-slate-800 truncate flex-1">${escKarya(namaPemilik)}</p>
                             <button type="button" id="post-tutup" aria-label="Tutup" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 text-xs"><i class="fa-solid fa-xmark"></i></button>
                         </div>
@@ -2733,8 +2751,10 @@
                                 <button type="button" id="post-fokus" aria-label="Komentar"><i class="fa-regular fa-comment"></i></button>
                                 <button type="button" id="post-bagikan" aria-label="Bagikan"><i class="fa-regular fa-paper-plane"></i></button>
                             </div>
-                            <p id="post-jumlah" class="text-xs font-bold text-slate-800 mt-1.5 mb-1"></p>
+                            <p id="post-jumlah" class="text-xs font-bold text-slate-800 mt-1.5"></p>
+                            <p id="post-statistik" class="text-[11px] text-slate-500 mb-1"></p>
                         </div>
+                        <div id="post-balas-info" class="items-center justify-between px-3 py-1 bg-slate-50 text-[11px] text-slate-500 border-t border-slate-100" style="display:none"><span id="post-balas-nama"></span><button type="button" id="post-balas-batal" class="font-bold text-slate-600">Batal</button></div>
                         <div class="flex items-center gap-2 border-t border-slate-100 px-3 py-2">
                             <input id="post-input" type="text" maxlength="300" placeholder="Tambahkan komentar..." class="flex-1 text-xs outline-none bg-transparent">
                             <button type="button" id="post-kirim" class="text-xs font-bold text-blue-600 disabled:opacity-40">Kirim</button>
@@ -2756,15 +2776,48 @@
                 ikon.style.color = k.sudah_like ? '#ef4444' : '';
                 $('#post-jumlah').textContent = k.jumlah_like > 0 ? k.jumlah_like + ' suka' : 'Jadilah yang pertama menyukai ini';
             }
+            function gambarStatistik() {
+                const nKomentar = komentar.length;
+                const nBalasan = komentar.reduce((t, c) => t + ((c.balasan || []).length), 0);
+                $('#post-statistik').textContent = nKomentar
+                    ? nKomentar + ' komentar \u00b7 ' + nBalasan + ' balasan'
+                    : '';
+            }
+            function htmlItemKomentar(c, balasan) {
+                const ukuran = balasan ? 'w-5 h-5' : 'w-7 h-7';
+                return `
+                    <div class="flex items-start gap-2">
+                        <img src="${escKarya(fotoKomentarKarya(c))}" alt="" class="${ukuran} rounded-full object-cover flex-none mt-0.5 bg-amber-100" onerror="this.onerror=null;this.src='${escKarya(avatarCadanganKarya(c.nama))}'">
+                        <div class="text-xs text-slate-800 leading-snug min-w-0 flex-1">
+                            <b>${escKarya(c.nama)}</b> ${escKarya(c.teks)}
+                            <div class="text-[10px] text-slate-400 mt-0.5">${escKarya(waktuRelatifKarya(c.waktu))}${balasan ? '' : ` &middot; <button type="button" data-balas="${escKarya(c.id)}" data-nama="${escKarya(c.nama)}" class="font-semibold hover:text-slate-600">Balas</button>`}${c.boleh_hapus ? ` &middot; <button type="button" data-hapus="${escKarya(c.id)}" class="font-semibold hover:text-rose-600">Hapus</button>` : ''}</div>
+                        </div>
+                    </div>`;
+            }
             function gambarKomentar() {
                 const wadah = $('#post-komentar');
+                gambarStatistik();
                 if (!komentar.length) { wadah.innerHTML = '<p class="text-[11px] text-slate-400 italic">Belum ada komentar.</p>'; return; }
-                wadah.innerHTML = komentar.map(c => `
-                    <div class="text-xs text-slate-800 leading-snug">
-                        <b>${escKarya(c.nama)}</b> ${escKarya(c.teks)}
-                        <div class="text-[10px] text-slate-400 mt-0.5">${escKarya(waktuRelatifKarya(c.waktu))}${c.boleh_hapus ? ` &middot; <button type="button" data-hapus="${escKarya(c.id)}" class="font-semibold hover:text-rose-600">Hapus</button>` : ''}</div>
-                    </div>`).join('');
+                wadah.innerHTML = komentar.map(c => {
+                    const bal = Array.isArray(c.balasan) ? c.balasan : [];
+                    const buka = terbuka.has(String(c.id));
+                    const blok = bal.length ? `
+                        <div class="ml-9 mt-1.5">
+                            <button type="button" data-toggle="${escKarya(c.id)}" class="text-[10px] font-semibold text-slate-400 hover:text-slate-600">${buka ? '\u2014 Sembunyikan balasan' : '\u2014 Lihat ' + bal.length + ' balasan'}</button>
+                            ${buka ? `<div class="space-y-2 mt-1.5">${bal.map(r => htmlItemKomentar(r, true)).join('')}</div>` : ''}
+                        </div>` : '';
+                    return `<div>${htmlItemKomentar(c, false)}${blok}</div>`;
+                }).join('');
             }
+            function setBalasKe(id, nama) {
+                balasKe = id || null;
+                const info = $('#post-balas-info');
+                info.style.display = balasKe ? 'flex' : 'none';
+                $('#post-balas-nama').textContent = balasKe ? 'Membalas ' + nama : '';
+                $('#post-input').placeholder = balasKe ? 'Tulis balasan...' : 'Tambahkan komentar...';
+                if (balasKe) $('#post-input').focus();
+            }
+            $('#post-balas-batal').addEventListener('click', () => setBalasKe(null));
 
             async function toggleLike() {
                 try {
@@ -2810,13 +2863,15 @@
                     const res = await fetch(dasar + '/komentar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ teks })
+                        body: JSON.stringify(balasKe ? { teks, parent_id: balasKe } : { teks })
                     });
                     const json = await res.json().catch(() => null);
                     if (!res.ok || !json || !json.success) throw new Error((json && json.message) || 'Gagal');
                     komentar = json.komentar || [];
                     k.jumlah_komentar = json.jumlah_komentar;
                     input.value = '';
+                    if (balasKe) terbuka.add(String(balasKe));
+                    setBalasKe(null);
                     gambarKomentar();
                     const daftar = $('#post-daftar');
                     daftar.scrollTop = daftar.scrollHeight;
@@ -2827,7 +2882,16 @@
             $('#post-input').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); kirimKomentar(); } });
 
             $('#post-komentar').addEventListener('click', async e => {
-                const id = e.target && e.target.getAttribute && e.target.getAttribute('data-hapus');
+                const el = e.target && e.target.closest ? e.target.closest('button') : null;
+                if (!el) return;
+                if (el.hasAttribute('data-balas')) { setBalasKe(el.getAttribute('data-balas'), el.getAttribute('data-nama')); return; }
+                if (el.hasAttribute('data-toggle')) {
+                    const t = el.getAttribute('data-toggle');
+                    if (terbuka.has(t)) terbuka.delete(t); else terbuka.add(t);
+                    gambarKomentar();
+                    return;
+                }
+                const id = el.getAttribute('data-hapus');
                 if (!id) return;
                 try {
                     const res = await fetch(dasar + '/komentar/' + encodeURIComponent(id), { method: 'DELETE' });
