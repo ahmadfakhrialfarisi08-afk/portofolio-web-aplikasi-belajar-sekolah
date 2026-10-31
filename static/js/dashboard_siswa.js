@@ -2655,6 +2655,13 @@
             const daftar = Array.isArray(karya) ? karya.filter(k => k && (k.gambar || k.judul)) : [];
             KARYA_ID_CARD_SAAT_INI = daftar;
 
+            // Grid rapi: kotak berukuran tetap (80-96px) dan jumlah kolom menyesuaikan lebar kartu,
+            // jadi di HP pas 3 kolom dan di layar lebar kotaknya tidak ikut membesar.
+            kontainer.style.display = 'grid';
+            kontainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(80px, 96px))';
+            kontainer.style.gap = '8px';
+            kontainer.style.justifyContent = 'start';
+
             if (pesanKosong) pesanKosong.classList.toggle('hidden', daftar.length > 0);
 
             const kotak = daftar.map((k, idx) => {
