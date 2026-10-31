@@ -45,9 +45,9 @@
     // Pengecekan koneksi NYATA (bukan hanya navigator.onLine / event browser).
     const URL_PING = '/ping';              // route ringan di server sendiri (404 pun dianggap "server terjangkau")
     const TIMEOUT_PING_MS = 2500;
-    const INTERVAL_OFFLINE_MS = 4000;      // saat offline: cek tiap 4 dtk supaya cepat sadar kalau internet kembali
-    const INTERVAL_ONLINE_MS = 10000;      // saat online: cek tiap 10 dtk supaya sadar kalau internet putus
-    const JEDA_MIN_PROBE_MS = 1500;
+    const INTERVAL_OFFLINE_MS = 6000;      // saat offline: cek tiap 4 dtk supaya cepat sadar kalau internet kembali
+    const INTERVAL_ONLINE_MS = 45000;      // saat online: cek tiap 10 dtk supaya sadar kalau internet putus
+    const JEDA_MIN_PROBE_MS = 8000;
     // Server di laptop sendiri (127.0.0.1 / localhost / IP jaringan lokal) SELALU terjangkau walau internet mati,
     // jadi di situ status online harus dibuktikan lewat situs luar. Di server internet sungguhan, /ping sudah cukup.
     // 'auto' : otomatis (pakai situs luar hanya kalau alamat halaman lokal) | true : selalu | false : tidak pernah
@@ -77,6 +77,7 @@
         probe: null,
         tProbe: null,
         probeTerakhir: 0,
+        okTerakhir: 0,              // kapan terakhir fetch aplikasi sendiri BERHASIL (bukti online gratis, tanpa ping)
         tMuncul: null
     };
     let wadah = null, pil = null, elIkon = null, elTeks = null;
@@ -339,7 +340,7 @@
     // (bisa jawaban palsu dari service worker/cache) -> diverifikasi dengan probe nyata.
     function laporJaringan(berhasil, status) {
         if (berhasil && status !== 503 && status !== 504) {
-            if (S.online) S.gagal = 0; else periksaKoneksi();
+            if (S.online) { S.gagal = 0; S.okTerakhir = Date.now(); } else periksaKoneksi();
             return;
         }
         S.gagal++;
@@ -361,8 +362,9 @@
             Object.assign({ credentials: 'same-origin' }, opsi))
             .then(res => res.status !== 503 && res.status !== 504 && res.status !== 0);
         // no-cors: respons "opaque" sudah cukup sebagai bukti ada internet; gagal jaringan -> reject.
-        const luar = () => Promise.any(URL_INTERNET_LUAR.map(u =>
-            f(u + '?_=' + sekarang, Object.assign({ mode: 'no-cors', credentials: 'omit' }, opsi)).then(() => true)));
+        const satuLuar = u => f(u + '?_=' + sekarang, Object.assign({ mode: 'no-cors', credentials: 'omit' }, opsi)).then(() => true);
+        // hemat request: coba 1 host dulu; baru kalau gagal, cadangan lainnya (dulu 3 request paralel tiap cek)
+        const luar = () => satuLuar(URL_INTERNET_LUAR[0]).catch(() => Promise.any(URL_INTERNET_LUAR.slice(1).map(satuLuar)));
         const cek = pakaiInternetLuar() && typeof Promise.any === 'function' ? luar() : ping();
         S.probe = cek
             .catch(() => false)
@@ -380,6 +382,8 @@
         clearTimeout(S.tProbe);
         S.tProbe = setTimeout(() => {
             if (document.hidden) { jadwalkan(); return; }
+            // fetch aplikasi sendiri baru saja sukses -> sudah terbukti online, tidak perlu ping lagi
+            if (S.online && Date.now() - S.okTerakhir < INTERVAL_ONLINE_MS) { jadwalkan(); return; }
             periksaKoneksi(true);
         }, S.online ? INTERVAL_ONLINE_MS : INTERVAL_OFFLINE_MS);
     }
@@ -461,8 +465,8 @@
     // Event 'online' hanya berarti "ada jaringan lokal", bukan "ada internet" -> wajib diverifikasi.
     window.addEventListener('online', () => { periksaKoneksi(true); });
     window.addEventListener('offline', () => setOnline(false));
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) periksaKoneksi(true); });
-    window.addEventListener('focus', () => { periksaKoneksi(); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) periksaKoneksi(!S.online); });
+    window.addEventListener('focus', () => { if (!S.online) periksaKoneksi(); });
     function inisialisasi() {
         siapkanDOM();
         if (!S.online) tampil({ mode: 'lebar', ikon: 'offline', teks: 'Mode offline \u00b7 data disimpan di perangkat', tahanMs: MS_LEBAR_OFFLINE });

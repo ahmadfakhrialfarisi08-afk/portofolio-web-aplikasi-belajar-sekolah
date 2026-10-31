@@ -12,6 +12,28 @@
         (document.head || document.documentElement).appendChild(s);
     } catch (e) { /* island tidak vital: abaikan */ }
 })();
+
+// ===== RASA INSTAN ala iOS: respons sentuhan langsung, tanpa delay tap, transisi tab singkat =====
+(function () {
+    try {
+        if (document.getElementById('gaya-rasa-instan')) return;
+        var st = document.createElement('style');
+        st.id = 'gaya-rasa-instan';
+        st.textContent = [
+            // hilangkan delay 300ms double-tap-zoom & kilatan abu-abu bawaan browser
+            'a,button,[role="button"],[onclick],.nav-btn,.bottom-nav-item,input,select,textarea,label{touch-action:manipulation;-webkit-tap-highlight-color:transparent}',
+            // umpan balik tekan SEKETIKA (muncul di frame yang sama dengan sentuhan, bukan setelah request)
+            '.bottom-nav-item,.nav-btn{transition:transform .14s cubic-bezier(.22,1,.36,1),background-color .15s ease,color .15s ease}',
+            '.bottom-nav-item:active{transform:scale(.9)}',
+            '.nav-btn:active{transform:scale(.97)}',
+            // pergantian tab: fade + geser 6px, 200ms, kurva ala iOS
+            '@keyframes tabMasukInstan{from{opacity:0;transform:translate3d(0,6px,0)}to{opacity:1;transform:none}}',
+            '.tab-content:not(.hidden){animation:tabMasukInstan .2s cubic-bezier(.22,1,.36,1)}',
+            '@media (prefers-reduced-motion:reduce){.tab-content:not(.hidden){animation:none}.bottom-nav-item:active,.nav-btn:active{transform:none}}'
+        ].join('');
+        (document.head || document.documentElement).appendChild(st);
+    } catch (e) { /* kosmetik: abaikan */ }
+})();
         // ============================================================
         // KONTROL BEBAN POLLING BERKALA (skala 600+ siswa bersamaan)
         // ------------------------------------------------------------
@@ -52,7 +74,8 @@
         // masih dalam masa tunda backoff, atau kalau responsnya 429 (sambil
         // otomatis mengaktifkan masa tunda itu buat polling lain).
         async function fetchDenganKontrolBeban(url, opts) {
-            if (pollingSedangDitunda()) return null;
+            // HEMAT KUOTA: tab disembunyikan / HP offline -> jangan nembak server sama sekali.
+            if (pollingSedangDitunda() || document.hidden || navigator.onLine === false) return null;
             const res = await fetch(url, opts);
             if (res.status === 429) tandaiPollingKena429(res);
             return res;
@@ -60,14 +83,32 @@
         function jedaDenganJitter(basisMs) {
             return Math.floor(basisMs * (0.85 + Math.random() * 0.3));
         }
+        // Polling BERHENTI saat tab disembunyikan / offline, lalu jalan lagi (bertahap) begitu tab
+        // dibuka kembali -- hemat request & baterai, dan siswa tetap dapat data segar saat kembali.
+        const _daftarPollingBerkala = [];
         function jadwalkanBerkala(fn, basisMs) {
+            const entri = { fn: fn, tertunda: false };
+            _daftarPollingBerkala.push(entri);
             (function tick() {
                 setTimeout(() => {
-                    fn();
+                    if (document.hidden || navigator.onLine === false) {
+                        entri.tertunda = true;
+                    } else {
+                        entri.tertunda = false;
+                        try { fn(); } catch (e) { console.warn('Polling error:', e); }
+                    }
                     tick();
                 }, jedaDenganJitter(basisMs));
             })();
         }
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) return;
+            _daftarPollingBerkala.forEach((e, i) => {
+                if (!e.tertunda) return;
+                e.tertunda = false;
+                setTimeout(() => { try { e.fn(); } catch (err) { console.warn('Polling error:', err); } }, 300 + i * 400);
+            });
+        });
 
         function getAccurateNow() {
             return new Date();
@@ -1226,7 +1267,7 @@
         // percuma karena tidak akan pernah kepakai.
         const _lastFetchAtSync = {};
         const _pendingFetchSync = {};
-        const JEDA_MIN_REFRESH_SYNC_MS = 8000;
+        const JEDA_MIN_REFRESH_SYNC_MS = 15000;
         // PERFORMANCE OPTIMIZATION: 'tasks_<KELAS>' & 'notif_tugas_<KELAS>' HAMPIR
         // SELALU dibutuhkan bareng dalam tick yang sama (lihat
         // jalankanSinkronisasiBerkalaDashboard di dashboard_siswa_2.js), jadi
@@ -1243,6 +1284,7 @@
             return nilaiLokal;
         }
         function _refreshSyncDiBackground(kunci, fallback) {
+            if (document.hidden || navigator.onLine === false) return; // tab tidak terlihat / offline: pakai cache saja, jangan nembak server
             if (_pendingFetchSync[kunci]) return; // masih ada fetch kunci ini yang berjalan, jangan tumpuk lagi
             const terakhirDifetch = _lastFetchAtSync[kunci] || 0;
             if (Date.now() - terakhirDifetch < JEDA_MIN_REFRESH_SYNC_MS) return; // masih terlalu baru, skip dulu
@@ -1326,6 +1368,18 @@
                     _pendingFetchBulkTugas = false;
                 });
         }
+        // Tarik data terbaru SEKARANG (dipakai saat tab dibuka lagi / siswa pindah ke tab Tugas).
+        // Tampilan tetap instan dari cache; request gabungan 1x jalan di background. Dibatasi 5 detik.
+        let _terakhirPaksaSync = 0;
+        function segarkanSyncSekarang() {
+            if (Date.now() - _terakhirPaksaSync < 5000) return;
+            _terakhirPaksaSync = Date.now();
+            try {
+                Object.keys(_lastFetchAtSync).forEach(k => { _lastFetchAtSync[k] = 0; });
+                getSync(`tasks_${KELAS_AKTIF_SISWA}`, []);
+            } catch (e) { /* abaikan */ }
+        }
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(segarkanSyncSekarang, 200); });
         function setSync(kunci, data) {
             localStorage.setItem(kunci, JSON.stringify(data));
             fetch(`/api/sync/${encodeURIComponent(kunci)}`, {
@@ -3667,7 +3721,11 @@
                     // ditampilkan (kartu langsung kalau <=2 tugas, atau modal ikon
                     // bulat kalau >2 tugas) yang berubah status; sisanya tetap
                     // "Belum Dikerjakan" sampai benar-benar dibuka siswa.
-                    renderLiveTaskContent();
+                    // Tab langsung tampil (paint dulu), isi dirender di frame berikutnya -> klik terasa instan.
+                    segarkanSyncSekarang();
+                    requestAnimationFrame(() => setTimeout(() => {
+                        try { renderLiveTaskContent(); } catch (e) { console.error('Gagal memuat konten tab Tugas:', e); }
+                    }, 0));
                 } catch (err) {
                     console.error('Gagal memuat konten tab Tugas:', err);
                 }
@@ -6216,6 +6274,22 @@
         // siswa-per-tugas (skema SAMA seperti status pengumpulan tugas di
         // /api/tugas/submit) lewat /api/tugas/dibaca -- TIDAK PERNAH
         // menyentuh tasks_<KELAS> sama sekali.
+        const _antrianDibaca = new Set();
+        let _timerDibaca = null;
+        function _kirimAntrianDibaca() {
+            _timerDibaca = null;
+            const ids = Array.from(_antrianDibaca);
+            _antrianDibaca.clear();
+            if (!ids.length) return;
+            // task_id (id pertama) ikut dikirim supaya server versi lama tetap bisa memprosesnya.
+            fetch('/api/tugas/dibaca', {
+                method: 'POST',
+                keepalive: true,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task_id: ids[0], task_ids: ids })
+            }).catch(e => console.warn('Gagal menandai tugas sebagai dibuka:', ids, e));
+        }
+        window.addEventListener('pagehide', () => { if (_timerDibaca) { clearTimeout(_timerDibaca); _kirimAntrianDibaca(); } });
         function tandaiTugasDibukaJikaPerlu(data) {
             if (!data || !data.id) return;
             if (data.studentSubmitted || data.sudahMengumpulkan) return; // sudah selesai, tak perlu diubah
@@ -6225,11 +6299,9 @@
             window._statusTugasSendiri[data.id] = Object.assign(
                 {}, window._statusTugasSendiri[data.id], { dilihat: true }
             );
-            fetch('/api/tugas/dibaca', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ task_id: data.id })
-            }).catch(e => console.warn('Gagal menandai tugas sebagai dibuka:', data.id, e));
+            // Digabung: beberapa tugas yang dibuka berdekatan dikirim dalam 1 request (jeda 600 ms).
+            _antrianDibaca.add(data.id);
+            if (!_timerDibaca) _timerDibaca = setTimeout(_kirimAntrianDibaca, 600);
             try {
                 if (typeof checkTaskBadgeStatus === 'function') checkTaskBadgeStatus();
             } catch (e) {

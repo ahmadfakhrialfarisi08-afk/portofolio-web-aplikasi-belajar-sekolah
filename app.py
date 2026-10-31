@@ -427,7 +427,7 @@ def _log_akses_request(response):
     try:
         # Jangan ikut log request ke file statis (css/js/gambar) -- biar log
         # tetap fokus ke endpoint aplikasi/API yang relevan buat didiagnosis.
-        if request.endpoint != 'static':
+        if request.endpoint not in ('static', 'ping'):
             durasi_ms = round((time.time() - getattr(request, '_waktu_mulai', time.time())) * 1000, 1)
             baris = {
                 'waktu': datetime.utcnow().isoformat(),
@@ -3166,28 +3166,36 @@ def api_tugas_dibaca():
     if 'user' not in session or session['user']['role'] != 'siswa':
         return jsonify(success=False, message='Belum login sebagai siswa.'), 401
     body = request.get_json(silent=True) or {}
-    task_id = (body.get('task_id') or '').strip()
-    if not task_id:
+    # Terima 1 task_id (klien lama) ATAU banyak sekaligus lewat task_ids (klien baru, digabung).
+    daftar_id = body.get('task_ids')
+    if not isinstance(daftar_id, list):
+        daftar_id = [body.get('task_id')]
+    daftar_id = [str(x).strip() for x in daftar_id if x and str(x).strip()][:50]
+    if not daftar_id:
         return jsonify(success=False, message='task_id kosong.'), 400
 
     username = session['user']['username']
-    tugas_submission_store.setdefault(task_id, {})
-    entri = tugas_submission_store[task_id].get(username)
-    if not entri:
-        tugas_submission_store[task_id][username] = {
-            'submitted': False,
-            'images': [],
-            'waktu': None,
-            'waktu_iso': None,
-            'nilai': None,
-            'catatan': None,
-            'dilihat': True,
-            'dilihat_at': datetime.utcnow().isoformat(),
-        }
-        _simpan_tugas_submission_store()
-    elif not entri.get('dilihat'):
-        entri['dilihat'] = True
-        entri['dilihat_at'] = datetime.utcnow().isoformat()
+    berubah = False
+    for task_id in daftar_id:
+        tugas_submission_store.setdefault(task_id, {})
+        entri = tugas_submission_store[task_id].get(username)
+        if not entri:
+            tugas_submission_store[task_id][username] = {
+                'submitted': False,
+                'images': [],
+                'waktu': None,
+                'waktu_iso': None,
+                'nilai': None,
+                'catatan': None,
+                'dilihat': True,
+                'dilihat_at': datetime.utcnow().isoformat(),
+            }
+            berubah = True
+        elif not entri.get('dilihat'):
+            entri['dilihat'] = True
+            entri['dilihat_at'] = datetime.utcnow().isoformat()
+            berubah = True
+    if berubah:
         _simpan_tugas_submission_store()
     return jsonify(success=True)
 
@@ -3322,6 +3330,28 @@ def _simpan_sync_store(store):
         _sync_store_cache = store
 
 
+# ----------------------------------------------------
+# HEMAT KUOTA: ETag + 304 Not Modified untuk GET sync, dan /ping ringan
+# ----------------------------------------------------
+# Browser mengirim If-None-Match otomatis; kalau data tidak berubah server
+# membalas 304 TANPA body (~200 byte) -- polling tiap beberapa detik jadi
+# hampir gratis di kuota. "private, no-cache" = selalu validasi ke server
+# (data tetap real-time), tapi body hanya dikirim kalau memang berubah.
+def _json_etag(payload):
+    resp = jsonify(payload)
+    resp.add_etag()
+    resp.headers['Cache-Control'] = 'private, no-cache'
+    return resp.make_conditional(request)
+
+
+@app.route('/ping', methods=['GET', 'HEAD'])
+def ping():
+    """Dipakai status_koneksi.js: tanpa session/DB/log, balasan kosong 204."""
+    r = app.response_class(status=204)
+    r.headers['Cache-Control'] = 'no-store'
+    return r
+
+
 @app.route('/api/sync/<kunci>', methods=['GET'])
 @batasi('berat')
 def api_sync_get(kunci):
@@ -3336,7 +3366,7 @@ def api_sync_get(kunci):
     # None (bukan [] atau {}) kalau kuncinya belum pernah disimpan -- biar
     # client yang tahu persis "kunci ini kosong" dan bisa pakai fallback-nya
     # sendiri (array kosong, null, dsb) sesuai jenis data yang dia harapkan.
-    return jsonify({'ok': True, 'data': store.get(kunci, None)})
+    return _json_etag({'ok': True, 'data': store.get(kunci, None)})
 
 
 # ----------------------------------------------------
@@ -3562,7 +3592,7 @@ def api_sync_bulk_get():
     if daftar_kunci and not kunci_boleh:
         return jsonify({'ok': False, 'error': 'Tidak berhak mengakses data ini'}), 403
     store = _muat_sync_store()
-    return jsonify({'ok': True, 'data': {k: store.get(k, None) for k in kunci_boleh}})
+    return _json_etag({'ok': True, 'data': {k: store.get(k, None) for k in kunci_boleh}})
  
  
 def _apakah_berteman(a, b):
