@@ -140,13 +140,13 @@
         '#header-clock-container #header-realtime-clock,#header-clock-container #header-realtime-date{white-space:nowrap}',
         '#pulau-koneksi.pk-inline .pk-teks{min-width:0;overflow:visible}',
         '#pk-ikon-hdr{flex:none;display:inline-flex;align-items:center;justify-content:center;position:relative;box-sizing:border-box;',
-        'width:38px;height:38px;border-radius:12px;padding:0;margin:0 4px;cursor:pointer;color:#d97706;',
-        'background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.45);transition:transform .15s ease}',
+        'width:38px;height:38px;border-radius:12px;padding:0;margin:0 4px;cursor:pointer;color:#6b7280;',
+        'background:rgba(107,114,128,.14);border:1px solid rgba(107,114,128,.40);transition:transform .15s ease}',
         '#pk-ikon-hdr[hidden]{display:none}',
         '#pk-ikon-hdr svg{width:18px;height:18px;display:block}',
         '#pk-ikon-hdr:active{transform:scale(.94)}',
         '#pk-ikon-hdr .pk-badge{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;',
-        'border-radius:8px;background:#d97706;color:#fff;font:600 10px/16px system-ui,sans-serif;text-align:center}',
+        'border-radius:8px;background:#6b7280;color:#fff;font:600 10px/16px system-ui,sans-serif;text-align:center}',
         '#pk-ikon-hdr .pk-badge:empty{display:none}',
         '#pk-ikon-hdr.pk-fix{position:fixed;top:max(10px,calc(env(safe-area-inset-top,0px) + 6px));right:12px;z-index:2147483000;margin:0}',
         '@keyframes pk-ikon-masuk{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}',
@@ -158,7 +158,7 @@
         '#pk-popover.pk-buka{opacity:1;transform:none;pointer-events:auto}',
         '#pk-popover .pk-pt{font-weight:600;font-size:13px;margin:0 0 2px}',
         '#pk-popover .pk-pb{margin:0 0 10px;color:#4b5563}',
-        '#pk-popover button{width:100%;height:34px;border-radius:10px;border:0;cursor:pointer;background:#d97706;color:#fff;font:600 12.5px/1 system-ui,sans-serif}',
+        '#pk-popover button{width:100%;height:34px;border-radius:10px;border:0;cursor:pointer;background:#6b7280;color:#fff;font:600 12.5px/1 system-ui,sans-serif}',
         '#pk-popover.pk-gelap{background:#1f2937;color:#f3f4f6;box-shadow:0 8px 28px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.1)}',
         '#pk-popover.pk-gelap .pk-pb{color:#9ca3af}',
         '@media (prefers-reduced-motion:reduce){#pulau-koneksi,#pulau-koneksi .pk-pill{transition:opacity .2s ease !important;',
@@ -577,10 +577,36 @@
     function lebarSedangTampil() { return S.mode === 'lebar' && !!S.tTutup; }
  
     /* ---------------- ikon status di header ---------------- */
+    // Ikon offline saat memakai WiFi.
     const SVG_WIFI_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
         'stroke-linejoin="round" aria-hidden="true"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/>' +
         '<path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/>' +
         '<path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/></svg>';
+    // Ikon offline saat memakai DATA seluler: bar sinyal bertingkat (anak tangga) dicoret.
+    const SVG_DATA_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+        'stroke-linejoin="round" aria-hidden="true"><defs><mask id="pk-m-coret"><rect width="24" height="24" fill="#fff"/>' +
+        '<path d="m2.5 2.5 19 19" stroke="#000" stroke-width="5"/></mask></defs>' +
+        '<g mask="url(#pk-m-coret)" fill="currentColor" stroke="none">' +
+        '<rect x="3" y="15" width="3.2" height="5" rx="1"/><rect x="8" y="11" width="3.2" height="9" rx="1"/>' +
+        '<rect x="13" y="7" width="3.2" height="13" rx="1"/><rect x="18" y="3" width="3.2" height="17" rx="1"/></g>' +
+        '<path d="m2.5 2.5 19 19"/></svg>';
+    // Jenis jaringan: 'data' (seluler) atau 'wifi'. navigator.connection.type hanya ada di Chrome/Android;
+    // saat offline nilainya 'none', jadi dipakai jenis terakhir yang diketahui. Tidak terdeteksi -> 'wifi'.
+    let jenisJaringanTerakhir = 'wifi';
+    function jenisJaringan() {
+        try {
+            const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            const t = c && c.type;
+            if (t === 'cellular') jenisJaringanTerakhir = 'data';
+            else if (t === 'wifi' || t === 'ethernet') jenisJaringanTerakhir = 'wifi';
+        } catch (e) { /* abaikan */ }
+        return jenisJaringanTerakhir;
+    }
+    try {
+        const cn = navigator.connection;
+        if (cn && cn.addEventListener) cn.addEventListener('change', () => { jenisJaringan(); try { perbaruiIkon(); } catch (e) { /* abaikan */ } });
+        jenisJaringan();
+    } catch (e) { /* abaikan */ }
     const SVG_SYNC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
         'stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>' +
         '<path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>';
@@ -686,10 +712,10 @@
         const el = pastikanIkon();
         if (!el) return;
         const n = total();
-        const jenis = S.online ? 'sync' : 'offline';
+        const jenis = S.online ? 'sync' : (jenisJaringan() === 'data' ? 'offline-data' : 'offline');
         if (el.dataset.jenis !== jenis) {
             el.dataset.jenis = jenis;
-            el.querySelector('.pk-svg').innerHTML = jenis === 'sync' ? SVG_SYNC : SVG_WIFI_OFF;
+            el.querySelector('.pk-svg').innerHTML = jenis === 'sync' ? SVG_SYNC : (jenis === 'offline-data' ? SVG_DATA_OFF : SVG_WIFI_OFF);
         }
         el.querySelector('.pk-badge').textContent = n > 0 ? (n > 99 ? '99+' : String(n)) : '';
         el.setAttribute('aria-label', S.online ? n + ' ' + labelAntrian() + ' menunggu kirim' : 'Offline');
