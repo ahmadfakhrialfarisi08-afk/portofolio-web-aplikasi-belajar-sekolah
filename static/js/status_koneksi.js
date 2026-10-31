@@ -131,6 +131,10 @@
         '@keyframes pk-denyut{0%{box-shadow:0 0 0 0 rgba(245,158,11,.55)}100%{box-shadow:0 0 0 8px rgba(245,158,11,0)}}',
         '@keyframes pk-putar{to{transform:rotate(360deg)}}',
         '@keyframes pk-teks-masuk{from{opacity:0}to{opacity:1}}',
+        '#pulau-koneksi.pk-nol{display:none}',
+        '#pulau-koneksi.pk-inline{position:relative;top:auto;left:auto;right:auto;bottom:auto;height:auto;width:auto;flex:0 1 auto;',
+        'min-width:0;margin:0 8px;z-index:auto;align-self:center}',
+        '#pulau-koneksi.pk-inline .pk-pill{max-width:100%}',
         '#pk-ikon-hdr{flex:none;display:inline-flex;align-items:center;justify-content:center;position:relative;box-sizing:border-box;',
         'width:38px;height:38px;border-radius:12px;padding:0;margin:0 4px;cursor:pointer;color:#d97706;',
         'background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.45);transition:transform .15s ease}',
@@ -203,13 +207,74 @@
             .replace(/^(\d+) (.+) menunggu kirim$/, '$1 menunggu')
             .replace(/^Masih offline \u00b7 .*$/, 'Masih offline');
     }
-    function muatkan(teks) {
-        let r = null;
-        try { r = hitungRuang(); } catch (e) { r = null; }
-        if (!r) return teks;                                   // di bawah header: ruang longgar, pakai teks penuh
-        return taksirLebar(teks) <= r.lebar ? teks : pendekkan(teks);
+    // Ruang kosong (px) di baris header untuk pil inline: lebar baris dikurangi semua item lain.
+    function ruangInline() {
+        const row = wadah.parentElement;
+        if (!row) return null;
+        const cs = getComputedStyle(row);
+        let pakai = 0, n = 0;
+        Array.prototype.forEach.call(row.children, c => {
+            if (c === wadah) return;
+            const w = c.getBoundingClientRect().width;
+            if (w > 0) { pakai += w; n++; }
+        });
+        const pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+        const gap = (parseFloat(cs.columnGap) || 0) * n;
+        return row.clientWidth - pad - pakai - gap - 16;
     }
-    function posisikanPil() {
+    function muatkan(teks) {
+        let lebar = null;
+        try {
+            if (wadah && wadah.classList.contains('pk-inline')) lebar = ruangInline();
+            else { const r = hitungRuang(); lebar = r ? r.lebar : null; }
+        } catch (e) { lebar = null; }
+        if (lebar === null) return teks;
+        return taksirLebar(teks) <= lebar ? teks : pendekkan(teks);
+    }
+    // Cari JAM: lewat selector, atau lewat teks "hh:mm:ss" di bagian atas halaman.
+    function cariJam() {
+        if (S.jamEl && S.jamEl.isConnected && S.jamEl.getBoundingClientRect().width > 0) return S.jamEl;
+        S.jamEl = null;
+        let el = document.querySelector(JAM_SELECTOR);
+        if (!el || el.getBoundingClientRect().width <= 0) {
+            el = null;
+            const akar = document.querySelector(HEADER_SELECTOR) || document.body;
+            const tw = document.createTreeWalker(akar, NodeFilter.SHOW_TEXT);
+            let n;
+            while ((n = tw.nextNode())) {
+                if (!/\d{1,2}:\d{2}:\d{2}/.test(n.nodeValue)) continue;
+                const t = n.parentElement;
+                if (!t || t.closest('#pulau-koneksi')) continue;
+                const r = t.getBoundingClientRect();
+                if (r.width > 0 && r.top < 160) { el = t; break; }
+            }
+        }
+        S.jamEl = el;
+        return el;
+    }
+    // Tempat pil INLINE: tepat setelah item jam di baris header (flex) -> jam bergeser ke kiri,
+    // lonceng dkk ke kanan saat pil melebar. null kalau struktur header tidak memungkinkan.
+    function cariTempatInline() {
+        const jam = cariJam();
+        if (!jam) return null;
+        const header = document.querySelector(HEADER_SELECTOR);
+        const lebarMin = window.innerWidth * 0.55;
+        let el = jam;
+        while (el.parentElement && el.parentElement !== document.body) {
+            const p = el.parentElement;
+            if (p === header) break;
+            const cs = getComputedStyle(p);
+            const anak = Array.prototype.filter.call(p.children, c => c !== wadah && c.getBoundingClientRect().width > 0);
+            const baris = /flex/.test(cs.display) && !/column/.test(cs.flexDirection);
+            if (baris && anak.length >= 2 && p.getBoundingClientRect().width >= lebarMin) break;
+            el = p;
+        }
+        const parent = el.parentElement;
+        if (!parent || parent === document.body) return null;
+        if (!/flex|grid/.test(getComputedStyle(parent).display)) return null;
+        return { parent: parent, setelah: el };
+    }
+    function posisikanFixed() {
         if (!wadah) return;
         try {
             const r = hitungRuang();
@@ -236,6 +301,22 @@
             wadah.style.right = '0px';
         } catch (e) { /* abaikan */ }
     }
+    function posisikanPil() {
+        if (!wadah) return;
+        let tempat = null;
+        try { tempat = cariTempatInline(); } catch (e) { tempat = null; }
+        if (tempat) {
+            if (wadah.parentNode !== tempat.parent || wadah.previousElementSibling !== tempat.setelah) {
+                tempat.parent.insertBefore(wadah, tempat.setelah.nextSibling);
+            }
+            wadah.classList.add('pk-inline');
+            wadah.style.left = wadah.style.right = wadah.style.top = wadah.style.height = wadah.style.alignItems = '';
+            return;
+        }
+        wadah.classList.remove('pk-inline');
+        if (wadah.parentNode !== document.body) document.body.appendChild(wadah);
+        posisikanFixed();
+    }
     function posisikan() {
         // ikon di header dipasang DULU supaya ruang kosong di samping jam dihitung setelah ikon ada
         try { if (ikonHdr && !ikonHdr.hidden) { pastikanIkon(); if (popoverTerbuka) isiPopover(); } } catch (e) { /* abaikan */ }
@@ -255,6 +336,7 @@
         wadah.setAttribute('role', 'status');
         wadah.setAttribute('aria-live', 'polite');
         wadah.dataset.mode = 'tersembunyi';
+        wadah.classList.add('pk-nol');
         wadah.innerHTML = '<div class="pk-pill"><span class="pk-ikon"></span><span class="pk-teks"></span></div>';
         document.body.appendChild(wadah);
         pil = wadah.querySelector('.pk-pill');
@@ -317,13 +399,17 @@
         clearTimeout(S.tTutup);
         S.tTutup = null;
         perbaruiIkon();
-        posisikan();
         if (o.mode === 'kompak') {
             // status menetap = IKON di header; pil menciut (animasi asli) lalu hilang
             if (S.mode === 'lebar') sembunyiPil();
             S.mode = 'kompak';
+            posisikan();
             return;
         }
+        clearTimeout(S.tNol);
+        wadah.classList.remove('pk-nol');      // harus tampil (punya ukuran) sebelum diukur
+        posisikan();
+        void pil.offsetWidth;                  // paksa reflow: keadaan awal (tersembunyi) tercatat dulu, baru animasi muncul jalan
         if (S.mode === 'tersembunyi' || S.mode === 'kompak') {
             // kemunculan baru -> aktifkan animasi muncul (harus dipasang SEBELUM data-mode berubah)
             pil.classList.add('pk-muncul');
@@ -344,6 +430,10 @@
         if (pil) { try { pil.style.width = Math.min(pil.offsetWidth, pil.offsetHeight || 30) + 'px'; } catch (e) { pil.style.width = ''; } }
         S.teks = '';
         S.ikon = '';
+        clearTimeout(S.tNol);
+        S.tNol = setTimeout(() => {
+            if (wadah && wadah.dataset.mode === 'tersembunyi') wadah.classList.add('pk-nol');
+        }, 380);
     }
     function sembunyi() {
         S.mode = 'tersembunyi';
