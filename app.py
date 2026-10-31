@@ -51,6 +51,8 @@ PROFIL_FOTO_QUALITY = 80
 KARYA_MAKS_PER_SISWA = 6
 KARYA_FOTO_MAX_DIM = 800
 KARYA_FOTO_QUALITY = 75
+KARYA_KOMENTAR_MAKS_PANJANG = 300
+KARYA_KOMENTAR_MAKS_PER_KARYA = 200
 TUGAS_FOTO_MAX_DIM = 2000
 TUGAS_FOTO_QUALITY = 85
  
@@ -5277,6 +5279,141 @@ def api_profil_sosmed_post():
     return jsonify(success=True, sosmed=sosmed_bersih)
 
 
+def _cari_karya(pemilik, karya_id):
+    """Cari karya milik siswa `pemilik` lewat id. Mengembalikan (user, karya) atau (None, None)."""
+    u = users.get(pemilik)
+    if not u or u.get('role') != 'siswa':
+        return None, None
+    for k in (u.get('karya') or []):
+        if k.get('id') == karya_id:
+            return u, k
+    return None, None
+
+
+def _karya_untuk_response(k, me):
+    """Bentuk karya yang aman dikirim ke browser: daftar username yang like TIDAK
+    ikut dikirim, hanya jumlahnya + apakah `me` sudah like."""
+    likes = k.get('likes') or []
+    return {
+        'id': k.get('id'),
+        'judul': k.get('judul') or 'Karya',
+        'gambar': k.get('gambar') or '',
+        'url': k.get('url') or '',
+        'jumlah_like': len(likes),
+        'sudah_like': me in likes,
+        'jumlah_komentar': len(k.get('komentar') or []),
+    }
+
+
+def _komentar_untuk_response(k, me, pemilik):
+    hasil = []
+    for c in (k.get('komentar') or []):
+        hasil.append({
+            'id': c.get('id'),
+            'username': c.get('username'),
+            'nama': c.get('nama') or c.get('username'),
+            'teks': c.get('teks') or '',
+            'waktu': c.get('waktu') or 0,
+            # penulis komentar & pemilik karya boleh menghapus
+            'boleh_hapus': (c.get('username') == me) or (me == pemilik),
+        })
+    return hasil
+
+
+def _boleh_interaksi_karya():
+    return 'user' in session and session['user'].get('role') in ('siswa', 'guru')
+
+
+@app.route('/api/karya/<pemilik>/<karya_id>', methods=['GET'])
+@batasi('umum')
+def api_karya_detail(pemilik, karya_id):
+    """Detail satu karya (untuk tampilan ala Instagram): like + daftar komentar."""
+    if not _boleh_interaksi_karya():
+        return jsonify(success=False, message='Belum login.'), 401
+    me = session['user']['username']
+    _u, k = _cari_karya(pemilik, karya_id)
+    if not k:
+        return jsonify(success=False, message='Karya tidak ditemukan.'), 404
+    return jsonify(success=True, karya=_karya_untuk_response(k, me),
+                   komentar=_komentar_untuk_response(k, me, pemilik))
+
+
+@app.route('/api/karya/<pemilik>/<karya_id>/like', methods=['POST'])
+@batasi('umum')
+def api_karya_like(pemilik, karya_id):
+    """Toggle like: kalau sudah like -> batal like, kalau belum -> like."""
+    if not _boleh_interaksi_karya():
+        return jsonify(success=False, message='Belum login.'), 401
+    me = session['user']['username']
+    _u, k = _cari_karya(pemilik, karya_id)
+    if not k:
+        return jsonify(success=False, message='Karya tidak ditemukan.'), 404
+    likes = list(k.get('likes') or [])
+    if me in likes:
+        likes.remove(me)
+    else:
+        likes.append(me)
+    k['likes'] = likes
+    _simpan_users_store()
+    return jsonify(success=True, jumlah_like=len(likes), sudah_like=(me in likes))
+
+
+@app.route('/api/karya/<pemilik>/<karya_id>/komentar', methods=['POST'])
+@batasi('umum')
+def api_karya_komentar_tambah(pemilik, karya_id):
+    if not _boleh_interaksi_karya():
+        return jsonify(success=False, message='Belum login.'), 401
+    me = session['user']['username']
+    _u, k = _cari_karya(pemilik, karya_id)
+    if not k:
+        return jsonify(success=False, message='Karya tidak ditemukan.'), 404
+
+    data = request.get_json(silent=True) or {}
+    teks = (data.get('teks') or '').strip()
+    if not teks:
+        return jsonify(success=False, message='Komentar kosong.'), 400
+    teks = teks[:KARYA_KOMENTAR_MAKS_PANJANG]
+
+    komentar = list(k.get('komentar') or [])
+    if len(komentar) >= KARYA_KOMENTAR_MAKS_PER_KARYA:
+        return jsonify(success=False, message='Kolom komentar karya ini sudah penuh.'), 400
+
+    komentar.append({
+        'id': uuid.uuid4().hex[:10],
+        'username': me,
+        'nama': session['user'].get('nama') or me,
+        'teks': teks,
+        'waktu': int(time.time()),
+    })
+    k['komentar'] = komentar
+    _simpan_users_store()
+    return jsonify(success=True, jumlah_komentar=len(komentar),
+                   komentar=_komentar_untuk_response(k, me, pemilik))
+
+
+@app.route('/api/karya/<pemilik>/<karya_id>/komentar/<komentar_id>', methods=['DELETE'])
+@batasi('umum')
+def api_karya_komentar_hapus(pemilik, karya_id, komentar_id):
+    if not _boleh_interaksi_karya():
+        return jsonify(success=False, message='Belum login.'), 401
+    me = session['user']['username']
+    _u, k = _cari_karya(pemilik, karya_id)
+    if not k:
+        return jsonify(success=False, message='Karya tidak ditemukan.'), 404
+
+    komentar = list(k.get('komentar') or [])
+    target = next((c for c in komentar if c.get('id') == komentar_id), None)
+    if not target:
+        return jsonify(success=False, message='Komentar tidak ditemukan.'), 404
+    if target.get('username') != me and me != pemilik:
+        return jsonify(success=False, message='Tidak boleh menghapus komentar ini.'), 403
+
+    k['komentar'] = [c for c in komentar if c.get('id') != komentar_id]
+    _simpan_users_store()
+    return jsonify(success=True, jumlah_komentar=len(k['komentar']),
+                   komentar=_komentar_untuk_response(k, me, pemilik))
+
+
 @app.route('/api/profil/karya', methods=['POST'])
 @batasi('upload')
 def api_profil_karya_tambah():
@@ -5317,11 +5454,13 @@ def api_profil_karya_tambah():
         'judul': judul or 'Karya',
         'gambar': gambar,
         'url': url,
+        'likes': [],
+        'komentar': [],
     }
     daftar.append(karya_baru)
     users[me]['karya'] = daftar
     _simpan_users_store()
-    return jsonify(success=True, karya=daftar)
+    return jsonify(success=True, karya=[_karya_untuk_response(k, me) for k in daftar])
 
 
 @app.route('/api/profil/karya/<karya_id>', methods=['DELETE'])
@@ -5343,7 +5482,7 @@ def api_profil_karya_hapus(karya_id):
 
     users[me]['karya'] = sisa
     _simpan_users_store()
-    return jsonify(success=True, karya=sisa)
+    return jsonify(success=True, karya=[_karya_untuk_response(k, me) for k in sisa])
 
 
 @app.route('/api/profil/foto', methods=['POST'])
@@ -5538,7 +5677,7 @@ def api_teman_profil(username):
         'sosmed': u.get('sosmed') or {},
         # Karya (portofolio) yang ditambahkan pemilik akun lewat tombol "+" di
         # ID Card -- dirender renderKaryaIdCard() di dashboard_siswa_2.js/.js.
-        'karya': u.get('karya') or []
+        'karya': [_karya_untuk_response(k, me) for k in (u.get('karya') or [])]
     })
  
  

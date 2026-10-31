@@ -2467,7 +2467,7 @@
             if (elBadgeDev) elBadgeDev.innerHTML = badgeDevProfil || '';
 
             renderSosmedIdCard(profil.sosmed || {});
-            renderKaryaIdCard(profil.karya || [], profil.status_pertemanan === 'diri_sendiri');
+            renderKaryaIdCard(profil.karya || [], profil.status_pertemanan === 'diri_sendiri', profil.username, profil.nama);
 
             document.getElementById('idcard-kelas').textContent = `Siswa • ${profil.kelas}`;
             document.getElementById('idcard-poin-pg').textContent = profil.quiz_pg_total_poin;
@@ -2640,18 +2640,20 @@
         const KARYA_MAKS_PER_SISWA = 6;
         let KARYA_ID_CARD_SAAT_INI = [];
         let KARYA_MILIK_SENDIRI = false;
+        let KARYA_PEMILIK = { username: '', nama: '' };
         function escKarya(t) {
             return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         }
         function urlKaryaAman(u) { return /^https?:\/\//i.test(String(u || '')) ? String(u) : ''; }
         function gambarKaryaAman(g) { return /^(data:image\/|https?:\/\/|\.\.\/static\/|\/static\/)/i.test(String(g || '')) ? String(g) : ''; }
 
-        function renderKaryaIdCard(karya, milikSendiri) {
+        function renderKaryaIdCard(karya, milikSendiri, pemilikUsername, pemilikNama) {
             const kontainer = document.getElementById('idcard-karya');
             const pesanKosong = document.getElementById('idcard-karya-kosong');
             if (!kontainer) return;
 
             KARYA_MILIK_SENDIRI = !!milikSendiri;
+            if (pemilikUsername) KARYA_PEMILIK = { username: pemilikUsername, nama: pemilikNama || pemilikUsername };
             const daftar = Array.isArray(karya) ? karya.filter(k => k && (k.gambar || k.judul)) : [];
             KARYA_ID_CARD_SAAT_INI = daftar;
 
@@ -2683,20 +2685,171 @@
             kontainer.innerHTML = kotak + tombolTambah;
         }
 
-        // Klik karya: ada link -> buka link di tab baru; tidak ada -> lightbox gambar
-        // (data URL tidak bisa dibuka langsung di tab baru oleh browser modern).
+        // ---- Tampilan karya ala Instagram: foto besar + suka, komentar, bagikan ----
+        function waktuRelatifKarya(detik) {
+            const selisih = Math.max(0, Math.floor(Date.now() / 1000) - (detik || 0));
+            if (selisih < 60) return 'baru saja';
+            if (selisih < 3600) return Math.floor(selisih / 60) + ' menit lalu';
+            if (selisih < 86400) return Math.floor(selisih / 3600) + ' jam lalu';
+            if (selisih < 2592000) return Math.floor(selisih / 86400) + ' hari lalu';
+            return new Date(detik * 1000).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
         function bukaKaryaIdCard(idx) {
             const k = KARYA_ID_CARD_SAAT_INI[idx];
-            if (!k) return;
-            const link = urlKaryaAman(k.url);
-            if (link) { window.open(link, '_blank', 'noopener,noreferrer'); return; }
+            if (!k || !k.id || document.getElementById('modal-post-karya')) return;
+            const pemilik = KARYA_PEMILIK.username;
+            const namaPemilik = KARYA_PEMILIK.nama;
             const gambar = gambarKaryaAman(k.gambar);
-            if (!gambar) return;
+            const link = urlKaryaAman(k.url);
+            const dasar = '/api/karya/' + encodeURIComponent(pemilik) + '/' + encodeURIComponent(k.id);
+            let komentar = [];
+
+            // Layout dihitung lewat inline style (kelas Tailwind arbitrary tidak tentu ada di CSS yang dikompilasi):
+            // layar lebar = foto kiri + panel kanan 340px; HP = foto atas, panel bawah.
+            const lebar = window.innerWidth >= 768;
             const ov = document.createElement('div');
-            ov.style.cssText = 'position:fixed;inset:0;z-index:20000;background:rgba(2,6,23,.88);display:flex;align-items:center;justify-content:center;padding:16px;flex-direction:column;gap:10px';
-            ov.innerHTML = `<img src="${escKarya(gambar)}" alt="${escKarya(k.judul || 'Karya')}" style="max-width:100%;max-height:80vh;border-radius:12px;object-fit:contain"><p style="color:#fff;font:600 13px system-ui,sans-serif;margin:0">${escKarya(k.judul || 'Karya')}</p>`;
-            ov.addEventListener('click', () => ov.remove());
+            ov.id = 'modal-post-karya';
+            ov.style.cssText = 'position:fixed;inset:0;z-index:20000;background:rgba(2,6,23,.85);display:flex;align-items:center;justify-content:center;padding:12px';
+            ov.innerHTML = `
+                <div class="bg-white rounded-2xl overflow-hidden shadow-2xl w-full flex" style="max-width:920px;max-height:92vh;flex-direction:${lebar ? 'row' : 'column'}" onclick="event.stopPropagation()">
+                    <div class="relative bg-black flex items-center justify-center" style="min-height:220px;max-height:${lebar ? '92vh' : '42vh'};${lebar ? 'flex:1 1 0;min-width:0' : ''}">
+                        <img id="post-gambar" src="${escKarya(gambar)}" alt="${escKarya(k.judul || 'Karya')}" class="w-full h-full object-contain select-none" style="max-height:${lebar ? '92vh' : '42vh'}" draggable="false">
+                        <i id="post-hati-pop" class="fa-solid fa-heart absolute text-white pointer-events-none" style="font-size:72px;opacity:0;transition:opacity .15s, transform .25s;transform:scale(.4);filter:drop-shadow(0 4px 12px rgba(0,0,0,.4))"></i>
+                    </div>
+                    <div class="flex flex-col min-h-0" style="max-height:92vh;${lebar ? 'width:340px;flex:none' : 'width:100%'}">
+                        <div class="flex items-center gap-2 px-3 py-2.5 border-b border-slate-100">
+                            <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 text-xs font-extrabold flex items-center justify-center flex-none">${escKarya((namaPemilik || '?').trim().charAt(0).toUpperCase())}</div>
+                            <p class="text-xs font-bold text-slate-800 truncate flex-1">${escKarya(namaPemilik)}</p>
+                            <button type="button" id="post-tutup" aria-label="Tutup" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 text-xs"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div id="post-daftar" class="flex-1 overflow-y-auto px-3 py-2.5 space-y-2.5" style="min-height:120px">
+                            <div class="text-xs text-slate-800 leading-snug"><b>${escKarya(namaPemilik)}</b> ${escKarya(k.judul || 'Karya')}${link ? `<br><a href="${escKarya(link)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-semibold break-all"><i class="fa-solid fa-link text-[10px]"></i> ${escKarya(link)}</a>` : ''}</div>
+                            <div id="post-komentar" class="space-y-2.5"></div>
+                        </div>
+                        <div class="border-t border-slate-100 px-3 pt-2 pb-1">
+                            <div class="flex items-center gap-4 text-xl text-slate-700">
+                                <button type="button" id="post-like" aria-label="Suka" class="transition-transform active:scale-90"><i class="fa-regular fa-heart"></i></button>
+                                <button type="button" id="post-fokus" aria-label="Komentar"><i class="fa-regular fa-comment"></i></button>
+                                <button type="button" id="post-bagikan" aria-label="Bagikan"><i class="fa-regular fa-paper-plane"></i></button>
+                            </div>
+                            <p id="post-jumlah" class="text-xs font-bold text-slate-800 mt-1.5 mb-1"></p>
+                        </div>
+                        <div class="flex items-center gap-2 border-t border-slate-100 px-3 py-2">
+                            <input id="post-input" type="text" maxlength="300" placeholder="Tambahkan komentar..." class="flex-1 text-xs outline-none bg-transparent">
+                            <button type="button" id="post-kirim" class="text-xs font-bold text-blue-600 disabled:opacity-40">Kirim</button>
+                        </div>
+                    </div>
+                </div>`;
             document.body.appendChild(ov);
+
+            const $ = sel => ov.querySelector(sel);
+            const tutup = () => { ov.remove(); document.removeEventListener('keydown', tekanEsc); };
+            const tekanEsc = e => { if (e.key === 'Escape') tutup(); };
+            document.addEventListener('keydown', tekanEsc);
+            ov.addEventListener('click', tutup);
+            $('#post-tutup').addEventListener('click', tutup);
+
+            function gambarLike() {
+                const ikon = $('#post-like i');
+                ikon.className = (k.sudah_like ? 'fa-solid' : 'fa-regular') + ' fa-heart';
+                ikon.style.color = k.sudah_like ? '#ef4444' : '';
+                $('#post-jumlah').textContent = k.jumlah_like > 0 ? k.jumlah_like + ' suka' : 'Jadilah yang pertama menyukai ini';
+            }
+            function gambarKomentar() {
+                const wadah = $('#post-komentar');
+                if (!komentar.length) { wadah.innerHTML = '<p class="text-[11px] text-slate-400 italic">Belum ada komentar.</p>'; return; }
+                wadah.innerHTML = komentar.map(c => `
+                    <div class="text-xs text-slate-800 leading-snug">
+                        <b>${escKarya(c.nama)}</b> ${escKarya(c.teks)}
+                        <div class="text-[10px] text-slate-400 mt-0.5">${escKarya(waktuRelatifKarya(c.waktu))}${c.boleh_hapus ? ` &middot; <button type="button" data-hapus="${escKarya(c.id)}" class="font-semibold hover:text-rose-600">Hapus</button>` : ''}</div>
+                    </div>`).join('');
+            }
+
+            async function toggleLike() {
+                try {
+                    const res = await fetch(dasar + '/like', { method: 'POST' });
+                    const json = await res.json().catch(() => null);
+                    if (!res.ok || !json || !json.success) throw new Error((json && json.message) || 'Gagal');
+                    k.sudah_like = json.sudah_like;
+                    k.jumlah_like = json.jumlah_like;
+                    gambarLike();
+                } catch (err) { triggerDynamicIsland(err.message || 'Gagal menyukai, coba lagi ya.'); }
+            }
+            $('#post-like').addEventListener('click', toggleLike);
+            // Klik dua kali pada foto = suka (seperti Instagram), tidak membatalkan like yang sudah ada.
+            $('#post-gambar').addEventListener('dblclick', async () => {
+                const hati = $('#post-hati-pop');
+                hati.style.opacity = '.95'; hati.style.transform = 'scale(1)';
+                setTimeout(() => { hati.style.opacity = '0'; hati.style.transform = 'scale(.4)'; }, 600);
+                if (!k.sudah_like) await toggleLike();
+            });
+
+            $('#post-fokus').addEventListener('click', () => $('#post-input').focus());
+
+            $('#post-bagikan').addEventListener('click', async () => {
+                const teks = `Lihat karya "${k.judul || 'Karya'}" dari ${namaPemilik}`;
+                const tautan = link || location.origin;
+                try {
+                    if (navigator.share) { await navigator.share({ title: k.judul || 'Karya', text: teks, url: tautan }); return; }
+                    await navigator.clipboard.writeText(teks + ' - ' + tautan);
+                    triggerDynamicIsland('Tautan karya disalin!');
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return;   // pengguna menutup menu bagikan
+                    triggerDynamicIsland('Tidak bisa membagikan di perangkat ini.');
+                }
+            });
+
+            async function kirimKomentar() {
+                const input = $('#post-input');
+                const teks = input.value.trim();
+                if (!teks) return;
+                const tombol = $('#post-kirim');
+                tombol.disabled = true;
+                try {
+                    const res = await fetch(dasar + '/komentar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ teks })
+                    });
+                    const json = await res.json().catch(() => null);
+                    if (!res.ok || !json || !json.success) throw new Error((json && json.message) || 'Gagal');
+                    komentar = json.komentar || [];
+                    k.jumlah_komentar = json.jumlah_komentar;
+                    input.value = '';
+                    gambarKomentar();
+                    const daftar = $('#post-daftar');
+                    daftar.scrollTop = daftar.scrollHeight;
+                } catch (err) { triggerDynamicIsland(err.message || 'Gagal mengirim komentar.'); }
+                finally { tombol.disabled = false; }
+            }
+            $('#post-kirim').addEventListener('click', kirimKomentar);
+            $('#post-input').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); kirimKomentar(); } });
+
+            $('#post-komentar').addEventListener('click', async e => {
+                const id = e.target && e.target.getAttribute && e.target.getAttribute('data-hapus');
+                if (!id) return;
+                try {
+                    const res = await fetch(dasar + '/komentar/' + encodeURIComponent(id), { method: 'DELETE' });
+                    const json = await res.json().catch(() => null);
+                    if (!res.ok || !json || !json.success) throw new Error((json && json.message) || 'Gagal');
+                    komentar = json.komentar || [];
+                    k.jumlah_komentar = json.jumlah_komentar;
+                    gambarKomentar();
+                } catch (err) { triggerDynamicIsland(err.message || 'Gagal menghapus komentar.'); }
+            });
+
+            gambarLike();
+            gambarKomentar();
+            // Daftar komentar lengkap diambil saat karya dibuka (tidak ikut di data profil supaya ringan).
+            fetch(dasar).then(r => r.json()).then(json => {
+                if (!json || !json.success) return;
+                komentar = json.komentar || [];
+                k.sudah_like = json.karya.sudah_like;
+                k.jumlah_like = json.karya.jumlah_like;
+                gambarLike();
+                gambarKomentar();
+            }).catch(() => { /* data awal dari profil tetap dipakai */ });
         }
 
         // Kompres gambar di browser dulu (sisi terpanjang maks 800px, JPEG) supaya
