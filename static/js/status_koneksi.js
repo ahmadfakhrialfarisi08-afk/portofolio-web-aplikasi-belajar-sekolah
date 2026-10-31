@@ -133,9 +133,11 @@
         '@keyframes pk-teks-masuk{from{opacity:0}to{opacity:1}}',
         '#pulau-koneksi.pk-nol{display:none}',
         '#pulau-koneksi.pk-inline{position:relative;top:auto;left:auto;right:auto;bottom:auto;height:auto;width:auto;flex:0 0 auto;',
-        'min-width:0;margin:0 10px;z-index:auto;align-self:center}',
+        'min-width:0;margin:0 6px;z-index:auto;align-self:center}',
         '#pulau-koneksi.pk-inline .pk-pill{max-width:none;min-width:0;padding:0 11px;gap:7px;font-size:12px}',
         '#pulau-koneksi.pk-inline[data-mode="lebar"] .pk-pill{height:34px;padding:0 12px;font-size:12px}',
+        '@media (max-width:639px){#header-utama.pk-aktif{padding-left:8px!important;padding-right:8px!important}#header-utama.pk-aktif #header-clock-container{padding-left:8px!important;padding-right:8px!important}}',
+        '#header-clock-container #header-realtime-clock,#header-clock-container #header-realtime-date{white-space:nowrap}',
         '#pulau-koneksi.pk-inline .pk-teks{min-width:0;overflow:visible}',
         '#pk-ikon-hdr{flex:none;display:inline-flex;align-items:center;justify-content:center;position:relative;box-sizing:border-box;',
         'width:38px;height:38px;border-radius:12px;padding:0;margin:0 4px;cursor:pointer;color:#d97706;',
@@ -202,7 +204,7 @@
     // Perkiraan lebar pil untuk sebuah teks (dipakai memilih versi singkat sebelum diukur).
     function taksirLebar(teks) {
         const inline = !!(wadah && wadah.classList.contains('pk-inline'));
-        return (inline ? 6.8 : (wadah && wadah.dataset.mode === 'lebar' ? 6.7 : 6.2)) * teks.length + (inline ? 54 : 58);
+        return (inline ? 6.4 : (wadah && wadah.dataset.mode === 'lebar' ? 6.7 : 6.2)) * teks.length + (inline ? 42 : 58);
     }
     function pendekkan(t) {
         return t
@@ -230,7 +232,7 @@
         });
         const pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
         const gap = (parseFloat(cs.columnGap) || 0) * n;
-        return row.clientWidth - pad - pakai - gap - 16;
+        return row.clientWidth - pad - pakai - gap - 4;
     }
     function sangatPendek(t) {
         return t
@@ -437,6 +439,7 @@
     }
     function rapatkanPojok(aktif) {
         try {
+            try { const h = document.querySelector(HEADER_SELECTOR); if (h) h.classList.toggle('pk-aktif', !!aktif); } catch (x) { /* abaikan */ }
             if (aktif) {
                 if (pojokEl && pojokEl.isConnected) return;
                 const el = elPojok();
@@ -494,7 +497,7 @@
                 const daftar = tingkatTeks(o.teks);
                 // Selalu usahakan INLINE (di antara jam & ikon; ikon-ikon bergeser ke kanan). Teks otomatis
                 // dipendekkan / dipotong "…" sesuai ruang. Fixed hanya kalau ruang benar-benar tidak terukur.
-                S.paksaFixed = lebar === null || lebar < 40;
+                S.paksaFixed = lebar === null || lebar < 6.4 * daftar[daftar.length - 1].length + 42 - 40;
             }
         } catch (e) { S.paksaFixed = false; }
         clearTimeout(S.tNol);
