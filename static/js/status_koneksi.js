@@ -178,8 +178,9 @@
     const JARAK_DARI_ITEM = 12;
     const RUANG_MIN = 96;                  // ruang minimal agar pil kompak "Offline" muat
     // MODE TENGAH (header siswa: #header-utama + #header-right-group): jam di kiri, ikon kontrol di kanan,
-    // pil koneksi TERPUSAT tepat di tengah header (bukan tengah sisa ruang) dan TIDAK ikut menjadi anak
-    // flex di baris header, jadi jam & grup ikon kanan tidak pernah bergeser saat pil muncul/menciut.
+    // pil koneksi TERPUSAT di titik tengah ruang kosong antara ujung kanan jam dan ujung kiri control group
+    // (sama dengan Dynamic Island), dan TIDAK ikut menjadi anak di header, jadi jam & grup ikon kanan
+    // tidak pernah bergeser saat pil muncul/menciut. Ikon WiFi dimasukkan ke #slot-wifi (lebar tetap).
     // Header lain (mis. guru) tetap memakai perilaku lama.
     function modeTengah() {
         const h = document.querySelector(HEADER_SELECTOR);
@@ -192,11 +193,11 @@
         const hr = header.getBoundingClientRect();
         if (hr.height <= 0 || hr.bottom > window.innerHeight * 0.5) return null;
         const kr = kiriEl.getBoundingClientRect(), nr = kananEl.getBoundingClientRect();
-        const cx = hr.left + hr.width / 2;
-        // setengah lebar yang tersedia, simetris terhadap pusat header
-        const setengah = Math.min(cx - kr.right, nr.left - cx) - JARAK_DARI_ITEM;
-        if (setengah * 2 < RUANG_MIN) return null;
-        return { kiri: cx - setengah, lebar: setengah * 2, atas: hr.top, tinggi: hr.height };
+        // ruang kosong = antara ujung kanan jam dan ujung kiri control group; pil di-center di ruang ini,
+        // jadi pusatnya = (jam.right + kontrol.left) / 2
+        const kiri = kr.right + JARAK_DARI_ITEM, kanan = nr.left - JARAK_DARI_ITEM;
+        if (kanan - kiri < RUANG_MIN) return null;
+        return { kiri: kiri, lebar: kanan - kiri, atas: hr.top, tinggi: hr.height };
     }
     function hitungRuang() {
         // -> {kiri, lebar} dalam px layar, atau null kalau tidak ada ruang di header
@@ -348,6 +349,17 @@
                 sr.right < window.innerWidth * 0.5) ? Math.round(sr.right) : 0;
             wadah.style.left = kiri + 'px';
             wadah.style.right = '0px';
+            // Header siswa: pil di bawah header tetap terpusat di titik tengah ruang kosong antara jam dan
+            // control group (sama dengan Dynamic Island), bukan di tengah header.
+            if (header && hr && hr.height > 0 && modeTengah()) {
+                const kEl = header.querySelector('#header-left-group'), nEl = header.querySelector('#header-right-group');
+                if (kEl && nEl) {
+                    const mid = (kEl.getBoundingClientRect().right + nEl.getBoundingClientRect().left) / 2;
+                    const setengah = Math.max(40, Math.min(mid - Math.max(hr.left, 0), Math.min(hr.right, window.innerWidth) - mid) - 8);
+                    wadah.style.left = Math.round(mid - setengah) + 'px';
+                    wadah.style.right = Math.round(window.innerWidth - (mid + setengah)) + 'px';
+                }
+            }
         } catch (e) { /* abaikan */ }
     }
     function posisikanPil() {
@@ -642,8 +654,12 @@
         }
         const bell = cariBell();
         const item = bell ? itemBaris(bell) : null;
+        const slotWifi = document.getElementById('slot-wifi');
         if (bell && item && item.parentNode) {
-            if (ikonHdr.parentNode !== item.parentNode || ikonHdr.nextSibling !== item) {
+            if (slotWifi) {
+                // header siswa: ikon WiFi masuk ke slot tetap (lebar slot sama walau ikon tersembunyi)
+                if (ikonHdr.parentNode !== slotWifi) { ikonHdr.classList.remove('pk-fix'); slotWifi.appendChild(ikonHdr); }
+            } else if (ikonHdr.parentNode !== item.parentNode || ikonHdr.nextSibling !== item) {
                 ikonHdr.classList.remove('pk-fix');
                 item.parentNode.insertBefore(ikonHdr, item);
             }

@@ -627,27 +627,24 @@
         }
     </style>
     <style id="css-header-layout">
-        /* LAYOUT HEADER (semua ukuran layar): tiga area.
-           KIRI  = jam + tanggal (#header-left-group)
-           TENGAH = Dynamic Island, terpusat ABSOLUT di tengah header -> tidak ikut ruang sisa jam/ikon
-           KANAN = control group (WiFi -> lonceng -> tema -> menu), rata kanan (flex-end), menempel ke pojok kanan.
-           Karena grup kanan menempel ke tepi kanan, ikon WiFi yang muncul/hilang hanya memanjangkan grup ke KIRI;
-           lonceng, matahari, dan titik tiga tidak pernah bergeser. */
-        #header-utama #header-left-group { flex: 0 0 auto; }
-        #header-utama #header-right-group { flex: 0 0 auto; margin-left: auto; justify-content: flex-end; }
-        /* Ikon WiFi (disisipkan status_koneksi.js): jarak antar ikon hanya dari gap grup, tanpa margin tambahan */
-        #header-utama #header-right-group > #pk-ikon-hdr { margin: 0 !important; }
-        /* Dynamic Island: pusat = tengah header. Pakai properti `translate` (terpisah dari `transform`) supaya
-           animasi expand/collapse yang memakai transform tidak bentrok. Lebar dibatasi ruang simetris di antara
-           jam dan control group (--pulau-maks, dihitung skrip di bawah header); teks dipotong "…" bila sempit. */
-        #header-utama > #dynamic-notification-island {
-            position: absolute !important; left: 50% !important; top: 50% !important; right: auto !important; bottom: auto !important;
-            translate: -50% -50%; margin: 0 !important;
-            max-width: var(--pulau-maks, 100%); box-sizing: border-box; z-index: 1;
-        }
-        /* Header padat (dipasang skrip di bawah header kalau jam + control group + slot WiFi tidak muat, mis. tablet):
+        /* LAYOUT HEADER (semua ukuran layar): CSS Grid tiga kolom  auto | minmax(0,1fr) | auto
+           KIRI   (kolom 1) = jam + tanggal (#header-left-group)
+           TENGAH (kolom 2) = ruang kosong antara ujung kanan jam dan ujung kiri control group -> Dynamic Island
+                              di-center di kolom ini, jadi pusatnya = (jam.right + kontrol.left) / 2
+           KANAN  (kolom 3) = control group: slot WiFi -> lonceng -> tema -> menu, rata kanan.
+           Slot WiFi (#slot-wifi) lebarnya TETAP walau ikon WiFi tidak tampil, jadi batas kiri control group
+           tidak pernah berubah saat online/offline -> ikon lain & pusat island tidak bergeser. */
+        #header-utama { display: grid !important; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 0.5rem; }
+        #header-utama > #header-left-group { grid-column: 1; grid-row: 1; justify-self: start; }
+        #header-utama > #judul-halaman-mobile { grid-column: 2; grid-row: 1; justify-self: center; min-width: 0; }
+        #header-utama > #dynamic-notification-island { grid-column: 2; grid-row: 1; justify-self: center; min-width: 0; max-width: 100%; box-sizing: border-box; }
+        #header-utama > #header-right-group { grid-column: 3; grid-row: 1; justify-self: end; justify-content: flex-end; }
+        /* Slot WiFi: lebar = lebar tombol lonceng (diset skrip di bawah header; nilai awal ini cadangan) */
+        #header-utama #slot-wifi { display: inline-flex; flex: none; align-items: center; justify-content: center; width: var(--slot-wifi, 2.25rem); }
+        #header-utama #slot-wifi > #pk-ikon-hdr { margin: 0 !important; }
+        /* Header padat (dipasang skrip di bawah header kalau jam + control group tidak muat, mis. tablet sempit):
            padding samping & jarak antar ikon dirapatkan. Ukuran ikon tidak berubah, dan keputusan ini TIDAK
-           bergantung pada status WiFi, jadi posisi ikon sama saat online maupun offline. */
+           bergantung pada status WiFi (slot WiFi selalu ikut dihitung). */
         #header-utama[data-header-padat] { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
         #header-utama[data-header-padat] #header-right-group { gap: 0.375rem !important; }
         @media (max-width: 639px) {
@@ -663,15 +660,16 @@
             /* ...dan blok nama/kelas di menu profil dibatasi lebarnya (nama dipotong "…") */
             #header-utama[data-header-padat] #profile-menu-trigger > div:last-child { max-width: 110px !important; }
         }
-        /* Layar sempit (ruang simetris < 96px): island turun, terpusat tepat di bawah header, tidak menimpa jam/ikon */
+        /* Kolom tengah terlalu sempit (< 96px, HP): island keluar dari grid dan turun tepat di bawah header,
+           tetap di titik tengah ruang kosong (--pulau-cx), supaya tidak menimpa jam/ikon. */
         #header-utama[data-pulau-turun] > #dynamic-notification-island {
-            top: calc(100% + 8px) !important; translate: -50% 0; max-width: calc(100% - 24px);
+            grid-column: auto; grid-row: auto; position: absolute; top: calc(100% + 8px); left: var(--pulau-cx, 50%); translate: -50% 0; max-width: calc(100% - 24px);
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden">
     <!-- Island status koneksi (online/offline/antrian) -- dimuat paling awal -->
-    <script src="../static/js/status_koneksi.js?v=20261031c"></script>
+    <script src="../static/js/status_koneksi.js?v=20261031d"></script>
     <!-- Layar transisi masuk dashboard: gelap -> terang, mirip halaman login -->
     <div id="layar-masuk-dashboard" aria-hidden="true">
         <div class="masuk-dashboard-lencana"><i class="fa-solid fa-graduation-cap"></i></div>
@@ -1081,6 +1079,8 @@
             </div>
 
             <div class="flex items-center gap-0.5 sm:gap-3" id="header-right-group">
+                <!-- Slot WiFi: lebar tetap; ikon WiFi offline (status_koneksi.js) dimasukkan ke sini -->
+                <span id="slot-wifi"></span>
                 <div class="relative">
                     <button id="btn-bell" onclick="toggleBellDropdown(event)" class="p-1.5 sm:p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 relative transition-colors text-xs sm:text-base" aria-label="Notifikasi" aria-haspopup="true" aria-expanded="false">
                         <i class="fa-regular fa-bell" aria-hidden="true"></i>
@@ -1242,42 +1242,37 @@
             </div>
         </header>
 
-        <!-- Hitung ruang SIMETRIS di tengah header (antara jam di kiri & control group di kanan) untuk
-             Dynamic Island: --pulau-maks = lebar maksimum island yang tetap terpusat tanpa menimpa jam/ikon.
-             Kalau ruangnya < 96px (HP sempit), header diberi atribut data-pulau-turun -> island turun ke bawah
-             header (lihat #css-header-layout). Dihitung ulang saat resize, ikon WiFi muncul/hilang, dll. -->
+        <!-- Skrip pendukung layout header (CSS Grid pada #css-header-layout yang menempatkan Dynamic Island):
+             - lebar slot WiFi = lebar tombol lonceng (tetap, walau ikon WiFi tidak tampil)
+             - --pulau-cx = titik tengah ruang kosong antara jam dan control group (dipakai hanya saat island turun)
+             - data-pulau-turun bila kolom tengah < 96px (HP) -> island turun ke bawah header
+             - data-header-padat bila jam + control group tidak muat -> padding/jarak dirapatkan.
+             Dihitung ulang saat resize, ukuran berubah, ikon WiFi muncul/hilang. -->
         <script>
         (function () {
             var header = document.getElementById('header-utama');
             var kiri = document.getElementById('header-left-group');
             var kanan = document.getElementById('header-right-group');
+            var slot = document.getElementById('slot-wifi');
+            var bell = document.getElementById('btn-bell');
             if (!header || !kiri || !kanan) return;
-            var JARAK = 12, RUANG_MIN = 96, JARAK_MIN = 8, antre = 0;
-            // Header terlalu sempit untuk jam + control group? Slot ikon WiFi SELALU dianggap ada (walau sedang
-            // tersembunyi), supaya keputusan "padat" sama saat online maupun offline -> posisi ikon tidak berubah
-            // ketika WiFi muncul/hilang. Mode padat (data-header-padat) hanya merapatkan padding & jarak (lihat CSS).
+            var RUANG_MIN = 96, JARAK_MIN = 8, antre = 0;
             function sempit() {
-                var wifi = kanan.querySelector('#pk-ikon-hdr');
-                var slot = 0;
-                if (!wifi || wifi.hidden || !wifi.offsetWidth) {
-                    var bell = document.getElementById('btn-bell');
-                    slot = (bell ? bell.offsetWidth : 38) + (parseFloat(getComputedStyle(kanan).columnGap) || 0);
-                }
-                return kanan.getBoundingClientRect().left - slot < kiri.getBoundingClientRect().right + JARAK_MIN ||
-                    header.scrollWidth > header.clientWidth + 1;
+                var nr = kanan.getBoundingClientRect();
+                return nr.left < kiri.getBoundingClientRect().right + JARAK_MIN || nr.right > header.getBoundingClientRect().right + 1;
             }
             function hitung() {
                 antre = 0;
                 try {
                     var hr = header.getBoundingClientRect();
                     if (hr.width <= 0) return;
+                    if (slot && bell && bell.offsetWidth > 0) slot.style.setProperty('--slot-wifi', bell.offsetWidth + 'px');
                     header.removeAttribute('data-header-padat');          // ukur dulu dalam keadaan normal
                     if (sempit()) header.setAttribute('data-header-padat', '');
-                    var cx = hr.left + hr.width / 2;
-                    var setengah = Math.min(cx - kiri.getBoundingClientRect().right, kanan.getBoundingClientRect().left - cx) - JARAK;
-                    var lebar = Math.max(0, Math.floor(setengah * 2));
-                    header.style.setProperty('--pulau-maks', lebar + 'px');
-                    if (lebar < RUANG_MIN) header.setAttribute('data-pulau-turun', '');
+                    var kr = kiri.getBoundingClientRect(), nr = kanan.getBoundingClientRect();
+                    var ruang = nr.left - kr.right;                         // lebar ruang kosong antara jam & control group
+                    header.style.setProperty('--pulau-cx', Math.round((kr.right + nr.left) / 2 - hr.left) + 'px');
+                    if (ruang - 16 < RUANG_MIN) header.setAttribute('data-pulau-turun', '');
                     else header.removeAttribute('data-pulau-turun');
                 } catch (e) { /* abaikan */ }
             }
@@ -1287,7 +1282,7 @@
             if (document.fonts && document.fonts.ready) document.fonts.ready.then(jadwalkan);
             if (window.ResizeObserver) {
                 var ro = new ResizeObserver(jadwalkan);
-                ro.observe(header); ro.observe(kiri); ro.observe(kanan);
+                ro.observe(header); ro.observe(kiri); ro.observe(kanan); if (bell) ro.observe(bell);
             }
             if (window.MutationObserver) {
                 new MutationObserver(jadwalkan).observe(kanan, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class', 'style'] });
