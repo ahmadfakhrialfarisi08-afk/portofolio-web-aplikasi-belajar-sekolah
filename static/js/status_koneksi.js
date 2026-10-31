@@ -27,7 +27,7 @@
    antrian_sync_guru.js (guru) lewat setAntrian(); keduanya otomatis
    kembali ke pil oranye lama kalau file ini tidak dimuat.
    Muat file ini PALING AWAL di HTML (sebelum script lain).
- 
+
    PEMULIH HALAMAN: file CSS/JS/gambar yang gagal dimuat (internet putus
    di tengah loading) dicatat. Begitu koneksi terbukti pulih, gambar &
    CSS dimuat ulang di tempat; kalau ada JS yang gagal, halaman di-reload
@@ -49,7 +49,7 @@
     const TAMPILKAN_ANTRIAN_SAAT_ONLINE = true;
     // Pengecekan koneksi NYATA (bukan hanya navigator.onLine / event browser).
     const URL_PING = '/ping';              // route ringan di server sendiri (404 pun dianggap "server terjangkau")
-    const TIMEOUT_PING_MS = 2500;
+    const TIMEOUT_PING_MS = 8000;         // sinyal lambat (3G) bisa butuh 3-6 dtk; 2,5 dtk terlalu ketat -> salah dibaca offline
     const INTERVAL_OFFLINE_MS = 6000;      // saat offline: cek tiap 4 dtk supaya cepat sadar kalau internet kembali
     const INTERVAL_ONLINE_MS = 45000;      // saat online: cek tiap 10 dtk supaya sadar kalau internet putus
     const JEDA_MIN_PROBE_MS = 8000;
@@ -377,7 +377,14 @@
                 clearTimeout(tm);
                 S.probe = null;
                 S.gagal = ok ? 0 : S.gagal + 1;
-                setOnline(ok);
+                // Satu kali gagal (timeout / sinyal lambat) BELUM berarti offline: cek ulang dulu.
+                // Offline baru ditetapkan setelah GAGAL_BERUNTUN_OFFLINE kali gagal beruntun,
+                // atau langsung kalau browser sendiri bilang offline.
+                if (ok || !S.online || S.gagal >= GAGAL_BERUNTUN_OFFLINE || navigator.onLine === false) {
+                    setOnline(ok);
+                } else {
+                    setTimeout(() => periksaKoneksi(true), 1500);
+                }
                 jadwalkan();
                 if (ok) pulihkanAset();
                 return ok;
@@ -502,7 +509,7 @@
             setTimeout(() => location.reload(), 700);
         }
     }
- 
+
     /* ---------------- deteksi koneksi ---------------- */
     function sameOrigin(input) {
         try {
