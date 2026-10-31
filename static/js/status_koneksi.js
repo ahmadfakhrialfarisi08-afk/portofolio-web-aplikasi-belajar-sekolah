@@ -132,11 +132,11 @@
         '@keyframes pk-putar{to{transform:rotate(360deg)}}',
         '@keyframes pk-teks-masuk{from{opacity:0}to{opacity:1}}',
         '#pulau-koneksi.pk-nol{display:none}',
-        '#pulau-koneksi.pk-inline{position:relative;top:auto;left:auto;right:auto;bottom:auto;height:auto;width:auto;flex:0 1 auto;',
-        'min-width:0;margin:0 8px;z-index:auto;align-self:center}',
-        '#pulau-koneksi.pk-inline .pk-pill{max-width:100%;min-width:0;padding:0 11px;gap:7px;font-size:12px}',
+        '#pulau-koneksi.pk-inline{position:relative;top:auto;left:auto;right:auto;bottom:auto;height:auto;width:auto;flex:0 0 auto;',
+        'min-width:0;margin:0 10px;z-index:auto;align-self:center}',
+        '#pulau-koneksi.pk-inline .pk-pill{max-width:none;min-width:0;padding:0 11px;gap:7px;font-size:12px}',
         '#pulau-koneksi.pk-inline[data-mode="lebar"] .pk-pill{height:34px;padding:0 12px;font-size:12px}',
-        '#pulau-koneksi.pk-inline .pk-teks{min-width:0;overflow:hidden;text-overflow:ellipsis}',
+        '#pulau-koneksi.pk-inline .pk-teks{min-width:0;overflow:visible}',
         '#pk-ikon-hdr{flex:none;display:inline-flex;align-items:center;justify-content:center;position:relative;box-sizing:border-box;',
         'width:38px;height:38px;border-radius:12px;padding:0;margin:0 4px;cursor:pointer;color:#d97706;',
         'background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.45);transition:transform .15s ease}',
@@ -168,6 +168,7 @@
     // Penempatan: SEJAJAR header, di samping JAM, tepat di tengah ruang kosong antara jam dan item terdekat
     // (lonceng/tombol di sebelah kanan jam; kalau kanan sempit -> di kiri jam). Kalau tidak ada ruang cukup
     // (mis. HP), jatuh ke tengah area konten tepat di bawah header.
+    try { window.__pkVersi = 'inline-pojok-2026-10-31b'; console.info('[status_koneksi] versi ' + window.__pkVersi); } catch (e) {}
     const HEADER_SELECTOR = '#header-utama-guru, #header-utama, header.sticky';
     const JAM_SELECTOR = '#header-clock-container, .guru-header-center';
     const SIDEBAR_SELECTOR = '#sidebar-utama';
@@ -201,7 +202,7 @@
     // Perkiraan lebar pil untuk sebuah teks (dipakai memilih versi singkat sebelum diukur).
     function taksirLebar(teks) {
         const inline = !!(wadah && wadah.classList.contains('pk-inline'));
-        return (wadah && wadah.dataset.mode === 'lebar' && !inline ? 6.7 : 6.2) * teks.length + (inline ? 44 : 58);
+        return (inline ? 6.8 : (wadah && wadah.dataset.mode === 'lebar' ? 6.7 : 6.2)) * teks.length + (inline ? 54 : 58);
     }
     function pendekkan(t) {
         return t
@@ -417,6 +418,60 @@
     function dapatTap() {
         return total() > 0;
     }
+    // Saat pil inline melebar, item PALING POJOK kanan di header (mis. tombol titik tiga) dirapatkan
+    // sementara (padding menciut) + jarak antar-ikon sedikit dirapatkan, supaya pil dapat ruang tanpa
+    // menjejalkan ikon. Begitu pil menciut/hilang, semuanya halus kembali ke ukuran normal.
+    let pojokEl = null, pojokBarisEl = null;
+    function elPojok() {
+        const header = document.querySelector(HEADER_SELECTOR);
+        if (!header) return null;
+        let terbaik = null, kananMax = -1;
+        header.querySelectorAll('button,a,[role="button"]').forEach(el => {
+            if (el.closest('#pulau-koneksi') || el.closest('#pk-popover')) return;
+            if (el.closest('[id*="dropdown"]') || el.closest('[id^="panel-"]')) return;
+            const r = el.getBoundingClientRect();
+            if (r.width <= 0 || r.height <= 0 || r.height > 70) return;
+            if (r.right > kananMax) { kananMax = r.right; terbaik = el; }
+        });
+        return terbaik;
+    }
+    function rapatkanPojok(aktif) {
+        try {
+            if (aktif) {
+                if (pojokEl && pojokEl.isConnected) return;
+                const el = elPojok();
+                if (!el) return;
+                pojokEl = el;
+                el.__pkAsli = { pl: el.style.paddingLeft, pr: el.style.paddingRight, tr: el.style.transition };
+                el.style.transition = 'padding .25s ease';
+                el.style.paddingLeft = '3px';
+                el.style.paddingRight = '3px';
+                const baris = el.parentElement && el.parentElement.parentElement;      // grup tombol kanan (flex)
+                if (baris && /flex/.test(getComputedStyle(baris).display)) {
+                    pojokBarisEl = baris;
+                    baris.__pkAsli = { cg: baris.style.columnGap, tr: baris.style.transition };
+                    baris.style.transition = 'column-gap .25s ease';
+                    baris.style.columnGap = '8px';
+                }
+            } else {
+                if (pojokEl) {
+                    const a = pojokEl.__pkAsli || {};
+                    pojokEl.style.paddingLeft = a.pl || '';
+                    pojokEl.style.paddingRight = a.pr || '';
+                    const e = pojokEl;
+                    setTimeout(() => { try { e.style.transition = (e.__pkAsli && e.__pkAsli.tr) || ''; } catch (x) { /* abaikan */ } }, 320);
+                    pojokEl = null;
+                }
+                if (pojokBarisEl) {
+                    const a = pojokBarisEl.__pkAsli || {};
+                    pojokBarisEl.style.columnGap = a.cg || '';
+                    const b = pojokBarisEl;
+                    setTimeout(() => { try { b.style.transition = (b.__pkAsli && b.__pkAsli.tr) || ''; } catch (x) { /* abaikan */ } }, 320);
+                    pojokBarisEl = null;
+                }
+            }
+        } catch (e) { /* abaikan */ }
+    }
     function tampil(o) {
         if (!siapkanDOM()) { document.addEventListener('DOMContentLoaded', () => tampil(o), { once: true }); return; }
         clearTimeout(S.tTutup);
@@ -425,11 +480,13 @@
         if (o.mode === 'kompak') {
             // status menetap = IKON di header; pil menciut (animasi asli) lalu hilang
             if (S.mode === 'lebar') sembunyiPil();
+            rapatkanPojok(false);
             S.mode = 'kompak';
             posisikan();
             return;
         }
         S.paksaFixed = false;
+        try { if (cariTempatInline()) rapatkanPojok(true); } catch (e) { /* abaikan */ }
         try {
             const t = cariTempatInline();
             if (t) {
@@ -471,6 +528,7 @@
     }
     function sembunyi() {
         S.mode = 'tersembunyi';
+        rapatkanPojok(false);
         sembunyiPil();
         perbaruiIkon();
     }

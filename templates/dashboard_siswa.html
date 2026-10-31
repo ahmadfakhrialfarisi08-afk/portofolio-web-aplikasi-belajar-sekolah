@@ -608,36 +608,20 @@
         }
     </style>
     <style id="css-header-mobile">
-        /* HEADER HP (<640px): dipertinggi sedikit (56px -> 64px) supaya kotak putih jam
-           & tombol-tombol ikon tidak kelihatan "kependekan", dan ikonnya bisa dibesarkan
-           secukupnya (tombol 40px, ikon 16px). Layar sm+ (tablet/laptop) TIDAK berubah.
-           Murni override CSS (pakai !important karena kelas Tailwind bawaan) -- tidak perlu
-           build ulang tailwind_compiled.css. Ikon wifi-offline dari status_koneksi.js
-           otomatis mengikuti ukuran tombol lonceng. */
+        /* HEADER HP (<640px): ukuran tombol ikon (lonceng, matahari, titik tiga) dibiarkan NORMAL
+           seperti bawaan; yang diubah cuma jarak antar tombol (lebih lega, nyaman ditekan) +
+           tinggi header sedikit (56px -> 60px) supaya kotak jam tidak kependekan.
+           Layar sm+ TIDAK berubah. Pakai !important karena kelas Tailwind bawaan. */
         @media (max-width: 639px) {
-            #header-utama { height: 4.25rem !important; padding-left: 0.875rem !important; padding-right: 0.875rem !important; }
-            #header-utama #header-clock-container { padding: 0.4rem 0.75rem !important; border-radius: 0.875rem !important; }
-            #header-utama #header-realtime-clock { font-size: 13px !important; }
-            #header-utama #header-realtime-date { font-size: 9px !important; }
-            #header-utama #header-right-group { gap: 0.625rem !important; }
-            #header-utama #btn-bell,
-            #header-utama #btn-dark-mode-toggle,
-            #header-utama #btn-more-header {
-                width: 2.5rem !important;
-                height: 2.5rem !important;
-                padding: 0 !important;
-                display: inline-flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                font-size: 1rem !important;
-                border-radius: 0.75rem !important;
-            }
+            #header-utama { height: 3.75rem !important; padding-left: 0.875rem !important; padding-right: 0.875rem !important; }
+            #header-utama #header-clock-container { padding: 0.4rem 0.75rem !important; }
+            #header-utama #header-right-group { gap: 0.75rem !important; }
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden">
     <!-- Island status koneksi (online/offline/antrian) -- dimuat paling awal -->
-    <script src="../static/js/status_koneksi.js?v=20261027"></script>
+    <script src="../static/js/status_koneksi.js?v=20261031b"></script>
     <!-- Layar transisi masuk dashboard: gelap -> terang, mirip halaman login -->
     <div id="layar-masuk-dashboard" aria-hidden="true">
         <div class="masuk-dashboard-lencana"><i class="fa-solid fa-graduation-cap"></i></div>
