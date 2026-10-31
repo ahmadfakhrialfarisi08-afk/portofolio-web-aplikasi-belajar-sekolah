@@ -2738,11 +2738,14 @@
                     <div class="flex flex-col min-h-0" style="max-height:92vh;${lebar ? 'width:340px;flex:none' : 'width:100%'}">
                         <div class="flex items-center gap-2 px-3 py-2.5 border-b border-slate-100">
                             <img src="${escKarya(fotoPemilikKarya)}" alt="" class="w-8 h-8 rounded-full object-cover flex-none bg-amber-100" onerror="this.onerror=null;this.src='${escKarya(avatarCadanganKarya(namaPemilik))}'">
-                            <p class="text-xs font-bold text-slate-800 truncate flex-1">${escKarya(namaPemilik)}</p>
+                            <div class="min-w-0 flex-1 leading-tight">
+                                <p class="text-xs font-bold text-slate-800 truncate">${escKarya(namaPemilik)}</p>
+                                <p class="text-[11px] text-slate-500 truncate" title="${escKarya(k.judul || 'Karya')}">${escKarya(k.judul || 'Karya')}</p>
+                            </div>
                             <button type="button" id="post-tutup" aria-label="Tutup" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 text-xs"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                         <div id="post-daftar" class="flex-1 overflow-y-auto px-3 py-2.5 space-y-2.5" style="min-height:120px">
-                            <div class="text-xs text-slate-800 leading-snug"><b>${escKarya(namaPemilik)}</b> ${escKarya(k.judul || 'Karya')}${link ? `<br><a href="${escKarya(link)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-semibold break-all"><i class="fa-solid fa-link text-[10px]"></i> ${escKarya(link)}</a>` : ''}</div>
+                            ${link ? `<div class="text-xs leading-snug"><a href="${escKarya(link)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-semibold break-all"><i class="fa-solid fa-link text-[10px]"></i> ${escKarya(link)}</a></div>` : ''}
                             <div id="post-komentar" class="space-y-2.5"></div>
                         </div>
                         <div class="border-t border-slate-100 px-3 pt-2 pb-1">
