@@ -28,6 +28,13 @@
    kembali ke pil oranye lama kalau file ini tidak dimuat.
    Muat file ini PALING AWAL di HTML (sebelum script lain).
 
+   TAMPILAN: status offline = IKON wifi-off tetap di header (di sebelah
+   lonceng; ketuk -> kartu kecil berisi detail + tombol periksa/kirim).
+   Perubahan status (offline, kembali online, terkirim) tetap tampil
+   dengan animasi "Dynamic Island" khas: pil hitam muncul sejajar jam,
+   melebar, lalu menciut. Kalau lonceng tidak ditemukan di header, ikon
+   jatuh ke pojok kanan atas layar.
+
    PEMULIH HALAMAN: file CSS/JS/gambar yang gagal dimuat (internet putus
    di tengah loading) dicatat. Begitu koneksi terbukti pulih, gambar &
    CSS dimuat ulang di tempat; kalau ada JS yang gagal, halaman di-reload
@@ -86,6 +93,7 @@
         tMuncul: null
     };
     let wadah = null, pil = null, elIkon = null, elTeks = null;
+    let ikonHdr = null, popover = null, popoverTerbuka = false;
  
     /* ---------------- DOM + CSS ---------------- */
     const CSS = [
@@ -123,6 +131,28 @@
         '@keyframes pk-denyut{0%{box-shadow:0 0 0 0 rgba(245,158,11,.55)}100%{box-shadow:0 0 0 8px rgba(245,158,11,0)}}',
         '@keyframes pk-putar{to{transform:rotate(360deg)}}',
         '@keyframes pk-teks-masuk{from{opacity:0}to{opacity:1}}',
+        '#pk-ikon-hdr{flex:none;display:inline-flex;align-items:center;justify-content:center;position:relative;box-sizing:border-box;',
+        'width:38px;height:38px;border-radius:12px;padding:0;margin:0 4px;cursor:pointer;color:#d97706;',
+        'background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.45);transition:transform .15s ease}',
+        '#pk-ikon-hdr[hidden]{display:none}',
+        '#pk-ikon-hdr svg{width:18px;height:18px;display:block}',
+        '#pk-ikon-hdr:active{transform:scale(.94)}',
+        '#pk-ikon-hdr .pk-badge{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;',
+        'border-radius:8px;background:#d97706;color:#fff;font:600 10px/16px system-ui,sans-serif;text-align:center}',
+        '#pk-ikon-hdr .pk-badge:empty{display:none}',
+        '#pk-ikon-hdr.pk-fix{position:fixed;top:max(10px,calc(env(safe-area-inset-top,0px) + 6px));right:12px;z-index:2147483000;margin:0}',
+        '@keyframes pk-ikon-masuk{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}',
+        '#pk-ikon-hdr.pk-baru{animation:pk-ikon-masuk .28s cubic-bezier(.2,.9,.25,1.2)}',
+        '#pk-popover{position:fixed;z-index:2147483001;width:230px;max-width:calc(100vw - 16px);box-sizing:border-box;padding:12px 14px;',
+        'border-radius:14px;background:#fff;color:#111827;box-shadow:0 8px 28px rgba(0,0,0,.16),inset 0 0 0 1px rgba(0,0,0,.08);',
+        'font:400 13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;opacity:0;transform:translateY(-6px);',
+        'pointer-events:none;transition:opacity .15s ease,transform .18s ease}',
+        '#pk-popover.pk-buka{opacity:1;transform:none;pointer-events:auto}',
+        '#pk-popover .pk-pt{font-weight:600;font-size:13px;margin:0 0 2px}',
+        '#pk-popover .pk-pb{margin:0 0 10px;color:#4b5563}',
+        '#pk-popover button{width:100%;height:34px;border-radius:10px;border:0;cursor:pointer;background:#d97706;color:#fff;font:600 12.5px/1 system-ui,sans-serif}',
+        '#pk-popover.pk-gelap{background:#1f2937;color:#f3f4f6;box-shadow:0 8px 28px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.1)}',
+        '#pk-popover.pk-gelap .pk-pb{color:#9ca3af}',
         '@media (prefers-reduced-motion:reduce){#pulau-koneksi,#pulau-koneksi .pk-pill{transition:opacity .2s ease !important;',
         'transform:none !important}#pulau-koneksi .pk-ikon,#pulau-koneksi .pk-pill .pk-teks{animation:none !important}}'
     ].join('');
@@ -179,7 +209,7 @@
         if (!r) return teks;                                   // di bawah header: ruang longgar, pakai teks penuh
         return taksirLebar(teks) <= r.lebar ? teks : pendekkan(teks);
     }
-    function posisikan() {
+    function posisikanPil() {
         if (!wadah) return;
         try {
             const r = hitungRuang();
@@ -205,6 +235,11 @@
             wadah.style.left = kiri + 'px';
             wadah.style.right = '0px';
         } catch (e) { /* abaikan */ }
+    }
+    function posisikan() {
+        // ikon di header dipasang DULU supaya ruang kosong di samping jam dihitung setelah ikon ada
+        try { if (ikonHdr && !ikonHdr.hidden) { pastikanIkon(); if (popoverTerbuka) isiPopover(); } } catch (e) { /* abaikan */ }
+        posisikanPil();
     }
     function siapkanDOM() {
         if (wadah) return true;
@@ -279,10 +314,17 @@
     }
     function tampil(o) {
         if (!siapkanDOM()) { document.addEventListener('DOMContentLoaded', () => tampil(o), { once: true }); return; }
-        posisikan();
         clearTimeout(S.tTutup);
         S.tTutup = null;
-        if (S.mode === 'tersembunyi') {
+        perbaruiIkon();
+        posisikan();
+        if (o.mode === 'kompak') {
+            // status menetap = IKON di header; pil menciut (animasi asli) lalu hilang
+            if (S.mode === 'lebar') sembunyiPil();
+            S.mode = 'kompak';
+            return;
+        }
+        if (S.mode === 'tersembunyi' || S.mode === 'kompak') {
             // kemunculan baru -> aktifkan animasi muncul (harus dipasang SEBELUM data-mode berubah)
             pil.classList.add('pk-muncul');
             clearTimeout(S.tMuncul);
@@ -296,16 +338,163 @@
         else { delete pil.dataset.tap; pil.removeAttribute('title'); }
         if (o.tahanMs) S.tTutup = setTimeout(() => { S.tTutup = null; (o.lalu || kembaliKeDasar)(); }, o.tahanMs);
     }
-    function sembunyi() {
-        S.mode = 'tersembunyi';
+    function sembunyiPil() {
         if (wadah) wadah.dataset.mode = 'tersembunyi';
         // menciut jadi titik sambil memudar (lalu width di-reset saat muncul lagi di ukurLebar)
         if (pil) { try { pil.style.width = Math.min(pil.offsetWidth, pil.offsetHeight || 30) + 'px'; } catch (e) { pil.style.width = ''; } }
         S.teks = '';
         S.ikon = '';
     }
+    function sembunyi() {
+        S.mode = 'tersembunyi';
+        sembunyiPil();
+        perbaruiIkon();
+    }
     function lebarSedangTampil() { return S.mode === 'lebar' && !!S.tTutup; }
  
+    /* ---------------- ikon status di header ---------------- */
+    const SVG_WIFI_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+        'stroke-linejoin="round" aria-hidden="true"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/>' +
+        '<path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/>' +
+        '<path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/></svg>';
+    const SVG_SYNC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+        'stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>' +
+        '<path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>';
+    function temaGelap() {
+        try {
+            const cls = document.documentElement.className + ' ' + (document.body ? document.body.className : '');
+            if (/(^|[\s_-])dark([\s_-]|$)/i.test(cls) || /dark/i.test(document.documentElement.getAttribute('data-theme') || '') ||
+                /dark/i.test(document.documentElement.getAttribute('data-mode') || '')) return true;
+            for (let el = document.body; el; el = el.parentElement) {
+                const m = getComputedStyle(el).backgroundColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+                if (m && (m[4] === undefined || parseFloat(m[4]) > 0.5)) return (0.299 * m[1] + 0.587 * m[2] + 0.114 * m[3]) < 110;
+            }
+        } catch (e) { /* abaikan */ }
+        return false;
+    }
+    // Kalau ikon tidak muncul di sebelah lonceng, isi selector tombol lonceng di sini, mis. '#btn-notifikasi'.
+    const BELL_SELECTOR = '';
+    const BELL_KANDIDAT = '[class*="bell"],[data-lucide="bell"],[data-icon*="bell"],[aria-label*="otif" i],[title*="otif" i],' +
+        '[id*="notif"],[id*="bell"],[class*="notif"],[onclick*="otif" i]';
+    function bellValid(el) {
+        if (!el || el.closest('#dynamic-notification-island') || el.closest('#pulau-koneksi') || el.closest('#pk-ikon-hdr') ||
+            el.closest('#pk-popover') || el.closest('#dropdown-hasil-pencarian')) return null;
+        const btn = el.closest('button,a,[role="button"]') || el;
+        const r = btn.getBoundingClientRect();
+        if (r.width <= 0 || r.height <= 0 || r.top > 160 || r.width > 120) return null;   // lonceng: kecil & di bagian atas
+        return btn;
+    }
+    function cariBell() {
+        if (BELL_SELECTOR) {
+            const el = document.querySelector(BELL_SELECTOR);
+            if (el) return el;
+        }
+        const header = document.querySelector(HEADER_SELECTOR);
+        // 1) cari di dalam header, 2) kalau tidak ada, cari di seluruh halaman (bagian atas saja)
+        const lingkup = header ? [header, document] : [document];
+        for (let k = 0; k < lingkup.length; k++) {
+            const kand = lingkup[k].querySelectorAll(BELL_KANDIDAT);
+            for (let i = 0; i < kand.length; i++) {
+                const btn = bellValid(kand[i]);
+                if (btn && !btn.contains(document.body) && btn.tagName !== 'HEADER') return btn;
+            }
+        }
+        return null;
+    }
+    function pastikanIkon() {
+        if (!document.body) return null;
+        if (!ikonHdr) {
+            ikonHdr = document.createElement('button');
+            ikonHdr.id = 'pk-ikon-hdr';
+            ikonHdr.type = 'button';
+            ikonHdr.hidden = true;
+            ikonHdr.setAttribute('aria-haspopup', 'dialog');
+            ikonHdr.innerHTML = '<span class="pk-svg" style="display:flex"></span><span class="pk-badge"></span>';
+            ikonHdr.addEventListener('click', e => { e.stopPropagation(); if (popoverTerbuka) tutupPopover(); else bukaPopover(); });
+        }
+        const bell = cariBell();
+        if (bell && bell.parentNode) {
+            if (ikonHdr.parentNode !== bell.parentNode || ikonHdr.nextSibling !== bell) {
+                ikonHdr.classList.remove('pk-fix');
+                bell.parentNode.insertBefore(ikonHdr, bell);
+            }
+            const r = bell.getBoundingClientRect();
+            if (r.width > 0 && r.height > 0) {
+                const u = Math.max(30, Math.min(44, Math.round(Math.min(r.width, r.height)))) + 'px';
+                if (ikonHdr.style.width !== u) { ikonHdr.style.width = u; ikonHdr.style.height = u; }
+            }
+            const rad = getComputedStyle(bell).borderRadius;
+            if (rad && ikonHdr.style.borderRadius !== rad) ikonHdr.style.borderRadius = rad;
+        } else if (ikonHdr.parentNode !== document.body) {
+            ikonHdr.classList.add('pk-fix');
+            document.body.appendChild(ikonHdr);
+        }
+        return ikonHdr;
+    }
+    function perluIkon() { return !S.online || (S.menungguTampil && total() > 0); }
+    function perbaruiIkon() {
+        if (!perluIkon()) {
+            if (ikonHdr) ikonHdr.hidden = true;
+            tutupPopover();
+            return;
+        }
+        const el = pastikanIkon();
+        if (!el) return;
+        const n = total();
+        const jenis = S.online ? 'sync' : 'offline';
+        if (el.dataset.jenis !== jenis) {
+            el.dataset.jenis = jenis;
+            el.querySelector('.pk-svg').innerHTML = jenis === 'sync' ? SVG_SYNC : SVG_WIFI_OFF;
+        }
+        el.querySelector('.pk-badge').textContent = n > 0 ? (n > 99 ? '99+' : String(n)) : '';
+        el.setAttribute('aria-label', S.online ? n + ' ' + labelAntrian() + ' menunggu kirim' : 'Offline');
+        if (el.hidden) {
+            el.hidden = false;
+            el.classList.remove('pk-baru'); void el.offsetWidth; el.classList.add('pk-baru');
+        }
+        if (popoverTerbuka) isiPopover();
+    }
+    function siapkanPopover() {
+        if (popover) return popover;
+        popover = document.createElement('div');
+        popover.id = 'pk-popover';
+        popover.setAttribute('role', 'dialog');
+        popover.innerHTML = '<p class="pk-pt"></p><p class="pk-pb"></p><button type="button"></button>';
+        document.body.appendChild(popover);
+        popover.querySelector('button').addEventListener('click', aksiPeriksa);
+        return popover;
+    }
+    function isiPopover() {
+        if (!ikonHdr) return;
+        const p = siapkanPopover(), n = total(), lb = labelAntrian();
+        p.querySelector('.pk-pt').textContent = S.online ? 'Menunggu kirim' : 'Mode offline';
+        p.querySelector('.pk-pb').textContent = S.online
+            ? n + ' ' + lb + ' belum terkirim ke server.'
+            : (n > 0 ? 'Data disimpan di perangkat. ' + n + ' ' + lb + ' menunggu kirim.'
+                     : 'Data disimpan di perangkat dan dikirim saat kembali online.');
+        p.querySelector('button').textContent = S.online ? 'Kirim sekarang' : 'Periksa koneksi';
+        p.classList.toggle('pk-gelap', temaGelap());
+        const r = ikonHdr.getBoundingClientRect();
+        p.style.top = Math.round(r.bottom + 8) + 'px';
+        p.style.right = Math.max(8, Math.round(window.innerWidth - r.right)) + 'px';
+    }
+    function bukaPopover() {
+        if (!ikonHdr || ikonHdr.hidden) return;
+        popoverTerbuka = true;
+        isiPopover();
+        popover.classList.add('pk-buka');
+    }
+    function tutupPopover() {
+        popoverTerbuka = false;
+        if (popover) popover.classList.remove('pk-buka');
+    }
+    document.addEventListener('click', e => {
+        if (!popoverTerbuka) return;
+        if ((popover && popover.contains(e.target)) || (ikonHdr && ikonHdr.contains(e.target))) return;
+        tutupPopover();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') tutupPopover(); });
+
     /* ---------------- keadaan ---------------- */
     function total() { return Object.values(S.sumber).reduce((a, s) => a + (s.n || 0), 0); }
     function labelAntrian() {
@@ -326,6 +515,7 @@
         if (nilai === S.online) return;
         S.online = nilai;
         if (!nilai) {
+            S.pernahOffline = true;
             tampil({ mode: 'lebar', ikon: 'offline', teks: 'Mode offline \u00b7 data disimpan di perangkat', tahanMs: MS_LEBAR_OFFLINE });
             return;
         }
@@ -437,10 +627,11 @@
                 kembaliKeDasar();
             }
         }
+        perbaruiIkon();
     }
  
-    function ketukPil() {
-        if (!dapatTap()) return;
+    function aksiPeriksa() {
+        tutupPopover();
         const sebelum = S.online;
         tampil({ mode: 'lebar', ikon: 'kirim', teks: 'Memeriksa koneksi\u2026', tahanMs: 8000 });
         periksaKoneksi(true).then(ok => {
@@ -456,7 +647,11 @@
             }
         });
     }
- 
+    function ketukPil() {
+        if (!dapatTap()) return;
+        aksiPeriksa();
+    }
+
     /* ---------------- pemulih aset yang gagal dimuat ---------------- */
     const gagalAset = [];                      // elemen <link>/<script>/<img> yang gagal dimuat
     function urlAset(el) { return el.tagName === 'LINK' ? el.href : el.src; }
@@ -471,7 +666,10 @@
     // fase capture: error load resource tidak bubbling, jadi harus ditangkap di window
     window.addEventListener('error', e => {
         const el = e.target;
-        if (el && el !== window && asetPenting(el) && gagalAset.indexOf(el) < 0) gagalAset.push(el);
+        if (el && el !== window && asetPenting(el) && gagalAset.indexOf(el) < 0) {
+            gagalAset.push(el);
+            if (navigator.onLine === false) S.pernahOffline = true;   // gagal karena memang sedang offline
+        }
     }, true);
     function bolehMuatUlang() {
         try {
@@ -499,6 +697,9 @@
     }
     function pulihkanAset() {
         if (!gagalAset.length) return;
+        // Pemulih HANYA bekerja setelah ada kejadian offline. File gagal karena sebab lain (mis. 404) diabaikan.
+        if (!S.pernahOffline) { gagalAset.length = 0; return; }
+        S.pernahOffline = false;
         const daftar = gagalAset.splice(0, gagalAset.length).filter(el => !el.__pkCoba);
         daftar.forEach(el => { el.__pkCoba = true; });          // tiap elemen hanya dicoba sekali
         if (!daftar.length) return;
