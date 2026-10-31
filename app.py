@@ -2788,6 +2788,10 @@ def api_tugas_submit():
     # client_id yang sama sudah tersimpan, balas sukses TANPA menimpa apa pun --
     # penting supaya keputusan/revisi guru yang sudah masuk tidak ke-reset.
     username = session['user']['username']
+    # KUNCI PER KELAS: tugas harus ada di tasks_<KELAS> milik kelas akun ini. Tugas kelas lain
+    # (atau ID asal-asalan) ditolak -- dulu "tidak ditemukan -> tidak diblokir". Admin/Dev dikecualikan.
+    if not _akun_ini_admin_dev() and _cari_tugas_untuk_siswa(task_id, username) is None:
+        return jsonify(success=False, message='Tugas ini tidak ditemukan di kelasmu.'), 403
     client_id = str(body.get('client_id') or '').strip()
     if not re.fullmatch(r'[A-Za-z0-9_\-]{8,64}', client_id):
         client_id = ''
@@ -3175,6 +3179,10 @@ def api_tugas_dibaca():
         return jsonify(success=False, message='task_id kosong.'), 400
 
     username = session['user']['username']
+    if not _akun_ini_admin_dev():
+        daftar_id = [x for x in daftar_id if _cari_tugas_untuk_siswa(x, username) is not None]
+        if not daftar_id:
+            return jsonify(success=False, message='Tugas tidak ditemukan di kelasmu.'), 403
     berubah = False
     for task_id in daftar_id:
         tugas_submission_store.setdefault(task_id, {})
@@ -5534,6 +5542,20 @@ def dashboard():
 # ----------------------------------------------------
 # DASHBOARD SPECIFIC TO ROLES
 # ----------------------------------------------------
+def _kunci_kelas_akun(username):
+    """'XII TKJ 3/TAV' (kelas di akun) -> 'XII_TKJ_3' (bentuk kunci tasks_<KELAS> dari Dashboard Guru)."""
+    kelas = str((users.get(username) or {}).get('kelas') or '').split('/')[0]
+    return re.sub(r'[^A-Za-z0-9_\-]', '', '_'.join(kelas.split()))
+
+
+def _sisipkan_kelas_siswa(html, kunci_kelas):
+    """Sematkan kelas siswa (dari SERVER) ke HTML pertama, sebelum script lain jalan.
+    Ini cuma petunjuk tampilan -- penegakan akses tetap di server (session), bukan dari nilai ini."""
+    skrip = '<script>window.KELAS_SISWA_SERVER=' + json.dumps(kunci_kelas) + ';</script>'
+    hasil, n = re.subn(r'(<head[^>]*>)', lambda m: m.group(1) + skrip, html, count=1, flags=re.IGNORECASE)
+    return hasil if n else skrip + html
+
+
 @app.route('/dashboard/siswa')
 def dashboard_siswa():
     if 'user' not in session or session['user']['role'] != 'siswa':
@@ -5592,7 +5614,7 @@ def dashboard_siswa():
     # normal sebelum overlay-nya sempat dipasang oleh JS.
     maintenance_awal = maintenance_store
 
-    return render_template(
+    html = render_template(
         'dashboard_siswa.html',
         username=session['user']['nama'],
         nama=session['user']['nama'],
@@ -5601,6 +5623,7 @@ def dashboard_siswa():
         pelanggaran_awal=pelanggaran_awal,
         maintenance_awal=maintenance_awal
     )
+    return _sisipkan_kelas_siswa(html, _kunci_kelas_akun(session['user']['username']))
  
 @app.route('/dashboard/guru')
 def dashboard_guru():

@@ -1102,6 +1102,13 @@
             const terakhir = localStorage.getItem(KEY_AKUN_ASLI_TERAKHIR);
             if (terakhir !== USERNAME_SISWA_ASLI) {
                 sessionStorage.removeItem(ACTIVE_DUMMY_KEY);
+                // Ganti akun di browser yang sama: buang cache tugas/notif akun sebelumnya supaya
+                // tugas kelas lain tidak "nyangkut" dan tampil di akun ini.
+                try {
+                    Object.keys(localStorage).forEach(k => {
+                        if (k.indexOf('tasks_') === 0 || k.indexOf('notif_tugas_') === 0) localStorage.removeItem(k);
+                    });
+                } catch (e) { /* abaikan */ }
                 localStorage.setItem(KEY_AKUN_ASLI_TERAKHIR, USERNAME_SISWA_ASLI);
             }
         })();
@@ -1222,7 +1229,9 @@
         // guru MENAMBAH ke daftar dan tugas lama yang belum dikerjakan tetap muncul.
         // CATATAN: tugas & notifikasi tugas SENGAJA tetap dinamespace per KELAS
         // (bukan per akun) karena memang data ini dibagikan bersama ke satu kelas.
-        const KELAS_AKTIF_SISWA = 'XII_TKJ_3';
+        // Kelas diambil dari SERVER (window.KELAS_SISWA_SERVER, disematkan app.py ke HTML) -- bukan lagi
+        // ditulis tetap. Fallback lama hanya dipakai kalau penyematan gagal.
+        const KELAS_AKTIF_SISWA = window.KELAS_SISWA_SERVER || 'XII_TKJ_3';
 
         // ===== Helper sinkron ke server (menggantikan localStorage-only) =====
         // Sama seperti di Dashboard Guru: kunci yang dipakai SAMA PERSIS dengan
