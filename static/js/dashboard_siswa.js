@@ -2114,13 +2114,18 @@
             if (btnTolak) btnTolak.addEventListener('click', () => tanggapiPerangkat(d.token, 'reject'));
         }
 
+        // Kalau server tidak punya route /api/perangkat/list (404), berhenti polling endpoint ini
+        // -- dulu 404 diulang tiap putaran polling selamanya (request sia-sia + error di console).
+        let _endpointPerangkatAda = true;
         async function updateBadgePerangkatNavSaja() {
+            if (!_endpointPerangkatAda) return;
             // Versi ringan dari renderPerangkat(): cuma update titik merah di
             // sidebar, tidak menulis ulang isi tabel supaya tidak mengganggu
             // kalau Master Device sedang lihat/klik tabel Perangkat tiap 3 detik.
             try {
                 const res = await fetchDenganKontrolBeban('/api/perangkat/list');
                 if (!res) return; // lagi masa tunda (backoff 429) -- skip fetch
+                if (res.status === 404) { _endpointPerangkatAda = false; return; }
                 const json = await res.json();
                 if (!json || !json.success) return;
                 const jumlahPending = json.devices.filter(d => d.status === 'pending').length;

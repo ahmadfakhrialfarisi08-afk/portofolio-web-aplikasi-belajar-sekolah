@@ -3344,6 +3344,23 @@ def _json_etag(payload):
     return resp.make_conditional(request)
 
 
+@app.after_request
+def _etag_otomatis_api_get(response):
+    """Semua GET /api/* yang membalas JSON 200 otomatis dapat ETag -> polling yang
+    datanya tidak berubah dibalas 304 tanpa body (hemat kuota, tanpa ubah tiap endpoint)."""
+    try:
+        if (request.method == 'GET' and request.path.startswith('/api/')
+                and response.status_code == 200 and response.mimetype == 'application/json'
+                and not response.direct_passthrough and 'ETag' not in response.headers):
+            response.add_etag()
+            response.headers.setdefault('Cache-Control', 'private, no-cache')
+            response.vary.add('Cookie')
+            response.make_conditional(request)
+    except Exception as exc:
+        print(f"[WARN] etag otomatis gagal: {exc}")
+    return response
+
+
 @app.route('/ping', methods=['GET', 'HEAD'])
 def ping():
     """Dipakai status_koneksi.js: tanpa session/DB/log, balasan kosong 204."""
