@@ -615,9 +615,12 @@
         @media (max-width: 639px) {
             /* padding-right dikecilkan (0.875rem -> 0.25rem) supaya grup ikon kanan
                (wifi, lonceng, matahari, titik tiga) lebih mepet ke ujung kanan layar */
-            #header-utama { height: 3.75rem !important; padding-left: 0.875rem !important; padding-right: 0.25rem !important; }
+            #header-utama { height: 3.75rem !important; padding-left: 0.875rem !important; padding-right: 0.5rem !important; }
             #header-utama #header-clock-container { padding: 0.4rem 0.75rem !important; }
             #header-utama #header-right-group { gap: 0.75rem !important; margin-left: auto !important; }
+            /* Wrapper palet warna kosong di HP (tombolnya disembunyikan, pindah ke menu titik tiga)
+               tapi masih kena gap -> bikin ruang kosong di kanan titik tiga. Gap-nya dibatalkan di sini. */
+            #header-utama #wrapper-btn-aksen-tema { margin-left: -0.75rem !important; width: 0 !important; }
         }
     </style>
 </head>
