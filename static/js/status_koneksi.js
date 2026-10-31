@@ -208,8 +208,8 @@
             .replace(/^Masih offline \u00b7 .*$/, 'Masih offline');
     }
     // Ruang kosong (px) di baris header untuk pil inline: lebar baris dikurangi semua item lain.
-    function ruangInline() {
-        const row = wadah.parentElement;
+    function ruangInline() { return wadah.parentElement ? ruangPada(wadah.parentElement) : null; }
+    function ruangPada(row) {
         if (!row) return null;
         const cs = getComputedStyle(row);
         let pakai = 0, n = 0;
@@ -222,6 +222,18 @@
         const gap = (parseFloat(cs.columnGap) || 0) * n;
         return row.clientWidth - pad - pakai - gap - 16;
     }
+    function sangatPendek(t) {
+        return t
+            .replace(/^(Mode offline|Masih offline|Offline).*$/, 'Offline')
+            .replace(/^Kembali online.*$/, 'Online')
+            .replace(/^(Mengirim|Mencoba mengirim).*$/, 'Mengirim\u2026')
+            .replace(/^Memeriksa koneksi.*$/, 'Memeriksa\u2026');
+    }
+    function tingkatTeks(teks) {
+        const p = pendekkan(teks);
+        const a = [teks, p, sangatPendek(p)];
+        return a.filter((t, i) => a.indexOf(t) === i);       // penuh -> pendek -> sangat pendek
+    }
     function muatkan(teks) {
         let lebar = null;
         try {
@@ -229,7 +241,9 @@
             else { const r = hitungRuang(); lebar = r ? r.lebar : null; }
         } catch (e) { lebar = null; }
         if (lebar === null) return teks;
-        return taksirLebar(teks) <= lebar ? teks : pendekkan(teks);
+        const daftar = tingkatTeks(teks);
+        for (let i = 0; i < daftar.length; i++) if (taksirLebar(daftar[i]) <= lebar) return daftar[i];
+        return daftar[daftar.length - 1];
     }
     // Cari JAM: lewat selector, atau lewat teks "hh:mm:ss" di bagian atas halaman.
     function cariJam() {
@@ -304,7 +318,7 @@
     function posisikanPil() {
         if (!wadah) return;
         let tempat = null;
-        try { tempat = cariTempatInline(); } catch (e) { tempat = null; }
+        try { tempat = S.paksaFixed ? null : cariTempatInline(); } catch (e) { tempat = null; }
         if (tempat) {
             if (wadah.parentNode !== tempat.parent || wadah.previousElementSibling !== tempat.setelah) {
                 tempat.parent.insertBefore(wadah, tempat.setelah.nextSibling);
@@ -406,6 +420,15 @@
             posisikan();
             return;
         }
+        S.paksaFixed = false;
+        try {
+            const t = cariTempatInline();
+            if (t) {
+                const lebar = ruangPada(t.parent);
+                const daftar = tingkatTeks(o.teks);
+                S.paksaFixed = lebar === null || taksirLebar(daftar[daftar.length - 1]) > lebar;
+            }
+        } catch (e) { S.paksaFixed = false; }
         clearTimeout(S.tNol);
         wadah.classList.remove('pk-nol');      // harus tampil (punya ukuran) sebelum diukur
         posisikan();
@@ -491,6 +514,22 @@
         }
         return null;
     }
+    // Item pada baris flex horizontal yang memuat el (naik dari el). Pembungkus lonceng sering bukan flex,
+    // sehingga ikon yang disisipkan di dalamnya malah menumpuk di atas lonceng.
+    function itemBaris(el) {
+        const header = document.querySelector(HEADER_SELECTOR);
+        let x = el, cadangan = null;
+        while (x.parentElement && x.parentElement !== document.body) {
+            const p = x.parentElement, cs = getComputedStyle(p);
+            if (/flex/.test(cs.display) && !/column/.test(cs.flexDirection)) {
+                if (cs.flexWrap === 'nowrap') return x;
+                if (!cadangan) cadangan = x;
+            }
+            if (p === header) break;
+            x = p;
+        }
+        return cadangan;
+    }
     function pastikanIkon() {
         if (!document.body) return null;
         if (!ikonHdr) {
@@ -503,10 +542,11 @@
             ikonHdr.addEventListener('click', e => { e.stopPropagation(); if (popoverTerbuka) tutupPopover(); else bukaPopover(); });
         }
         const bell = cariBell();
-        if (bell && bell.parentNode) {
-            if (ikonHdr.parentNode !== bell.parentNode || ikonHdr.nextSibling !== bell) {
+        const item = bell ? itemBaris(bell) : null;
+        if (bell && item && item.parentNode) {
+            if (ikonHdr.parentNode !== item.parentNode || ikonHdr.nextSibling !== item) {
                 ikonHdr.classList.remove('pk-fix');
-                bell.parentNode.insertBefore(ikonHdr, bell);
+                item.parentNode.insertBefore(ikonHdr, item);
             }
             const r = bell.getBoundingClientRect();
             if (r.width > 0 && r.height > 0) {
