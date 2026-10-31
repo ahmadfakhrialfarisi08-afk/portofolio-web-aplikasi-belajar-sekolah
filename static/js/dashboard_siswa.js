@@ -2890,7 +2890,8 @@
                         <input id="karya-file" type="file" accept="image/*" class="hidden">
                     </label>
                     <input id="karya-judul" type="text" maxlength="60" placeholder="Judul karya (opsional)" class="w-full mb-2 px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-amber-400">
-                    <input id="karya-url" type="url" maxlength="300" placeholder="Link karya, mis. https://... (opsional)" class="w-full mb-3 px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-amber-400">
+                    <input id="karya-url" type="text" inputmode="url" autocapitalize="off" autocomplete="off" maxlength="300" placeholder="Link karya, mis. https://... (opsional)" class="w-full mb-2 px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-amber-400">
+                    <p id="karya-error" class="hidden text-[11px] font-semibold text-rose-600 mb-2"></p>
                     <div class="flex gap-2">
                         <button type="button" id="karya-batal" class="flex-1 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold">Batal</button>
                         <button type="button" id="karya-simpan" class="flex-1 py-2 rounded-lg bg-amber-500 text-white text-xs font-bold disabled:opacity-60">Simpan</button>
@@ -2900,6 +2901,20 @@
 
             let dataGambar = null;
             const tutup = () => ov.remove();
+            // Pesan error ditampilkan DI DALAM form (toast Dynamic Island tertutup lapisan gelap modal ini).
+            const tampilError = pesan => {
+                const el = ov.querySelector('#karya-error');
+                el.textContent = pesan || '';
+                el.classList.toggle('hidden', !pesan);
+            };
+            // Link opsional: tanpa skema ("contoh.com") otomatis diberi https://; yang bukan alamat web ditolak.
+            const normalisasiLink = mentah => {
+                const t = (mentah || '').trim();
+                if (!t) return { ok: true, url: '' };
+                if (/^https?:\/\//i.test(t)) return /\s/.test(t) ? { ok: false } : { ok: true, url: t };
+                if (!/\s/.test(t) && /^[^\s\/]+\.[^\s\/.]{2,}(\/\S*)?$/.test(t)) return { ok: true, url: 'https://' + t };
+                return { ok: false };
+            };
             ov.addEventListener('click', tutup);
             ov.querySelector('#karya-batal').addEventListener('click', tutup);
 
@@ -2912,17 +2927,20 @@
                     pv.src = dataGambar;
                     pv.classList.remove('hidden');
                     ov.querySelector('#karya-preview-teks').classList.add('hidden');
+                    tampilError('');
                 } catch (err) {
                     dataGambar = null;
-                    triggerDynamicIsland(err.message || 'Gambar tidak bisa dipakai.');
+                    tampilError(err.message || 'Gambar tidak bisa dipakai.');
                 }
             });
 
             const btn = ov.querySelector('#karya-simpan');
             btn.addEventListener('click', async () => {
-                if (!dataGambar) { triggerDynamicIsland('Pilih gambar karya dulu ya.'); return; }
-                const url = ov.querySelector('#karya-url').value.trim();
-                if (url && !/^https?:\/\//i.test(url)) { triggerDynamicIsland('Link harus diawali http:// atau https://'); return; }
+                if (!dataGambar) { tampilError('Pilih gambar karya dulu ya.'); return; }
+                const cekLink = normalisasiLink(ov.querySelector('#karya-url').value);
+                if (!cekLink.ok) { tampilError('Link tidak valid. Contoh: https://contoh.com — atau kosongkan saja kolom link.'); return; }
+                const url = cekLink.url;
+                tampilError('');
                 btn.disabled = true;
                 btn.textContent = 'Menyimpan...';
                 try {
@@ -2938,7 +2956,7 @@
                     tutup();
                 } catch (err) {
                     console.error('Gagal menambah karya:', err);
-                    triggerDynamicIsland(err.message || 'Gagal menyimpan, coba lagi ya.');
+                    tampilError(err.message || 'Gagal menyimpan, coba lagi ya.');
                     btn.disabled = false;
                     btn.textContent = 'Simpan';
                 }
