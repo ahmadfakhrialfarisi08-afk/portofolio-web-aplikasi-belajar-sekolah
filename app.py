@@ -45,6 +45,12 @@ from stt_engine import transkrip_audio_file
 # tugas/soal paling besar (siswa/guru perlu baca detail tulisan di foto).
 PROFIL_FOTO_MAX_DIM = 1000
 PROFIL_FOTO_QUALITY = 80
+# Karya (portofolio) di ID Card Teman: gambar kecil saja (tampil sebagai kotak
+# 3 kolom), jadi resolusinya dibuat lebih kecil dari foto profil supaya
+# users_store.json tidak membengkak. Dibatasi jumlahnya per siswa.
+KARYA_MAKS_PER_SISWA = 6
+KARYA_FOTO_MAX_DIM = 800
+KARYA_FOTO_QUALITY = 75
 TUGAS_FOTO_MAX_DIM = 2000
 TUGAS_FOTO_QUALITY = 85
  
@@ -5271,6 +5277,75 @@ def api_profil_sosmed_post():
     return jsonify(success=True, sosmed=sosmed_bersih)
 
 
+@app.route('/api/profil/karya', methods=['POST'])
+@batasi('upload')
+def api_profil_karya_tambah():
+    """Tambah satu karya (gambar + judul, link opsional) ke ID Card siswa yang
+    sedang login. Disimpan di users[me]['karya'] dan otomatis ikut dikirim
+    lewat /api/teman/profil/<username>, jadi teman yang membuka ID Card
+    langsung melihatnya. Hanya pemilik akun yang bisa menambah (username
+    diambil dari session, bukan dari request)."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login.'), 401
+
+    me = session['user']['username']
+    if me not in users:
+        return jsonify(success=False, message='Akun tidak ditemukan.'), 404
+
+    data = request.get_json(silent=True) or {}
+    gambar = (data.get('gambar') or '').strip()
+    judul = (data.get('judul') or '').strip()[:60]
+    url = (data.get('url') or '').strip()[:300]
+
+    if not gambar:
+        return jsonify(success=False, message='Gambar karya kosong.'), 400
+    if url and not re.match(r'^https?://', url, re.IGNORECASE):
+        return jsonify(success=False, message='Link harus diawali http:// atau https://'), 400
+
+    daftar = users[me].get('karya') or []
+    if len(daftar) >= KARYA_MAKS_PER_SISWA:
+        return jsonify(success=False,
+                       message=f'Maksimal {KARYA_MAKS_PER_SISWA} karya. Hapus salah satu dulu.'), 400
+
+    try:
+        gambar, _asli, _baru = kompres_gambar_base64(gambar, KARYA_FOTO_MAX_DIM, KARYA_FOTO_QUALITY)
+    except GambarTidakValid as e:
+        return jsonify(success=False, message=f'Gambar tidak valid: {e}'), 400
+
+    karya_baru = {
+        'id': uuid.uuid4().hex[:12],
+        'judul': judul or 'Karya',
+        'gambar': gambar,
+        'url': url,
+    }
+    daftar.append(karya_baru)
+    users[me]['karya'] = daftar
+    _simpan_users_store()
+    return jsonify(success=True, karya=daftar)
+
+
+@app.route('/api/profil/karya/<karya_id>', methods=['DELETE'])
+@batasi('umum')
+def api_profil_karya_hapus(karya_id):
+    """Hapus satu karya milik akun sendiri (dicari lewat id, hanya di daftar
+    karya milik username yang login)."""
+    if 'user' not in session or session['user']['role'] != 'siswa':
+        return jsonify(success=False, message='Belum login.'), 401
+
+    me = session['user']['username']
+    if me not in users:
+        return jsonify(success=False, message='Akun tidak ditemukan.'), 404
+
+    daftar = users[me].get('karya') or []
+    sisa = [k for k in daftar if k.get('id') != karya_id]
+    if len(sisa) == len(daftar):
+        return jsonify(success=False, message='Karya tidak ditemukan.'), 404
+
+    users[me]['karya'] = sisa
+    _simpan_users_store()
+    return jsonify(success=True, karya=sisa)
+
+
 @app.route('/api/profil/foto', methods=['POST'])
 @batasi('upload')
 def api_profil_foto():
@@ -5460,7 +5535,10 @@ def api_teman_profil(username):
         # Media" -> disimpan lewat /api/profil/sosmed di atas. Dipetakan jadi
         # ikon-ikon berwarna di kotak sosmed ID Card oleh renderSosmedIdCard()
         # di dashboard_siswa.html.
-        'sosmed': u.get('sosmed') or {}
+        'sosmed': u.get('sosmed') or {},
+        # Karya (portofolio) yang ditambahkan pemilik akun lewat tombol "+" di
+        # ID Card -- dirender renderKaryaIdCard() di dashboard_siswa_2.js/.js.
+        'karya': u.get('karya') or []
     })
  
  

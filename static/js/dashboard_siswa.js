@@ -2467,7 +2467,7 @@
             if (elBadgeDev) elBadgeDev.innerHTML = badgeDevProfil || '';
 
             renderSosmedIdCard(profil.sosmed || {});
-            renderKaryaIdCard(profil.karya || []);
+            renderKaryaIdCard(profil.karya || [], profil.status_pertemanan === 'diri_sendiri');
 
             document.getElementById('idcard-kelas').textContent = `Siswa • ${profil.kelas}`;
             document.getElementById('idcard-poin-pg').textContent = profil.quiz_pg_total_poin;
@@ -2632,35 +2632,172 @@
             }
         }
 
-        // Karya (portofolio) teman -- dibangun dinamis dari profil.karya.
-        // Diharapkan berupa array objek, mis:
-        // [{ judul: "Desain Poster", gambar: "url_gambar.jpg" }, ...]
-        // Kalau field/endpoint itu belum ada di server, arraynya otomatis
-        // kosong sehingga tampil pesan "Belum ada karya" -- jadi bagian ini
-        // aman dipasang duluan di frontend, tidak akan menampilkan kotak
-        // rusak sebelum backend menambah datanya.
-        function renderKaryaIdCard(karya) {
+        // Karya (portofolio) di ID Card -- dibangun dinamis dari profil.karya:
+        // [{ id, judul, gambar, url }]. Pemilik akun (status 'diri_sendiri')
+        // melihat tombol "+" untuk menambah karya & tombol x untuk menghapus;
+        // teman hanya melihat. Judul/link diisi pengguna, jadi SEMUA nilai
+        // di-escape & link dibatasi http(s) sebelum masuk ke HTML.
+        const KARYA_MAKS_PER_SISWA = 6;
+        let KARYA_ID_CARD_SAAT_INI = [];
+        let KARYA_MILIK_SENDIRI = false;
+        function escKarya(t) {
+            return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+        function urlKaryaAman(u) { return /^https?:\/\//i.test(String(u || '')) ? String(u) : ''; }
+        function gambarKaryaAman(g) { return /^(data:image\/|https?:\/\/|\.\.\/static\/|\/static\/)/i.test(String(g || '')) ? String(g) : ''; }
+
+        function renderKaryaIdCard(karya, milikSendiri) {
             const kontainer = document.getElementById('idcard-karya');
             const pesanKosong = document.getElementById('idcard-karya-kosong');
             if (!kontainer) return;
 
+            KARYA_MILIK_SENDIRI = !!milikSendiri;
             const daftar = Array.isArray(karya) ? karya.filter(k => k && (k.gambar || k.judul)) : [];
+            KARYA_ID_CARD_SAAT_INI = daftar;
 
-            if (!daftar.length) {
-                kontainer.innerHTML = '';
-                if (pesanKosong) pesanKosong.classList.remove('hidden');
-                return;
-            }
+            if (pesanKosong) pesanKosong.classList.toggle('hidden', daftar.length > 0);
 
-            if (pesanKosong) pesanKosong.classList.add('hidden');
-            kontainer.innerHTML = daftar.map(k => {
-                const gambar = k.gambar || `https://ui-avatars.com/api/?name=${encodeURIComponent(k.judul || 'Karya')}&background=fef3c7&color=92400e&size=120`;
-                const judul = k.judul || 'Karya';
-                return `<a href="${k.url || gambar}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="${judul}" class="group block rounded-lg overflow-hidden border border-amber-100 bg-white aspect-square relative">
-                    <img loading="lazy" decoding="async" src="${gambar}" alt="${judul}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+            const kotak = daftar.map((k, idx) => {
+                const judul = escKarya(k.judul || 'Karya');
+                const gambar = gambarKaryaAman(k.gambar) || `https://ui-avatars.com/api/?name=${encodeURIComponent(k.judul || 'Karya')}&background=fef3c7&color=92400e&size=120`;
+                const hapus = KARYA_MILIK_SENDIRI && k.id
+                    ? `<button type="button" onclick="event.stopPropagation(); hapusKaryaIdCard('${escKarya(k.id)}')" aria-label="Hapus karya" title="Hapus" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center hover:bg-rose-600"><i class="fa-solid fa-xmark"></i></button>`
+                    : '';
+                return `<div class="group relative rounded-lg overflow-hidden border border-amber-100 bg-white aspect-square cursor-pointer" role="button" tabindex="0" title="${judul}" onclick="event.stopPropagation(); bukaKaryaIdCard(${idx})">
+                    <img loading="lazy" decoding="async" src="${escKarya(gambar)}" alt="${judul}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
                     <span class="absolute inset-x-0 bottom-0 bg-black/50 text-white text-[9px] px-1.5 py-1 truncate">${judul}</span>
-                </a>`;
+                    ${hapus}
+                </div>`;
             }).join('');
+
+            const tombolTambah = (KARYA_MILIK_SENDIRI && daftar.length < KARYA_MAKS_PER_SISWA)
+                ? `<button type="button" onclick="event.stopPropagation(); bukaFormTambahKarya()" aria-label="Tambah karya" title="Tambah karya" class="rounded-lg border-2 border-dashed border-amber-300 bg-white/60 text-amber-500 aspect-square flex items-center justify-center text-xl hover:bg-amber-100 transition-colors"><i class="fa-solid fa-plus"></i></button>`
+                : '';
+            kontainer.innerHTML = kotak + tombolTambah;
+        }
+
+        // Klik karya: ada link -> buka link di tab baru; tidak ada -> lightbox gambar
+        // (data URL tidak bisa dibuka langsung di tab baru oleh browser modern).
+        function bukaKaryaIdCard(idx) {
+            const k = KARYA_ID_CARD_SAAT_INI[idx];
+            if (!k) return;
+            const link = urlKaryaAman(k.url);
+            if (link) { window.open(link, '_blank', 'noopener,noreferrer'); return; }
+            const gambar = gambarKaryaAman(k.gambar);
+            if (!gambar) return;
+            const ov = document.createElement('div');
+            ov.style.cssText = 'position:fixed;inset:0;z-index:20000;background:rgba(2,6,23,.88);display:flex;align-items:center;justify-content:center;padding:16px;flex-direction:column;gap:10px';
+            ov.innerHTML = `<img src="${escKarya(gambar)}" alt="${escKarya(k.judul || 'Karya')}" style="max-width:100%;max-height:80vh;border-radius:12px;object-fit:contain"><p style="color:#fff;font:600 13px system-ui,sans-serif;margin:0">${escKarya(k.judul || 'Karya')}</p>`;
+            ov.addEventListener('click', () => ov.remove());
+            document.body.appendChild(ov);
+        }
+
+        // Kompres gambar di browser dulu (sisi terpanjang maks 800px, JPEG) supaya
+        // upload kecil; server mengompres lagi ke WebP.
+        function kompresGambarKarya(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error('Gagal membaca file.'));
+                reader.onload = () => {
+                    const img = new Image();
+                    img.onerror = () => reject(new Error('File bukan gambar yang valid.'));
+                    img.onload = () => {
+                        const MAKS = 800;
+                        const skala = Math.min(1, MAKS / Math.max(img.width, img.height));
+                        const c = document.createElement('canvas');
+                        c.width = Math.max(1, Math.round(img.width * skala));
+                        c.height = Math.max(1, Math.round(img.height * skala));
+                        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                        resolve(c.toDataURL('image/jpeg', 0.8));
+                    };
+                    img.src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function bukaFormTambahKarya() {
+            if (!KARYA_MILIK_SENDIRI || document.getElementById('modal-tambah-karya')) return;
+            const ov = document.createElement('div');
+            ov.id = 'modal-tambah-karya';
+            ov.style.cssText = 'position:fixed;inset:0;z-index:20000;background:rgba(2,6,23,.7);display:flex;align-items:center;justify-content:center;padding:16px';
+            ov.innerHTML = `
+                <div class="bg-white rounded-2xl p-4 w-full max-w-sm shadow-xl" onclick="event.stopPropagation()">
+                    <p class="text-sm font-extrabold text-slate-800 mb-3">Tambah Karya</p>
+                    <label class="block aspect-video rounded-xl border-2 border-dashed border-amber-300 bg-amber-50/60 overflow-hidden cursor-pointer flex items-center justify-center text-amber-500 text-xs font-bold mb-3">
+                        <img id="karya-preview" alt="" class="hidden w-full h-full object-cover">
+                        <span id="karya-preview-teks"><i class="fa-solid fa-image mr-1"></i> Pilih gambar</span>
+                        <input id="karya-file" type="file" accept="image/*" class="hidden">
+                    </label>
+                    <input id="karya-judul" type="text" maxlength="60" placeholder="Judul karya (opsional)" class="w-full mb-2 px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-amber-400">
+                    <input id="karya-url" type="url" maxlength="300" placeholder="Link karya, mis. https://... (opsional)" class="w-full mb-3 px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-amber-400">
+                    <div class="flex gap-2">
+                        <button type="button" id="karya-batal" class="flex-1 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold">Batal</button>
+                        <button type="button" id="karya-simpan" class="flex-1 py-2 rounded-lg bg-amber-500 text-white text-xs font-bold disabled:opacity-60">Simpan</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(ov);
+
+            let dataGambar = null;
+            const tutup = () => ov.remove();
+            ov.addEventListener('click', tutup);
+            ov.querySelector('#karya-batal').addEventListener('click', tutup);
+
+            ov.querySelector('#karya-file').addEventListener('change', async e => {
+                const f = e.target.files && e.target.files[0];
+                if (!f) return;
+                try {
+                    dataGambar = await kompresGambarKarya(f);
+                    const pv = ov.querySelector('#karya-preview');
+                    pv.src = dataGambar;
+                    pv.classList.remove('hidden');
+                    ov.querySelector('#karya-preview-teks').classList.add('hidden');
+                } catch (err) {
+                    dataGambar = null;
+                    triggerDynamicIsland(err.message || 'Gambar tidak bisa dipakai.');
+                }
+            });
+
+            const btn = ov.querySelector('#karya-simpan');
+            btn.addEventListener('click', async () => {
+                if (!dataGambar) { triggerDynamicIsland('Pilih gambar karya dulu ya.'); return; }
+                const url = ov.querySelector('#karya-url').value.trim();
+                if (url && !/^https?:\/\//i.test(url)) { triggerDynamicIsland('Link harus diawali http:// atau https://'); return; }
+                btn.disabled = true;
+                btn.textContent = 'Menyimpan...';
+                try {
+                    const res = await fetch('/api/profil/karya', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ gambar: dataGambar, judul: ov.querySelector('#karya-judul').value.trim(), url })
+                    });
+                    const json = await res.json().catch(() => null);
+                    if (!res.ok || !json || !json.success) throw new Error((json && json.message) || 'Respons server tidak sukses');
+                    renderKaryaIdCard(json.karya || [], true);
+                    triggerDynamicIsland('Karya berhasil ditambahkan!');
+                    tutup();
+                } catch (err) {
+                    console.error('Gagal menambah karya:', err);
+                    triggerDynamicIsland(err.message || 'Gagal menyimpan, coba lagi ya.');
+                    btn.disabled = false;
+                    btn.textContent = 'Simpan';
+                }
+            });
+        }
+
+        async function hapusKaryaIdCard(id) {
+            if (!KARYA_MILIK_SENDIRI || !id) return;
+            if (!window.confirm('Hapus karya ini?')) return;
+            try {
+                const res = await fetch('/api/profil/karya/' + encodeURIComponent(id), { method: 'DELETE' });
+                const json = await res.json().catch(() => null);
+                if (!res.ok || !json || !json.success) throw new Error((json && json.message) || 'Respons server tidak sukses');
+                renderKaryaIdCard(json.karya || [], true);
+                triggerDynamicIsland('Karya dihapus.');
+            } catch (err) {
+                console.error('Gagal menghapus karya:', err);
+                triggerDynamicIsland(err.message || 'Gagal menghapus, coba lagi ya.');
+            }
         }
 
         // dariTombolBack: true kalau dipanggil DARI handler popstate (tombol
