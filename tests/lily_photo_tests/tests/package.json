@@ -1,0 +1,1 @@
+{ "name": "lily-photo-tests", "private": true, "scripts": { "test": "node test_suite.js ../static/js/lily_brain.js ../static/js/lily_photo_reactions.js" }, "devDependencies": { "jsdom": "^26.0.0", "canvas": "^3.0.0" } }

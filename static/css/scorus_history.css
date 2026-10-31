@@ -1,0 +1,107 @@
+/* SCORUS AI -- panel riwayat chat. Memakai variabel warna #tab-scorus-ai (terang & gelap). */
+#tab-scorus-ai .scorus-shell { position: relative; }
+
+#tab-scorus-ai .scorus-head-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+#tab-scorus-ai .scorus-histbtn {
+    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+    padding: 8px 12px; border-radius: 12px; font-size: 12px; font-weight: 700; cursor: pointer;
+    color: var(--sc-text); background: var(--sc-bg-soft); border: 1px solid var(--sc-border);
+}
+#tab-scorus-ai .scorus-histbtn:hover,
+#tab-scorus-ai .scorus-histbtn[aria-expanded="true"] { border-color: var(--sc-brand); color: var(--sc-brand); }
+#tab-scorus-ai .scorus-histbtn:focus-visible,
+#tab-scorus-ai .scorus-hist-item button:focus-visible { outline: 2px solid var(--sc-brand); outline-offset: 2px; }
+
+#tab-scorus-ai .scorus-hist-backdrop {
+    position: absolute; inset: 0; z-index: 8; background: rgba(15, 23, 42, .35);
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+#tab-scorus-ai .scorus-hist-backdrop.terbuka { opacity: 1; pointer-events: auto; }
+
+#tab-scorus-ai .scorus-hist-panel {
+    position: absolute; top: 0; bottom: 0; left: 0; z-index: 9; width: min(320px, 88%);
+    height: 100%; max-height: 100%; min-height: 0; box-sizing: border-box; overflow: hidden; border-radius: 0;
+    display: flex; flex-direction: column; background: var(--sc-bg);
+    border-right: 1px solid var(--sc-border); box-shadow: 8px 0 28px -12px rgba(15, 23, 42, .35);
+    transform: translateX(-102%); visibility: hidden; transition: transform .22s ease, visibility 0s linear .22s;
+}
+#tab-scorus-ai .scorus-hist-panel.terbuka { transform: translateX(0); visibility: visible; transition: transform .22s ease; }
+
+#tab-scorus-ai .scorus-hist-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 14px 14px 12px; border-bottom: 1px solid var(--sc-border); flex: 0 0 auto;
+}
+#tab-scorus-ai .scorus-hist-head h3 { margin: 0; font-size: 14px; font-weight: 800; color: var(--sc-text); }
+#tab-scorus-ai .scorus-hist-tutup {
+    width: 30px; height: 30px; border: 0; border-radius: 10px; cursor: pointer; font-size: 14px;
+    color: var(--sc-muted); background: var(--sc-bg-soft);
+}
+#tab-scorus-ai .scorus-hist-list {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
+    padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    scrollbar-width: thin; scrollbar-color: var(--sc-border) transparent;
+}
+#tab-scorus-ai .scorus-hist-list::-webkit-scrollbar { width: 6px; }
+#tab-scorus-ai .scorus-hist-list::-webkit-scrollbar-thumb { background: var(--sc-border); border-radius: 999px; }
+#tab-scorus-ai .scorus-hist-info { margin: 18px 10px; text-align: center; font-size: 12.5px; line-height: 1.5; color: var(--sc-muted); }
+#tab-scorus-ai .scorus-hist-info button {
+    margin-top: 8px; padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer;
+    color: var(--sc-brand); background: var(--sc-bg-soft); border: 1px solid var(--sc-border);
+}
+
+#tab-scorus-ai .scorus-hist-item {
+    display: flex; align-items: stretch; gap: 2px; margin-bottom: 4px; border-radius: 12px; border: 1px solid transparent;
+}
+#tab-scorus-ai .scorus-hist-item:hover { background: var(--sc-bg-soft); }
+#tab-scorus-ai .scorus-hist-item.aktif { background: var(--sc-bg-soft); border-color: var(--sc-brand); }
+#tab-scorus-ai .scorus-hist-buka {
+    flex: 1; min-width: 0; text-align: left; border: 0; background: transparent; cursor: pointer; padding: 9px 10px; border-radius: 12px;
+}
+#tab-scorus-ai .scorus-hist-judul {
+    display: block; font-size: 13px; font-weight: 700; color: var(--sc-text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#tab-scorus-ai .scorus-hist-waktu { display: block; margin-top: 2px; font-size: 10.5px; color: var(--sc-muted); }
+#tab-scorus-ai .scorus-hist-hapus {
+    flex-shrink: 0; width: 34px; border: 0; background: transparent; cursor: pointer; border-radius: 12px; color: var(--sc-muted); font-size: 13px;
+}
+#tab-scorus-ai .scorus-hist-hapus:hover { color: #e11d48; background: rgba(244, 63, 94, .1); }
+
+@media (max-width: 767px) {
+    #tab-scorus-ai .scorus-hist-panel { width: min(300px, 86%); }
+    #tab-scorus-ai .scorus-histbtn span { display: none; }   /* tombol Riwayat jadi ikon saja di HP, sama seperti Chat Baru */
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #tab-scorus-ai .scorus-hist-panel, #tab-scorus-ai .scorus-hist-backdrop { transition: none; }
+}
+
+/* ===== SCORUS AI penuh layar (desktop): kartu mengisi seluruh area konten di bawah header ===== */
+@media (min-width: 768px) {
+    /* hilangkan padding <main> hanya saat tab SCORUS AI sedang tampil (tab lain tidak terpengaruh) */
+    main:has(> #tab-scorus-ai:not(.hidden)) { padding: 0; }
+
+    #tab-scorus-ai.scorus-page:not(.hidden) { margin-top: 0; }   /* buang jarak space-y bawaan Tailwind */
+
+    #tab-scorus-ai.scorus-page .scorus-shell {
+        width: 100%; max-width: none; margin: 0;
+        height: calc(100vh - 5rem);      /* 5rem = tinggi header h-20 */
+        height: calc(100dvh - 5rem);
+        min-height: 0;
+        border: 0; border-radius: 0;     /* menempel ke sidebar, header, dan tepi layar */
+    }
+}
+
+/* ===== Tombol X (tutup) riwayat: merah saat disorot mouse / disentuh di HP ===== */
+#tab-scorus-ai .scorus-hist-tutup {
+    transition: color .15s ease, background-color .15s ease, transform .1s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+#tab-scorus-ai .scorus-hist-tutup:hover,
+#tab-scorus-ai .scorus-hist-tutup:focus-visible {
+    color: #e11d48; background: rgba(244, 63, 94, .12);
+}
+#tab-scorus-ai .scorus-hist-tutup:active {          /* saat diklik / ditekan jari di HP */
+    color: #ffffff; background: #e11d48; transform: scale(.94);
+}

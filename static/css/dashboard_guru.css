@@ -1,0 +1,964 @@
+body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        html { scroll-behavior: smooth; }
+
+        /* ============================================================
+           LAYOUT -- Kerangka Utama (Sidebar + Header + Konten)
+           ------------------------------------------------------------
+           PENYEBAB BUG "header numpuk/menabrak sidebar setelah ganti
+           tema": kontainer konten (#main-scroll-container) adalah flex
+           item (flex-1) tapi tanpa min-width:0, dan area kiri header
+           (search bar + identitas HP) juga tidak dibatasi lebarnya.
+           Akibatnya kalau kontennya tidak muat, browser TIDAK
+           menyusutkan flex item itu (perilaku default flexbox), malah
+           mendorong lebar keluar -- tombol tema/lonceng/profil ikut
+           terdorong dan tampak menabrak/menumpuk ke sidebar. Ini murni
+           soal layout; toggle tema cuma "memicu" render ulang yang
+           bikin bug lama ini kelihatan.
+
+           Blok ini ditulis manual (bukan cuma andalin class Tailwind di
+           HTML) supaya kerangkanya TETAP STABIL apa pun kondisinya --
+           termasuk kalau tailwind_compiled_guru.css belum sempat
+           di-generate ulang (lihat catatan build di <head>
+           dashboard_guru.html), dan terlepas dari tema aktif.
+
+           ATURAN PENTING buat siapa pun yang edit CSS ini ke depannya:
+           - Blok LAYOUT (di sini) HANYA boleh berisi: display, position,
+             flex/grid, width/height, margin, padding struktural, gap,
+             z-index, top/left/right/bottom, overflow, min-width.
+           - Blok THEME (cari komentar "MODE TERANG / GELAP" di bawah)
+             HANYA boleh berisi: color, background(-color), border-color,
+             box-shadow warna, color-scheme, opacity ikon tema.
+           - JANGAN campur keduanya dalam satu selector. Kalau nanti nemu
+             selector ".dark"/"html:not(.dark)" yang mengatur position/
+             display/grid/flex/width/margin/transform layout, itu BUG --
+             pindahkan bagian layoutnya ke sini, sisakan cuma warnanya
+             di blok THEME. (Sudah diaudit per 2026-09-24: semua rule
+             ".dark" yang ada murni warna/border/scrollbar, aman.)
+           ============================================================ */
+        body {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #sidebar-utama {
+            flex: 0 0 16rem; /* kunci lebar sidebar (=w-64) biar tidak pernah "kompres" kalau header melebar */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        #main-scroll-container {
+            flex: 1 1 auto;
+            min-width: 0; /* WAJIB: tanpa ini, konten header yang kepanjangan mendorong lebar & menabrak sidebar */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        #header-utama-guru {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            flex-shrink: 0;
+        }
+        .guru-header-start {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+        .guru-header-center {
+            flex: 0 0 auto;
+        }
+        .guru-header-end {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 0 0 auto;
+        }
+
+        html:not(.dark) body.bg-slate-50 { background-color: #F5F7FA; }
+
+        .kartu-kelas-beranda {
+            -webkit-tap-highlight-color: transparent;
+        }
+        .kartu-kelas-beranda.kartu-tersentuh {
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            transform: translateY(-4px);
+            border-color: #93c5fd;
+        }
+
+        #main-scroll-container {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+        }
+
+        .modal-scroll-smooth {
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+        .modal-scroll-smooth::-webkit-scrollbar { width: 6px; }
+        .modal-scroll-smooth::-webkit-scrollbar-track { background: transparent; }
+        .modal-scroll-smooth::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .modal-scroll-smooth::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+
+        .tab-beri-tugas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background-color: #f1f5f9;
+            padding: 4px;
+            border-radius: 0.75rem;
+        }
+        .tab-beri-tugas-opsi {
+            padding: 0.5rem 0;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 0.5rem;
+            background-color: transparent;
+            color: #64748b;
+            cursor: pointer;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .tab-beri-tugas-opsi.aktif {
+            background-color: #ffffff;
+            color: #2563eb;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+
+        .kartu-rekap-tugas-siswa {
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .kartu-rekap-tugas-siswa.bisa-diperiksa:hover {
+            transform: scale(1.03);
+            box-shadow: 0 14px 28px -10px rgba(15, 23, 42, 0.22);
+        }
+        .kartu-rekap-tugas-siswa.bisa-diperiksa:active { transform: scale(0.99); }
+
+        .border-emas-avatar {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            padding: 3px;
+            background: linear-gradient(135deg, #f59e0b, #fde047, #f59e0b, #b45309);
+            box-shadow: 0 0 14px rgba(245, 158, 11, 0.55), 0 0 4px rgba(253, 224, 71, 0.6);
+            flex-shrink: 0;
+        }
+        .border-emas-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 9999px;
+            object-fit: cover;
+            border: 2px solid white;
+            display: block;
+        }
+
+        .gold-name-text {
+            background: linear-gradient(90deg, #f59e0b, #fde047, #f59e0b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+        }
+
+        .badge-dev {
+            position: relative;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+        }
+        .badge-dev::after {
+            content: "";
+            position: absolute;
+            top: -50px;
+            left: -75px;
+            width: 40px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0) 100%);
+            animation: shine-dev 3.5s ease-in-out infinite;
+            transform: rotate(-30deg);
+            pointer-events: none;
+        }
+        @keyframes shine-dev {
+            0% { top: -50px; left: -75px; }
+            30%, 100% { top: -50px; left: 85px; }
+        }
+
+        .tombol-kirim-anim { position: relative; overflow: hidden; }
+        .tombol-kirim-anim .kirim-icon-slot {
+            position: relative; width: 16px; height: 16px; flex-shrink: 0;
+        }
+        .tombol-kirim-anim .icon-buku-kirim,
+        .tombol-kirim-anim .icon-check-kirim {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+        }
+        .tombol-kirim-anim .icon-buku-kirim { opacity: 1; transform: translateX(0); }
+        .tombol-kirim-anim .icon-check-kirim {
+            opacity: 0; transform: scale(0.3);
+            width: 16px; height: 16px; border-radius: 9999px;
+            background: #ffffff; color: #059669; font-size: 10px;
+        }
+        .tombol-kirim-anim.mengirim .icon-buku-kirim {
+            transform: translateX(22px); opacity: 0;
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease 0.1s;
+        }
+        .tombol-kirim-anim.mengirim .icon-check-kirim {
+            opacity: 1; transform: scale(1);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.32s, opacity 0.25s ease 0.32s;
+        }
+        .tombol-kirim-anim:disabled { cursor: not-allowed; opacity: 0.9; }
+
+        #toast-sukses-container {
+            position: fixed; top: 1rem; right: 1rem; z-index: 100;
+            display: flex; flex-direction: column; gap: 0.75rem;
+            width: min(360px, calc(100vw - 2rem)); pointer-events: none;
+        }
+        .toast-sukses-kirim {
+            pointer-events: auto; background: #ffffff;
+            border: 1px solid #d1fae5; border-left: 4px solid #10b981;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1);
+            padding: 0.9rem 1rem; display: flex; align-items: flex-start; gap: 0.75rem;
+            animation: toastSuksesMasuk 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .toast-sukses-kirim.toast-keluar { animation: toastSuksesKeluar 0.3s ease forwards; }
+        @keyframes toastSuksesMasuk {
+            from { transform: translateX(28px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes toastSuksesKeluar {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(28px); opacity: 0; }
+        }
+        .toast-sukses-kirim .toast-check-svg { width: 26px; height: 26px; flex-shrink: 0; margin-top: 1px; }
+        .toast-sukses-kirim .toast-check-circle {
+            fill: none; stroke: #10b981; stroke-width: 3;
+            stroke-dasharray: 145; stroke-dashoffset: 145;
+            animation: toastCircleDraw 0.5s ease forwards;
+        }
+        .toast-sukses-kirim .toast-check-mark {
+            fill: none; stroke: #10b981; stroke-width: 4.5;
+            stroke-linecap: round; stroke-linejoin: round;
+            stroke-dasharray: 36; stroke-dashoffset: 36;
+            animation: toastCheckDraw 0.35s ease forwards; animation-delay: 0.4s;
+        }
+        @keyframes toastCircleDraw { to { stroke-dashoffset: 0; } }
+        @keyframes toastCheckDraw { to { stroke-dashoffset: 0; } }
+        .toast-sukses-kirim .toast-teks-judul { font-weight: 800; font-size: 12px; color: #065f46; }
+        .toast-sukses-kirim .toast-teks-pesan {
+            font-size: 11px; color: #475569; line-height: 1.5; margin-top: 0.15rem;
+        }
+        .toast-sukses-kirim .toast-btn-tutup {
+            margin-left: auto; color: #94a3b8; font-size: 12px; padding: 0.15rem; flex-shrink: 0;
+        }
+        .toast-sukses-kirim .toast-btn-tutup:hover { color: #475569; }
+
+        #layar-masuk-dashboard {
+            position: fixed; inset: 0; z-index: 9999;
+            background:
+                radial-gradient(circle at 18% 20%, rgba(99,102,241,0.45), transparent 52%),
+                radial-gradient(circle at 82% 28%, rgba(16,185,129,0.4), transparent 52%),
+                radial-gradient(circle at 50% 95%, rgba(250,204,21,0.18), transparent 60%),
+                linear-gradient(160deg, #0b1120 0%, #111827 55%, #0b1120 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+            overflow: hidden;
+        }
+        #layar-masuk-dashboard.selesai { opacity: 0; visibility: hidden; pointer-events: none; }
+        #layar-masuk-dashboard::before {
+            content: ""; position: absolute; inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+            background-size: 26px 26px; opacity: 0.5; z-index: 0;
+            animation: masukDashboardKisiGeser 22s linear infinite;
+        }
+        @keyframes masukDashboardKisiGeser { 0% { background-position: 0 0; } 100% { background-position: 260px 260px; } }
+        .masuk-dashboard-lencana, .masuk-dashboard-spinner, .masuk-dashboard-teks { position: relative; z-index: 1; }
+        .masuk-dashboard-lencana {
+            width: 80px; height: 80px; border-radius: 24px;
+            background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28);
+            display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
+            animation: masukDashboardNapas 1.4s ease-in-out infinite;
+        }
+        @keyframes masukDashboardNapas { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+        .masuk-dashboard-lencana i { font-size: 32px; color: #ffffff; }
+        .masuk-dashboard-spinner {
+            width: 38px; height: 38px; border-radius: 50%;
+            border: 4px solid rgba(255,255,255,0.28); border-top-color: #ffffff;
+            animation: masukDashboardPutar 0.8s linear infinite; margin-bottom: 14px;
+        }
+        @keyframes masukDashboardPutar { to { transform: rotate(360deg); } }
+        .masuk-dashboard-teks {
+            color: #ffffff; font-size: 13.5px; font-weight: 600;
+            letter-spacing: 0.3px; opacity: 0.92;
+        }
+        .masuk-dashboard-titik::after {
+            content: ''; animation: masukDashboardTitikJalan 1.2s steps(4) infinite;
+        }
+        @keyframes masukDashboardTitikJalan {
+            0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } 100% { content: ''; }
+        }
+
+        .guru-mobile-only-flex { display: none; }
+        @media (max-width: 639px) {
+            .guru-mobile-only-flex { display: flex; }
+            .guru-desktop-only-inline { display: none !important; }
+        }
+
+        .guru-mobile-clock-bar {
+            display: none; align-items: center; justify-content: flex-start; gap: 0.6rem;
+            background: #ffffff; border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            padding: 0.55rem 1rem;
+        }
+        @media (max-width: 639px) { .guru-mobile-clock-bar { display: flex; } }
+        @media (max-width: 639px) {
+            #header-utama-guru {
+                background: linear-gradient(120deg, #0f172a 0%, #1e1b4b 50%, #1e3a8a 100%);
+                border-bottom: none; box-shadow: none;
+            }
+            .guru-mobile-clock-bar {
+                background: linear-gradient(120deg, #1e1b4b 0%, #1e3a8a 100%);
+                border-bottom: none; padding: 0.5rem 1rem 1rem;
+            }
+        }
+        .guru-jam-chip {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 9999px; padding: 0.3rem 0.75rem; flex-shrink: 0;
+        }
+
+        @media (max-width: 639px) {
+            .filter-cepat-wrap {
+                flex-wrap: nowrap; overflow-x: auto;
+                -webkit-overflow-scrolling: touch; scrollbar-width: none;
+                padding-bottom: 2px; margin: 0 -0.25rem;
+                padding-left: 0.25rem; padding-right: 0.25rem;
+            }
+            .filter-cepat-wrap::-webkit-scrollbar { display: none; }
+            .filter-cepat-wrap .btn-fast-filter { flex-shrink: 0; }
+        }
+
+        @media (max-width: 639px) {
+            #banner-selamat-datang-guru {
+                margin: -1rem -1rem 0 -1rem;
+                border-top-left-radius: 0; border-top-right-radius: 0;
+                border-bottom-left-radius: 1.5rem; border-bottom-right-radius: 1.5rem;
+                box-shadow: none;
+            }
+        }
+
+        @media (max-width: 639px) {
+            .btn-fast-filter { border-radius: 9999px; }
+            #select-fast-jurusan {
+                background: #ffffff; border-color: #f1f5f9; border-radius: 1rem;
+                padding-left: 2.5rem; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+            }
+        }
+
+        .kartu-kelas-sisa-wrapper { display: contents; }
+        .kartu-kelas-sisa-wrapper.kartu-kelas-tersembunyi { display: none; }
+
+        @media (min-width: 640px) {
+            .kartu-kelas-sisa-wrapper.kartu-kelas-tersembunyi { display: contents; }
+            [id$="-tombol"] { display: none; }
+        }
+
+        @media (max-width: 639px) {
+            #header-utama-guru .guru-mobile-only-flex p,
+            #header-realtime-date-mobile {
+                color: rgba(191, 219, 254, 0.85) !important;
+            }
+        }
+
+        .denah-top-row .denah-pintu-masuk { display: none !important; }
+        .denah-top-row .denah-papan-tulis {
+            width: 100% !important; flex: 1 1 100% !important; grid-column: 1 / -1 !important;
+        }
+
+        @media (max-width: 639px) {
+            .kelas-hero-banner { height: auto !important; padding-bottom: 1.1rem; }
+            #modal-kelas-header-row {
+                flex-direction: column; align-items: flex-start; gap: 0.65rem;
+            }
+            #modal-kelas-header-row > div:first-child { width: 100%; }
+            .kelas-header-badge-count { display: none !important; }
+            .kelas-view-toggle-wrap { width: 100%; }
+            .kelas-view-toggle-wrap button { flex: 1 1 0%; }
+            .denah-top-row { display: flex; flex-direction: column; gap: 0.5rem; }
+            .denah-top-row > div { width: 100%; }
+            .denah-papan-tulis { order: 1; }
+            .denah-pintu-masuk { display: none !important; }
+        }
+
+        .tsm-card {
+            background: #ffffff; border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 1.25rem; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+            overflow: hidden;
+        }
+        .tsm-card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 0.75rem; padding: 0.95rem 1.1rem;
+            background: linear-gradient(180deg, #f8fafc, #ffffff);
+            border-bottom: 1px solid #eef2f7;
+        }
+        .tsm-card-header-text h4 {
+            font-size: 0.95rem; font-weight: 800; color: #0f172a; line-height: 1.25; margin: 0;
+        }
+        .tsm-card-header-text p { font-size: 0.7rem; color: #64748b; margin: 0.15rem 0 0 0; }
+        .tsm-mini-badge {
+            flex-shrink: 0; font-size: 0.65rem; font-weight: 800;
+            padding: 0.35rem 0.7rem; border-radius: 9999px;
+            background: #dbeafe; color: #1d4ed8; white-space: nowrap;
+        }
+        .tsm-col-labels {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.55rem 1.1rem; background: #f8fafc; border-bottom: 1px solid #eef2f7;
+        }
+        .tsm-col-labels span {
+            font-size: 0.62rem; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 0.04em; color: #94a3b8;
+        }
+        .tsm-list { display: flex; flex-direction: column; max-height: none; }
+        .tsm-row {
+            display: flex; align-items: center; gap: 0.7rem;
+            padding: 0.8rem 1.1rem; border-bottom: 1px solid #f1f5f9;
+            cursor: pointer; transition: background-color 0.15s ease;
+        }
+        .tsm-row:last-child { border-bottom: none; }
+        .tsm-row:hover, .tsm-row:active { background-color: #f8fafc; }
+        .tsm-avatar-wrap { position: relative; flex-shrink: 0; line-height: 0; }
+        .tsm-main { flex: 1 1 auto; min-width: 0; }
+        .tsm-badges {
+            display: flex; align-items: center; flex-wrap: wrap;
+            gap: 0.25rem; margin-bottom: 0.2rem;
+        }
+        .tsm-badge-dev {
+            gap: 0.25rem; padding: 0.1rem 0.4rem; font-size: 0.55rem;
+            font-weight: 800; background: #fbbf24; color: #1e293b; border-radius: 0.35rem;
+        }
+        .tsm-badge-pintu {
+            padding: 0.1rem 0.4rem; font-size: 0.55rem; font-weight: 800;
+            background: #fef3c7; color: #b45309; border-radius: 0.35rem;
+        }
+        .tsm-badge-efek {
+            display: inline-flex; align-items: center; gap: 0.2rem;
+            padding: 0.1rem 0.4rem; font-size: 0.55rem; font-weight: 800;
+            background: #f5f3ff; color: #7c3aed; border-radius: 0.35rem;
+        }
+        .tsm-nama {
+            font-size: 0.82rem; font-weight: 800; color: #0f172a;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .tsm-id {
+            font-size: 0.65rem; color: #94a3b8;
+            font-family: ui-monospace, monospace; margin-top: 0.1rem;
+        }
+        .tsm-status { flex-shrink: 0; display: flex; justify-content: flex-end; }
+        .tsm-status-pill {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            font-size: 0.62rem; font-weight: 800; padding: 0.35rem 0.6rem;
+            border-radius: 9999px; white-space: nowrap;
+        }
+        .tsm-status-hijau { background: #d1fae5; color: #047857; }
+        .tsm-status-merah { background: #ffe4e6; color: #be123c; }
+        .tsm-status-biru  { background: #dbeafe; color: #1d4ed8; }
+        .tsm-status-kuning { background: #fef3c7; color: #92400e; }
+        .tsm-chevron { flex-shrink: 0; color: #cbd5e1; font-size: 0.7rem; margin-left: 0.1rem; }
+
+        @media (max-width: 380px) { .tsm-id { display: none; } }
+
+        .guru-tombol-tema {
+            position: relative; overflow: hidden;
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 2.5rem; height: 2.5rem; flex-shrink: 0;
+            border-radius: 9999px; cursor: pointer;
+            border: 1px solid #e2e8f0; background: #ffffff; color: #475569;
+            font-size: 15px; -webkit-tap-highlight-color: transparent;
+            transition: background-color .15s ease, color .15s ease, transform .15s ease;
+        }
+        .guru-tombol-tema:hover { background: #f8fafc; }
+        .guru-tombol-tema:active { transform: scale(.9); }
+        .guru-tombol-tema .slot-ikon-tema {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform .55s cubic-bezier(.65, 0, .35, 1), opacity .4s ease;
+        }
+        .guru-tombol-tema .icon-matahari-wrap { transform: translateY(0) rotate(0deg); opacity: 1; color: #fbbf24; }
+        .guru-tombol-tema .icon-bulan-wrap { transform: translateY(-160%) rotate(-50deg); opacity: 0; }
+        html.dark .guru-tombol-tema .icon-matahari-wrap { transform: translateY(160%) rotate(50deg); opacity: 0; }
+        html.dark .guru-tombol-tema .icon-bulan-wrap { transform: translateY(0) rotate(0deg); opacity: 1; }
+        @media (prefers-reduced-motion: reduce) {
+            .guru-tombol-tema .slot-ikon-tema { transition: opacity .25s ease !important; }
+            .guru-tombol-tema .icon-matahari-wrap,
+            .guru-tombol-tema .icon-bulan-wrap,
+            html.dark .guru-tombol-tema .icon-matahari-wrap,
+            html.dark .guru-tombol-tema .icon-bulan-wrap { transform: none !important; }
+        }
+        @media (max-width: 639px) {
+            .guru-tombol-tema {
+                margin-right: -0.5rem;
+                border-color: rgba(255, 255, 255, 0.2);
+                background: rgba(255, 255, 255, 0.15);
+                color: #ffffff;
+            }
+            .guru-tombol-tema:hover { background: rgba(255, 255, 255, 0.25); }
+        }
+        html.dark .guru-tombol-tema { border-color: #334155; background: #313d59; color: #e2e8f0; }
+        @media (max-width: 639px) {
+            html.dark .guru-tombol-tema {
+                border-color: rgba(255, 255, 255, 0.2);
+                background: rgba(255, 255, 255, 0.15);
+                color: #ffffff;
+            }
+        }
+
+        html.dark { color-scheme: dark; }
+        html.dark body.bg-slate-50 { background-color: #182031 !important; }
+        html.dark .bg-white { background-color: #232d42 !important; }
+        html.dark .bg-slate-50 { background-color: #2a3550 !important; }
+        html.dark .bg-slate-50\/50 { background-color: rgba(42, 53, 80, 0.5) !important; }
+        html.dark .bg-slate-100 { background-color: #313d59 !important; }
+        html.dark .bg-slate-100\/70 { background-color: rgba(49, 61, 89, 0.7) !important; }
+        html.dark .bg-slate-200 { background-color: #3b4867 !important; }
+        html.dark .bg-gradient-to-br.from-blue-50 { background-image: linear-gradient(to bottom right, #2d3a5c, #232d42) !important; }
+        html.dark button.bg-slate-800,
+        html.dark button.bg-slate-900 { background-color: #334155 !important; }
+        html.dark button.hover\:bg-slate-800:hover,
+        html.dark button.hover\:bg-slate-900:hover { background-color: #475569 !important; }
+        html.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.14) !important; }
+        html.dark .bg-blue-50\/60 { background-color: rgba(59, 130, 246, 0.09) !important; }
+        html.dark .bg-rose-50 { background-color: rgba(244, 63, 94, 0.13) !important; }
+        html.dark .bg-rose-50\/70 { background-color: rgba(244, 63, 94, 0.1) !important; }
+        html.dark .bg-rose-100 { background-color: rgba(244, 63, 94, 0.2) !important; }
+        html.dark .bg-emerald-50,
+        html.dark .bg-emerald-50\/90 { background-color: rgba(16, 185, 129, 0.13) !important; }
+        html.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.2) !important; }
+        html.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.13) !important; }
+        html.dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.2) !important; }
+        html.dark .bg-orange-50 { background-color: rgba(249, 115, 22, 0.13) !important; }
+        html.dark .bg-violet-50,
+        html.dark .bg-purple-50 { background-color: rgba(139, 92, 246, 0.14) !important; }
+        html.dark .hover\:bg-slate-50:hover { background-color: #2a3550 !important; }
+        html.dark .hover\:bg-slate-200:hover { background-color: #46557a !important; }
+        html.dark .hover\:bg-slate-300:hover { background-color: #4f5f82 !important; }
+        html.dark .hover\:bg-blue-50:hover { background-color: rgba(59, 130, 246, 0.2) !important; }
+        html.dark .hover\:bg-blue-100:hover { background-color: rgba(59, 130, 246, 0.28) !important; }
+        html.dark .hover\:bg-rose-100:hover { background-color: rgba(244, 63, 94, 0.26) !important; }
+        html.dark .hover\:bg-emerald-100:hover { background-color: rgba(16, 185, 129, 0.26) !important; }
+        html.dark .hover\:bg-orange-100:hover { background-color: rgba(249, 115, 22, 0.26) !important; }
+        html.dark .hover\:border-orange-200:hover { border-color: rgba(249, 115, 22, 0.45) !important; }
+        html.dark .hover\:border-blue-300:hover { border-color: rgba(96, 165, 250, 0.55) !important; }
+        html.dark .text-slate-900 { color: #e2e8f0 !important; }
+        html.dark .text-slate-800 { color: #e2e8f0 !important; }
+        html.dark .text-slate-700 { color: #cbd5e1 !important; }
+        html.dark .text-slate-600 { color: #b3bfd0 !important; }
+        html.dark .text-slate-500 { color: #a3b0c4 !important; }
+        html.dark .text-slate-400 { color: #94a1b7 !important; }
+        html.dark .hover\:text-slate-900:hover { color: #e2e8f0 !important; }
+        html.dark .hover\:text-slate-700:hover { color: #e2e8f0 !important; }
+        html.dark .hover\:text-slate-600:hover { color: #cbd5e1 !important; }
+        html.dark .hover\:text-blue-600:hover,
+        html.dark .group:hover .group-hover\:text-blue-600 { color: #93c5fd !important; }
+        html.dark .text-blue-500,
+        html.dark .text-blue-600 { color: #60a5fa !important; }
+        html.dark .text-blue-700 { color: #93c5fd !important; }
+        html.dark .text-blue-900 { color: #bfdbfe !important; }
+        html.dark .text-rose-600 { color: #fb7185 !important; }
+        html.dark .text-rose-700 { color: #fda4af !important; }
+        html.dark .text-rose-900 { color: #fecdd3 !important; }
+        html.dark .text-emerald-600 { color: #34d399 !important; }
+        html.dark .text-emerald-700 { color: #6ee7b7 !important; }
+        html.dark .text-emerald-900 { color: #a7f3d0 !important; }
+        html.dark .text-amber-600 { color: #fbbf24 !important; }
+        html.dark .text-amber-700 { color: #fcd34d !important; }
+        html.dark .text-amber-900 { color: #fde68a !important; }
+        html.dark .text-orange-600 { color: #fb923c !important; }
+        html.dark .text-orange-900 { color: #fdba74 !important; }
+        html.dark .text-purple-600,
+        html.dark .text-violet-600 { color: #c4b5fd !important; }
+        html.dark .text-purple-700,
+        html.dark .text-violet-700 { color: #ddd6fe !important; }
+        html.dark .text-cyan-700 { color: #67e8f9 !important; }
+        html.dark ::placeholder { color: #8391a8 !important; }
+        html.dark .border-slate-100,
+        html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #2f3a54 !important; }
+        html.dark .border-slate-200,
+        html.dark .border-slate-200\/80,
+        html.dark .border-slate-200\/60,
+        html.dark .border-slate-200\/50 { border-color: #3a4763 !important; }
+        html.dark .border-slate-300 { border-color: #4a5878 !important; }
+        html.dark .border-blue-200 { border-color: rgba(59, 130, 246, 0.35) !important; }
+        html.dark .border-rose-200 { border-color: rgba(244, 63, 94, 0.35) !important; }
+        html.dark .border-rose-300 { border-color: rgba(244, 63, 94, 0.45) !important; }
+        html.dark .border-emerald-200 { border-color: rgba(16, 185, 129, 0.35) !important; }
+        html.dark .border-emerald-300 { border-color: rgba(16, 185, 129, 0.45) !important; }
+        html.dark .border-orange-200 { border-color: rgba(249, 115, 22, 0.35) !important; }
+        html.dark .border-violet-100 { border-color: rgba(139, 92, 246, 0.25) !important; }
+        html.dark .tab-beri-tugas { background-color: #313d59 !important; }
+        html.dark .tab-beri-tugas-opsi.aktif { background-color: #3b4867 !important; color: #60a5fa !important; box-shadow: none !important; }
+        html.dark .modal-scroll-smooth { scrollbar-color: #334155 transparent; }
+        html.dark .modal-scroll-smooth::-webkit-scrollbar-thumb { background-color: #334155; }
+        html.dark .modal-scroll-smooth::-webkit-scrollbar-thumb:hover { background-color: #475569; }
+        html.dark #select-fast-jurusan { background: #232d42 !important; border-color: #3a4763 !important; color: #e2e8f0 !important; }
+        html.dark .guru-bottom-sheet { background: #232d42 !important; }
+        html.dark .guru-sheet-handle { background: #334155 !important; }
+        html.dark .guru-sheet-item { color: #cbd5e1 !important; }
+        html.dark .guru-sheet-item:active { background: #313d59 !important; }
+        html.dark .guru-sheet-item i { color: #60a5fa !important; }
+        html.dark #profile-dropdown-guru.guru-profile-dropdown-panel { background: #232d42 !important; border-color: #3a4763 !important; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45) !important; }
+        html.dark .toast-sukses-kirim { background: #232d42 !important; border-color: rgba(16, 185, 129, 0.3) !important; border-left-color: #10b981 !important; }
+        html.dark .toast-sukses-kirim .toast-teks-judul { color: #6ee7b7 !important; }
+        html.dark .toast-sukses-kirim .toast-teks-pesan { color: #b3bfd0 !important; }
+        html.dark .toast-sukses-kirim .toast-btn-tutup:hover { color: #e2e8f0 !important; }
+        html.dark .tsm-card { background: #232d42 !important; border-color: #3a4763 !important; box-shadow: none !important; }
+        html.dark .tsm-card-header { background: linear-gradient(180deg, #2a3550, #232d42) !important; border-bottom-color: #3a4763 !important; }
+        html.dark .tsm-card-header-text h4,
+        html.dark .tsm-nama { color: #e2e8f0 !important; }
+        html.dark .tsm-mini-badge { background: rgba(59, 130, 246, 0.2) !important; color: #93c5fd !important; }
+        html.dark .tsm-col-labels { background: #2a3550 !important; border-bottom-color: #3a4763 !important; }
+        html.dark .tsm-row { border-bottom-color: #2f3a54 !important; }
+        html.dark .tsm-row:hover,
+        html.dark .tsm-row:active { background-color: #2a3550 !important; }
+        html.dark .tsm-badge-pintu { background: rgba(245, 158, 11, 0.2) !important; color: #fcd34d !important; }
+        html.dark .tsm-badge-efek { background: rgba(139, 92, 246, 0.2) !important; color: #c4b5fd !important; }
+        html.dark .tsm-status-hijau { background: rgba(16, 185, 129, 0.2) !important; color: #6ee7b7 !important; }
+        html.dark .tsm-status-merah { background: rgba(244, 63, 94, 0.2) !important; color: #fda4af !important; }
+        html.dark .tsm-status-biru { background: rgba(59, 130, 246, 0.2) !important; color: #93c5fd !important; }
+        html.dark .tsm-status-kuning { background: rgba(245, 158, 11, 0.2) !important; color: #fcd34d !important; }
+        html.dark .tsm-chevron { color: #64748b !important; }
+
+        html:not(.dark) .guru-bottom-nav {
+            background: #ffffff; border-top: 1px solid #e2e8f0;
+            box-shadow: 0 -6px 20px rgba(15, 23, 42, 0.07);
+        }
+        html:not(.dark) .guru-bottom-nav-item { color: #64748b; }
+        html:not(.dark) .guru-bottom-nav-item.is-active { color: #2563eb; }
+        html:not(.dark) .guru-bottom-nav-dot { border-color: #ffffff; }
+
+        .guru-about-page:not(.hidden) { display: flex; flex-direction: column; gap: 1.5rem; }
+        .guru-about-header {
+            display: flex; flex-direction: column; gap: 1rem;
+            padding: 1.5rem; border-radius: 1rem;
+            border-width: 1px; border-style: solid;
+        }
+        @media (min-width: 768px) {
+            .guru-about-header { flex-direction: row; align-items: center; justify-content: space-between; }
+        }
+        .guru-about-header-text h2 { font-size: 1.375rem; font-weight: 800; line-height: 1.25; margin: 0; }
+        .guru-about-header-text p { font-size: 0.75rem; margin: 0.35rem 0 0; }
+        .guru-about-back-btn {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            align-self: flex-start; padding: 0.65rem 1.1rem; border-radius: 0.75rem;
+            font-size: 0.75rem; font-weight: 700; border: none; cursor: pointer;
+            flex-shrink: 0; transition: background-color .15s ease, color .15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .guru-about-hero {
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            gap: 1.25rem; padding: 2rem 1.5rem; border-radius: 1.5rem;
+            border-width: 1px; border-style: solid;
+            transition: transform .25s cubic-bezier(.22,1,.36,1), box-shadow .25s ease, border-color .25s ease;
+            will-change: transform;
+        }
+        .guru-about-hero:hover { transform: scale(1.012); }
+        @media (min-width: 640px) {
+            .guru-about-hero { flex-direction: row; align-items: flex-start; text-align: left; padding: 2.5rem; }
+        }
+        .guru-about-hero-logo {
+            width: 5.5rem; height: 5.5rem; border-radius: 1.25rem;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; flex-shrink: 0;
+            box-shadow: 0 10px 25px -8px rgba(37, 99, 235, 0.4);
+        }
+        .guru-about-hero-logo img { width: 100%; height: 100%; object-fit: contain; }
+        .guru-about-hero-body { flex: 1 1 auto; min-width: 0; }
+        .guru-about-hero-body h1 { font-size: 1.375rem; font-weight: 800; margin: 0; }
+        .guru-about-hero-body p { font-size: 0.85rem; line-height: 1.7; margin: 0.6rem 0 0; max-width: 42rem; }
+        .guru-about-badges { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
+        @media (min-width: 640px) { .guru-about-badges { justify-content: flex-start; } }
+        .guru-about-badge {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.68rem; font-weight: 800;
+        }
+        .guru-about-badge-dot { width: 0.4rem; height: 0.4rem; border-radius: 9999px; flex-shrink: 0; }
+        .guru-about-section-title { font-size: 1rem; font-weight: 800; margin: 0 0 1rem; }
+        .guru-about-features-grid { display: grid; grid-template-columns: 1fr; gap: 1.1rem; }
+        @media (min-width: 640px) { .guru-about-features-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1024px) { .guru-about-features-grid { grid-template-columns: repeat(4, 1fr); } }
+        .guru-about-feature-card {
+            padding: 1.25rem; border-radius: 1.1rem; border-width: 1px; border-style: solid;
+            transition: transform .25s cubic-bezier(.22,1,.36,1), box-shadow .25s ease, border-color .25s ease;
+            will-change: transform; cursor: default;
+        }
+        .guru-about-feature-card:hover { transform: scale(1.02); }
+        .guru-about-feature-icon {
+            width: 2.75rem; height: 2.75rem; border-radius: 0.85rem;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.05rem; margin-bottom: 0.85rem;
+        }
+        .guru-about-feature-card h4 { font-size: 0.85rem; font-weight: 800; margin: 0; }
+        .guru-about-feature-card p { font-size: 0.72rem; line-height: 1.6; margin: 0.35rem 0 0; }
+        .guru-about-card {
+            padding: 1.5rem; border-radius: 1.1rem; border-width: 1px; border-style: solid;
+            transition: transform .25s cubic-bezier(.22,1,.36,1), box-shadow .25s ease, border-color .25s ease;
+            will-change: transform;
+        }
+        .guru-about-card:hover { transform: scale(1.012); }
+        .guru-about-dev-row { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1rem; }
+        @media (min-width: 640px) { .guru-about-dev-row { flex-direction: row; align-items: center; text-align: left; } }
+        .guru-about-dev-avatar {
+            width: 3.5rem; height: 3.5rem; border-radius: 9999px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.25rem; flex-shrink: 0;
+        }
+        .guru-about-dev-name { font-size: 0.9rem; font-weight: 800; margin: 0; }
+        .guru-about-dev-name-btn {
+            background: none; border: none; padding: 0; text-align: left; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 0.35rem;
+        }
+        .guru-about-dev-name-btn::after {
+            content: '\f35d'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+            font-size: 0.6rem; opacity: 0.45; transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .guru-about-dev-name-btn:hover { color: #2563eb; }
+        .guru-about-dev-name-btn:hover::after { opacity: 1; transform: translate(1px, -1px); }
+        .guru-about-dev-role { font-size: 0.72rem; margin: 0.2rem 0 0; }
+        .guru-about-stack-label { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.6rem; }
+        .guru-about-stack-wrap { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+        @media (min-width: 640px) { .guru-about-stack-wrap { justify-content: flex-start; } }
+        .guru-about-stack-pill {
+            padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.68rem; font-weight: 700;
+            transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer; position: relative;
+            display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .guru-about-stack-pill i { font-size: 0.78rem; transition: transform 0.25s ease; }
+        .guru-about-stack-pill:hover,
+        .guru-about-stack-pill.is-touched { transform: translateY(-3px); box-shadow: 0 6px 14px -6px rgba(15, 23, 42, 0.25); }
+        .guru-about-stack-pill:hover i,
+        .guru-about-stack-pill.is-touched i { transform: scale(1.15) rotate(-8deg); }
+        .guru-about-stack-pill:active { transform: translateY(-1px) scale(0.96); }
+        .guru-about-stack-pill::after {
+            content: attr(data-tooltip);
+            position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%) translateY(4px);
+            background: #1e293b; color: #f8fafc; font-size: 0.62rem; font-weight: 600; white-space: nowrap;
+            padding: 0.3rem 0.6rem; border-radius: 0.4rem; opacity: 0; pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease; z-index: 5;
+        }
+        .guru-about-stack-pill:hover::after,
+        .guru-about-stack-pill.is-touched::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .guru-about-divider { border-top-width: 1px; border-top-style: solid; margin-top: 1.25rem; padding-top: 1.25rem; }
+        .guru-about-school-row { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1rem; }
+        @media (min-width: 640px) { .guru-about-school-row { flex-direction: row; align-items: flex-start; text-align: left; } }
+        .guru-about-school-logo {
+            width: 3.5rem; height: 3.5rem; border-radius: 0.85rem; overflow: hidden;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            box-shadow: 0 10px 25px -8px rgba(37, 99, 235, 0.4);
+        }
+        .guru-about-school-logo img { width: 100%; height: 100%; object-fit: contain; }
+        .guru-about-school-name { font-size: 0.9rem; font-weight: 800; margin: 0; }
+        .guru-about-school-desc { font-size: 0.78rem; line-height: 1.7; margin: 0.4rem 0 0; }
+        .guru-about-school-link { font-size: 0.72rem; font-weight: 700; display: inline-block; margin-top: 0.5rem; text-decoration: none; }
+        .guru-about-school-link:hover { text-decoration: underline; }
+        .guru-about-footer { text-align: center; padding: 1.5rem 0 0.5rem; }
+        .guru-about-footer p { font-size: 0.68rem; margin: 0; }
+
+        .guru-about-header,
+        .guru-about-hero,
+        .guru-about-feature-card,
+        .guru-about-card {
+            background: #ffffff; border-color: #e2e8f0;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .guru-about-hero { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 60%); }
+        .guru-about-hero:hover,
+        .guru-about-feature-card:hover,
+        .guru-about-card:hover {
+            border-color: #93c5fd;
+            box-shadow: 0 18px 34px -14px rgba(37, 99, 235, 0.28);
+        }
+        .guru-about-header-text h2,
+        .guru-about-hero-body h1,
+        .guru-about-section-title,
+        .guru-about-feature-card h4,
+        .guru-about-dev-name,
+        .guru-about-school-name { color: #1e293b; }
+        .guru-about-header-text p,
+        .guru-about-hero-body p,
+        .guru-about-feature-card p,
+        .guru-about-dev-role,
+        .guru-about-stack-label,
+        .guru-about-school-desc,
+        .guru-about-footer p { color: #64748b; }
+        .guru-about-back-btn { background: #f1f5f9; color: #334155; }
+        .guru-about-back-btn:hover { background: #e2e8f0; }
+        .guru-about-badge { background: #2563eb; color: #ffffff; }
+        .guru-about-badge.is-status { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+        .guru-about-badge-dot { background: #10b981; }
+        .guru-about-feature-icon.is-blue { background: #eff6ff; color: #2563eb; }
+        .guru-about-feature-icon.is-violet { background: #f5f3ff; color: #7c3aed; }
+        .guru-about-feature-icon.is-amber { background: #fffbeb; color: #b45309; }
+        .guru-about-feature-icon.is-rose { background: #fff1f2; color: #be123c; }
+        .guru-about-dev-avatar { background: #f1f5f9; color: #94a3b8; }
+        .guru-about-stack-pill { background: #f1f5f9; color: #334155; }
+        .guru-about-stack-pill.is-flask:hover, .guru-about-stack-pill.is-flask.is-touched { background: #1e293b; color: #ffffff; }
+        .guru-about-stack-pill.is-python:hover, .guru-about-stack-pill.is-python.is-touched { background: #dbeafe; color: #1d4ed8; }
+        .guru-about-stack-pill.is-js:hover, .guru-about-stack-pill.is-js.is-touched { background: #fef9c3; color: #854d0e; }
+        .guru-about-stack-pill.is-tailwind:hover, .guru-about-stack-pill.is-tailwind.is-touched { background: #cffafe; color: #0e7490; }
+        .guru-about-divider { border-top-color: #f1f5f9; }
+        .guru-about-school-link { color: #2563eb; }
+
+        html.dark .guru-about-header,
+        html.dark .guru-about-hero,
+        html.dark .guru-about-feature-card,
+        html.dark .guru-about-card {
+            background: #232d42; border-color: #3a4763; box-shadow: none;
+        }
+        html.dark .guru-about-hero { background: linear-gradient(135deg, #2d3a5c 0%, #232d42 65%); }
+        html.dark .guru-about-hero:hover,
+        html.dark .guru-about-feature-card:hover,
+        html.dark .guru-about-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 18px 34px -14px rgba(59, 130, 246, 0.35);
+        }
+        html.dark .guru-about-header-text h2,
+        html.dark .guru-about-hero-body h1,
+        html.dark .guru-about-section-title,
+        html.dark .guru-about-feature-card h4,
+        html.dark .guru-about-school-name { color: #e2e8f0; }
+        html.dark .guru-about-dev-name { color: #e2e8f0; }
+        html.dark .guru-about-dev-name-btn:hover { color: #60a5fa; }
+        html.dark .guru-about-header-text p,
+        html.dark .guru-about-hero-body p,
+        html.dark .guru-about-feature-card p,
+        html.dark .guru-about-dev-role,
+        html.dark .guru-about-stack-label,
+        html.dark .guru-about-school-desc,
+        html.dark .guru-about-footer p { color: #94a3b8; }
+        html.dark .guru-about-back-btn { background: #313d59; color: #e2e8f0; }
+        html.dark .guru-about-back-btn:hover { background: #3b4867; }
+        html.dark .guru-about-badge { background: #2563eb; color: #e2e8f0; }
+        html.dark .guru-about-badge.is-status { background: rgba(16, 185, 129, 0.14); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+        html.dark .guru-about-badge-dot { background: #34d399; }
+        html.dark .guru-about-feature-icon.is-blue { background: rgba(59, 130, 246, 0.14); color: #60a5fa; }
+        html.dark .guru-about-feature-icon.is-violet { background: rgba(139, 92, 246, 0.16); color: #c4b5fd; }
+        html.dark .guru-about-feature-icon.is-amber { background: rgba(245, 158, 11, 0.16); color: #fbbf24; }
+        html.dark .guru-about-feature-icon.is-rose { background: rgba(244, 63, 94, 0.16); color: #fb7185; }
+        html.dark .guru-about-dev-avatar { background: #313d59; color: #94a3b8; }
+        html.dark .guru-about-stack-pill { background: #313d59; color: #cbd5e1; }
+        html.dark .guru-about-stack-pill:hover,
+        html.dark .guru-about-stack-pill.is-touched { box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.45); }
+        html.dark .guru-about-stack-pill.is-flask:hover, html.dark .guru-about-stack-pill.is-flask.is-touched { background: #27324b; color: #e2e8f0; border: 1px solid #334155; }
+        html.dark .guru-about-stack-pill.is-python:hover, html.dark .guru-about-stack-pill.is-python.is-touched { background: rgba(59, 130, 246, 0.16); color: #93c5fd; }
+        html.dark .guru-about-stack-pill.is-js:hover, html.dark .guru-about-stack-pill.is-js.is-touched { background: rgba(250, 204, 21, 0.16); color: #fde047; }
+        html.dark .guru-about-stack-pill.is-tailwind:hover, html.dark .guru-about-stack-pill.is-tailwind.is-touched { background: rgba(6, 182, 212, 0.16); color: #67e8f9; }
+        html.dark .guru-about-stack-pill::after { background: #27324b; color: #e2e8f0; border: 1px solid #334155; }
+        html.dark .guru-about-divider { border-top-color: #2f3a54; }
+        html.dark .guru-about-school-link { color: #93c5fd; }
+
+        /* ============================================================
+           FIX FINAL — Tombol "Atur" & Teks Tanggal Deadline
+           ------------------------------------------------------------
+           Selector PRESISI berdasarkan DevTools (24 Sep 2026):
+           - Tombol "Atur"       → button.rekap-btn-atur
+           - Teks tanggal        → span.rekap-deadline
+
+           Class custom (bukan Tailwind), jadi rule ini tidak akan
+           bentrok dengan elemen lain. Tombol "Hapus" (rekap-btn-hapus)
+           & badge "Kedaluwarsa" (rekap-badge-lewat) TIDAK disentuh.
+           ============================================================ */
+
+        /* --- LIGHT MODE --- */
+        html:not(.dark) .rekap-btn-atur {
+            background-color: #F1F5F9 !important; /* platinum lembut */
+            color: #334155 !important;            /* slate-700 */
+            border-color: #E2E8F0 !important;     /* slate-200 */
+            transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+        }
+        html:not(.dark) .rekap-btn-atur:hover {
+            background-color: #E2E8F0 !important;
+            color: #1E293B !important;
+            border-color: #CBD5E1 !important;
+        }
+        html:not(.dark) .rekap-btn-atur:active {
+            background-color: #CBD5E1 !important;
+        }
+        html:not(.dark) .rekap-deadline {
+            color: #4A5568 !important; /* slate-600, mudah dibaca tapi tidak mencolok */
+        }
+
+        /* --- DARK MODE --- */
+        html.dark .rekap-btn-atur {
+            background-color: #313d59 !important;
+            color: #E2E8F0 !important;
+            border: 1px solid #334155 !important;
+            transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+        }
+        html.dark .rekap-btn-atur:hover {
+            background-color: #3b4867 !important;
+            color: #e2e8f0 !important;
+            border-color: #475569 !important;
+        }
+        html.dark .rekap-btn-atur:active {
+            background-color: #27324b !important;
+        }
+        html.dark .rekap-deadline {
+            color: #94A3B8 !important; /* slate-400 */
+        }
+
+/* ===== DARK MODE LEMBUT (override akhir, letakkan paling bawah) =====
+   Latar slate lembut, kartu terangkat lewat bayangan + garis tepi tipis,
+   teks putih lembut (#e2e8f0 / #cbd5e1), aksen tetap terbaca tapi tidak silau. */
+html.dark {
+    --dm-bg: #182031;
+    --dm-card: #232d42;
+    --dm-card-2: #2a3550;
+    --dm-line: #3a4763;
+    --dm-shadow: 0 10px 24px -10px rgba(2, 6, 23, 0.55), 0 2px 6px -2px rgba(2, 6, 23, 0.35);
+    --dm-shadow-hover: 0 16px 30px -10px rgba(2, 6, 23, 0.65), 0 0 0 1px rgba(96, 165, 250, 0.25);
+}
+html.dark .bg-white.shadow-sm,
+html.dark .bg-white.shadow,
+html.dark .bg-white.shadow-md,
+html.dark .bg-white.shadow-lg,
+html.dark .bg-white.shadow-xl,
+html.dark .bg-white.rounded-2xl,
+html.dark .bg-white.rounded-3xl,
+html.dark .tsm-card {
+    box-shadow: var(--dm-shadow) !important;
+    border-color: var(--dm-line) !important;
+}
+html.dark .bg-white.rounded-2xl:hover,
+html.dark .bg-white.rounded-3xl:hover { box-shadow: var(--dm-shadow-hover) !important; }
+/* kartu bagian dalam sedikit lebih terang dari kartu induk agar tidak tenggelam */
+html.dark .bg-white .bg-slate-50,
+html.dark .bg-white .bg-white { background-color: var(--dm-card-2) !important; }
+/* status: beri garis tipis supaya batas tombol jelas tanpa warna menyala */
+html.dark .tsm-status-hijau  { border: 1px solid rgba(52, 211, 153, 0.30) !important; }
+html.dark .tsm-status-merah  { border: 1px solid rgba(251, 113, 133, 0.30) !important; }
+html.dark .tsm-status-biru   { border: 1px solid rgba(96, 165, 250, 0.30) !important; }
+html.dark .tsm-status-kuning { border: 1px solid rgba(251, 191, 36, 0.30) !important; }
+/* tombol biru solid: sedikit diredam agar tidak silau */
+html.dark button.bg-blue-600 { background-color: #3b6fd4 !important; }
+html.dark button.bg-blue-600:hover { background-color: #4a7fe6 !important; }
+html.dark button.bg-blue-500 { background-color: #4a7fe6 !important; }
+html.dark button.bg-blue-600,
+html.dark button.bg-blue-500,
+html.dark button.bg-emerald-500,
+html.dark button.bg-emerald-600,
+html.dark button.bg-rose-500,
+html.dark button.bg-rose-600 { color: #f1f5f9 !important; }
+html.dark input, html.dark select, html.dark textarea { color: #e2e8f0; }

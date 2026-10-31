@@ -1,0 +1,93 @@
+/* ============================================================
+   SKELETON LOADER (gaya Instagram / TikTok) -- Dashboard Siswa
+   Murni tambahan: semua class diawali "sk-" jadi tidak menyentuh
+   style lain. Warna memakai token yang SUDAH ada di
+   dashboard_siswa.css (--surface-hover, --border-strong, --surface),
+   jadi otomatis ikut Mode Gelap, Warna Aksen, dan tema Rahasia
+   tanpa aturan khusus per tema.
+   ============================================================ */
+.sk-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.sk-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.875rem;
+}
+.sk-avatar {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 9999px;
+}
+.sk-avatar--sm { width: 36px; height: 36px; }
+.sk-avatar--lg { width: 52px; height: 52px; }
+.sk-body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-top: 0.125rem;
+}
+.sk-line {
+    height: 14px;
+    border-radius: 9999px;
+}
+.sk-line--short { width: 46%; }
+.sk-line--mid   { width: 72%; }
+.sk-line--long  { width: 94%; }
+
+/* Efek shimmer: hanya background-position yang bergerak (ringan, tanpa reflow) */
+.sk-shimmer {
+    background-color: var(--surface-hover);
+    background-image: linear-gradient(
+        100deg,
+        transparent 20%,
+        color-mix(in srgb, var(--border-strong) 55%, transparent) 50%,
+        transparent 80%
+    );
+    background-size: 220% 100%;
+    background-repeat: no-repeat;
+    background-position: 160% 0;
+    animation: skShimmer 1.4s ease-in-out infinite;
+}
+@keyframes skShimmer {
+    to { background-position: -60% 0; }
+}
+
+/* Mode Gelap: kilau dibuat sedikit lebih terang supaya terlihat di atas navy */
+html.dark .sk-shimmer {
+    background-image: linear-gradient(
+        100deg,
+        transparent 20%,
+        rgba(148, 163, 184, 0.14) 50%,
+        transparent 80%
+    );
+}
+
+/* Hormati "Reduce Motion": ganti shimmer dengan denyut lembut */
+@media (prefers-reduced-motion: reduce) {
+    .sk-shimmer {
+        background-image: none;
+        animation: skPulse 2s ease-in-out infinite;
+    }
+    @keyframes skPulse { 50% { opacity: .55; } }
+}
+
+.sk-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}

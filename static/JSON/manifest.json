@@ -1,0 +1,1286 @@
+{
+ "schema": 2,
+ "package": "LILY_ASSETS",
+ "frame_size": [
+  512,
+  512
+ ],
+ "note": "Status: AVAILABLE | REQUIRED (asset belum ada, jangan dianggap ada) | INCONSISTENT (ada tapi tidak boleh jadi layer) | REFERENCE_ONLY | CSS (tanpa PNG)",
+ "base": {
+  "master": {
+   "path": "01_BASE/lily_master.png",
+   "status": "REQUIRED"
+  },
+  "body": {
+   "path": "01_BASE/lily_body.png",
+   "status": "REQUIRED"
+  },
+  "head": {
+   "path": "01_BASE/lily_head.png",
+   "status": "REQUIRED"
+  },
+  "visor_blank": {
+   "path": "01_BASE/lily_visor_blank.png",
+   "status": "REQUIRED"
+  },
+  "reference": {
+   "path": "00_LEGACY/01_BASE/lily_base_tpose_reference.png",
+   "status": "REFERENCE_ONLY"
+  }
+ },
+ "layers": {
+  "face": {
+   "normal": {
+    "path": "02_FACE_EXPRESSIONS/normal/face.png",
+    "status": "REQUIRED"
+   },
+   "happy": {
+    "path": "02_FACE_EXPRESSIONS/happy/face.png",
+    "status": "REQUIRED"
+   },
+   "surprised": {
+    "path": "02_FACE_EXPRESSIONS/surprised/face.png",
+    "status": "REQUIRED"
+   },
+   "worried": {
+    "path": "02_FACE_EXPRESSIONS/worried/face.png",
+    "status": "REQUIRED"
+   },
+   "sleepy": {
+    "path": "02_FACE_EXPRESSIONS/sleepy/face.png",
+    "status": "REQUIRED"
+   },
+   "confused": {
+    "path": "02_FACE_EXPRESSIONS/confused/face.png",
+    "status": "REQUIRED"
+   },
+   "sad": {
+    "path": "02_FACE_EXPRESSIONS/sad/face.png",
+    "status": "REQUIRED"
+   },
+   "excited": {
+    "path": "02_FACE_EXPRESSIONS/excited/face.png",
+    "status": "REQUIRED"
+   },
+   "calm": {
+    "path": "02_FACE_EXPRESSIONS/calm/face.png",
+    "status": "REQUIRED"
+   },
+   "warm": {
+    "path": "02_FACE_EXPRESSIONS/warm/face.png",
+    "status": "REQUIRED"
+   },
+   "curious": {
+    "path": "02_FACE_EXPRESSIONS/curious/face.png",
+    "status": "REQUIRED"
+   },
+   "attentive": {
+    "path": "02_FACE_EXPRESSIONS/attentive/face.png",
+    "status": "REQUIRED"
+   },
+   "focused": {
+    "path": "02_FACE_EXPRESSIONS/focused/face.png",
+    "status": "REQUIRED"
+   },
+   "uncertain": {
+    "path": "02_FACE_EXPRESSIONS/uncertain/face.png",
+    "status": "REQUIRED"
+   },
+   "concerned": {
+    "path": "02_FACE_EXPRESSIONS/concerned/face.png",
+    "status": "REQUIRED"
+   },
+   "reassuring": {
+    "path": "02_FACE_EXPRESSIONS/reassuring/face.png",
+    "status": "REQUIRED"
+   },
+   "proud": {
+    "path": "02_FACE_EXPRESSIONS/proud/face.png",
+    "status": "REQUIRED"
+   },
+   "relieved": {
+    "path": "02_FACE_EXPRESSIONS/relieved/face.png",
+    "status": "REQUIRED"
+   },
+   "grateful": {
+    "path": "02_FACE_EXPRESSIONS/grateful/face.png",
+    "status": "REQUIRED"
+   },
+   "empathetic": {
+    "path": "02_FACE_EXPRESSIONS/empathetic/face.png",
+    "status": "REQUIRED"
+   },
+   "encouraging": {
+    "path": "02_FACE_EXPRESSIONS/encouraging/face.png",
+    "status": "REQUIRED"
+   },
+   "playful": {
+    "path": "02_FACE_EXPRESSIONS/playful/face.png",
+    "status": "REQUIRED"
+   },
+   "amazed": {
+    "path": "02_FACE_EXPRESSIONS/amazed/face.png",
+    "status": "REQUIRED"
+   },
+   "apologetic": {
+    "path": "02_FACE_EXPRESSIONS/apologetic/face.png",
+    "status": "REQUIRED"
+   }
+  },
+  "eyes": {
+   "neutral": {
+    "frames": [
+     {
+      "id": "01_hold",
+      "path": "03_EYE_STATES/neutral/01_hold.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "soft": {
+    "frames": [
+     {
+      "id": "01_hold",
+      "path": "03_EYE_STATES/soft/01_hold.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "attentive": {
+    "frames": [
+     {
+      "id": "01_hold",
+      "path": "03_EYE_STATES/attentive/01_hold.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "curious": {
+    "frames": [
+     {
+      "id": "01_hold",
+      "path": "03_EYE_STATES/curious/01_hold.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "focused": {
+    "frames": [
+     {
+      "id": "01_hold",
+      "path": "03_EYE_STATES/focused/01_hold.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "left": {
+    "frames": [
+     {
+      "id": "01_center",
+      "path": "03_EYE_STATES/left/01_center.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_left_25",
+      "path": "03_EYE_STATES/left/02_left_25.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_left_50",
+      "path": "03_EYE_STATES/left/03_left_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_left_75",
+      "path": "03_EYE_STATES/left/04_left_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "05_left_full",
+      "path": "03_EYE_STATES/left/05_left_full.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "06_left_75",
+      "path": "03_EYE_STATES/left/06_left_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "07_left_50",
+      "path": "03_EYE_STATES/left/07_left_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "08_left_25",
+      "path": "03_EYE_STATES/left/08_left_25.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "09_center",
+      "path": "03_EYE_STATES/left/09_center.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "right": {
+    "frames": [
+     {
+      "id": "01_center",
+      "path": "03_EYE_STATES/right/01_center.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_right_25",
+      "path": "03_EYE_STATES/right/02_right_25.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_right_50",
+      "path": "03_EYE_STATES/right/03_right_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_right_75",
+      "path": "03_EYE_STATES/right/04_right_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "05_right_full",
+      "path": "03_EYE_STATES/right/05_right_full.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "06_right_75",
+      "path": "03_EYE_STATES/right/06_right_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "07_right_50",
+      "path": "03_EYE_STATES/right/07_right_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "08_right_25",
+      "path": "03_EYE_STATES/right/08_right_25.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "09_center",
+      "path": "03_EYE_STATES/right/09_center.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "up": {
+    "frames": [
+     {
+      "id": "01_center",
+      "path": "03_EYE_STATES/up/01_center.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_up_25",
+      "path": "03_EYE_STATES/up/02_up_25.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_up_50",
+      "path": "03_EYE_STATES/up/03_up_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_up_75",
+      "path": "03_EYE_STATES/up/04_up_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "05_up_full",
+      "path": "03_EYE_STATES/up/05_up_full.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "06_up_75",
+      "path": "03_EYE_STATES/up/06_up_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "07_up_50",
+      "path": "03_EYE_STATES/up/07_up_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "08_up_25",
+      "path": "03_EYE_STATES/up/08_up_25.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "09_center",
+      "path": "03_EYE_STATES/up/09_center.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "down": {
+    "frames": [
+     {
+      "id": "01_center",
+      "path": "03_EYE_STATES/down/01_center.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_down_25",
+      "path": "03_EYE_STATES/down/02_down_25.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_down_50",
+      "path": "03_EYE_STATES/down/03_down_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_down_75",
+      "path": "03_EYE_STATES/down/04_down_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "05_down_full",
+      "path": "03_EYE_STATES/down/05_down_full.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "06_down_75",
+      "path": "03_EYE_STATES/down/06_down_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "07_down_50",
+      "path": "03_EYE_STATES/down/07_down_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "08_down_25",
+      "path": "03_EYE_STATES/down/08_down_25.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "09_center",
+      "path": "03_EYE_STATES/down/09_center.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "wide": {
+    "frames": [
+     {
+      "id": "01_open",
+      "path": "03_EYE_STATES/wide/01_open.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_wide_50",
+      "path": "03_EYE_STATES/wide/02_wide_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_wide_full",
+      "path": "03_EYE_STATES/wide/03_wide_full.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_hold",
+      "path": "03_EYE_STATES/wide/04_hold.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "05_wide_50",
+      "path": "03_EYE_STATES/wide/05_wide_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "06_open",
+      "path": "03_EYE_STATES/wide/06_open.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "sleepy": {
+    "frames": [
+     {
+      "id": "01_open",
+      "path": "03_EYE_STATES/sleepy/01_open.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_75",
+      "path": "03_EYE_STATES/sleepy/02_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_50",
+      "path": "03_EYE_STATES/sleepy/03_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_heavy",
+      "path": "03_EYE_STATES/sleepy/04_heavy.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "05_50",
+      "path": "03_EYE_STATES/sleepy/05_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "06_75",
+      "path": "03_EYE_STATES/sleepy/06_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "07_open",
+      "path": "03_EYE_STATES/sleepy/07_open.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "blink": {
+    "frames": [
+     {
+      "id": "01_open",
+      "path": "03_EYE_STATES/blink/01_open.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_75",
+      "path": "03_EYE_STATES/blink/02_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_50",
+      "path": "03_EYE_STATES/blink/03_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_25",
+      "path": "03_EYE_STATES/blink/04_25.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "05_closed",
+      "path": "03_EYE_STATES/blink/05_closed.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "06_25",
+      "path": "03_EYE_STATES/blink/06_25.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "07_50",
+      "path": "03_EYE_STATES/blink/07_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "08_75",
+      "path": "03_EYE_STATES/blink/08_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "09_open",
+      "path": "03_EYE_STATES/blink/09_open.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "half-blink": {
+    "frames": [
+     {
+      "id": "01_open",
+      "path": "03_EYE_STATES/half-blink/01_open.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_50",
+      "path": "03_EYE_STATES/half-blink/02_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_half",
+      "path": "03_EYE_STATES/half-blink/03_half.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_50",
+      "path": "03_EYE_STATES/half-blink/04_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "05_open",
+      "path": "03_EYE_STATES/half-blink/05_open.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "wink-left": {
+    "frames": [
+     {
+      "id": "01_open",
+      "path": "03_EYE_STATES/wink-left/01_open.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_75",
+      "path": "03_EYE_STATES/wink-left/02_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_50",
+      "path": "03_EYE_STATES/wink-left/03_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_closed",
+      "path": "03_EYE_STATES/wink-left/04_closed.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "05_50",
+      "path": "03_EYE_STATES/wink-left/05_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "06_75",
+      "path": "03_EYE_STATES/wink-left/06_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "07_open",
+      "path": "03_EYE_STATES/wink-left/07_open.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "wink-right": {
+    "frames": [
+     {
+      "id": "01_open",
+      "path": "03_EYE_STATES/wink-right/01_open.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_75",
+      "path": "03_EYE_STATES/wink-right/02_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_50",
+      "path": "03_EYE_STATES/wink-right/03_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_closed",
+      "path": "03_EYE_STATES/wink-right/04_closed.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "05_50",
+      "path": "03_EYE_STATES/wink-right/05_50.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "06_75",
+      "path": "03_EYE_STATES/wink-right/06_75.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "07_open",
+      "path": "03_EYE_STATES/wink-right/07_open.png",
+      "status": "REQUIRED"
+     }
+    ]
+   }
+  },
+  "mouth": {
+   "neutral": {
+    "path": "04_MOUTH_STATES/neutral/mouth.png",
+    "status": "REQUIRED"
+   },
+   "soft-smile": {
+    "path": "04_MOUTH_STATES/soft-smile/mouth.png",
+    "status": "REQUIRED"
+   },
+   "smile": {
+    "path": "04_MOUTH_STATES/smile/mouth.png",
+    "status": "REQUIRED"
+   },
+   "happy": {
+    "path": "04_MOUTH_STATES/happy/mouth.png",
+    "status": "REQUIRED"
+   },
+   "surprised": {
+    "path": "04_MOUTH_STATES/surprised/mouth.png",
+    "status": "REQUIRED"
+   },
+   "concerned": {
+    "path": "04_MOUTH_STATES/concerned/mouth.png",
+    "status": "REQUIRED"
+   },
+   "confused": {
+    "path": "04_MOUTH_STATES/confused/mouth.png",
+    "status": "REQUIRED"
+   },
+   "thinking": {
+    "path": "04_MOUTH_STATES/thinking/mouth.png",
+    "status": "REQUIRED"
+   }
+  },
+  "gesture": {
+   "idle": {
+    "frames": [
+     {
+      "id": "01_idle",
+      "path": "06_GESTURE_FRAMES/idle/01_idle.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_breath_in",
+      "path": "06_GESTURE_FRAMES/idle/02_breath_in.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_breath_out",
+      "path": "06_GESTURE_FRAMES/idle/03_breath_out.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_idle",
+      "path": "06_GESTURE_FRAMES/idle/04_idle.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "notice": {
+    "frames": [
+     {
+      "id": "01_idle",
+      "path": "06_GESTURE_FRAMES/notice/01_idle.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_attention",
+      "path": "06_GESTURE_FRAMES/notice/02_attention.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_notice",
+      "path": "06_GESTURE_FRAMES/notice/03_notice.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_hold",
+      "path": "06_GESTURE_FRAMES/notice/04_hold.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "05_return",
+      "path": "06_GESTURE_FRAMES/notice/05_return.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "thinking": {
+    "frames": [
+     {
+      "id": "01_idle",
+      "path": "06_GESTURE_FRAMES/thinking/01_idle.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_think_in",
+      "path": "06_GESTURE_FRAMES/thinking/02_think_in.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_think_hold",
+      "path": "06_GESTURE_FRAMES/thinking/03_think_hold.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_return",
+      "path": "06_GESTURE_FRAMES/thinking/04_return.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "reassuring": {
+    "frames": [
+     {
+      "id": "01_attention",
+      "path": "06_GESTURE_FRAMES/reassuring/01_attention.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_soft",
+      "path": "06_GESTURE_FRAMES/reassuring/02_soft.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_nod",
+      "path": "06_GESTURE_FRAMES/reassuring/03_nod.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_hold",
+      "path": "06_GESTURE_FRAMES/reassuring/04_hold.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "05_return",
+      "path": "06_GESTURE_FRAMES/reassuring/05_return.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "excited": {
+    "frames": [
+     {
+      "id": "01_prepare",
+      "path": "06_GESTURE_FRAMES/excited/01_prepare.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_happy",
+      "path": "06_GESTURE_FRAMES/excited/02_happy.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_bounce",
+      "path": "06_GESTURE_FRAMES/excited/03_bounce.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_hold",
+      "path": "06_GESTURE_FRAMES/excited/04_hold.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "05_return",
+      "path": "06_GESTURE_FRAMES/excited/05_return.png",
+      "status": "REQUIRED"
+     }
+    ]
+   },
+   "celebrating": {
+    "frames": [
+     {
+      "id": "01_prepare",
+      "path": "06_GESTURE_FRAMES/celebrating/01_prepare.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "02_happy",
+      "path": "06_GESTURE_FRAMES/celebrating/02_happy.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "03_raise",
+      "path": "06_GESTURE_FRAMES/celebrating/03_raise.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "04_peak",
+      "path": "06_GESTURE_FRAMES/celebrating/04_peak.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "05_hold",
+      "path": "06_GESTURE_FRAMES/celebrating/05_hold.png",
+      "status": "REQUIRED"
+     },
+     {
+      "id": "06_return",
+      "path": "06_GESTURE_FRAMES/celebrating/06_return.png",
+      "status": "REQUIRED"
+     }
+    ]
+   }
+  }
+ },
+ "headCss": {
+  "center": {
+   "rotate": 0,
+   "y": 0
+  },
+  "tilt-left": {
+   "rotate": -8,
+   "y": 0
+  },
+  "tilt-right": {
+   "rotate": 8,
+   "y": 0
+  },
+  "nod": {
+   "rotate": 0,
+   "y": 4,
+   "keyframes": [
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0.3,
+     0,
+     3
+    ],
+    [
+     0.6,
+     0,
+     6
+    ],
+    [
+     1,
+     0,
+     0
+    ]
+   ]
+  },
+  "shake": {
+   "rotate": 0,
+   "y": 0,
+   "keyframes": [
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0.25,
+     -4,
+     0
+    ],
+    [
+     0.5,
+     4,
+     0
+    ],
+    [
+     0.75,
+     -3,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ]
+   ]
+  }
+ },
+ "legacy": {
+  "frames": {
+   "amazed": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/amazed.png",
+    "status": "INCONSISTENT",
+    "md5": "db1757e6"
+   },
+   "attentive": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/attentive.png",
+    "status": "INCONSISTENT",
+    "md5": "68b90b38"
+   },
+   "attentive_soft": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/attentive_soft.png",
+    "status": "INCONSISTENT",
+    "md5": "96ae1be0"
+   },
+   "celebrating": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/celebrating.png",
+    "status": "INCONSISTENT",
+    "md5": "803828dd"
+   },
+   "concerned": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/concerned.png",
+    "status": "INCONSISTENT",
+    "md5": "77e07119"
+   },
+   "confused": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/confused.png",
+    "status": "INCONSISTENT",
+    "md5": "61e7881a"
+   },
+   "curious": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/curious.png",
+    "status": "INCONSISTENT",
+    "md5": "d67a73c6"
+   },
+   "curious_down": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/curious_down.png",
+    "status": "INCONSISTENT",
+    "md5": "9b7ce6cc"
+   },
+   "focused": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/focused.png",
+    "status": "INCONSISTENT",
+    "md5": "d2024328"
+   },
+   "glance": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/glance.png",
+    "status": "INCONSISTENT",
+    "md5": "61638f9f"
+   },
+   "grateful": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/grateful.png",
+    "status": "INCONSISTENT",
+    "md5": "e3427310"
+   },
+   "happy": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/happy.png",
+    "status": "INCONSISTENT",
+    "md5": "0c1fd1a8"
+   },
+   "happy_2": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/happy_2.png",
+    "status": "INCONSISTENT",
+    "md5": "d3140943"
+   },
+   "happy_closed": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/happy_closed.png",
+    "status": "INCONSISTENT",
+    "md5": "75d4f988"
+   },
+   "happy_soft": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/happy_soft.png",
+    "status": "INCONSISTENT",
+    "md5": "99147487"
+   },
+   "love_appreciation": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/love_appreciation.png",
+    "status": "INCONSISTENT",
+    "md5": "eae08904"
+   },
+   "neutral_curious": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/neutral_curious.png",
+    "status": "INCONSISTENT",
+    "md5": "7d2b4425"
+   },
+   "normal": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/normal.png",
+    "status": "INCONSISTENT",
+    "md5": "90bf8c05"
+   },
+   "sad": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/sad.png",
+    "status": "INCONSISTENT",
+    "md5": "a5856fab"
+   },
+   "serious": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/serious.png",
+    "status": "INCONSISTENT",
+    "md5": "5a617d6b"
+   },
+   "shy": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/shy.png",
+    "status": "INCONSISTENT",
+    "md5": "0404c6a9"
+   },
+   "sleepy": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/sleepy.png",
+    "status": "INCONSISTENT",
+    "md5": "1efd3a7d"
+   },
+   "sleepy_2": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/sleepy_2.png",
+    "status": "INCONSISTENT",
+    "md5": "1a7962a7"
+   },
+   "sleepy_closed": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/sleepy_closed.png",
+    "status": "INCONSISTENT",
+    "md5": "d8f86b62"
+   },
+   "sleepy_side": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/sleepy_side.png",
+    "status": "INCONSISTENT",
+    "md5": "90cfa9c2"
+   },
+   "sleepy_soft": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/sleepy_soft.png",
+    "status": "INCONSISTENT",
+    "md5": "26f83e3d"
+   },
+   "sleepy_thinking": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/sleepy_thinking.png",
+    "status": "INCONSISTENT",
+    "md5": "6601d3cb"
+   },
+   "soft_curious": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/soft_curious.png",
+    "status": "INCONSISTENT",
+    "md5": "34d8c90f"
+   },
+   "surprised": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/surprised.png",
+    "status": "INCONSISTENT",
+    "md5": "d09fb389"
+   },
+   "surprised_small": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/surprised_small.png",
+    "status": "INCONSISTENT",
+    "md5": "8e555443"
+   },
+   "tired": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/tired.png",
+    "status": "INCONSISTENT",
+    "md5": "3386410d"
+   },
+   "warm": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/warm.png",
+    "status": "INCONSISTENT",
+    "md5": "f37dbc4f"
+   },
+   "warm_smile": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/warm_smile.png",
+    "status": "INCONSISTENT",
+    "md5": "8f0c6fd8"
+   },
+   "wide": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/wide.png",
+    "status": "INCONSISTENT",
+    "md5": "d491113b"
+   },
+   "wink": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/wink.png",
+    "status": "INCONSISTENT",
+    "md5": "e5fac9be"
+   },
+   "wink_soft": {
+    "path": "00_LEGACY/02_FACE_EXPRESSIONS/wink_soft.png",
+    "status": "INCONSISTENT",
+    "md5": "9b693ccf"
+   }
+  },
+  "note": "Frame full-character lama (opak, crop/posisi berbeda). Hanya untuk jalur sprite lama brain (opsi `sprites`); jangan dipakai untuk blink/gaze/head."
+ },
+ "fallback": {
+  "eyes": {
+   "curious": [
+    "attentive",
+    "neutral"
+   ],
+   "attentive": [
+    "neutral"
+   ],
+   "focused": [
+    "attentive",
+    "neutral"
+   ],
+   "soft": [
+    "neutral"
+   ],
+   "wide": [
+    "neutral"
+   ],
+   "sleepy": [
+    "half-blink",
+    "neutral"
+   ],
+   "left": [
+    "neutral"
+   ],
+   "right": [
+    "neutral"
+   ],
+   "up": [
+    "neutral"
+   ],
+   "down": [
+    "neutral"
+   ],
+   "blink": [
+    "half-blink",
+    "neutral"
+   ],
+   "half-blink": [
+    "neutral"
+   ],
+   "wink-left": [
+    "neutral"
+   ],
+   "wink-right": [
+    "neutral"
+   ]
+  },
+  "mouth": {
+   "soft-smile": [
+    "neutral"
+   ],
+   "smile": [
+    "soft-smile",
+    "neutral"
+   ],
+   "happy": [
+    "smile",
+    "soft-smile",
+    "neutral"
+   ],
+   "surprised": [
+    "neutral"
+   ],
+   "concerned": [
+    "neutral"
+   ],
+   "confused": [
+    "neutral"
+   ],
+   "thinking": [
+    "neutral"
+   ]
+  },
+  "head": {
+   "tilt-left": [
+    "center"
+   ],
+   "tilt-right": [
+    "center"
+   ],
+   "nod": [
+    "center"
+   ],
+   "shake": [
+    "center"
+   ]
+  },
+  "face": {
+   "normal": [
+    "normal"
+   ],
+   "happy": [
+    "normal"
+   ],
+   "surprised": [
+    "normal"
+   ],
+   "worried": [
+    "normal"
+   ],
+   "sleepy": [
+    "normal"
+   ],
+   "confused": [
+    "normal"
+   ],
+   "sad": [
+    "normal"
+   ],
+   "excited": [
+    "normal"
+   ],
+   "calm": [
+    "normal"
+   ],
+   "warm": [
+    "normal"
+   ],
+   "curious": [
+    "normal"
+   ],
+   "attentive": [
+    "normal"
+   ],
+   "focused": [
+    "normal"
+   ],
+   "uncertain": [
+    "normal"
+   ],
+   "concerned": [
+    "normal"
+   ],
+   "reassuring": [
+    "normal"
+   ],
+   "proud": [
+    "normal"
+   ],
+   "relieved": [
+    "normal"
+   ],
+   "grateful": [
+    "normal"
+   ],
+   "empathetic": [
+    "normal"
+   ],
+   "encouraging": [
+    "normal"
+   ],
+   "playful": [
+    "normal"
+   ],
+   "amazed": [
+    "normal"
+   ],
+   "apologetic": [
+    "normal"
+   ]
+  },
+  "gesture": {
+   "idle": [
+    "idle"
+   ],
+   "notice": [
+    "idle"
+   ],
+   "thinking": [
+    "idle"
+   ],
+   "reassuring": [
+    "idle"
+   ],
+   "excited": [
+    "idle"
+   ],
+   "celebrating": [
+    "idle"
+   ]
+  }
+ },
+ "labelMap": {
+  "note": "Terjemahan label micro-expression brain (PROFILE di lily_brain.js) -> state asset. Brain tetap sumber kebenaran mood->label.",
+  "eyes": {
+   "neutral": "neutral",
+   "relaxed": "soft",
+   "soft": "soft",
+   "curious": "curious",
+   "attentive": "attentive",
+   "focused": "focused",
+   "wide": "wide",
+   "sleepy": "sleepy"
+  },
+  "mouth": {
+   "neutral": "neutral",
+   "slight_smile": "soft-smile",
+   "warm_smile": "smile",
+   "happy_smile": "happy",
+   "open_smile": "happy",
+   "small_surprise": "surprised",
+   "thinking": "thinking",
+   "concerned": "concerned",
+   "apologetic": "concerned"
+  }
+ },
+ "moodFace": {
+  "thinking": "focused",
+  "wink": "playful",
+  "celebrating": "excited",
+  "love": "grateful"
+ },
+ "gestureMap": {
+  "celebrate": "celebrating",
+  "encouraging": "reassuring",
+  "thinking": "thinking",
+  "notice": "notice",
+  "excited": "excited"
+ },
+ "_gesture_frame_format": "Frame gesture = layer BADAN saja (tanpa kepala), kanvas sama dengan master; kepala/wajah tetap dari layer head."
+}

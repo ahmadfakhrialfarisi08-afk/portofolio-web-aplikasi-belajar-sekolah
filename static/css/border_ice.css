@@ -1,0 +1,100 @@
+/* ============================================================
+   border_ice.css (sebelumnya sempat dinamai border_aurora.css --
+   sudah di-rename total, termasuk aset border_ice.png & id border
+   'border_ice' di dashboard_siswa_2.js)
+   ------------------------------------------------------------
+   Border khusus "Ice", kategori 'khusus', pasangan
+   efek_nama_collector.css / title-badge-collector.
+
+   Sebelum file ini dibuat, border ini belum punya CSS scoped
+   sendiri -- artinya dia masih ikut style dasar generik di
+   border_polos.css (.profile-wrapper / .user-avatar / .user-border),
+   termasuk glow EMAS bawaan (rgba(255, 215, 0, ...)) yang muncul
+   saat hover/klik. Itu penyebab kenapa border es/kristal biru-ungu
+   ini kelihatan "kuning hangat" pas disentuh -- bukan dari gambar
+   border_ice.png-nya (PNG-nya sendiri sudah bersih biru-ungu-putih),
+   tapi dari filter drop-shadow default itu.
+
+   Sama seperti border_admin.css & border_imortal.css, semua selector
+   di sini dibungkus :has(img.user-border[src*="border_ice"])
+   supaya HANYA aktif saat border ini beneran sedang dipakai --
+   tidak menyentuh/mengubah glow border lain sama sekali.
+
+   Warna glow (rgba(120, 200, 255, ...) biru + rgba(150, 140, 255, ...)
+   ungu) SENGAJA disamakan persis dengan filter drop-shadow di
+   .efek-nama-collector (efek_nama_collector.css) supaya nama +
+   title badge + border avatar satu keluarga warna/tema es.
+
+   State :active ditambahkan (bukan cuma :hover) supaya efek glow
+   & scale tetap kerasa pas di-TAP di HP/tablet (hover murni tidak
+   pernah "menyala" di layar sentuh yang tidak ada kursor mouse).
+
+   Urutan load: taruh SETELAH border_polos.css, border_admin.css,
+   & border_imortal.css di <head>, sama seperti pola border khusus
+   lain, supaya selector :has() ini menang lawan style dasar polos:
+     <link rel="stylesheet" href="../static/css/border_ice.css">
+   (kalau link lama border_aurora.css masih ada di <head>, HAPUS/
+   GANTI jadi border_ice.css -- jangan link keduanya sekaligus)
+   ============================================================ */
+
+.profile-wrapper:has(img.user-border[src*="border_ice"]) {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.profile-wrapper:has(img.user-border[src*="border_ice"]) img.user-avatar {
+    width: 72%;
+    height: 72%;
+    object-fit: cover;
+    border-radius: 6px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}
+
+.profile-wrapper:has(img.user-border[src*="border_ice"]) img.user-border[src*="border_ice"] {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    pointer-events: none;
+
+    /* Glow dasar biru-ungu es -- ganti total dari glow emas default
+       border_polos.css, warnanya disamakan dgn .efek-nama-collector. */
+    filter:
+        drop-shadow(0 0 4px rgba(120, 200, 255, 0.55))
+        drop-shadow(0 0 8px rgba(150, 140, 255, 0.35));
+    transition: filter 0.3s ease;
+}
+
+/* Hover (laptop/desktop, kursor mouse) DAN active (tap di HP/tablet)
+   dipersamakan -- sama-sama bikin frame sedikit membesar + glow
+   biru-ungu makin terang, senada tema es di semua jenis perangkat. */
+.profile-wrapper:has(img.user-border[src*="border_ice"]):hover,
+.profile-wrapper:has(img.user-border[src*="border_ice"]):active {
+    transform: scale(1.08);
+}
+
+.profile-wrapper:has(img.user-border[src*="border_ice"]):hover img.user-border,
+.profile-wrapper:has(img.user-border[src*="border_ice"]):active img.user-border {
+    filter:
+        drop-shadow(0 0 8px rgba(120, 200, 255, 0.85))
+        drop-shadow(0 0 14px rgba(150, 140, 255, 0.6));
+}
+
+/* hormati preferensi kurangi animasi -- transisi scale/glow dimatikan,
+   border tetap tampil (cuma tanpa animasi transisi halusnya) */
+@media (prefers-reduced-motion: reduce) {
+    .profile-wrapper:has(img.user-border[src*="border_ice"]) {
+        transition: none;
+    }
+    .profile-wrapper:has(img.user-border[src*="border_ice"]) img.user-border {
+        transition: none;
+    }
+}

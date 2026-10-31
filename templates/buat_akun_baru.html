@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buat Akun Baru - Arcana Smart School</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        /* Sama seperti halaman Login: gumpalan warna blur yang melayang
+           pelan di background -- identitas visual hijau/kuning/biru,
+           tetap elegan di atas dasar gelap. */
+        .bg-blob { position: fixed; border-radius: 50%; filter: blur(100px); z-index: 0; pointer-events: none; }
+        .bg-blob.biru { width: 460px; height: 460px; background: #2563eb; opacity: 0.35; top: -120px; left: -100px; animation: mengambang1 14s ease-in-out infinite; }
+        .bg-blob.hijau { width: 420px; height: 420px; background: #16a34a; opacity: 0.3; bottom: -140px; right: -100px; animation: mengambang2 16s ease-in-out infinite; }
+        .bg-blob.kuning { width: 300px; height: 300px; background: #eab308; opacity: 0.2; bottom: 12%; left: -70px; animation: mengambang3 12s ease-in-out infinite; }
+        @keyframes mengambang1 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(35px,55px) scale(1.08); } }
+        @keyframes mengambang2 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-45px,-35px) scale(1.1); } }
+        @keyframes mengambang3 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(25px,-25px) scale(1.05); } }
+
+        /* Kartu masuk dengan fade + naik pelan, sama seperti Login */
+        .register-card {
+            position: relative; z-index: 1;
+            opacity: 0; transform: translateY(28px);
+            animation: kartuMasuk 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes kartuMasuk { to { opacity: 1; transform: translateY(0); } }
+
+        /* Garis aksen gradasi hijau-kuning-biru yang geser pelan di atas kartu */
+        .register-card::before {
+            content: ""; position: absolute; top: 0; left: 28px; right: 28px; height: 4px;
+            border-radius: 0 0 4px 4px;
+            background: linear-gradient(90deg, #16a34a 0%, #eab308 50%, #2563eb 100%);
+            background-size: 200% 100%;
+            animation: geserGradasi 6s linear infinite;
+        }
+        @keyframes geserGradasi { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+        .logo-wrap { opacity: 0; animation: logoMasuk 0.6s ease-out 0.15s forwards; }
+        @keyframes logoMasuk { from { opacity: 0; transform: scale(0.8) rotate(-6deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+
+        /* ===================== Popup jurusan (ganti logo statis SMK) =====================
+           Bukan lagi satu logo diam -- sekarang bergantian (siklus) menampilkan:
+           logo SMK Banjar Asri -> TKJ -> TAV -> TKR, tiap slide "pop" masuk dengan
+           efek elastis yang sama nuansanya dengan animasi lain di kartu ini. */
+        .jurusan-wrap {
+            position: relative;
+            width: 84px; height: 84px;
+            border-radius: 22px;
+            margin: 0 auto 12px auto;
+            box-shadow: 0 10px 22px -8px rgba(37,99,235,0.45);
+            opacity: 0; animation: logoMasuk 0.6s ease-out 0.15s forwards;
+            overflow: hidden;
+        }
+        .jurusan-slide {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 3px;
+            opacity: 0;
+            transform: scale(0.55) rotate(-10deg);
+            animation: jurusanSiklus 8s ease-in-out infinite;
+        }
+        .jurusan-slide.slide-sekolah { background: #ffffff; padding: 10px; animation-delay: 0s; }
+        .jurusan-slide.slide-sekolah img { width: 100%; height: 100%; object-fit: contain; }
+        .jurusan-slide.slide-tkj { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; animation-delay: 2s; }
+        .jurusan-slide.slide-tav { background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); color: #fff; animation-delay: 4s; }
+        .jurusan-slide.slide-tkr { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: #fff; animation-delay: 6s; }
+        .jurusan-slide i { font-size: 26px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15)); }
+        .jurusan-slide .jurusan-teks { font-size: 10px; font-weight: 800; letter-spacing: 0.6px; }
+        @keyframes jurusanSiklus {
+            0%   { opacity: 0; transform: scale(0.55) rotate(-10deg); }
+            3%   { opacity: 1; transform: scale(1) rotate(0deg); }
+            22%  { opacity: 1; transform: scale(1) rotate(0deg); }
+            28%  { opacity: 0; transform: scale(0.55) rotate(10deg); }
+            100% { opacity: 0; }
+        }
+
+        .header-text { opacity: 0; animation: teksMasuk 0.5s ease-out 0.3s forwards; }
+        @keyframes teksMasuk { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Field-field form masuk berurutan (stagger), bukan sekaligus */
+        .field-anim { opacity: 0; transform: translateY(10px); animation: fieldMasuk 0.5s ease-out forwards; }
+        .field-anim:nth-of-type(1) { animation-delay: 0.4s; }
+        .field-anim:nth-of-type(2) { animation-delay: 0.48s; }
+        .field-anim:nth-of-type(3) { animation-delay: 0.56s; }
+        .field-anim:nth-of-type(4) { animation-delay: 0.64s; }
+        .field-anim:nth-of-type(5) { animation-delay: 0.72s; }
+        .field-anim:nth-of-type(6) { animation-delay: 0.8s; }
+        @keyframes fieldMasuk { to { opacity: 1; transform: translateY(0); } }
+
+        /* Efek shine yang menyapu tombol saat hover, senada dengan Login */
+        .btn-shine { position: relative; overflow: hidden; isolation: isolate;
+            opacity: 0; transform: translateY(10px); animation: fieldMasuk 0.5s ease-out 0.88s forwards; }
+        .btn-shine::before {
+            content: ""; position: absolute; inset: 0;
+            background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.35) 50%, transparent 80%);
+            transform: translateX(-120%); transition: transform 0.6s ease; z-index: -1;
+        }
+        .btn-shine:hover::before { transform: translateX(120%); }
+
+        .footer-anim { opacity: 0; animation: teksMasuk 0.5s ease-out 0.95s forwards; }
+
+        /* ===================== TIRAI GESER (masuk & keluar halaman) =====================
+           Satu tirai dipakai dua arah:
+           1) Saat halaman ini BARU DIBUKA (datang dari klik "Buat Akun Baru" di
+              Login) -- tirai MENUTUPI layar sejak awal (biar gak keliatan kedip
+              putih), lalu SLIDE ke kiri membuka & menampilkan form pendaftaran.
+           2) Saat tombol "Masuk di sini" diklik -- tirai SLIDE balik dari kiri
+              menutupi layar lagi, baru pindah ke halaman Login.
+           Warna & pola sama seperti tirai di halaman Login supaya ciri khasnya
+           konsisten di kedua halaman. */
+        .tirai {
+            position: fixed; inset: 0; z-index: 90;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; color: #ffffff; overflow: hidden;
+            background:
+                radial-gradient(circle at 20% 15%, rgba(255,255,255,0.10), transparent 45%),
+                linear-gradient(135deg, #16a34a 0%, #1d7fd6 45%, #1d4ed8 70%, #0b1120 100%);
+            transform: translateX(0);
+            transition: transform 0.65s cubic-bezier(0.65, 0, 0.35, 1);
+            will-change: transform;
+        }
+        .tirai.terbuka { transform: translateX(-100%); }
+        .tirai::before {
+            content: ""; position: absolute; inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.10) 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            animation: kisiGeserTirai 20s linear infinite;
+        }
+        @keyframes kisiGeserTirai { 0% { background-position: 0 0; } 100% { background-position: 240px 240px; } }
+        .tirai-konten { position: relative; z-index: 1; }
+        .tirai-lencana {
+            width: 84px; height: 84px; border-radius: 50%;
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.35);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 18px auto;
+            animation: tiraiNapas 1.5s ease-in-out infinite;
+        }
+        @keyframes tiraiNapas { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+        .tirai-lencana svg { width: 42px; height: 42px; }
+        .tirai-judul { font-size: 18px; font-weight: 800; }
+        .tirai-sub { font-size: 12.5px; color: rgba(255,255,255,0.85); margin-top: 6px; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-800 min-h-screen flex items-center justify-center p-4 overflow-hidden">
+
+    <div class="bg-blob biru"></div>
+    <div class="bg-blob hijau"></div>
+    <div class="bg-blob kuning"></div>
+
+    <div class="register-card w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden p-8 space-y-6">
+        
+        <div class="text-center space-y-2">
+            <div class="jurusan-wrap">
+                <div class="jurusan-slide slide-sekolah">
+                    <img src="https://smkba.sch.id/storage/settings/01KSS8AQ39D852VCW0SD8XDZPA.png" alt="Logo SMK Banjar Asri" />
+                </div>
+                <div class="jurusan-slide slide-tkj">
+                    <i class="fa-solid fa-computer"></i>
+                    <span class="jurusan-teks">TKJ</span>
+                </div>
+                <div class="jurusan-slide slide-tav">
+                    <i class="fa-solid fa-video"></i>
+                    <span class="jurusan-teks">TAV</span>
+                </div>
+                <div class="jurusan-slide slide-tkr">
+                    <i class="fa-solid fa-car-side"></i>
+                    <span class="jurusan-teks">TKR</span>
+                </div>
+            </div>
+            <h2 class="header-text text-2xl font-extrabold text-slate-900">Pendaftaran Akun</h2>
+            <p class="header-text text-xs text-slate-400">Isi formulir di bawah untuk membuat akun baru</p>
+        </div>
+
+        <form action="{{ url_for('register') }}" method="POST" class="space-y-4">
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-semibold">
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <div class="field-anim">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Daftar Sebagai</label>
+                <div class="relative">
+                    <i class="fa-solid fa-user-gear absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <select name="role" required class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        <option value="Siswa">Siswa</option>
+                        <option value="Guru">Guru / Staf Pengajar</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="field-anim">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Nama Lengkap</label>
+                <div class="relative">
+                    <i class="fa-solid fa-id-card absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" name="fullname" placeholder="Masukkan nama lengkap" required class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                </div>
+            </div>
+
+            <div class="field-anim">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">NISN / NIP</label>
+                <div class="relative">
+                    <i class="fa-solid fa-hashtag absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" name="identity_number" placeholder="Nomor NISN (Siswa) / NIP (Guru)" required class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                </div>
+            </div>
+
+            <div class="field-anim">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Username</label>
+                <div class="relative">
+                    <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" name="username" placeholder="Buat username unik" required class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                </div>
+            </div>
+
+            <div class="field-anim">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Password</label>
+                <div class="relative">
+                    <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="password" id="passwordInput" name="password" placeholder="Buat password" required minlength="8" maxlength="128" autocomplete="new-password" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-10 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                    <button type="button" id="togglePasswordBtn" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+                        <i class="fa-solid fa-eye" id="togglePasswordIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="field-anim">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Email</label>
+                <div class="relative">
+                    <i class="fa-solid fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="email" name="email" placeholder="Masukkan alamat email" required class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-shine w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-500/30 transition-all mt-2">
+                Daftar Akun Baru <i class="fa-solid fa-arrow-right ml-1"></i>
+            </button>
+        </form>
+
+        <div class="footer-anim text-center border-t border-slate-100 pt-4">
+            <p class="text-xs text-slate-500">
+                Sudah punya akun? 
+                <a href="{{ url_for('login') }}" id="tautanMasuk" class="text-blue-600 font-bold hover:underline">
+                    Masuk di sini
+                </a>
+            </p>
+        </div>
+
+    </div>
+
+    <!-- Tirai geser: menutupi layar saat halaman ini pertama dibuka, lalu
+         geser ke kiri membuka form. Dipakai lagi (geser balik dari kiri)
+         saat tombol "Masuk di sini" diklik. -->
+    <div id="tirai" class="tirai">
+        <div class="tirai-konten">
+            <div class="tirai-lencana">
+                <svg viewBox="0 0 60 60" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="24" cy="24" r="9" stroke="#facc15"/>
+                    <path d="M9 46c1.8-9.5 7-14.5 15-14.5S38.2 36.5 40 46" stroke="#facc15"/>
+                    <path d="M47 26v14M40 33h14" stroke="#22c55e"/>
+                </svg>
+            </div>
+            <p class="tirai-judul" id="tiraiJudul">Menyiapkan Formulir Pendaftaran</p>
+            <p class="tirai-sub" id="tiraiSub">Mohon tunggu sebentar...</p>
+        </div>
+    </div>
+
+    <script>
+        const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+        const passwordInput = document.getElementById('passwordInput');
+        const togglePasswordIcon = document.getElementById('togglePasswordIcon');
+
+        togglePasswordBtn.addEventListener('click', function () {
+            const isHidden = passwordInput.type === 'password';
+            passwordInput.type = isHidden ? 'text' : 'password';
+            togglePasswordIcon.classList.toggle('fa-eye');
+            togglePasswordIcon.classList.toggle('fa-eye-slash');
+        });
+
+        /* ---------- Tirai: buka saat halaman dimuat ---------- */
+        const tirai = document.getElementById('tirai');
+        const tiraiJudul = document.getElementById('tiraiJudul');
+        const tiraiSub = document.getElementById('tiraiSub');
+
+        window.addEventListener('load', function () {
+            setTimeout(function () {
+                tirai.classList.add('terbuka');
+            }, 350);
+        });
+        // jaga-jaga kalau event load lambat, tetap buka tirainya
+        setTimeout(function () { tirai.classList.add('terbuka'); }, 1800);
+
+        /* ---------- Tirai: tutup lagi saat klik "Masuk di sini" ---------- */
+        const tautanMasuk = document.getElementById('tautanMasuk');
+        if (tautanMasuk) {
+            tautanMasuk.addEventListener('click', function (e) {
+                e.preventDefault();
+                const tujuan = tautanMasuk.getAttribute('href');
+
+                tiraiJudul.textContent = 'Kembali ke Halaman Masuk';
+                tiraiSub.textContent = 'Mohon tunggu sebentar...';
+                tirai.classList.remove('terbuka');
+
+                setTimeout(function () {
+                    window.location.href = tujuan;
+                }, 700);
+            });
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Patcher Release Notes</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,sans-serif;background:#f1f5f9;color:#1e293b;max-width:920px;margin:0 auto;padding:30px 20px;line-height:1.55}
+  h1{font-size:1.5rem;margin-bottom:6px;color:#0f172a}
+  .sub{color:#64748b;font-size:.88rem;margin-bottom:22px}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin-bottom:12px}
+  .card h2{font-size:.92rem;margin-bottom:6px}
+  .card .hint{font-size:.76rem;color:#64748b;margin-bottom:10px}
+  input[type=file]{display:block;width:100%;padding:10px;border:2px dashed #cbd5e1;border-radius:8px;background:#f8fafc;cursor:pointer;font-size:.85rem}
+  .status{display:none;font-size:.78rem;padding:6px 10px;border-radius:6px;margin-top:8px}
+  .status.ok{display:block;background:#dcfce7;color:#15803d}
+  .status.err{display:block;background:#fee2e2;color:#b91c1c}
+  button.big{display:block;width:100%;padding:14px;font-size:1rem;font-weight:700;background:#2563eb;color:#fff;border:none;border-radius:10px;cursor:pointer;margin:20px 0 12px}
+  button.big:disabled{background:#cbd5e1;cursor:not-allowed}
+  button.dl{display:block;width:100%;padding:11px;font-size:.88rem;font-weight:600;background:#059669;color:#fff;border:none;border-radius:8px;cursor:pointer;margin-bottom:8px;text-align:left}
+  button.dl:disabled{background:#94a3b8;cursor:not-allowed}
+  .log{background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;font-family:monospace;font-size:.74rem;max-height:280px;overflow-y:auto;white-space:pre-wrap;display:none;margin-top:10px}
+  .log.show{display:block}
+  .num{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;background:#2563eb;color:#fff;border-radius:50%;font-size:.72rem;font-weight:700;margin-right:6px}
+</style>
+</head>
+<body>
+
+<h1>Patcher Release Notes</h1>
+<p class="sub">Semua diproses di browser lu sendiri. File tidak dikirim ke mana-mana.</p>
+
+<div class="card">
+  <h2><span class="num">1</span>app.py</h2>
+  <p class="hint">File utama Flask (root project)</p>
+  <input type="file" id="in-app" accept=".py">
+  <div class="status" id="st-app"></div>
+</div>
+
+<div class="card">
+  <h2><span class="num">2</span>dashboard_siswa_2.js</h2>
+  <p class="hint">Ada di static/js/dashboard_siswa_2.js</p>
+  <input type="file" id="in-js2" accept=".js">
+  <div class="status" id="st-js2"></div>
+</div>
+
+<div class="card">
+  <h2><span class="num">3</span>dashboard_siswa.html</h2>
+  <p class="hint">Ada di templates/dashboard_siswa.html</p>
+  <input type="file" id="in-html" accept=".html">
+  <div class="status" id="st-html"></div>
+</div>
+
+<div class="card">
+  <h2><span class="num">4</span>dashboard_siswa.css</h2>
+  <p class="hint">Ada di static/css/dashboard_siswa.css</p>
+  <input type="file" id="in-css" accept=".css">
+  <div class="status" id="st-css"></div>
+</div>
+
+<button class="big" id="btn-patch" disabled>PATCH & BIKIN 5 FILE LENGKAP</button>
+<div class="log" id="log"></div>
+
+<div id="dl-card" style="display:none;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:16px 20px;margin-top:16px">
+  <h3 style="color:#065f46;font-size:.95rem;margin-bottom:8px">Selesai. Download 5 file di bawah:</h3>
+  <ol style="font-size:.82rem;color:#065f46;margin-left:18px;line-height:1.8">
+    <li>Download satu-satu (tombol hijau)</li>
+    <li>Upload ke PythonAnywhere (tab Files)</li>
+    <li>release_notes.js taruh di static/js/ (file baru)</li>
+    <li>Klik Reload di tab Web</li>
+  </ol>
+  <div id="dl-list" style="margin-top:12px"></div>
+</div>
+
+
+<!-- ============================================================
+     TEMPLATE RELEASE_NOTES.JS
+     ============================================================ -->
+<script type="text/plain" id="tpl-release-notes">
+(function () {
+    'use strict';
+
+    var STORAGE_KEY = 'release_dilihat_' + (window.USERNAME_SISWA_ASLI || 'guest');
+    var DELAY_MUNCUL_MS = 1200;
+
+    function ambilReleaseDilihat() {
+        try {
+            var raw = localStorage.getItem(STORAGE_KEY);
+            var arr = raw ? JSON.parse(raw) : [];
+            return new Set(Array.isArray(arr) ? arr : []);
+        } catch (e) { return new Set(); }
+    }
+    function simpanReleaseDilihat(setIds) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(setIds))); } catch (e) {}
+    }
+
+    var BULAN_ID = ['Januari','Februari','Maret','April','Mei','Juni',
+                   'Juli','Agustus','September','Oktober','November','Desember'];
+    function formatJam(ms) {
+        var d = new Date(ms);
+        return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+    function formatTanggalLengkap(ms) {
+        var d = new Date(ms);
+        return d.getDate() + ' ' + BULAN_ID[d.getMonth()] + ' ' + d.getFullYear();
+    }
+    function formatDurasi(menit) {
+        if (menit >= 60) {
+            var jam = Math.floor(menit / 60);
+            var sisa = menit % 60;
+            return sisa > 0 ? jam + ' jam ' + sisa + ' menit' : jam + ' jam';
+        }
+        return menit + ' menit';
+    }
+    function escapeHtml(s) {
+        var div = document.createElement('div');
+        div.textContent = String(s == null ? '' : s);
+        return div.innerHTML;
+    }
+
+    function renderBlokRelease(release) {
+        var blok = document.createElement('div');
+        blok.className = 'release-blok';
+
+        var tgl = release.tanggal_tampil || formatTanggalLengkap(release.selesai || Date.now());
+        var jm = formatJam(release.mulai || Date.now());
+        var js = formatJam(release.selesai || Date.now());
+        var dur = formatDurasi(release.durasi_menit || 1);
+
+        var baris = '';
+        (release.fitur_baru || []).forEach(function(f){
+            baris += '<tr>' +
+                '<td><span class="badge-baru">Baru</span></td>' +
+                '<td><strong>' + escapeHtml(f.nama || '') + '</strong></td>' +
+                '<td>' + escapeHtml(f.desc || '') + '</td>' +
+                '</tr>';
+        });
+        (release.perbaikan || []).forEach(function(p){
+            baris += '<tr>' +
+                '<td><span class="badge-fix">Fix</span></td>' +
+                '<td><strong>' + escapeHtml(p.nama || '') + '</strong></td>' +
+                '<td>' + escapeHtml(p.desc || '') + '</td>' +
+                '</tr>';
+        });
+        if (!baris) {
+            baris = '<tr>' +
+                '<td><span class="badge-fix">Fix</span></td>' +
+                '<td><strong>' + escapeHtml(release.fitur_nama || 'Sistem') + '</strong></td>' +
+                '<td>Perbaikan & pemeliharaan rutin.</td>' +
+                '</tr>';
+        }
+
+        blok.innerHTML =
+            '<div class="release-header">' +
+                '<div class="release-header-kiri">' +
+                    '<span class="release-versi">' + escapeHtml(release.versi || '') + '</span>' +
+                    '<span class="release-fitur-tag">' + escapeHtml(release.fitur_nama || '') + '</span>' +
+                '</div>' +
+                '<div class="release-waktu">' +
+                    escapeHtml(tgl) + ' - ' + jm + ' s/d ' + js + ' WIB' +
+                    '<span class="release-durasi">(durasi ' + dur + ')</span>' +
+                '</div>' +
+            '</div>' +
+            '<table class="changelog-table">' +
+                '<thead><tr><th>Tipe</th><th>Fitur</th><th>Keterangan</th></tr></thead>' +
+                '<tbody>' + baris + '</tbody>' +
+            '</table>';
+        return blok;
+    }
+
+    function tampilkanModal(daftarRelease) {
+        var lama = document.getElementById('modal-release-notes');
+        if (lama) lama.remove();
+
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-release-notes';
+        overlay.className = 'modal-overlay-release';
+
+        var jumlah = daftarRelease.length;
+        var card = document.createElement('div');
+        card.className = 'changelog-card';
+        card.innerHTML =
+            '<div class="changelog-header">' +
+                '<div>' +
+                    '<h2>Maintenance Selesai</h2>' +
+                    '<p class="subtitle">' +
+                        (jumlah === 1 ? 'Ada update terbaru buat kamu' : jumlah + ' update yang belum kamu lihat') +
+                    '</p>' +
+                '</div>' +
+                '<button class="close-btn" type="button" aria-label="Tutup">x</button>' +
+            '</div>' +
+            '<div class="changelog-body-wrap" id="release-body-wrap"></div>' +
+            '<div class="changelog-footer">' +
+                '<span>Coba fitur barunya sekarang!</span>' +
+                '<button class="btn-ok" type="button">Oke, Mengerti</button>' +
+            '</div>';
+
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+
+        var bodyWrap = card.querySelector('#release-body-wrap');
+        var terurut = daftarRelease.slice().sort(function(a,b){
+            return (a.selesai || 0) - (b.selesai || 0);
+        });
+        terurut.forEach(function(r){ bodyWrap.appendChild(renderBlokRelease(r)); });
+
+        requestAnimationFrame(function(){ overlay.classList.add('active'); });
+
+        function tutup() {
+            var sudah = ambilReleaseDilihat();
+            terurut.forEach(function(r){ if (r && r.id) sudah.add(r.id); });
+            simpanReleaseDilihat(sudah);
+            overlay.classList.remove('active');
+            setTimeout(function(){
+                overlay.remove();
+                document.body.style.overflow = '';
+            }, 300);
+        }
+
+        card.querySelector('.close-btn').addEventListener('click', tutup);
+        card.querySelector('.btn-ok').addEventListener('click', tutup);
+        overlay.addEventListener('click', function(e){
+            if (e.target === overlay) tutup();
+        });
+
+        function escHandler(e) {
+            if (e.key === 'Escape') {
+                tutup();
+                document.removeEventListener('keydown', escHandler);
+            }
+        }
+        document.addEventListener('keydown', escHandler);
+    }
+
+    var sedangCek = false;
+    function cekDanTampilkanRelease() {
+        if (sedangCek) return;
+        sedangCek = true;
+        fetch('/api/releases/list')
+            .then(function(res){ return res.ok ? res.json() : null; })
+            .then(function(json){
+                if (!json || !json.success || !Array.isArray(json.data)) return;
+                var sudah = ambilReleaseDilihat();
+                var belum = [];
+                var idPakai = new Set();
+                json.data.forEach(function(r){
+                    if (!r || !r.id) return;
+                    if (sudah.has(r.id)) return;
+                    if (idPakai.has(r.id)) return;
+                    idPakai.add(r.id);
+                    belum.push(r);
+                });
+                if (belum.length === 0) return;
+                tampilkanModal(belum);
+            })
+            .catch(function(e){ console.warn('[release-notes] gagal:', e); })
+            .then(function(){ sedangCek = false; });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function(){
+            setTimeout(cekDanTampilkanRelease, DELAY_MUNCUL_MS);
+        });
+    } else {
+        setTimeout(cekDanTampilkanRelease, DELAY_MUNCUL_MS);
+    }
+    document.addEventListener('visibilitychange', function(){
+        if (document.visibilityState === 'visible') cekDanTampilkanRelease();
+    });
+
+    window.__cekReleaseNotes = cekDanTampilkanRelease;
+    window.__resetReleaseDilihat = function(){
+        try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+        console.log('[release-notes] reset. Refresh halaman.');
+    };
+})();
+</script>
+
+
+<!-- ============================================================
+     TEMPLATE: BLOK RELEASE NOTES UNTUK app.py
+     ============================================================ -->
+<script type="text/plain" id="tpl-app-blok">
+
+# ----------------------------------------------------
+# SISTEM RELEASE NOTES (auto-generate changelog maintenance)
+# ----------------------------------------------------
+RELEASE_STORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'release_store.json')
+MAINTENANCE_SESI_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'maintenance_sesi.json')
+
+
+def _muat_release_store():
+    try:
+        with open(RELEASE_STORE_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return data if isinstance(data, list) else []
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def _simpan_release_store():
+    os.makedirs(os.path.dirname(RELEASE_STORE_PATH), exist_ok=True)
+    tmp_path = RELEASE_STORE_PATH + '.tmp'
+    with open(tmp_path, 'w', encoding='utf-8') as f:
+        json.dump(release_store, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, RELEASE_STORE_PATH)
+
+
+def _muat_maintenance_sesi():
+    try:
+        with open(MAINTENANCE_SESI_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _simpan_maintenance_sesi():
+    os.makedirs(os.path.dirname(MAINTENANCE_SESI_PATH), exist_ok=True)
+    tmp_path = MAINTENANCE_SESI_PATH + '.tmp'
+    with open(tmp_path, 'w', encoding='utf-8') as f:
+        json.dump(maintenance_sesi, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, MAINTENANCE_SESI_PATH)
+
+
+release_store = _muat_release_store()
+maintenance_sesi = _muat_maintenance_sesi()
+
+
+LABEL_FITUR_MAINTENANCE = {
+    'akademik': 'Koleksi Prestasi',
+    'tugas': 'Tugas & Catatan',
+    'guru': 'Daftar Guru',
+    'cari-teman': 'Cari Teman',
+    'quiz': 'Quiz & Leaderboard',
+    'pengumuman': 'Pengumuman',
+    'kotak-saran': 'Kotak Saran',
+    'ai-support': 'AI Support',
+}
+
+
+def _hitung_versi_release_berikutnya():
+    total = len(release_store)
+    major = 1 + (total // 100)
+    minor = (total // 10) % 10
+    patch = total % 10
+    return 'v' + str(major) + '.' + str(minor) + '.' + str(patch)
+
+
+def _generate_release_dari_sesi(fitur_id, sesi):
+    sekarang_ms = int(time.time() * 1000)
+    mulai_ms = sesi.get('mulai', sekarang_ms)
+    durasi_menit = max(1, round((sekarang_ms - mulai_ms) / 60000))
+    waktu_selesai = datetime.utcnow() + timedelta(hours=7)
+    tanggal_tampil = waktu_selesai.strftime('%d %B %Y')
+    fitur_nama = LABEL_FITUR_MAINTENANCE.get(fitur_id, fitur_id)
+    fitur_baru = sesi.get('fitur_baru', [])
+    perbaikan = [{'nama': fitur_nama, 'desc': 'Perbaikan dan peningkatan pada ' + fitur_nama}]
+    entry = {
+        'id': 'release_' + str(mulai_ms),
+        'versi': _hitung_versi_release_berikutnya(),
+        'fitur_id': fitur_id,
+        'fitur_nama': fitur_nama,
+        'mulai': mulai_ms,
+        'selesai': sekarang_ms,
+        'durasi_menit': durasi_menit,
+        'oleh': sesi.get('oleh', 'admin'),
+        'fitur_baru': fitur_baru,
+        'perbaikan': perbaikan,
+        'tanggal_tampil': tanggal_tampil,
+    }
+    release_store.append(entry)
+    _simpan_release_store()
+    return entry
+
+</script>
+
+
+<!-- ============================================================
+     TEMPLATE: ROUTE BARU UNTUK app.py
+     ============================================================ -->
+<script type="text/plain" id="tpl-app-route">
+@app.route('/api/maintenance/toggle', methods=['POST'])
+@batasi('umum')
+def api_maintenance_toggle():
+    if not _akun_ini_admin_dev():
+        return jsonify(success=False, message='Tidak diizinkan.'), 403
+
+    body = request.get_json(silent=True) or {}
+    fitur = body.get('fitur')
+    aktif = bool(body.get('aktif'))
+
+    if fitur not in FITUR_MAINTENANCE_VALID:
+        return jsonify(success=False, message='Fitur tidak dikenal.'), 400
+
+    status_lama = bool(maintenance_store.get(fitur, False))
+
+    if status_lama != aktif:
+        if aktif:
+            maintenance_sesi[fitur] = {
+                'mulai': int(time.time() * 1000),
+                'oleh': session['user'].get('nama') or session['user']['username'],
+                'fitur_baru': [],
+            }
+            _simpan_maintenance_sesi()
+        else:
+            sesi = maintenance_sesi.pop(fitur, None)
+            if sesi:
+                _generate_release_dari_sesi(fitur, sesi)
+                _simpan_maintenance_sesi()
+
+    maintenance_store[fitur] = aktif
+    _simpan_maintenance_store()
+    return jsonify(success=True, fitur=maintenance_store)
+
+
+@app.route('/api/maintenance/tandai-fitur-baru', methods=['POST'])
+@batasi('umum')
+def api_maintenance_tandai_fitur_baru():
+    if not _akun_ini_admin_dev():
+        return jsonify(success=False, message='Tidak diizinkan.'), 403
+
+    body = request.get_json(silent=True) or {}
+    fitur = body.get('fitur')
+    if fitur not in FITUR_MAINTENANCE_VALID:
+        return jsonify(success=False, message='Fitur tidak dikenal.'), 400
+
+    sesi = maintenance_sesi.get(fitur)
+    if not sesi:
+        return jsonify(success=False, message='Fitur ini tidak sedang dalam maintenance.'), 400
+
+    daftar = body.get('fitur_baru') or []
+    if not isinstance(daftar, list):
+        return jsonify(success=False, message='Format fitur_baru tidak valid.'), 400
+
+    bersih = []
+    for item in daftar:
+        if not isinstance(item, dict):
+            continue
+        nama = (item.get('nama') or '').strip()[:120]
+        desc = (item.get('desc') or '').strip()[:300]
+        if nama:
+            bersih.append({'nama': nama, 'desc': desc})
+    sesi['fitur_baru'] = bersih
+    maintenance_sesi[fitur] = sesi
+    _simpan_maintenance_sesi()
+    return jsonify(success=True, fitur_baru=bersih)
+
+
+@app.route('/api/releases/list', methods=['GET'])
+@batasi('umum')
+def api_releases_list():
+    if 'user' not in session:
+        return jsonify(success=False, message='Belum login.'), 401
+
+    terurut = sorted(release_store, key=lambda r: r.get('selesai', 0), reverse=True)
+    return jsonify(success=True, data=terurut)
+</script>
+
+
+<!-- ============================================================
+     TEMPLATE: CSS MODAL RELEASE NOTES
+     ============================================================ -->
+<script type="text/plain" id="tpl-css">
+
+/* MODAL RELEASE NOTES */
+.modal-overlay-release {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.modal-overlay-release.active {
+    display: flex;
+    animation: fadeInRelease 0.3s ease;
+}
+@keyframes fadeInRelease { from{opacity:0} to{opacity:1} }
+.modal-overlay-release .changelog-card {
+    background: #fff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 640px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    overflow: hidden;
+    animation: slideUpRelease 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideUpRelease {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+.modal-overlay-release .changelog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px 22px 16px;
+    background: linear-gradient(135deg, #0ea5e9, #2563eb);
+    color: #fff;
+}
+.modal-overlay-release .changelog-header h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+.modal-overlay-release .changelog-header .subtitle {
+    margin: 4px 0 0;
+    font-size: 0.82rem;
+    opacity: 0.9;
+}
+.modal-overlay-release .close-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.modal-overlay-release .close-btn:hover { background: rgba(255,255,255,0.35); }
+.modal-overlay-release .changelog-body-wrap {
+    padding: 8px 22px 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+.release-blok {
+    padding: 14px 0;
+    border-bottom: 1px dashed #e2e8f0;
+}
+.release-blok:last-child { border-bottom: none; }
+.release-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+.release-header-kiri {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.release-versi {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #dbeafe;
+    color: #1e40af;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: 999px;
+}
+.release-fitur-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: 999px;
+}
+.release-waktu {
+    font-size: 0.72rem;
+    color: #64748b;
+    text-align: right;
+    line-height: 1.35;
+}
+.release-durasi {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.68rem;
+}
+.changelog-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.85rem;
+}
+.changelog-table thead th {
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    border-bottom: 2px solid #e2e8f0;
+    font-weight: 700;
+}
+.changelog-table tbody td {
+    padding: 10px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: top;
+    color: #1e293b;
+    line-height: 1.5;
+}
+.changelog-table tbody tr:last-child td { border-bottom: none; }
+.badge-baru, .badge-fix {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.badge-baru { background: #dcfce7; color: #15803d; }
+.badge-fix  { background: #fef3c7; color: #b45309; }
+.modal-overlay-release .changelog-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 22px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 0.82rem;
+    color: #475569;
+    gap: 12px;
+}
+.modal-overlay-release .btn-ok {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+.modal-overlay-release .btn-ok:hover { background: #1d4ed8; }
+@media (max-width: 480px) {
+    .modal-overlay-release .changelog-card { max-height: 90vh; }
+    .modal-overlay-release .changelog-header h2 { font-size: 1rem; }
+    .changelog-table { font-size: 0.78rem; }
+    .changelog-table thead th,
+    .changelog-table tbody td { padding: 7px 6px; }
+    .modal-overlay-release .changelog-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .modal-overlay-release .btn-ok { width: 100%; }
+    .release-waktu { text-align: left; }
+}
+</script>
+
+
+<script>
+(function(){
+'use strict';
+
+var state = {
+  app:  { nama:'app.py',              konten:null, hasil:null, inp:'in-app',  st:'st-app'  },
+  js2:  { nama:'dashboard_siswa_2.js',konten:null, hasil:null, inp:'in-js2',  st:'st-js2'  },
+  html: { nama:'dashboard_siswa.html',konten:null, hasil:null, inp:'in-html', st:'st-html' },
+  css:  { nama:'dashboard_siswa.css', konten:null, hasil:null, inp:'in-css',  st:'st-css'  }
+};
+
+var logEl = document.getElementById('log');
+function log(msg){
+  logEl.classList.add('show');
+  var t = new Date().toLocaleTimeString('id-ID');
+  logEl.textContent += '[' + t + '] ' + msg + '\n';
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function setStatus(key, tipe, pesan){
+  var el = document.getElementById(state[key].st);
+  el.className = 'status ' + tipe;
+  el.textContent = pesan;
+}
+function cekSemuaSiap(){
+  var ok = true;
+  for (var k in state){ if (state[k].konten === null) ok = false; }
+  document.getElementById('btn-patch').disabled = !ok;
+}
+function bacaFile(file){
+  return new Promise(function(res, rej){
+    var r = new FileReader();
+    r.onload = function(e){ res(e.target.result); };
+    r.onerror = function(){ rej(new Error('Gagal baca file')); };
+    r.readAsText(file, 'utf-8');
+  });
+}
+function download(nama, konten){
+  var blob = new Blob([konten], {type:'text/plain;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = nama;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+var TPL_RELEASE_NOTES = document.getElementById('tpl-release-notes').textContent;
+var TPL_APP_BLOK = document.getElementById('tpl-app-blok').textContent;
+var TPL_APP_ROUTE = document.getElementById('tpl-app-route').textContent;
+var TPL_CSS = document.getElementById('tpl-css').textContent;
+
+for (var key in state) {
+  (function(k){
+    var s = state[k];
+    document.getElementById(s.inp).addEventListener('change', function(e){
+      var f = e.target.files[0];
+      if (!f) return;
+      bacaFile(f).then(function(isi){
+        s.konten = isi;
+        var kb = (f.size/1024).toFixed(1);
+        var baris = isi.split('\n').length;
+        setStatus(k, 'ok', 'OK - ' + s.nama + ' dimuat (' + kb + ' KB, ' + baris + ' baris)');
+        cekSemuaSiap();
+      }).catch(function(err){
+        setStatus(k, 'err', 'GAGAL: ' + err.message);
+        s.konten = null;
+        cekSemuaSiap();
+      });
+    });
+  })(key);
+}
+
+function patchAppPy(src){
+  var h = src; var logs = [];
+
+  var regexDup = /@app\.route\('\/api\/maintenance\/status',\s*methods=\['GET'\]\)[\s\S]*?return\s+jsonify\(success=True,\s*fitur=maintenance_store\)\s*\n\s*\n\s*@app\.route\('\/api\/maintenance\/toggle',\s*methods=\['POST'\]\)[\s\S]*?maintenance_store\[fitur\]\s*=\s*aktif\s*\n\s*_simpan_maintenance_store\(\)\s*\n\s*return\s+jsonify\(success=True,\s*fitur=maintenance_store\)\s*\n/m;
+  if (regexDup.test(h)){
+    h = h.replace(regexDup, '');
+    logs.push('OK - Route duplikat dihapus.');
+  } else {
+    logs.push('INFO - Duplikat tidak terdeteksi (mungkin sudah bersih).');
+  }
+
+  var anchor = 'maintenance_store = _muat_maintenance_store()';
+  if (h.indexOf(anchor) !== -1 && h.indexOf('RELEASE_STORE_PATH') === -1){
+    h = h.replace(anchor, anchor + '\n' + TPL_APP_BLOK);
+    logs.push('OK - Blok RELEASE NOTES disisipkan.');
+  } else if (h.indexOf('RELEASE_STORE_PATH') !== -1){
+    logs.push('INFO - Blok RELEASE NOTES sudah ada.');
+  } else {
+    logs.push('GAGAL - Anchor tidak ditemukan!');
+  }
+
+  var regexToggleLama = /@app\.route\('\/api\/maintenance\/toggle',\s*methods=\['POST'\]\)[\s\S]*?return\s+jsonify\(success=True,\s*fitur=maintenance_store\)/;
+  if (regexToggleLama.test(h)){
+    h = h.replace(regexToggleLama, TPL_APP_ROUTE);
+    logs.push('OK - Route toggle diganti + 2 endpoint baru.');
+  } else {
+    logs.push('INFO - Route toggle lama tidak terdeteksi.');
+  }
+
+  return { hasil: h, logs: logs };
+}
+
+function patchJs2(src){
+  var h = src; var logs = [];
+
+  var reLama = /wadah\.innerHTML\s*=\s*DAFTAR_FITUR_MAINTENANCE\.map\(f\s*=>\s*\{[\s\S]*?\}\)\.join\(''\);/;
+
+  var baru = [
+    "wadah.innerHTML = DAFTAR_FITUR_MAINTENANCE.map(f => {",
+    "    const aktif = !!STATUS_MAINTENANCE_FITUR[f.id];",
+    "    return `",
+    "        <div class=\"bg-slate-50 rounded-xl px-3.5 py-3 border ${aktif ? 'border-emerald-300' : 'border-slate-200'}\">",
+    "            <div class=\"flex items-center justify-between gap-3\">",
+    "                <div class=\"flex items-center gap-3 min-w-0\">",
+    "                    <div class=\"w-8 h-8 rounded-lg ${aktif ? 'bg-emerald-100 text-emerald-600' : 'bg-white text-slate-400'} border border-slate-200 flex items-center justify-center flex-shrink-0\">",
+    "                        <i class=\"fa-solid ${f.ikon} text-xs\"></i>",
+    "                    </div>",
+    "                    <div class=\"min-w-0\">",
+    "                        <p class=\"text-xs font-bold text-slate-800 truncate\">${f.label}</p>",
+    "                        <p class=\"text-[10px] ${aktif ? 'text-emerald-600 font-semibold' : 'text-slate-400'}\">${aktif ? 'Sedang dikunci dari siswa' : 'Normal, siswa bisa akses'}</p>",
+    "                    </div>",
+    "                </div>",
+    "                <label class=\"maintenance-switch flex-shrink-0\">",
+    "                    <input type=\"checkbox\" ${aktif ? 'checked' : ''} onchange=\"setMaintenanceFitur('${f.id}', this.checked)\">",
+    "                    <span class=\"maintenance-switch-track\"></span>",
+    "                </label>",
+    "            </div>",
+    "            ${aktif ? `",
+    "                <div class=\"mt-2.5 pt-2.5 border-t border-slate-200/70 flex items-center justify-between gap-2 flex-wrap\">",
+    "                    <button type=\"button\" onclick=\"bukaFormTandaiFiturBaru('${f.id}')\"",
+    "                        class=\"text-[10px] font-bold text-blue-600 hover:text-blue-800 px-2 py-1 rounded-lg hover:bg-blue-50 flex items-center gap-1\">",
+    "                        <i class=\"fa-solid fa-plus\"></i> Tandai Fitur Baru",
+    "                    </button>",
+    "                    <span class=\"text-[9px] text-slate-400 italic\">Opsional - muncul di changelog pas maintenance OFF</span>",
+    "                </div>",
+    "            ` : ''}",
+    "        </div>",
+    "    `;",
+    "}).join('');"
+  ].join('\n');
+
+  if (reLama.test(h)){
+    h = h.replace(reLama, baru);
+    logs.push('OK - renderPanelMaintenanceFitur() diupdate.');
+  } else {
+    logs.push('INFO - Blok renderPanelMaintenanceFitur() tidak ditemukan.');
+  }
+
+  if (h.indexOf('function bukaFormTandaiFiturBaru') === -1){
+    var fn = [
+      "",
+      "/* Admin menandai fitur baru selama maintenance ON. */",
+      "function bukaFormTandaiFiturBaru(fiturId) {",
+      "    const nama = prompt('Nama fitur baru (kosongkan & klik OK untuk batal):');",
+      "    if (!nama || !nama.trim()) return;",
+      "    const desc = prompt('Deskripsi singkat fitur baru (opsional):') || '';",
+      "    fetch('/api/maintenance/tandai-fitur-baru', {",
+      "        method: 'POST',",
+      "        headers: { 'Content-Type': 'application/json' },",
+      "        body: JSON.stringify({ fitur: fiturId, fitur_baru: [{ nama: nama.trim(), desc: desc.trim() }] })",
+      "    })",
+      "    .then(function(r){ return r.json(); })",
+      "    .then(function(j){",
+      "        if (j.success) tampilkanToast('Fitur baru ditandai.', 'sukses');",
+      "        else tampilkanToast(j.message || 'Gagal menandai.', 'error');",
+      "    })",
+      "    .catch(function(){ tampilkanToast('Gagal menghubungi server.', 'error'); });",
+      "}",
+      ""
+    ].join('\n');
+    h += fn;
+    logs.push('OK - Fungsi bukaFormTandaiFiturBaru() ditambahkan.');
+  } else {
+    logs.push('INFO - Fungsi sudah ada.');
+  }
+
+  return { hasil: h, logs: logs };
+}
+
+function patchHtml(src){
+  var h = src; var logs = [];
+  var anchor = '<script src="../static/js/dashboard_siswa_pelanggaran.js?v=20260909"><\/script>';
+  if (h.indexOf(anchor) !== -1 && h.indexOf('release_notes.js') === -1){
+    h = h.replace(anchor, anchor + '\n    <script src="../static/js/release_notes.js?v=20260925"><\/script>');
+    logs.push('OK - Script release_notes.js ditambahkan.');
+  } else if (h.indexOf('release_notes.js') !== -1){
+    logs.push('INFO - Sudah ada.');
+  } else {
+    logs.push('GAGAL - Anchor tidak ditemukan!');
+  }
+  return { hasil: h, logs: logs };
+}
+
+function patchCss(src){
+  var h = src; var logs = [];
+  if (h.indexOf('.modal-overlay-release') !== -1){
+    logs.push('INFO - CSS sudah ada.');
+    return { hasil: h, logs: logs };
+  }
+  h += "\n\n" + TPL_CSS;
+  logs.push('OK - CSS ditambahkan.');
+  return { hasil: h, logs: logs };
+}
+
+document.getElementById('btn-patch').addEventListener('click', function(){
+    logEl.textContent = '';
+    logEl.classList.add('show');
+
+    try {
+        var r1 = patchAppPy(state.app.konten);
+        state.app.hasil = r1.hasil;
+        for (var i=0; i<r1.logs.length; i++) log('app.py: ' + r1.logs[i]);
+    } catch(e){ log('GAGAL app.py: ' + e.message); }
+
+    try {
+        var r2 = patchJs2(state.js2.konten);
+        state.js2.hasil = r2.hasil;
+        for (var j=0; j<r2.logs.length; j++) log('js2: ' + r2.logs[j]);
+    } catch(e){ log('GAGAL js2: ' + e.message); }
+
+    try {
+        var r3 = patchHtml(state.html.konten);
+        state.html.hasil = r3.hasil;
+        for (var k=0; k<r3.logs.length; k++) log('html: ' + r3.logs[k]);
+    } catch(e){ log('GAGAL html: ' + e.message); }
+
+    try {
+        var r4 = patchCss(state.css.konten);
+        state.css.hasil = r4.hasil;
+        for (var l=0; l<r4.logs.length; l++) log('css: ' + r4.logs[l]);
+    } catch(e){ log('GAGAL css: ' + e.message); }
+
+    log('');
+    log('SIAP. Download 5 file di bawah.');
+
+    var card = document.getElementById('dl-card');
+    var list = document.getElementById('dl-list');
+    list.innerHTML = '';
+    card.style.display = 'block';
+
+    var items = [
+        { label: 'app.py (direvisi)',              nama: 'app.py',               konten: state.app.hasil },
+        { label: 'dashboard_siswa_2.js (direvisi)', nama: 'dashboard_siswa_2.js', konten: state.js2.hasil },
+        { label: 'dashboard_siswa.html (direvisi)', nama: 'dashboard_siswa.html', konten: state.html.hasil },
+        { label: 'dashboard_siswa.css (direvisi)',  nama: 'dashboard_siswa.css',  konten: state.css.hasil },
+        { label: 'release_notes.js (FILE BARU)',    nama: 'release_notes.js',     konten: TPL_RELEASE_NOTES }
+    ];
+
+    for (var n=0; n<items.length; n++){
+        (function(it){
+            var b = document.createElement('button');
+            b.className = 'dl';
+            if (!it.konten){
+                b.disabled = true;
+                b.textContent = 'GAGAL - ' + it.label;
+            } else {
+                b.textContent = 'Download: ' + it.label;
+                b.addEventListener('click', function(){ download(it.nama, it.konten); });
+            }
+            list.appendChild(b);
+        })(items[n]);
+    }
+
+    card.scrollIntoView({ behavior: 'smooth' });
+});
+
+})();
+</script>
+
+</body>
+</html>

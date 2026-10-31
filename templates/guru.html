@@ -1,0 +1,15 @@
+<!-- contoh siswa.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>Siswa Page</title>
+</head>
+<body>
+<h1>Halaman Siswa</h1>
+<script>
+  const user = JSON.parse(localStorage.getItem('user'));
+  document.write('Selamat datang, ' + (user ? user.nama : 'Guest'));
+</script>
+</body>
+</html>

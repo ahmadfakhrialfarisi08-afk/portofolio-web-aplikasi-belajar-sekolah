@@ -1,0 +1,3014 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <!--
+    =====================================================================
+    LOGIN PAGE - SMK BANJAR ASRI
+    Dibuat oleh : AHMAD FAKHRI AL FARISI
+    Copyright (c) 2026 AHMAD FAKHRI AL FARISI
+    Lisensi     : MIT License (lihat file LICENSE)
+
+    Kode ini open source. Kamu boleh memakai, mengubah, dan membagikannya,
+    selama pemberitahuan hak cipta dan lisensi ini tetap disertakan.
+    =====================================================================
+  -->
+  <meta name="author" content="AHMAD FAKHRI AL FARISI" />
+  <meta name="copyright" content="Copyright (c) 2026 AHMAD FAKHRI AL FARISI - MIT License" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - SMK BANJAR ASRI</title>
+  <!-- Wajib supaya submit form / klik link di dalam dokumen ini, saat dia
+       dimuat sebagai iframe embed (lihat #lupaSceneHost di lupa_password.html),
+       tetap menavigasi TAB UTAMA -- bukan "terjebak" kecil di dalam iframe. -->
+  <base target="_top">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ===================== OPTIMASI PERFORMA (LOW-END) =====================
+       1) Hormati preferensi "reduced motion" OS/browser -- biasanya otomatis
+          aktif di mode hemat baterai atau di-set manual oleh user di laptop
+          yang animasinya terasa berat. Semua animasi & transisi dipangkas
+          jadi nyaris instan (0.01ms, sekali putaran) tanpa menghapus elemen
+          atau mengubah state akhir tampilan -- cuma flourish geraknya yang
+          dihilangkan.
+       2) .jeda-animasi -- diaktifkan lewat JS saat tab browser sedang tidak
+          aktif (pindah tab/minimize), supaya animasi dekoratif (blob,
+          maskot, dll) berhenti makan CPU/GPU di background. */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+    .jeda-animasi *, .jeda-animasi *::before, .jeda-animasi *::after {
+      animation-play-state: paused !important;
+    }
+
+    :root {
+      --biru: #2563eb;
+      --biru-tua: #1d4ed8;
+      --biru-terang: #3b82f6;
+      --hijau: #16a34a;
+      --hijau-terang: #22c55e;
+      --kuning: #facc15;
+      --kuning-tua: #eab308;
+      --hitam: #0f172a;
+      --hitam-lembut: #1e293b;
+      --putih: #ffffff;
+    }
+    * { box-sizing: border-box; font-family: 'Poppins', Arial, sans-serif; }
+
+    html, body { height: 100%; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: #f4f7fb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+      padding: 0;
+    }
+
+    /* ===================== LAYAR LOADING (EDUNEX) =====================
+       Tampil saat halaman login pertama kali dibuka. Desain mengikuti
+       edunex-loading-all-in-one.html: logo melayang + cahaya buku, wordmark,
+       tagline, bar progres + persen, label tahap, dan status. Semua selector
+       memakai awalan #layar-loading / .ll- supaya tidak bentrok dengan CSS
+       halaman ini. Progresnya terhubung ke pemuatan halaman yang sebenarnya
+       (lihat script "Layar loading" di bawah). */
+    #layar-loading {
+      position: fixed; inset: 0; z-index: 50;
+      display: flex; overflow-x: hidden; overflow-y: auto; padding: 28px 20px;
+      color: #f7f9ff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(ellipse at 50% 37%, rgba(18,57,116,.42), transparent 55%),
+        linear-gradient(145deg, #0b2550 0%, #071a3b 54%, #04132e 100%);
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    #layar-loading.selesai { opacity: 0; visibility: hidden; pointer-events: none; }
+    #layar-loading *, #layar-loading *::before, #layar-loading *::after { box-sizing: border-box; font-family: inherit; }
+    #layar-loading::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(120deg, transparent 20%, rgba(45,117,213,.035) 50%, transparent 80%);
+    }
+    #layar-loading .ll-content { position: relative; width: min(590px, 100%); margin: auto; display: flex; align-items: center; flex-direction: column; text-align: center; }
+    #layar-loading .ll-logo-wrap {
+      width: min(390px, 76vw); aspect-ratio: 544 / 478; display: grid; place-items: center; position: relative;
+      animation: llFloat 2.4s ease-in-out infinite; /* satu naik-turun = 2,4 detik */
+    }
+    #layar-loading .ll-logo { display: block; width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 1; filter: drop-shadow(0 12px 18px rgba(0,0,0,.12)); }
+    #layar-loading .ll-book-light {
+      position: absolute; z-index: 0; left: 50%; top: 78%; width: 42%; height: 19%;
+      transform: translate(-50%, -50%); border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(255,201,40,.24) 0%, rgba(255,201,40,.08) 38%, transparent 72%);
+      filter: blur(12px); animation: llGlow 2.4s ease-in-out infinite; /* selaras dengan naik-turun logo */
+    }
+    #layar-loading .ll-wordmark { margin-top: 14px; font-size: clamp(45px, 7vw, 64px); font-weight: 850; letter-spacing: -2.7px; line-height: 1.04; }
+    #layar-loading .ll-edu { color: #fff; }
+    #layar-loading .ll-nex { color: #ffd13b; }
+    #layar-loading .ll-tagline { margin-top: 15px; font-size: clamp(14px, 2.5vw, 18px); letter-spacing: .1px; color: #c5d6f0; }
+    #layar-loading .ll-loader { width: min(410px, 86vw); margin-top: 48px; text-align: left; }
+    #layar-loading .ll-track { height: 8px; border-radius: 99px; overflow: hidden; background: rgba(151,180,224,.17); box-shadow: inset 0 1px 2px rgba(0,0,0,.2); }
+    #layar-loading .ll-bar {
+      height: 100%; width: 25%; border-radius: inherit;
+      background: linear-gradient(90deg, #168cff 0%, #35c2ff 58%, #ffd43b 100%);
+      box-shadow: 0 0 12px rgba(53,194,255,.24);
+      transition: width .5s cubic-bezier(.2,.7,.2,1);
+    }
+    #layar-loading .ll-meta { display: flex; justify-content: flex-end; gap: 12px; margin-top: 13px; font-size: 14px; color: #c0d0e9; }
+    #layar-loading .ll-status { position: relative; margin-top: 28px; min-height: 22px; font-size: 15px; font-weight: 600; color: #e5edfa; }
+    #layar-loading .ll-status::after { content: ""; position: absolute; left: 100%; top: 0; text-align: left; animation: llDots 1.3s steps(4, end) infinite; }
+    @keyframes llFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(var(--ll-naik, -14px)); } }
+    @keyframes llGlow { 0%, 100% { opacity: .32; transform: translate(-50%, -50%) scale(.88); } 50% { opacity: .78; transform: translate(-50%, -50%) scale(1.08); } }
+    @keyframes llDots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75%, 100% { content: "..."; } }
+    @media (max-height: 760px) {
+      #layar-loading { padding: 18px; }
+      #layar-loading .ll-logo-wrap { width: min(310px, 47vh); }
+      #layar-loading .ll-wordmark { font-size: 48px; }
+      #layar-loading .ll-tagline { margin-top: 10px; }
+      #layar-loading .ll-loader { margin-top: 30px; }
+      #layar-loading .ll-status { margin-top: 18px; }
+    }
+    @media (max-height: 480px) {
+      #layar-loading { padding: 12px 18px; }
+      #layar-loading .ll-logo-wrap { width: min(150px, 34vh); --ll-naik: -8px; }
+      #layar-loading .ll-wordmark { font-size: 36px; margin-top: 8px; letter-spacing: -1.6px; }
+      #layar-loading .ll-tagline { margin-top: 6px; font-size: 13px; }
+      #layar-loading .ll-loader { margin-top: 18px; }
+      #layar-loading .ll-meta { margin-top: 9px; font-size: 13px; }
+      #layar-loading .ll-status { margin-top: 10px; font-size: 14px; min-height: 20px; }
+    }
+    @media (max-width: 430px) {
+      #layar-loading .ll-logo-wrap { width: min(330px, 82vw); }
+      #layar-loading .ll-wordmark { font-size: 48px; }
+      #layar-loading .ll-loader { margin-top: 34px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #layar-loading .ll-status::after { animation: none !important; content: "..."; }
+    }
+
+    /* Gumpalan warna blur di background -- kesan berkelas, bukan rame */
+    /* Sengaja cuma 2 blob (bukan 4) & blur diturunkan 90px->65px -- tetap
+       terasa "melayang lembut" tapi jauh lebih ringan buat GPU/CPU lawas,
+       karena tiap elemen blur adalah layer terpisah yang harus terus
+       dikomposit ulang selama animasi berjalan. */
+    .bg-blob { position: fixed; border-radius: 50%; filter: blur(65px); opacity: 0.35; z-index: 0; pointer-events: none; }
+    .bg-blob.biru { width: 480px; height: 480px; background: #3b82f6; top: -140px; left: -120px; animation: mengambang1 14s ease-in-out infinite; }
+    .bg-blob.hijau { width: 420px; height: 420px; background: #22c55e; bottom: -160px; right: -100px; animation: mengambang2 16s ease-in-out infinite; }
+    @keyframes mengambang1 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,60px) scale(1.08); } }
+    @keyframes mengambang2 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-50px,-40px) scale(1.1); } }
+
+    /* Wrapper -- panel ilustrasi (kiri) + kartu login (kanan) */
+    .login-wrapper {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      width: 100vw;
+      max-width: 100vw;
+      height: 100vh;
+      max-height: 100vh;
+      min-height: 100vh;
+      margin: 0;
+      background: #ffffff;
+      border-radius: 0;
+      overflow: hidden;
+      box-shadow: none;
+      transition: opacity 0.38s cubic-bezier(0.4, 0, 0.2, 1), filter 0.38s cubic-bezier(0.4, 0, 0.2, 1), transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Dipicu lewat JS saat tombol "Lupa Password?" diklik -- fade + blur +
+       scale-down sebelum benar-benar berpindah ke halaman lupa_password.html,
+       supaya perpindahannya terasa smooth, bukan loncat/reload polos. */
+    .login-wrapper.menuju-lupa-password {
+      opacity: 0;
+      filter: blur(10px);
+      transform: scale(0.96);
+      pointer-events: none;
+    }
+
+    /* ===================== SCENE HOST: LOGIN <-> LUPA PASSWORD =====================
+       #homeSceneHost membungkus .login-wrapper apa adanya (tidak diubah).
+       #lupaSceneHost berisi iframe ke lupa_password.html, di-preload diam-diam
+       saat browser idle. Keduanya digeser bareng lewat transform: translateX
+       ketika class .trikarya-scene-lupa aktif di <html> -- efeknya seperti
+       satu halaman yang mulus berpindah scene, padahal sebenarnya dua dokumen
+       terpisah (perlu karena login.html & lupa_password.html adalah dua route
+       Flask dengan banyak id yang sama, jadi tidak aman digabung lewat
+       fetch+inject). prefers-reduced-motion sudah otomatis dipangkas oleh
+       aturan global *,*::before,*::after di atas. */
+    #homeSceneHost, #lupaSceneHost {
+      position: fixed; inset: 0;
+      transition: transform 0.42s cubic-bezier(0.65, 0, 0.35, 1);
+      will-change: transform;
+    }
+    #homeSceneHost { z-index: 5; transform: translateX(0); }
+    #lupaSceneHost { z-index: 6; transform: translateX(100%); background: #060b16; }
+    #lupaSceneHost iframe { width: 100%; height: 100%; border: 0; display: block; background: #060b16; }
+    html.trikarya-scene-lupa #homeSceneHost { transform: translateX(-100%); }
+    html.trikarya-scene-lupa #lupaSceneHost { transform: translateX(0); }
+
+    /* ===================== SLIDER LOGIN <-> DAFTAR =====================
+       panel-slider (panel hijau berlogo) & form-slider (kartu putih) adalah
+       DUA kolom 50/50 yang saling tukar posisi lewat transform: translateX.
+       Karena lebarnya sama persis (50%/50%), translateX(100%) / (-100%)
+       membuat keduanya "geser" & tukar tempat dengan pas, tanpa hitungan
+       persen rumit. panel-slider dikasih z-index lebih tinggi supaya efeknya
+       terasa seperti tirai hijau menyapu ke sisi lain. */
+    .panel-slider, .form-slider {
+      flex: 1 1 50%;
+      min-width: 0;
+      position: relative;
+      display: flex; /* supaya anak langsungnya (illustration-panel / login-container)
+                         ikut "stretch" memenuhi tinggi wrapper, persis kayak
+                         sebelum dibungkus slider ini */
+      transition: transform 0.65s cubic-bezier(0.65, 0, 0.35, 1);
+      will-change: transform;
+    }
+    .panel-slider { z-index: 3; }
+    .form-slider { z-index: 1; background: #ffffff; overflow: hidden; }
+    .form-slider > .login-container { flex: 1 1 auto; }
+    .login-wrapper.mode-daftar .panel-slider { transform: translateX(100%); }
+    .login-wrapper.mode-daftar .form-slider { transform: translateX(-100%); }
+
+    .illustration-panel {
+      flex: 1 1 46%;
+      position: relative;
+      /* Warna panel adaptif per jurusan: --jur-* diisi JS (lihat blok "Warna
+         adaptif panel" di script coverflow) dari warna logo jurusan aktif.
+         Nilai fallback di bawah = emerald asli, jadi tanpa JS / logo gagal
+         dianalisis / tampilan HP, tampilannya persis seperti sebelumnya. */
+      background:
+        radial-gradient(circle at 78% 6%, rgba(var(--jur-glow, 45,212,191),0.22), transparent 45%),
+        radial-gradient(circle at 8% 98%, rgba(var(--jur-shadow, 2,10,8),0.55), transparent 55%),
+        linear-gradient(160deg, rgb(var(--jur-c0, 6,35,29)) 0%, rgb(var(--jur-c1, 10,59,48)) 42%, rgb(var(--jur-c2, 15,77,63)) 72%, rgb(var(--jur-c3, 20,96,78)) 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 48px 52px 44px 52px;
+      color: rgb(var(--jur-teks, 255,255,255));
+      overflow: hidden;
+      opacity: 0;
+      transform: translateX(-40px);
+      animation: panelMasukKiri 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards;
+    }
+    @keyframes panelMasukKiri { to { opacity: 1; transform: translateX(0); } }
+
+    /* Lingkaran dekoratif besar bertumpuk di pojok kanan-bawah panel -- murni
+       hiasan statis (bukan lagi pola circuit bergerak) supaya tampilannya
+       tenang & bersih seperti referensi. */
+    .illustration-decor { position: absolute; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.08); pointer-events: none; z-index: 0; }
+    .illustration-decor.c1 { width: 340px; height: 340px; right: -140px; bottom: -160px; }
+    .illustration-decor.c2 { width: 230px; height: 230px; right: -70px; bottom: -90px; border-color: rgba(255,255,255,0.10); }
+    .illustration-decor.c3 { width: 140px; height: 140px; right: -10px; bottom: -30px; border-color: rgba(255,255,255,0.14); }
+
+    .illustration-panel::after {
+      content: "";
+      position: absolute;
+      top: -50%; left: -60%;
+      width: 60%; height: 220%;
+      background: linear-gradient(115deg, transparent 30%, rgba(var(--jur-glow, 45,212,191),0.14) 50%, transparent 70%);
+      transform: rotate(12deg);
+      animation: sinarSapu 6s linear infinite;
+      z-index: 0;
+    }
+    @keyframes sinarSapu { 0% { left: -60%; } 100% { left: 140%; } }
+
+    /* Logo mini + wordmark di pojok kiri-atas panel */
+    .brand-mini { position: relative; z-index: 2; display: flex; align-items: center; gap: 12px; opacity: 0; animation: teksMasuk 0.5s ease-out 0.35s forwards; }
+    .brand-mini-logo {
+      width: 42px; height: 42px; border-radius: 10px; background: #ffffff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 18px; color: #0f4d3f; flex-shrink: 0;
+      overflow: hidden;
+    }
+    .brand-mini-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .brand-mini-nama { font-size: 15px; font-weight: 700; letter-spacing: 0.4px; }
+    .brand-mini-nama-mobile { display: none; }
+    .illustration-mobile-title { display: none; font-size: 21px; font-weight: 800; margin: 6px 0 0 0; letter-spacing: 0.3px; }
+
+    .illustration-bottom { position: relative; z-index: 2; width: 100%; }
+    .illustration-title { font-size: 34px; line-height: 1.25; font-weight: 800; text-align: left; margin: 0 0 16px 0; opacity: 0; animation: teksMasuk 0.5s ease-out 0.5s forwards; }
+    .illustration-text { font-size: 15px; text-align: left; color: rgba(var(--jur-teks, 255,255,255),var(--jur-a2, 0.78)); line-height: 1.7; margin: 0; max-width: 400px; opacity: 0; animation: teksMasuk 0.5s ease-out 0.6s forwards; }
+
+    .illustration-footer {
+      display: flex; align-items: center; gap: 8px; margin-top: 28px; padding-top: 20px;
+      border-top: 1px solid rgba(var(--jur-teks, 255,255,255),0.14);
+      color: rgba(var(--jur-teks, 255,255,255),var(--jur-a3, 0.62)); font-size: 12.5px; font-weight: 500;
+      opacity: 0; animation: teksMasuk 0.5s ease-out 0.7s forwards;
+    }
+    .illustration-footer svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    /* ===================== 3D COVERFLOW LOGO JURUSAN =====================
+       Mengisi ruang kosong di tengah panel ilustrasi (antara logo sekolah
+       di pojok atas & blok VISI di bawah) dengan 3 logo jurusan (TKJ, TAV,
+       TKR) dalam carousel coverflow: 1 aktif di tengah (besar, terang),
+       2 mengantre di sayap kiri/kanan (kecil, gelap masuk bayangan).
+       Peran tiap slide (tengah/kiri/kanan) ditentukan lewat atribut
+       data-peran yang diubah oleh JS -- semua animasi murni CSS transition
+       supaya ringan di HP low-end. */
+    .jurusan-showcase {
+      flex: 1 1 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+      position: relative;
+      z-index: 2;
+      opacity: 0;
+      animation: teksMasuk 0.5s ease-out 0.42s forwards;
+    }
+    .cf-track {
+      position: relative;
+      width: min(72%, 260px);
+      height: min(46vw, 210px);
+      margin: 0 auto;
+      perspective: 1000px;
+      touch-action: pan-y;
+      cursor: grab;
+    }
+    .cf-track:active { cursor: grabbing; }
+    .cf-slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      transition: transform 0.5s ease-in-out, filter 0.5s ease-in-out;
+      will-change: transform, filter;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .cf-logo {
+      width: 78%;
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .cf-logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .cf-slide[data-peran="tengah"] {
+      transform: translateX(0) scale(1.15);
+      filter: brightness(1) contrast(1.15) blur(0);
+      z-index: 30;
+    }
+    .cf-slide[data-peran="tengah"] .cf-logo {
+      filter: drop-shadow(0 0 18px rgba(255,255,255,0.5));
+    }
+    .cf-slide[data-peran="kanan"] {
+      transform: translateX(115px) scale(0.8);
+      filter: brightness(0.25) contrast(0.8) blur(0.5px);
+      z-index: 10;
+    }
+    .cf-slide[data-peran="kiri"] {
+      transform: translateX(-115px) scale(0.8);
+      filter: brightness(0.25) contrast(0.8) blur(0.5px);
+      z-index: 10;
+    }
+    .cf-label {
+      margin: 10px 0 0 0;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      color: rgb(var(--jur-teks, 255,255,255));
+      text-align: center;
+      min-height: 20px;
+      transition: opacity 0.4s ease-in-out;
+    }
+    .cf-slide[data-peran="tengah"] .cf-label { opacity: 1; }
+    .cf-slide[data-peran="kanan"] .cf-label,
+    .cf-slide[data-peran="kiri"] .cf-label { opacity: 0; }
+
+
+    /* Kartu login (panel kanan) -- panel INI SENDIRI tidak scroll; ia cuma
+       flex column setinggi card (dibatasi max-height .login-wrapper) yang
+       membungkus area konten. min-height:0 WAJIB di sini supaya panel bisa
+       menyusut mengikuti tinggi card, bukan malah memaksa card ikut membesar
+       mengikuti tinggi konten (itu penyebab bagian bawah card kepotong). */
+    .login-container {
+      flex: 1 1 54%;
+      position: relative;
+      background-color: #ffffff;
+      padding: 0 56px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateX(40px);
+      animation: panelMasukKanan 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards;
+    }
+    @keyframes panelMasukKanan { to { opacity: 1; transform: translateX(0); } }
+
+    /* Area konten form (robot + judul + deskripsi + form + link bawah).
+       INI yang benar-benar scroll kalau kontennya lebih tinggi dari card --
+       body/halaman utama tetap diam, hanya area ini yang bergerak.
+       margin: auto 0 -> saat konten muat, otomatis tampil center vertikal
+       seperti sebelumnya; saat konten kepanjangan, margin auto "mengalah"
+       jadi 0 sehingga overflow-y:auto bisa scroll penuh sampai elemen paling
+       bawah (tombol "Masuk Akun" & "Belum punya akun?") -- bukan malah
+       terpotong seperti kalau pakai justify-content:center biasa. */
+    .login-scroll-area {
+      width: 100%;
+      max-width: 460px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: auto 0;
+      padding: 24px 0 20px 0;
+      /* Sembunyikan scrollbar (tetap bisa discroll) -- Firefox */
+      scrollbar-width: none;
+      /* Sembunyikan scrollbar (tetap bisa discroll) -- IE/Edge lama */
+      -ms-overflow-style: none;
+    }
+    /* Sembunyikan scrollbar (tetap bisa discroll) -- Chrome/Safari/Edge baru */
+    .login-scroll-area::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+    }
+
+    /* ===================== MASKOT BARU: "Robi" si robot bulat ===================== */
+    .maskot-wrap {
+      width: 100px; height: 100px;
+      margin-bottom: 0;
+      opacity: 0; transform: scale(0.5) translateY(16px);
+      animation: maskotMasuk 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s forwards;
+      filter: drop-shadow(0 12px 18px rgba(30,41,59,0.2));
+      transition: width 0.2s ease, height 0.2s ease;
+      cursor: pointer;
+      user-select: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    @keyframes maskotMasuk { to { opacity: 1; transform: scale(1) translateY(0); } }
+    .maskot-wrap:active { transform: scale(0.94); }
+
+    .maskot-wrap svg { width: 100%; height: 100%; overflow: visible; }
+
+    .m-bayangan { transform-origin: 80px 148px; animation: bayanganNapas 2.6s ease-in-out infinite; }
+    @keyframes bayanganNapas { 0%, 100% { transform: scaleX(1); opacity: 0.14; } 50% { transform: scaleX(0.82); opacity: 0.08; } }
+
+    /* mengambang pelan terus menerus -- state idle */
+    .m-badan-grup { transform-box: fill-box; transform-origin: center; animation: robiMelayang 2.6s ease-in-out infinite; }
+    @keyframes robiMelayang { 0%, 100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-6px) rotate(1.5deg); } }
+
+    /* antena berdenyut */
+    .m-antena-bola { animation: antenaBerkedip 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+    @keyframes antenaBerkedip { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.82); } }
+
+    .m-pupil { transition: transform 0.07s ease-out; }
+    .m-mata-tutup { transform-box: fill-box; transform-origin: center; transition: transform 0.2s ease; transform: scaleY(1); }
+    .m-pipi { opacity: 0; transition: opacity 0.3s ease; }
+    .m-mulut { transition: d 0.25s ease, transform 0.25s ease; transform-box: fill-box; transform-origin: center; }
+    .m-lengan { transform-box: fill-box; transform-origin: top center; transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .m-lengan-kiri { transform: rotate(0deg); }
+    .m-lengan-kanan { transform: rotate(0deg); }
+    .m-zzz { opacity: 0; transition: opacity 0.3s ease; font-family: 'Poppins', Arial, sans-serif; font-weight: 700; fill: #ffffff; }
+    .m-mata-kejut { opacity: 0; transition: opacity 0.15s ease; }
+
+    /* kedip acak saat idle */
+    .maskot-wrap.kedip .m-mata-tutup { transform: scaleY(0.08); }
+
+    /* password disembunyikan & sedang difokus -> Robi "mengintip" malu-malu, kepala miring santai */
+    .maskot-wrap.tutup-mata .m-badan-grup { animation-play-state: paused; transform: translateY(-2px) rotate(-3deg); }
+    .maskot-wrap.tutup-mata .m-mata-tutup { transform: scaleY(0.4) translateY(2px); }
+    .maskot-wrap.tutup-mata .m-pupil { transform: translateY(2.5px); }
+    .maskot-wrap.tutup-mata .m-pipi { opacity: 1; }
+    .maskot-wrap.tutup-mata .m-mulut { transform: scaleX(1.08) translateY(1px); }
+    .maskot-wrap.tutup-mata .m-lengan-kiri { transform: rotate(-14deg); }
+    .maskot-wrap.tutup-mata .m-lengan-kanan { transform: rotate(14deg); }
+
+    /* password ditampilkan & difokus -> Robi kaget/melek lebar */
+    .maskot-wrap.melek-lebar .m-badan-grup { animation-play-state: paused; transform: translateY(-4px) rotate(0deg); }
+    .maskot-wrap.melek-lebar .m-mata-normal { opacity: 0; }
+    .maskot-wrap.melek-lebar .m-mata-kejut { opacity: 1; }
+    .maskot-wrap.melek-lebar .m-lengan-kiri { transform: rotate(-28deg); }
+    .maskot-wrap.melek-lebar .m-lengan-kanan { transform: rotate(28deg); }
+
+    /* senyum lebar saat username terisi */
+    .maskot-wrap.senang .m-mulut { transform: scaleX(1.2) translateY(1px); }
+
+    /* ===== reaksi saat diklik (acak) ===== */
+    .maskot-wrap.reaksi-loncat .m-badan-grup { animation: reaksiLoncat 0.6s ease-in-out; }
+    @keyframes reaksiLoncat { 0%, 100% { transform: translateY(0) rotate(0); } 35% { transform: translateY(-22px) rotate(-6deg); } 60% { transform: translateY(0) rotate(4deg); } 80% { transform: translateY(-6px) rotate(-2deg); } }
+
+    .maskot-wrap.reaksi-putar .m-badan-grup { animation: reaksiPutar 0.6s ease-in-out; }
+    @keyframes reaksiPutar { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
+
+    .maskot-wrap.reaksi-goyang .m-badan-grup { animation: reaksiGoyang 0.5s ease-in-out; }
+    @keyframes reaksiGoyang { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-14deg); } 40% { transform: rotate(12deg); } 60% { transform: rotate(-8deg); } 80% { transform: rotate(6deg); } }
+
+    .maskot-wrap.reaksi-cinta .m-mata-normal { opacity: 0; }
+    .maskot-wrap.reaksi-cinta .m-mata-cinta { opacity: 1; }
+    .m-mata-cinta { opacity: 0; transition: opacity 0.15s ease; }
+    .maskot-wrap.reaksi-cinta .m-lengan-kiri { transform: rotate(-24deg); }
+    .maskot-wrap.reaksi-cinta .m-lengan-kanan { transform: rotate(24deg); }
+
+    .maskot-wrap.reaksi-wink .m-mata-kiri-normal { transform: scaleY(0.08); }
+
+    /* bubble teks kecil di atas maskot saat diklik */
+    .maskot-gelembung {
+      position: absolute; left: 50%; top: -6px; transform: translate(-50%, -100%) scale(0.7);
+      background: #1e293b; color: #fff; font-size: 11.5px; font-weight: 600;
+      padding: 5px 10px; border-radius: 8px; white-space: nowrap;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 5;
+    }
+    .maskot-gelembung::after {
+      content: ""; position: absolute; left: 50%; bottom: -5px; transform: translateX(-50%);
+      border: 5px solid transparent; border-top-color: #1e293b;
+    }
+    .maskot-gelembung.tampil { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+    .maskot-area { position: relative; display: flex; justify-content: center; margin-bottom: 6px; }
+
+    /* Lencana kecil di atas form Daftar (pengganti maskot Robi -- form ini
+       sengaja dibuat lebih ringkas karena field-nya sudah lebih banyak). */
+    .jurusan-wrap-daftar {
+      width: 64px; height: 64px; border-radius: 18px;
+      background: #ecfdf5; border: 1.5px solid #bbf7d0;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 8px auto;
+      opacity: 0; transform: scale(0.7);
+      animation: maskotMasuk 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forwards;
+    }
+    .jurusan-wrap-daftar svg { width: 30px; height: 30px; }
+
+    h2 { position: relative; color: #0f172a; margin: 0 0 4px 0; font-size: 25px; font-weight: 800; letter-spacing: 0.3px; opacity: 0; animation: teksMasuk 0.5s ease-out 0.5s forwards; }
+    .subtitle { color: #64748b; font-size: 13.5px; margin: 0 0 16px 0; font-weight: 500; max-width: 440px; text-align: center; opacity: 0; animation: teksMasuk 0.5s ease-out 0.6s forwards; }
+    @keyframes teksMasuk { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+    form { width: 100%; max-width: 460px; display: flex; flex-direction: column; }
+
+    .field { opacity: 0; transform: translateY(10px); animation: fieldMasuk 0.5s ease-out forwards; }
+    .field:nth-of-type(1) { animation-delay: 0.65s; }
+    .field:nth-of-type(2) { animation-delay: 0.75s; }
+    .field:nth-of-type(3) { animation-delay: 0.85s; }
+    .field:nth-of-type(4) { animation-delay: 0.95s; }
+    .field:nth-of-type(5) { animation-delay: 1.05s; }
+    .field:nth-of-type(6) { animation-delay: 1.15s; }
+    @keyframes fieldMasuk { to { opacity: 1; transform: translateY(0); } }
+    button.tombol-submit.daftar-btn { animation-delay: 1.35s; }
+    .bottom-links.daftar-links { animation-delay: 1.45s; }
+
+    label { text-align: left; display: block; margin-top: 13px; margin-bottom: 6px; color: #475569; font-size: 13px; font-weight: 600; }
+
+    select, input {
+      width: 100%; padding: 12.5px 16px; border-radius: 11px; border: 1.5px solid #cbd5e1;
+      background-color: #ffffff; font-size: 14.5px; outline: none; color: #0f172a;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+    }
+    select:hover, input:hover { border-color: #0d9488; }
+    select:focus, input:focus { border-color: #0f4d3f; box-shadow: 0 0 0 4px rgba(15,77,63,0.14); transform: translateY(-1px); }
+    label { color: #0f172a; }
+
+    /* Ikon di dalam kotak Role/Username/Password, konsisten dengan referensi */
+    .input-icon-wrap { position: relative; width: 100%; }
+    .input-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      width: 17px; height: 17px; color: #94a3b8; pointer-events: none; z-index: 2;
+    }
+    select.has-icon, input.has-icon { padding-left: 42px; }
+    select.has-icon {
+      appearance: none; -webkit-appearance: none; -moz-appearance: none;
+      padding-right: 38px; cursor: pointer;
+    }
+    .input-chevron {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      width: 16px; height: 16px; color: #94a3b8; pointer-events: none;
+    }
+    .password-box.input-icon-wrap input.has-icon { padding-right: 44px; }
+
+    /* Wrapper input password + tombol toggle lihat/sembunyikan */
+    .password-box { position: relative; width: 100%; }
+    .password-box input { padding-right: 44px; }
+    /* sembunyikan ikon reveal bawaan browser (Edge/IE) biar gak dobel sama tombol kita */
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear { display: none; width: 0; height: 0; }
+    .toggle-password {
+      position: absolute; top: 50%; right: 5px; transform: translateY(-50%);
+      width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+      background: transparent; border: none; border-radius: 8px; cursor: pointer; padding: 0;
+      color: #64748b; transition: color 0.2s ease, background-color 0.2s ease;
+      z-index: 2;
+    }
+    .toggle-password:hover { color: #0f4d3f; background-color: #ecfdf5; }
+    .toggle-password:focus-visible { outline: 2px solid #14b8a6; outline-offset: 1px; }
+    .toggle-password svg { width: 19px; height: 19px; pointer-events: none; }
+    .toggle-password .mata-tertutup { display: none; }
+    .toggle-password.aktif .mata-terbuka { display: none; }
+    .toggle-password.aktif .mata-tertutup { display: block; }
+
+    /* Baris "Ingat saya" -- checkbox custom, checklist muncul otomatis saat diklik */
+    .ingat-saya {
+      display: inline-flex; align-items: center; gap: 9px;
+      cursor: pointer; user-select: none;
+    }
+    .ingat-saya input[type="checkbox"] {
+      position: absolute; opacity: 0; width: 0; height: 0; margin: 0;
+    }
+    .kotak-centang {
+      width: 19px; height: 19px; border-radius: 6px;
+      border: 1.5px solid #cbd5e1; background-color: #ffffff;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.12s ease, box-shadow 0.2s ease;
+    }
+    .kotak-centang svg {
+      width: 13px; height: 13px; opacity: 0; transform: scale(0.5);
+      transition: opacity 0.15s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .ingat-saya:hover .kotak-centang { border-color: #0d9488; }
+    .ingat-saya input:focus-visible + .kotak-centang {
+      border-color: #0f4d3f; box-shadow: 0 0 0 4px rgba(15,77,63,0.15);
+    }
+    .ingat-saya input:checked + .kotak-centang {
+      background: #0f4d3f;
+      border-color: transparent;
+    }
+    .ingat-saya input:checked + .kotak-centang svg { opacity: 1; transform: scale(1); }
+    .ingat-saya input:active + .kotak-centang { transform: scale(0.88); }
+    .ingat-teks { font-size: 13px; font-weight: 600; color: #475569; }
+
+    /* Tombol "Masuk Akun" -- efek 3D fisik: lapisan box-shadow solid di bawah
+       (bukan cuma blur) berperan sebagai "sisi" tombol yang tebal, jadi
+       kelihatan terangkat saat normal. Saat ditekan (:active), tombol turun
+       (translateY) sekaligus lapisan solid itu dipertipis -- persis seperti
+       tombol fisik yang "tenggelam" ke dudukannya. Transisi dibikin sangat
+       cepat (0.08s) khusus utk transform & box-shadow supaya terasa instan,
+       sedangkan warna background tetap pelan (0.2s) biar tidak "kedip". */
+    button.tombol-submit {
+      margin-top: 16px; width: 100%; padding: 13.5px;
+      background: #0f4d3f;
+      color: #ffffff; border: none; border-radius: 10px; font-weight: 700;
+      letter-spacing: 0.2px; cursor: pointer; font-size: 16px;
+      position: relative; overflow: hidden; isolation: isolate;
+      opacity: 0; transform: translateY(10px);
+      animation: fieldMasuk 0.5s ease-out 0.95s forwards;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+      transition: box-shadow 0.08s ease, transform 0.08s ease, background 0.2s ease;
+      /* 0 4px 0 0 -> "sisi" solid tombol (kedalaman 3D), sisanya shadow blur biasa */
+      box-shadow:
+        0 4px 0 0 #093226,
+        0 10px 22px -8px rgba(15,23,42,0.4),
+        0 6px 14px -6px rgba(15,77,63,0.45);
+    }
+    button.tombol-submit::before {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.16) 50%, transparent 80%);
+      transform: translateX(-120%); transition: transform 0.6s ease; z-index: -1;
+    }
+    button.tombol-submit:hover::before { transform: translateX(120%); }
+    button.tombol-submit:hover {
+      background: #135e4d;
+      box-shadow:
+        0 5px 0 0 #0a4536,
+        0 12px 26px -8px rgba(15,23,42,0.45),
+        0 8px 18px -6px rgba(15,77,63,0.5);
+      transform: translateY(-1px);
+    }
+    /* Ditekan (mouse maupun tap di HP) -- turun 3px & "sisi" solid mengecil
+       jadi 1px, sehingga total pergeseran terasa seperti tombol benar-benar
+       tertekan ke dudukannya, bukan cuma mengecil (scale) seperti sebelumnya. */
+    button.tombol-submit:active {
+      transform: translateY(3px);
+      box-shadow:
+        0 1px 0 0 #093226,
+        0 3px 8px -4px rgba(15,23,42,0.35);
+      transition: box-shadow 0.05s ease, transform 0.05s ease;
+    }
+    button.tombol-submit:disabled { cursor: default; }
+
+    .flash-container { width: 100%; margin-top: 14px; }
+    .flash-msg {
+      padding: 10px 12px; border-radius: 8px; font-size: 13px; text-align: center; font-weight: 500;
+      max-height: 120px; overflow: hidden; border-width: 1px; border-style: solid;
+      /* Transisi ini yang bikin pesan hilang PELAN-PELAN (fade + menciut),
+         bukan langsung "plek" hilang -- dipakai baik saat auto-hilang sendiri
+         (timeout) maupun saat digantikan pesan baru (misal user spam submit). */
+      transition: opacity 0.6s ease, max-height 0.6s ease, margin-top 0.6s ease,
+                  padding-top 0.6s ease, padding-bottom 0.6s ease, border-width 0.6s ease, transform 0.5s ease;
+    }
+    .flash-msg.error { background-color: #fef2f2; color: #dc2626; border-color: #fecaca; animation: shake 0.45s ease-in-out; }
+    .flash-msg.success { background-color: #f0fdf4; color: #16a34a; border-color: #bbf7d0; animation: popMasuk 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    /* Kelas ini ditambahkan lewat JS ketika pesan mau dihilangkan -- perlahan
+       memudar sekaligus menciut tingginya jadi 0, supaya tidak ninggalin
+       celah kosong mendadak di bawah tombol "Masuk Akun". */
+    .flash-msg.hilang {
+      opacity: 0; max-height: 0; margin-top: 0; padding-top: 0; padding-bottom: 0;
+      border-width: 0; transform: translateY(-6px);
+    }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+    @keyframes popMasuk { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+    .bottom-links { margin-top: 14px; width: 100%; text-align: center; font-size: 13px; color: #475569; opacity: 0; animation: teksMasuk 0.5s ease-out 1.05s forwards; }
+    .link { position: relative; color: #0f4d3f; text-decoration: none; font-weight: 700; cursor: pointer; }
+    .link::after { content: ""; position: absolute; left: 0; bottom: -2px; width: 0%; height: 1.5px; background: #0f4d3f; transition: width 0.25s ease; }
+    .link:hover::after { width: 100%; }
+
+    /* Baris "Ingat saya" + "Lupa Password?" sejajar di satu baris, tepat
+       sebelum tombol Masuk Akun -- sesuai referensi desain. */
+    .ingat-lupa-row {
+      display: flex; align-items: center; justify-content: space-between;
+      opacity: 0; transform: translateY(10px);
+      animation: fieldMasuk 0.5s ease-out 0.9s forwards;
+      margin-top: 14px;
+    }
+    .link-lupa { font-size: 13px; }
+
+    /* Tablet -- dua panel masih tampil berdampingan, tapi lebih sempit, jadi
+       robot sedikit dikecilkan supaya tetap jadi focal point tanpa membuat
+       form terasa sumpek. */
+    @media (max-width: 900px) {
+      .maskot-wrap { width: 78px; height: 78px; }
+      .login-container { padding: 0 32px; }
+    }
+
+    @media (max-width: 720px) {
+      /* Di HP, kartu login + kartu "lupa password"/dll bisa lebih tinggi dari
+         layar (apalagi kalau keyboard HP muncul saat isi field Password), jadi
+         overflow:hidden di body (dipakai buat desktop) diganti scroll vertikal
+         di sini supaya field Password & tombol Masuk tetap bisa dicapai dengan
+         cara di-scroll, bukan ke-clip/hilang di bawah layar. */
+      html, body { height: auto; min-height: 100%; }
+      body {
+        overflow: hidden;
+        padding: 0;
+        align-items: flex-start;
+        justify-content: center;
+      }
+      /* #homeSceneHost dipasang position:fixed;inset:0 (lihat CSS scene-host
+         di atas) buat animasi geser Login <-> Lupa Password -- karena fixed,
+         body TIDAK bisa ikut men-scroll-nya sekalipun body sudah diberi
+         overflow-y:auto. Makanya di HP, #homeSceneHost sendiri yang jadi
+         kotak scroll-nya (bukan body) -- berlaku juga utk mode "Daftar"
+         (form Buat Akun Baru), karena itu cuma konten yang di-toggle di
+         dalam #homeSceneHost yang sama, bukan halaman terpisah. Supaya
+         field Password & tombol Masuk/Daftar yang kepotong kalau kontennya
+         lebih tinggi dari layar (apalagi saat keyboard HP muncul) tetap bisa
+         dicapai lewat scroll. Scrollbar-nya disembunyikan tapi tetap bisa
+         discroll seperti biasa. */
+      #homeSceneHost {
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; -ms-overflow-style: none;
+        /* padding dihapus (sebelumnya 24px 16px) -- itu yang bikin ada celah
+           background kelihatan di sisi kiri/kanan/atas/bawah kartu login di
+           HP. Sekarang wrapper-nya (100vw x 100vh, lihat base .login-wrapper
+           di atas) mepet pas ke semua sisi layar. */
+      }
+      #homeSceneHost::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+      /* Di HP, wrapper jadi tumpuk vertikal & TIDAK dibatasi max-height/overflow
+         desktop lagi (85vh + overflow:hidden) -- soalnya di sini kontennya
+         boleh lebih tinggi dari layar & di-scroll lewat body, bukan dipotong. */
+      .login-wrapper {
+        flex-direction: column;
+        max-height: none;
+        overflow: visible;
+        /* border-radius dihapus (sebelumnya 24px) -- biar kartunya beneran
+           full-bleed sampai ke pojok layar, tanpa sudut membulat yang
+           menyingkap background di baliknya. */
+        border-radius: 0;
+      }
+      .panel-slider, .form-slider {
+        flex: none;
+        width: 100%;
+        transition: none;
+        transform: none !important;
+      }
+      .form-slider { overflow: visible; }
+      .illustration-panel {
+        flex: none;
+        align-items: flex-start;
+        justify-content: flex-start;
+        width: 100%;
+        min-height: 150px;
+        padding: 22px 22px 20px 22px;
+        gap: 2px;
+        /* Ikut diratakan (sebelumnya 24px 24px 0 0) supaya menyatu rapat
+           dengan pojok atas layar, senada dgn .login-wrapper di atas. */
+        border-radius: 0;
+      }
+      .illustration-decor, .illustration-bottom, .jurusan-showcase { display: none; }
+      .brand-mini-nama-desktop { display: none; }
+      .brand-mini-nama-mobile { display: inline; }
+      .illustration-mobile-title { display: block; margin-top: auto; }
+      .login-wrapper.mode-daftar .illustration-mobile-title { display: none; }
+
+      /* Maskot TIDAK lagi "duduk" di jahitan hijau-putih (sebelumnya ditarik
+         naik pakai margin-top negatif + dikasih plat bulat di belakangnya
+         supaya jadi lencana) -- robot sekarang murni di area putih, persis
+         seperti tampilan desktop, jadi hijaunya sama sekali tidak menutupi/
+         bersinggungan dengan robot. Plat bulat (background+box-shadow) juga
+         dihapus, balik transparan sama seperti .maskot-wrap dasar (desktop). */
+      .maskot-area { margin-top: 22px; margin-bottom: 6px; }
+      .maskot-wrap {
+        width: 96px; height: 96px;
+        background: none;
+        box-shadow: none;
+      }
+      /* Badge "Buat Akun Baru" disamakan jarak atasnya dengan .maskot-area
+         di atas -- sebelumnya badge ini tidak disentuh sama sekali di HP jadi
+         nempel lebih ke atas dibanding maskot robot saat pindah mode, bikin
+         kartu Login & Buat Akun kelihatan tidak simetris pas ditoggle.
+         Margin-bawah SENGAJA dibuat lebih besar (38px, bukan 8px seperti
+         desktop) -- badge ini cuma 64px sementara maskot robot 96px, jadi
+         kalau margin-bawahnya disamakan literal, judul "BUAT AKUN BARU"
+         akan duduk ±30px lebih tinggi drpd "SELAMAT DATANG" (tinggi blok
+         ikon beda). 38px dihitung supaya TOTAL tinggi blok ikon+jarak jadi
+         sama persis dgn punya Login (96px maskot + 6px jarak = 102px vs
+         64px badge + 38px jarak = 102px), sehingga kedua judul kartu duduk
+         di ketinggian yang identik saat ditoggle bolak-balik. */
+      .jurusan-wrap-daftar { margin: 22px auto 38px auto; }
+
+      .login-container {
+        margin-top: -22px;
+        border-radius: 24px;
+        padding: 34px 26px 30px 26px;
+        box-shadow: none;
+        overflow: visible;
+        transform: translateY(16px);
+      }
+      @keyframes panelMasukKanan { to { opacity: 1; transform: translateY(0); } }
+
+      /* Di mobile, biarkan halaman (body) yang scroll seperti sudah diatur
+         di atas -- area konten form TIDAK lagi jadi kotak scroll sendiri
+         supaya tidak ada "scroll di dalam scroll" & tidak ada padding dobel
+         dengan padding .login-container di atas. */
+      .login-scroll-area {
+        overflow-y: visible;
+        min-height: auto;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* ===== Animasi slide Login <-> Daftar KHUSUS mobile (FULL SLIDE) =====
+         Diupgrade dari versi lama (nudge tipis 26px+fade) jadi "meluncur
+         penuh" (translateX 100%) supaya efeknya kerasa jelas kayak versi
+         desktop (.panel-slider/.form-slider translateX 100%/-100%, lihat
+         class mode-daftar di atas) & senada sama transisi Login<->Lupa
+         Password (#homeSceneHost/#lupaSceneHost) yang juga full-slide.
+
+         Triknya: begitu geser mulai, kartu yang KELUAR dilepas dari alur
+         normal (position:absolute, numpuk pas di atas kartu yang MASUK --
+         .form-slider sudah position:relative jadi bisa jadi bingkainya)
+         sementara kartu yang MASUK tetap di alur normal. Efeknya, wrapper
+         langsung "ambil" tinggi kartu baru sejak awal geser (ga nunggu
+         kartu lama beneran hilang dulu), dan dua-duanya (keluar & masuk)
+         meluncur BARENGAN dalam satu transisi yang sama -- bukan gantian
+         (tampil/sembunyi) kayak versi lama -- jadi hasilnya satu geseran
+         mulus, bukan "kedip" di tengah. Klip horizontalnya diserahkan ke
+         #homeSceneHost (overflow-x:hidden, lihat CSS-nya di atas) supaya
+         kartu yang lagi meluncur keluar/masuk tidak memicu scrollbar. Arah
+         tetap konsisten dgn desktop: Login->Daftar keluar ke kiri & masuk
+         dari kanan, Daftar->Login kebalikannya. Lihat pindahMode() di
+         skrip bawah untuk urutan pemicunya. */
+      .login-container, .register-container {
+        transition: transform 0.42s cubic-bezier(0.65, 0, 0.35, 1);
+        will-change: transform;
+      }
+      /* animation:none !important WAJIB di sini -- .login-container punya
+         animation entrance (panelMasukKanan, forwards) yang kalau masih
+         "aktif" akan terus mengunci nilai transform-nya sendiri (translateY(0)
+         setelah animasi awal selesai) dengan prioritas lebih tinggi daripada
+         transform biasa dari class manapun, sehingga transform di bawah ini
+         tidak akan kelihatan efeknya kalau animation-nya tidak dimatikan
+         eksplisit lebih dulu. */
+      /* Kelas "keluar" -- dipasang di kartu LAMA: dilepas dari alur normal
+         (absolute, nempel pas di posisi kartu baru) lalu digeser 100% lebar
+         sendiri (bukan cuma 26px lagi) sampai benar-benar hilang dari layar. */
+      .login-container.mobile-slide-keluar-kiri,
+      .register-container.mobile-slide-keluar-kiri {
+        animation: none !important;
+        position: absolute; top: 0; left: 0; width: 100%;
+        transform: translateX(-100%) !important;
+      }
+      .login-container.mobile-slide-keluar-kanan,
+      .register-container.mobile-slide-keluar-kanan {
+        animation: none !important;
+        position: absolute; top: 0; left: 0; width: 100%;
+        transform: translateX(100%) !important;
+      }
+      /* Kelas "masuk" -- posisi AWAL kartu baru (di luar layar), langsung
+         dipasang bareng display:flex lalu dilepas 1 frame kemudian supaya
+         browser sempat "lihat" posisi luar-layarnya dulu sebelum dianimasikan
+         balik ke translateX(0). Tetap di alur normal (bukan absolute) supaya
+         tinggi wrapper langsung ngikut kartu ini sejak awal geser. */
+      .login-container.mobile-slide-masuk-kanan,
+      .register-container.mobile-slide-masuk-kanan { animation: none !important; transform: translateX(100%) !important; }
+      .login-container.mobile-slide-masuk-kiri,
+      .register-container.mobile-slide-masuk-kiri { animation: none !important; transform: translateX(-100%) !important; }
+    }
+    @media (max-width: 480px) {
+      /* .login-wrapper border-radius sengaja TIDAK di-override lagi di sini
+         (dulu 20px) -- biar tetap 0 (full-bleed) mengikuti breakpoint 720px
+         di atas, konsisten di semua ukuran HP. */
+      .login-container { padding: 30px 20px 26px 20px; }
+      .maskot-wrap { width: 88px; height: 88px; }
+      .maskot-area { margin-top: 18px; margin-bottom: 4px; }
+      /* Ikut disesuaikan di breakpoint ini juga, dengan hitungan yang sama
+         seperti di breakpoint 720px (lihat komentarnya di atas) -- supaya
+         "SELAMAT DATANG" & "BUAT AKUN BARU" tetap sejajar di layar HP paling
+         kecil sekalipun: 18px + 88px + 4px = 18px + 64px + 28px = 110px. */
+      .jurusan-wrap-daftar { margin: 18px auto 28px auto; }
+      .bg-blob { display: none; }
+    }
+
+    /* ===================== LOADING SCREEN EDUNEX =====================
+       Dipakai untuk transisi setelah login BERHASIL (menunggu browser pindah
+       ke halaman tujuan) dan setelah form daftar dikirim. TIDAK dipakai saat
+       login gagal -- errornya tampil di field + pesan flash (lihat
+       .field-error di bawah).
+       Desain mengikuti edunex-loading-all-in-one.html. Semua selector diawali
+       #enx-loader / .enx- supaya tidak bentrok dengan CSS halaman ini.
+       Progres pindah halaman tidak bisa diukur browser, jadi bar-nya
+       indeterminate (tidak menampilkan angka persen palsu). Semua animasi
+       hanya jalan selama loader tampil (animation-play-state), jadi tidak
+       memakan CPU/GPU di balik halaman login. */
+    #enx-loader {
+      position: fixed; inset: 0; z-index: 60;
+      display: flex; overflow-x: hidden; overflow-y: auto; padding: 28px 20px;
+      color: #f7f9ff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(ellipse at 50% 37%, rgba(18,57,116,.42), transparent 55%),
+        linear-gradient(145deg, #0b2550 0%, #071a3b 54%, #04132e 100%);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity .25s ease, visibility 0s linear .25s;
+    }
+    /* jeda .12s sebelum muncul: kalau halaman tujuan langsung siap, loader tidak sempat berkedip */
+    #enx-loader.tampil {
+      opacity: 1; visibility: visible; pointer-events: auto;
+      transition: opacity .3s ease .12s, visibility 0s linear .12s;
+    }
+    #enx-loader *, #enx-loader *::before, #enx-loader *::after { box-sizing: border-box; font-family: inherit; }
+    #enx-loader::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(120deg, transparent 20%, rgba(45,117,213,.035) 50%, transparent 80%);
+    }
+    #enx-loader .enx-content { position: relative; width: min(590px, 100%); margin: auto; display: flex; align-items: center; flex-direction: column; text-align: center; }
+    #enx-loader .enx-logo-wrap {
+      width: min(390px, 76vw); aspect-ratio: 544 / 478; display: grid; place-items: center; position: relative;
+      animation: enxFloat 2.4s ease-in-out infinite paused;
+    }
+    #enx-loader .enx-logo { display: block; width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 1; filter: drop-shadow(0 12px 18px rgba(0,0,0,.12)); }
+    #enx-loader .enx-book-light {
+      position: absolute; z-index: 0; left: 50%; top: 78%; width: 42%; height: 19%;
+      transform: translate(-50%, -50%); border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(255,201,40,.24) 0%, rgba(255,201,40,.08) 38%, transparent 72%);
+      filter: blur(12px); animation: enxGlow 2.4s ease-in-out infinite paused;
+    }
+    #enx-loader .enx-wordmark { margin-top: 14px; font-size: clamp(45px, 7vw, 64px); font-weight: 850; letter-spacing: -2.7px; line-height: 1.04; }
+    #enx-loader .enx-edu { color: #fff; }
+    #enx-loader .enx-nex { color: #ffd13b; }
+    #enx-loader .enx-tagline { margin-top: 15px; font-size: clamp(14px, 2.5vw, 18px); letter-spacing: .1px; color: #c5d6f0; }
+    #enx-loader .enx-loader-box { width: min(410px, 86vw); margin-top: 48px; text-align: left; }
+    #enx-loader .enx-track { position: relative; height: 8px; border-radius: 99px; overflow: hidden; background: rgba(151,180,224,.17); box-shadow: inset 0 1px 2px rgba(0,0,0,.2); }
+    #enx-loader .enx-bar {
+      position: absolute; top: 0; bottom: 0; left: 0; width: 42%; border-radius: inherit;
+      background: linear-gradient(90deg, #168cff 0%, #35c2ff 58%, #ffd43b 100%);
+      box-shadow: 0 0 12px rgba(53,194,255,.24);
+      animation: enxSweep 1.5s cubic-bezier(.45,.05,.35,1) infinite paused;
+    }
+    #enx-loader .enx-meta { display: flex; justify-content: space-between; gap: 12px; margin-top: 13px; font-size: 14px; color: #c0d0e9; }
+    #enx-loader .enx-status { margin-top: 28px; min-height: 22px; font-size: 15px; font-weight: 600; color: #e5edfa; }
+    #enx-loader .enx-status::after { content: ""; display: inline-block; width: 1.25em; text-align: left; animation: enxDots 1.3s steps(4, end) infinite paused; }
+    #enx-loader.lambat .enx-status::after { content: none; }
+    #enx-loader.tampil .enx-logo-wrap,
+    #enx-loader.tampil .enx-book-light,
+    #enx-loader.tampil .enx-bar,
+    #enx-loader.tampil .enx-status::after { animation-play-state: running; }
+    /* tombol hanya muncul kalau pemuatan macet (jalur keluar, supaya loader tidak menutup halaman selamanya) */
+    #enx-loader .enx-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 27px; }
+    #enx-loader .enx-actions[hidden], #enx-loader .enx-actions button[hidden] { display: none; }
+    #enx-loader .enx-actions button {
+      font: inherit; font-size: 13px; color: #edf4ff; background: rgba(255,255,255,.045);
+      border: 1px solid rgba(174,198,233,.22); border-radius: 13px; padding: 10px 14px; cursor: pointer;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    #enx-loader .enx-actions button:hover { background: rgba(255,255,255,.10); border-color: rgba(174,198,233,.45); transform: translateY(-1px); }
+    #enx-loader .enx-actions button:focus-visible { outline: 2px solid #ffc928; outline-offset: 3px; }
+    @keyframes enxFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(var(--enx-naik, -14px)); } }
+    @keyframes enxGlow { 0%, 100% { opacity: .32; transform: translate(-50%, -50%) scale(.88); } 50% { opacity: .78; transform: translate(-50%, -50%) scale(1.08); } }
+    @keyframes enxDots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75%, 100% { content: "..."; } }
+    @keyframes enxSweep { 0% { transform: translateX(-105%); } 100% { transform: translateX(250%); } }
+    @media (max-height: 760px) {
+      #enx-loader { padding: 18px; }
+      #enx-loader .enx-logo-wrap { width: min(310px, 47vh); }
+      #enx-loader .enx-wordmark { font-size: 48px; }
+      #enx-loader .enx-tagline { margin-top: 10px; }
+      #enx-loader .enx-loader-box { margin-top: 30px; }
+      #enx-loader .enx-status { margin-top: 18px; }
+      #enx-loader .enx-actions { margin-top: 18px; }
+    }
+    /* ponsel landscape / layar sangat pendek: rapatkan supaya status & tombol jalur-keluar tetap terlihat */
+    @media (max-height: 480px) {
+      #enx-loader { padding: 12px 18px; }
+      #enx-loader .enx-logo-wrap { width: min(150px, 34vh); --enx-naik: -8px; }
+      #enx-loader .enx-wordmark { font-size: 36px; margin-top: 8px; letter-spacing: -1.6px; }
+      #enx-loader .enx-tagline { margin-top: 6px; font-size: 13px; }
+      #enx-loader .enx-loader-box { margin-top: 18px; }
+      #enx-loader .enx-meta { margin-top: 9px; font-size: 13px; }
+      #enx-loader .enx-status { margin-top: 10px; font-size: 14px; min-height: 20px; }
+      #enx-loader .enx-actions { margin-top: 10px; }
+    }
+    @media (max-width: 430px) {
+      #enx-loader .enx-logo-wrap { width: min(330px, 82vw); }
+      #enx-loader .enx-wordmark { font-size: 48px; }
+      #enx-loader .enx-loader-box { margin-top: 34px; }
+      #enx-loader .enx-actions { gap: 6px; }
+      #enx-loader .enx-actions button { padding: 9px 11px; }
+    }
+    /* Aturan reduced-motion global di atas membuat animasi 1x dalam 0.01ms, yang untuk bar
+       sweep berarti bar berhenti di luar track. Override: bar statis & penuh (redup). */
+    @media (prefers-reduced-motion: reduce) {
+      #enx-loader .enx-bar { animation: none !important; transform: none !important; width: 100%; opacity: .55; }
+      #enx-loader .enx-status::after { animation: none !important; content: "..."; }
+    }
+
+    /* ===================== INDIKATOR ERROR FIELD LOGIN =====================
+       Dipasang lewat JS (class .field-error di .field) saat server menolak login;
+       dihapus lagi begitu user mulai mengubah field terkait. */
+    .field.field-error select, .field.field-error input { border-color: #ef4444; box-shadow: 0 0 0 4px rgba(239,68,68,0.14); }
+    .field.field-error .input-icon { color: #ef4444; }
+    .field.field-error .input-icon-wrap { animation: shake 0.45s ease-in-out; }
+
+    /* Pesan kesalahan kecil di bawah kolom -- muncul halus bersama border merah dan hilang
+       bersama border begitu user mulai mengetik ulang. Teksnya sengaja tidak dikosongkan saat
+       disembunyikan, supaya transisi menciutnya tidak "kosong dulu". Hanya kolom yang ditandai
+       server yang menampilkan pesan; kolom lain tetap tampilan normal. */
+    .field .field-pesan {
+      margin: 0 2px; max-height: 0; overflow: hidden; opacity: 0;
+      font-size: 12.5px; line-height: 1.4; font-weight: 500; text-align: left; color: #dc2626;
+      transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease;
+    }
+    .field.field-error .field-pesan:not(:empty) { max-height: 3.5em; opacity: 1; margin-top: 6px; }
+
+    /* keyframes kisiGeser dipakai bersama .tirai-daftar::before di bawah */
+    @keyframes kisiGeser { 0% { background-position: 0 0; } 100% { background-position: 260px 260px; } }
+
+    /* ===================== TIRAI GESER "Buat Akun Baru" =====================
+       Ini animasi utama yang keliatan pas link "Buat Akun Baru" diklik: satu
+       panel warna PENUH LAYAR yang MENGGESER masuk dari kanan menutupi seluruh
+       layar (persis efek panel gelap yang menutup/membuka di video referensi),
+       baru setelah itu pindah ke halaman daftar. Warna & pola tetap pakai
+       identitas hijau/biru/kuning yang sama supaya ciri khasnya kelihatan. */
+    .tirai-daftar {
+      position: fixed; inset: 0; z-index: 90;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; color: #ffffff; overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(255,255,255,0.10), transparent 45%),
+        linear-gradient(135deg, #16a34a 0%, #1d7fd6 45%, #1d4ed8 70%, #0b1120 100%);
+      transform: translateX(100%);
+      transition: transform 0.65s cubic-bezier(0.65, 0, 0.35, 1);
+      will-change: transform;
+    }
+    .tirai-daftar.aktif { transform: translateX(0); }
+    .tirai-daftar::before {
+      content: "";
+      position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.10) 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+      animation: kisiGeser 20s linear infinite;
+    }
+    .tirai-konten { position: relative; z-index: 1; }
+    .tirai-lencana {
+      width: 84px; height: 84px; border-radius: 50%;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.35);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 18px auto;
+      opacity: 0; transform: scale(0.5);
+      animation: tiraiLencanaPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.25s forwards, tiraiNapas 1.5s ease-in-out 0.8s infinite;
+    }
+    @keyframes tiraiLencanaPop { to { opacity: 1; transform: scale(1); } }
+    @keyframes tiraiNapas { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+    .tirai-lencana svg { width: 42px; height: 42px; }
+    .tirai-judul { font-size: 18px; font-weight: 800; opacity: 0; animation: teksMasuk 0.5s ease-out 0.4s forwards; }
+    .tirai-sub { font-size: 12.5px; color: rgba(255,255,255,0.85); margin-top: 6px; opacity: 0; animation: teksMasuk 0.5s ease-out 0.5s forwards; }
+
+    /* Floating alert validasi (CSS biasa; menggantikan Tailwind CDN ~127 kB) */
+    .validasi-alert {
+      position: absolute; top: 12px; left: 50%; z-index: 50;
+      width: calc(100% - 32px); max-width: 360px; pointer-events: none;
+      transition: all .2s ease-out;
+    }
+    .validasi-alert.alert-sembunyi { opacity: 0; transform: translate(-50%, -12px) scale(.95); }
+    .validasi-alert.alert-tampil   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    .validasi-alert-isi {
+      display: flex; align-items: center; gap: 8px;
+      background: #fef2f2; border: 1px solid #fecaca; color: #dc2626;
+      font-size: 13px; font-weight: 600; padding: 10px 16px; border-radius: 10px;
+      box-shadow: 0 10px 15px -3px rgba(15,23,42,.1), 0 4px 6px -4px rgba(15,23,42,.1);
+    }
+    .validasi-alert-ikon { width: 16px; height: 16px; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+<!-- Layar loading (EduNex): progres diatur lewat script "Layar loading" di bawah -->
+<div id="layar-loading" role="status" aria-live="polite" aria-label="EduNex sedang memuat">
+  <section class="ll-content">
+    <div class="ll-logo-wrap">
+      <div class="ll-book-light" aria-hidden="true"></div>
+      <img class="ll-logo" src="{{ url_for('static', filename='img/edunex_logo.webp') }}" alt="Logo EduNex: dua murid, buku terbuka, dan simbol pertumbuhan" width="522" height="478" decoding="async" fetchpriority="high">
+    </div>
+    <div class="ll-wordmark"><span class="ll-edu">Edu</span><span class="ll-nex">Nex</span></div>
+    <div class="ll-tagline">Belajar Hari Ini, Meraih Masa Depan</div>
+    <div class="ll-loader">
+      <div class="ll-track" id="llTrack" role="progressbar" aria-label="Progres pemuatan" aria-valuemin="0" aria-valuemax="100" aria-valuenow="25"><div class="ll-bar" id="llBar"></div></div>
+      <div class="ll-meta"><span id="llPercent">25%</span></div>
+    </div>
+    <div class="ll-status" id="llStatus">Menyiapkan pengalaman belajar</div>
+  </section>
+</div>
+
+<div class="bg-blob biru"></div>
+<div class="bg-blob hijau"></div>
+
+<div id="homeSceneHost">
+<div class="login-wrapper" id="loginWrapper">
+
+  <div class="panel-slider" id="panelSlider">
+  <!-- Panel ilustrasi (kiri) -->
+  <div class="illustration-panel">
+    <div class="illustration-decor c1"></div>
+    <div class="illustration-decor c2"></div>
+    <div class="illustration-decor c3"></div>
+
+    <div class="brand-mini">
+      <div class="brand-mini-logo"><img src="{{ url_for('static', filename='img/logo_sekolah.webp') }}" alt="Logo SMK Banjar Asri Cimaung" width="96" height="96" decoding="async" onerror="this.onerror=null;this.src='https://smkba.sch.id/storage/settings/01M2QBHVS6FTP0S9D1FKR9W72G.png';"></div>
+      <span class="brand-mini-nama brand-mini-nama-desktop">SMK BANJAR ASRI</span>
+      <span class="brand-mini-nama brand-mini-nama-mobile">SMK BANJAR ASRI CIMAUNG</span>
+    </div>
+    <p class="illustration-mobile-title">LOGIN AKUN </p>
+
+    <div class="jurusan-showcase">
+      <div class="cf-track" id="cfTrack">
+        <div class="cf-slide" data-index="0" data-peran="tengah" data-nama="Teknik Komputer dan Jaringan">
+          <div class="cf-logo">
+            <img src="{{ url_for('static', filename='img/logo_TEKNIK_KOMPUTER_JARINGAN.webp') }}" alt="Logo Teknik Komputer dan Jaringan" class="cf-logo-img">
+          </div>
+          <p class="cf-label">Teknik Komputer dan Jaringan</p>
+        </div>
+        <div class="cf-slide" data-index="1" data-peran="kanan" data-nama="Teknik Audio Video">
+          <div class="cf-logo">
+            <img src="{{ url_for('static', filename='img/logo_TEKNIK_AUDIO_VIDEO.webp') }}" alt="Logo Teknik Audio Video" class="cf-logo-img">
+          </div>
+          <p class="cf-label">Teknik Audio Video</p>
+        </div>
+        <div class="cf-slide" data-index="2" data-peran="kiri" data-nama="Teknik Kendaraan Ringan">
+          <div class="cf-logo">
+            <img src="{{ url_for('static', filename='img/logo_TEKNIK_KENDARAAN_RINGAN.webp') }}" alt="Logo Teknik Kendaraan Ringan" class="cf-logo-img">
+          </div>
+          <p class="cf-label">Teknik Kendaraan Ringan</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="illustration-bottom">
+      <p class="illustration-title">VISI<br>SMK BANJAR ASRI</p>
+      <p class="illustration-text">Mewujudkan SMK Banjar Asri yang BAROKAH (Bahagia, Religius, Optimis, Kreatif, Aktif, dan HAndal) </p>
+
+      <div class="illustration-footer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>
+        </svg>
+        <span>Koneksi Aman &amp; Terenkripsi &bull; Website belajar</span>
+      </div>
+    </div>
+  </div>
+  </div><!-- /panel-slider -->
+
+  <div class="form-slider" id="formSlider">
+  <!-- Kartu login -->
+  <div class="login-container" id="loginContainer">
+
+  <!-- Floating alert validasi custom (ganti validasi native browser).
+       Diposisikan absolute relatif ke .login-container supaya "melayang" di
+       atas isi kartu & tetap terlihat walau area form sedang di-scroll.
+       Kelas Tailwind di sini di-toggle lewat JS (lihat tampilkanValidasiAlert /
+       sembunyikanValidasiAlert) untuk animasi fade + slide + scale. -->
+  <div id="validasiAlert"
+       data-state="tersembunyi"
+       class="validasi-alert alert-sembunyi">
+    <div class="validasi-alert-isi">
+      <svg class="validasi-alert-ikon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span id="validasiAlertTeks">Pesan validasi</span>
+    </div>
+  </div>
+
+  <div class="login-scroll-area">
+
+    <div class="maskot-area">
+      <div class="maskot-gelembung" id="maskotGelembung">Hai!</div>
+      <div class="maskot-wrap" id="maskotWrap" role="button" tabindex="0" aria-label="Maskot Robi, klik untuk say hi">
+        <svg viewBox="0 0 160 160">
+          <ellipse class="m-bayangan" cx="80" cy="150" rx="42" ry="7" fill="#1e293b"/>
+
+          <g class="m-badan-grup">
+            <!-- antena -->
+            <line x1="80" y1="20" x2="80" y2="6" stroke="#2563eb" stroke-width="4" stroke-linecap="round"/>
+            <circle class="m-antena-bola" cx="80" cy="6" r="6" fill="#facc15"/>
+
+            <!-- lengan kiri & kanan -->
+            <rect class="m-lengan m-lengan-kiri" x="16" y="70" width="12" height="34" rx="6" fill="#2563eb"/>
+            <rect class="m-lengan m-lengan-kanan" x="132" y="70" width="12" height="34" rx="6" fill="#2563eb"/>
+
+            <!-- badan bulat -->
+            <circle cx="80" cy="86" r="62" fill="#ffffff" stroke="#2563eb" stroke-width="4"/>
+            <circle cx="80" cy="86" r="62" fill="url(#gradBadan)" opacity="0.1"/>
+
+            <!-- layar wajah -->
+            <rect x="34" y="58" width="92" height="60" rx="26" fill="#1e293b"/>
+
+            <!-- pipi blush -->
+            <ellipse class="m-pipi" cx="46" cy="100" rx="9" ry="5.5" fill="#fb7185"/>
+            <ellipse class="m-pipi" cx="114" cy="100" rx="9" ry="5.5" fill="#fb7185"/>
+
+            <!-- mata normal -->
+            <g class="m-mata-normal">
+              <g class="m-mata-kiri-normal">
+                <ellipse class="m-mata-tutup" cx="58" cy="88" rx="10" ry="12" fill="#7dd3fc"/>
+                <circle class="m-pupil" id="pupilKiri" cx="58" cy="88" r="4.5" fill="#0f172a"/>
+              </g>
+              <g class="m-mata-kanan-normal">
+                <ellipse class="m-mata-tutup" cx="102" cy="88" rx="10" ry="12" fill="#7dd3fc"/>
+                <circle class="m-pupil" id="pupilKanan" cx="102" cy="88" r="4.5" fill="#0f172a"/>
+              </g>
+            </g>
+
+            <!-- mata kejut (saat password ditampilkan) -->
+            <g class="m-mata-kejut">
+              <circle cx="58" cy="88" r="12" fill="#7dd3fc"/>
+              <circle cx="58" cy="88" r="5" fill="#0f172a"/>
+              <circle cx="102" cy="88" r="12" fill="#7dd3fc"/>
+              <circle cx="102" cy="88" r="5" fill="#0f172a"/>
+            </g>
+
+            <!-- mata cinta (reaksi klik) -->
+            <g class="m-mata-cinta">
+              <path d="M52 84 a5 5 0 0 1 10 0 c0 4 -5 8 -5 8 s-5 -4 -5 -8Z" fill="#fb7185"/>
+              <path d="M96 84 a5 5 0 0 1 10 0 c0 4 -5 8 -5 8 s-5 -4 -5 -8Z" fill="#fb7185"/>
+            </g>
+
+            <!-- Zzz saat merem -->
+            <text class="m-zzz" x="112" y="70" font-size="13">Z</text>
+            <text class="m-zzz" x="120" y="60" font-size="10" style="animation-delay:0.3s">z</text>
+
+            <!-- mulut -->
+            <path class="m-mulut" d="M66 104 Q80 112 94 104" stroke="#7dd3fc" stroke-width="4" fill="none" stroke-linecap="round"/>
+          </g>
+
+          <defs>
+            <linearGradient id="gradBadan" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#16a34a"/>
+              <stop offset="100%" stop-color="#2563eb"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </div>
+
+    <h2>SELAMAT DATANG</h2>
+    <p class="subtitle">Silakan masuk untuk memulai proses belajar dan mengajar hari ini</p>
+
+    <form id="loginForm" action="{{ url_for('login') }}" method="POST" novalidate>
+
+      {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+
+      <div class="field">
+        <label for="role">Pilih Role</label>
+        <div class="input-icon-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <select id="role" name="role" required class="has-icon">
+            <option value="" disabled selected>-- Pilih Role --</option>
+            <option value="guru">Guru</option>
+            <option value="siswa">Siswa</option>
+            <option value="staf_kebersihan">Staf Kebersihan</option>
+          </select>
+          <svg class="input-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <p class="field-pesan" id="pesanRole" aria-live="polite"></p>
+      </div>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <div class="input-icon-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <input type="text" id="username" name="username" placeholder="Masukkan username" required autocomplete="username" class="has-icon" />
+        </div>
+        <p class="field-pesan" id="pesanUsername" aria-live="polite"></p>
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="password-box input-icon-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="10" width="16" height="10" rx="2"/>
+            <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+          </svg>
+          <input type="password" id="password" name="password" placeholder="Masukkan password" required autocomplete="current-password" class="has-icon" />
+          <button type="button" class="toggle-password" id="togglePassword" aria-label="Lihat password" title="Lihat password">
+            <svg class="mata-terbuka" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg class="mata-tertutup" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.7 19.7 0 0 1 5.06-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a19.8 19.8 0 0 1-3.22 4.36M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          </button>
+        </div>
+        <p class="field-pesan" id="pesanPassword" aria-live="polite"></p>
+      </div>
+
+      <div class="ingat-lupa-row">
+        <label class="ingat-saya" for="ingatSaya">
+          <input type="checkbox" id="ingatSaya" name="remember" />
+          <span class="kotak-centang">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 12 9 17 20 6"></polyline>
+            </svg>
+          </span>
+          <span class="ingat-teks">Ingat saya</span>
+        </label>
+        <a href="{{ url_for('lupa_password') }}" class="link link-lupa">Lupa Password?</a>
+      </div>
+
+      <button type="submit" class="tombol-submit" id="tombolSubmit">Masuk Akun</button>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+              <div class="flash-msg {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <!-- Diisi lewat JS saat login GAGAL (lihat tampilkanPesanErrorLogin() di
+           bawah) -- sengaja terpisah dari flash-container Flask di atas supaya
+           tidak perlu reload halaman untuk menampilkan pesan error, jadi
+           username/password/role yang sudah diisi user TIDAK ikut hilang. -->
+      <div class="flash-container" id="jsFlashContainer"></div>
+
+    </form>
+
+    <div class="bottom-links">
+      Belum punya akun? <a href="{{ url_for('register') }}" id="tautanDaftar" class="link">Buat Akun Baru</a>
+    </div>
+
+  </div>
+  </div><!-- /login-container -->
+
+  <!-- Kartu daftar akun -->
+  <div class="login-container register-container" id="registerContainer" style="display:none;">
+  <div class="login-scroll-area">
+
+    <div class="jurusan-wrap-daftar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#0f4d3f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <line x1="19" y1="8" x2="19" y2="14"/>
+        <line x1="16" y1="11" x2="22" y2="11"/>
+      </svg>
+    </div>
+
+    <h2>BUAT AKUN BARU</h2>
+    <p class="subtitle">Isi formulir di bawah untuk membuat akun baru</p>
+
+    <form id="registerForm" action="{{ url_for('register') }}" method="POST">
+
+      {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+              <div class="flash-msg {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="field">
+        <label for="regRole">Daftar Sebagai</label>
+        <div class="input-icon-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <select id="regRole" name="role" required class="has-icon">
+            <option value="Siswa">Siswa</option>
+            <option value="Guru">Guru / Staf Pengajar</option>
+          </select>
+          <svg class="input-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="regFullname">Nama Lengkap</label>
+        <div class="input-icon-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9.5" cy="10.5" r="2"/><path d="M6 16.5c.5-2 2-3 3.5-3s3 1 3.5 3"/><line x1="13.5" y1="8.5" x2="17.5" y2="8.5"/><line x1="13.5" y1="12" x2="17.5" y2="12"/>
+          </svg>
+          <input type="text" id="regFullname" name="fullname" placeholder="Masukkan nama lengkap" required autocomplete="off" class="has-icon" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="regIdentity">NISN / NIP</label>
+        <div class="input-icon-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>
+          </svg>
+          <input type="text" id="regIdentity" name="identity_number" placeholder="Nomor NISN (Siswa) / NIP (Guru)" required autocomplete="off" class="has-icon" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="regUsername">Username</label>
+        <div class="input-icon-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <input type="text" id="regUsername" name="username" placeholder="Buat username unik" required autocomplete="off" class="has-icon" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="regPassword">Password</label>
+        <div class="password-box input-icon-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+          </svg>
+          <input type="password" id="regPassword" name="password" placeholder="Buat password" required minlength="6" autocomplete="new-password" class="has-icon" />
+          <button type="button" class="toggle-password" id="toggleRegPassword" aria-label="Lihat password" title="Lihat password">
+            <svg class="mata-terbuka" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg class="mata-tertutup" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.7 19.7 0 0 1 5.06-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a19.8 19.8 0 0 1-3.22 4.36M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="regEmail">Email</label>
+        <div class="input-icon-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>
+          </svg>
+          <input type="email" id="regEmail" name="email" placeholder="Masukkan alamat email" required autocomplete="off" class="has-icon" />
+        </div>
+      </div>
+
+      <button type="submit" class="tombol-submit daftar-btn" id="tombolSubmitDaftar">Daftar Akun Baru</button>
+
+    </form>
+
+    <div class="bottom-links daftar-links">
+      Sudah punya akun? <a href="{{ url_for('login') }}" id="tautanMasukDariDaftar" class="link">Masuk di sini</a>
+    </div>
+
+  </div>
+  </div><!-- /register-container -->
+
+  </div><!-- /form-slider -->
+
+</div><!-- /login-wrapper -->
+</div><!-- /homeSceneHost -->
+
+<div id="lupaSceneHost">
+  <iframe id="lupaFrame" title="Lupa Password" loading="lazy"></iframe>
+</div><!-- /lupaSceneHost -->
+
+<!-- Loading screen EduNex: tampil HANYA setelah login berhasil (menunggu pindah halaman)
+     atau setelah form daftar dikirim. Tidak tampil saat login gagal. Diatur lewat JS (enxTampil/enxSembunyi). -->
+<div id="enx-loader" aria-hidden="true">
+  <section class="enx-content" role="status" aria-live="polite" aria-label="EduNex sedang memuat">
+    <div class="enx-logo-wrap">
+      <div class="enx-book-light" aria-hidden="true"></div>
+      <img class="enx-logo" src="{{ url_for('static', filename='img/edunex_logo.webp') }}" alt="Logo EduNex: dua murid, buku terbuka, dan simbol pertumbuhan" width="522" height="478" decoding="async" fetchpriority="low">
+    </div>
+    <div class="enx-wordmark"><span class="enx-edu">Edu</span><span class="enx-nex">Nex</span></div>
+    <div class="enx-tagline">Belajar Hari Ini, Meraih Masa Depan</div>
+    <div class="enx-loader-box">
+      <div class="enx-track" role="progressbar" aria-label="Sedang memuat"><div class="enx-bar"></div></div>
+      <div class="enx-meta"><span id="enxLabel">Memuat</span></div>
+    </div>
+    <div class="enx-status" id="enxStatus"></div>
+    <div class="enx-actions" id="enxAksi" hidden>
+      <button type="button" id="enxCoba">Coba lagi</button>
+      <button type="button" id="enxTutup">Tutup</button>
+    </div>
+  </section>
+</div>
+
+<script>
+  (function () {
+    /* ---------- FIX: halaman "mental" ke sini lewat tombol Back browser ----------
+       Setelah login sukses kita pindah ke dashboard pakai window.location.href
+       (bukan reload), jadi halaman login.html ini masih tersimpan APA ADANYA di
+       bfcache (back-forward cache) milik browser -- termasuk state overlay
+       "Berhasil masuk!" yang lagi tampil saat itu, timer-timer JS yang sudah
+       kepakai, dsb. Begitu user klik tombol Back di browser, Chrome/Firefox
+       cuma "membekukan lalu mencairkan kembali" DOM lama itu (bukan memuat
+       ulang dari server) -- makanya kelihatan seperti macet/diam di layar
+       loading checklist hijau, padahal sebenarnya bukan loading, cuma tampilan
+       lama yang beku.
+       Solusinya: dengar event 'pageshow'. Kalau event.persisted === true,
+       artinya halaman ini memang dipulihkan dari bfcache (bukan load baru) --
+       maka langsung reload() supaya browser benar-benar minta halaman /login
+       yang segar ke server (session lama otomatis dibersihkan oleh app.py di
+       route GET /login), dan user melihat FORM LOGIN BERSIH, bukan animasi
+       yang beku. */
+    window.addEventListener('pageshow', function (event) {
+      if (!event.persisted) return;
+      // Reload penuh HANYA kalau loading screen EduNex masih nyangkut
+      // (artinya user Back tepat di tengah proses redirect ke dashboard).
+      // Kalau bukan kondisi itu, ini cuma navigasi Back biasa -- jangan
+      // reload, supaya animasi intro (#layar-loading) tidak main ulang
+      // setiap kali user pindah halaman lalu balik lagi.
+      var overlaySukses = document.getElementById('enx-loader');
+      if (overlaySukses && overlaySukses.classList.contains('tampil')) {
+        window.location.reload();
+      }
+    });
+
+    /* ---------- Restart animasi "masuk" home-scene ----------
+       Dipakai di 2 momen: (1) tepat saat layar loading hilang -- supaya
+       animasi panel/judul/field baru mulai terlihat SEKARANG, bukan sudah
+       kelar duluan di balik overlay loading; dan (2) tiap kali user kembali
+       dari scene Lupa Password ke Login (lihat script scene-swap di bawah)
+       -- karena saat itu cuma transform yang digeser balik, bukan reload,
+       jadi animation:forwards yang sudah kelar di load pertama tidak akan
+       otomatis terputar ulang tanpa dipaksa begini. */
+    var SELECTOR_ANIMASI_HOME = [
+      '#homeSceneHost .illustration-panel',
+      '#homeSceneHost .brand-mini',
+      '#homeSceneHost .illustration-title',
+      '#homeSceneHost .illustration-text',
+      '#homeSceneHost .jurusan-showcase',
+      '#homeSceneHost .illustration-footer',
+      '#homeSceneHost .login-container',
+      '#homeSceneHost .maskot-wrap',
+      '#homeSceneHost h2',
+      '#homeSceneHost .subtitle',
+      '#homeSceneHost .field',
+      '#homeSceneHost .ingat-lupa-row',
+      '#homeSceneHost button.tombol-submit',
+      '#homeSceneHost .bottom-links'
+    ];
+    window.trikaryaPutarUlangAnimasiHome = function () {
+      SELECTOR_ANIMASI_HOME.forEach(function (sel) {
+        document.querySelectorAll(sel).forEach(function (el) {
+          el.style.animation = 'none';
+          void el.offsetWidth; // paksa reflow
+          el.style.animation = '';
+        });
+      });
+    };
+
+    /* ---------- Layar loading (EduNex) ----------
+       Bar & persen mengikuti pemuatan halaman yang SEBENARNYA (bukan angka
+       palsu): 25% saat dokumen mulai dibaca, 50% saat DOM siap, 75% saat
+       font selesai dimuat, 100% saat semua aset (event 'load') selesai.
+       Nilai tidak pernah turun. Tahap & teksnya sama dengan
+       edunex-loading-all-in-one.html. */
+    var layarLoading = document.getElementById('layar-loading');
+    var llBar = document.getElementById('llBar');
+    var llTrack = document.getElementById('llTrack');
+    var llPercent = document.getElementById('llPercent');
+    var llStatus = document.getElementById('llStatus');
+    var LL_TAHAP = [
+      [0,   'Menghubungkan layanan', 'Menghubungkan ke layanan'],
+      [25,  'Menyiapkan komponen',   'Menyiapkan pengalaman belajar'],
+      [50,  'Memuat materi',         'Menyiapkan materi pembelajaran'],
+      [75,  'Menyiapkan akun',       'Hampir siap digunakan'],
+      [100, 'Siap digunakan',        'Aplikasi siap']
+    ];
+    // Layar loading minimal tampil selama ini (ms) supaya animasinya sempat
+    // terlihat di localhost yang sangat cepat (naik-turun logo = 2,4 dtk). Isi 0 untuk menonaktifkan.
+    var LL_MIN_TAMPIL_MS = 2400; // = satu siklus penuh naik-turun logo
+    var llMulai = Date.now();
+    var llNilai = 0;
+    var llSudahSelesai = false;
+
+    function llAtur(nilai) {
+      var p = Math.max(llNilai, Math.max(0, Math.min(100, Number(nilai) || 0)));
+      llNilai = p;
+      llBar.style.width = p + '%';
+      llPercent.textContent = p + '%';
+      llTrack.setAttribute('aria-valuenow', String(p));
+      var tahap = LL_TAHAP[0];
+      for (var i = 0; i < LL_TAHAP.length; i++) {
+        if (p >= LL_TAHAP[i][0]) tahap = LL_TAHAP[i];
+      }
+      llStatus.textContent = tahap[2];
+    }
+
+    var loadingSudahDisembunyikan = false; // guard: cegah sembunyikanLoading() jalan 2x
+    // (kalau event 'load' sudah kelar duluan, timer fallback 3000ms di bawah
+    // tetap akan menembak sembunyikanLoading() lagi karena tidak pernah
+    // di-clearTimeout -- efeknya animasi home ke-restart untuk kedua kalinya
+    // via trikaryaPutarUlangAnimasiHome(). Flag ini yang menahannya.)
+    function sembunyikanLoading() {
+      if (loadingSudahDisembunyikan) return;
+      loadingSudahDisembunyikan = true;
+      window.trikaryaPutarUlangAnimasiHome();
+      layarLoading.classList.add('selesai');
+      setTimeout(function () { layarLoading.style.display = 'none'; }, 550);
+    }
+
+    function llSelesai() {
+      if (llSudahSelesai) return;
+      llSudahSelesai = true;
+      llAtur(100);
+      // beri jeda >= 500ms setelah 100% supaya bar & status "Aplikasi siap" sempat terlihat
+      var sisa = Math.max(500, LL_MIN_TAMPIL_MS - (Date.now() - llMulai));
+      setTimeout(sembunyikanLoading, sisa);
+    }
+
+    llAtur(25);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { llAtur(50); });
+    } else {
+      llAtur(50);
+    }
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () { llAtur(75); });
+    }
+    if (document.readyState === 'complete') {
+      llSelesai();
+    } else {
+      window.addEventListener('load', llSelesai);
+      // jaga-jaga kalau event load lambat/gagal, tetap selesaikan
+      setTimeout(llSelesai, 3000);
+    }
+
+    /* ---------- Elemen maskot & form ---------- */
+    var maskot = document.getElementById('maskotWrap');
+    var gelembung = document.getElementById('maskotGelembung');
+    var pupilKiri = document.getElementById('pupilKiri');
+    var pupilKanan = document.getElementById('pupilKanan');
+    var inputUsername = document.getElementById('username');
+    var inputPassword = document.getElementById('password');
+    var selectRole = document.getElementById('role');
+    var togglePassword = document.getElementById('togglePassword');
+    var checkboxIngatSaya = document.getElementById('ingatSaya');
+
+    /* ---------- Floating alert validasi custom (pengganti validasi native) ----------
+       Kelas Tailwind yang di-toggle untuk animasi: saat tersembunyi elemen
+       diberi opacity-0 + scale-95 + digeser naik (-translate-y-3); saat tampil
+       ketiganya diganti opacity-100 + scale-100 + translate-y-0. Karena semua
+       properti itu sudah didaftarkan lewat "transition-all duration-200
+       ease-out" di HTML, perpindahan antar state otomatis animasi
+       fade + slide + scale yang cepat & smooth. */
+    var validasiAlert = document.getElementById('validasiAlert');
+    var validasiAlertTeks = document.getElementById('validasiAlertTeks');
+    var validasiTimer = null;
+    var KELAS_ALERT_SEMBUNYI = ['alert-sembunyi'];
+    var KELAS_ALERT_TAMPIL = ['alert-tampil'];
+
+    function tampilkanValidasiAlert(pesan, untukField) {
+      clearTimeout(validasiTimer);
+      validasiAlertTeks.textContent = pesan;
+      validasiAlert.dataset.state = 'tampil';
+      validasiAlert.dataset.untuk = untukField;
+      validasiAlert.classList.remove.apply(validasiAlert.classList, KELAS_ALERT_SEMBUNYI);
+      validasiAlert.classList.add.apply(validasiAlert.classList, KELAS_ALERT_TAMPIL);
+      // Tetap auto-hilang sendiri kalau user diam saja (tidak langsung
+      // membetulkan input), jadi alert tidak nyangkut selamanya di layar.
+      validasiTimer = setTimeout(sembunyikanValidasiAlert, 4000);
+    }
+
+    function sembunyikanValidasiAlert() {
+      clearTimeout(validasiTimer);
+      validasiAlert.dataset.state = 'tersembunyi';
+      validasiAlert.classList.remove.apply(validasiAlert.classList, KELAS_ALERT_TAMPIL);
+      validasiAlert.classList.add.apply(validasiAlert.classList, KELAS_ALERT_SEMBUNYI);
+      delete validasiAlert.dataset.untuk;
+    }
+
+    // Alert hilang otomatis begitu field yang jadi penyebabnya sudah dibetulkan
+    // oleh user -- tidak perlu tunggu submit ulang atau timeout 4 detik.
+    selectRole.addEventListener('change', function () {
+      if (validasiAlert.dataset.untuk === 'role' && selectRole.value !== '') {
+        sembunyikanValidasiAlert();
+      }
+    });
+    inputUsername.addEventListener('input', function () {
+      if (validasiAlert.dataset.untuk === 'username' && inputUsername.value.trim() !== '') {
+        sembunyikanValidasiAlert();
+      }
+    });
+    inputPassword.addEventListener('input', function () {
+      if (validasiAlert.dataset.untuk === 'password' && inputPassword.value.trim() !== '') {
+        sembunyikanValidasiAlert();
+      }
+    });
+
+    /* ---------- Ingat Saya: auto-isi username, password, role ----------
+       Data disimpan di localStorage browser (bukan di server), jadi hanya
+       berlaku untuk browser & perangkat ini. Saat checkbox "Ingat saya"
+       dicentang dan login berhasil, data disimpan; kalau tidak dicentang
+       atau user logout/uncheck, data lama dihapus. */
+    var KUNCI_INGAT = 'sekolah_ingat_login';
+
+    function muatDataIngatSaya() {
+      try {
+        var data = JSON.parse(localStorage.getItem(KUNCI_INGAT) || 'null');
+        if (data && checkboxIngatSaya) {
+          if (inputUsername) inputUsername.value = data.username || '';
+          if (selectRole && data.role) selectRole.value = data.role;
+          checkboxIngatSaya.checked = true;
+          // KEAMANAN: bersihkan password lama (versi sebelumnya menyimpan
+          // password polos di localStorage) -- sekarang tidak pernah disimpan.
+          if (data.password !== undefined) {
+            delete data.password;
+            localStorage.setItem(KUNCI_INGAT, JSON.stringify(data));
+          }
+        }
+      } catch (e) { /* abaikan kalau data korup */ }
+    }
+
+    function simpanDataIngatSaya() {
+      if (!checkboxIngatSaya) return;
+      if (checkboxIngatSaya.checked) {
+        // KEAMANAN: password TIDAK disimpan di localStorage (rawan dicuri lewat
+        // XSS / orang yang memakai perangkat yang sama). Cukup username & role;
+        // untuk password biarkan pengelola password browser yang menanganinya.
+        var data = {
+          username: inputUsername ? inputUsername.value : '',
+          role: selectRole ? selectRole.value : ''
+        };
+        localStorage.setItem(KUNCI_INGAT, JSON.stringify(data));
+      } else {
+        localStorage.removeItem(KUNCI_INGAT);
+      }
+    }
+
+    muatDataIngatSaya();
+
+    function bersihkanStatusPassword() {
+      maskot.classList.remove('tutup-mata', 'melek-lebar');
+    }
+
+    function statusMaskotPassword() {
+      var fokus = document.activeElement === inputPassword;
+      var tampil = inputPassword.type === 'text';
+      bersihkanStatusPassword();
+      if (!fokus) return;
+      if (tampil) {
+        maskot.classList.add('melek-lebar');
+      } else {
+        maskot.classList.add('tutup-mata');
+      }
+    }
+
+    /* ---------- Tombol lihat/sembunyikan password (diperbaiki) ---------- */
+    // mousedown dicegah defaultnya supaya fokus input TIDAK hilang saat tombol diklik
+    togglePassword.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    togglePassword.addEventListener('click', function () {
+      var tampil = inputPassword.type === 'text';
+      inputPassword.type = tampil ? 'password' : 'text';
+      togglePassword.classList.toggle('aktif', !tampil);
+      var labelBaru = tampil ? 'Lihat password' : 'Sembunyikan password';
+      togglePassword.setAttribute('aria-label', labelBaru);
+      togglePassword.title = labelBaru;
+      inputPassword.focus();
+      statusMaskotPassword();
+    });
+
+    /* ---------- Mata mengikuti kursor (laptop) / jari (HP) ----------
+       Dulu cuma dengar event 'mousemove', jadi di HP (yang gerakannya
+       lewat sentuhan, bukan mouse) mata maskot ini nggak pernah gerak
+       sama sekali. Sekarang logic-nya dipisah ke fungsi gerakkanMata()
+       yang dipakai bareng oleh listener 'mousemove' (laptop/desktop)
+       DAN listener 'touchstart' + 'touchmove' (HP/tablet) -- begitu jari
+       nyentuh & ditahan/digeser di layar, posisi sentuhan pertama
+       (e.touches[0]) dipakai persis seperti posisi kursor mouse. Listener
+       touch sengaja pakai { passive: true } supaya TIDAK memblokir scroll
+       halaman seperti biasa.
+       Posisi kursor/jari TERAKHIR juga disimpan (mataTerakhirX/Y) supaya
+       bisa dipakai ulang oleh sinkronMataUlang() di bawah -- dipanggil
+       tepat setelah kartu Login/Daftar selesai bertukar (lihat pindahMode)
+       supaya mata langsung "nyambung" lagi ke posisi kursor saat itu juga,
+       bukan nunggu user menggerakkan mouse lagi dari nol. Tanpa ini, kursor
+       yang sudah "mentok" di sudut (mis. bekas posisi klik link "Buat Akun
+       Baru"/"Masuk di sini") bikin geseran KECIL setelahnya kelihatan
+       "tidak merespon", karena sudut itu sudah dekat batas maksimal gerak
+       mata (dx/dy sudah nyaris ter-clamp di ±1) sebelum sempat direfresh. */
+    var batasGerak = 3.6;
+    var mataTerakhirX = null;
+    var mataTerakhirY = null;
+    function gerakkanMata(clientX, clientY) {
+      mataTerakhirX = clientX;
+      mataTerakhirY = clientY;
+      if (maskot.classList.contains('tutup-mata') || maskot.classList.contains('melek-lebar')) return;
+      var rect = maskot.getBoundingClientRect();
+      var cx = rect.left + rect.width / 2;
+      var cy = rect.top + rect.height / 2;
+      var dx = Math.max(-1, Math.min(1, (clientX - cx) / 200));
+      var dy = Math.max(-1, Math.min(1, (clientY - cy) / 200));
+      var tx = dx * batasGerak;
+      var ty = dy * batasGerak;
+      pupilKiri.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
+      pupilKanan.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
+    }
+    // Dipanggil setelah kartu Login/Daftar selesai ditukar tampilannya --
+    // "memaksa" mata membaca ulang posisi kursor TERAKHIR yang tersimpan,
+    // supaya langsung update seketika tanpa menunggu mousemove baru.
+    function sinkronMataUlang() {
+      if (mataTerakhirX !== null) gerakkanMata(mataTerakhirX, mataTerakhirY);
+    }
+    document.addEventListener('mousemove', function (e) {
+      gerakkanMata(e.clientX, e.clientY);
+    });
+    document.addEventListener('touchstart', function (e) {
+      if (e.touches && e.touches.length > 0) gerakkanMata(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    document.addEventListener('touchmove', function (e) {
+      if (e.touches && e.touches.length > 0) gerakkanMata(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+
+    /* ---------- Reaksi ke field password ---------- */
+    inputPassword.addEventListener('focus', statusMaskotPassword);
+    inputPassword.addEventListener('blur', bersihkanStatusPassword);
+
+    /* ---------- Senyum saat username diisi ---------- */
+    inputUsername.addEventListener('input', function () {
+      maskot.classList.toggle('senang', inputUsername.value.length > 0);
+    });
+
+    /* ---------- Sedikit tegak saat pilih role ---------- */
+    selectRole.addEventListener('change', function () {
+      maskot.style.transform = 'scale(1.05)';
+      setTimeout(function () { maskot.style.transform = 'scale(1)'; }, 220);
+    });
+
+    /* ---------- Kedipan mata acak saat idle ---------- */
+    function jadwalkanKedip() {
+      var jeda = 2200 + Math.random() * 2600;
+      setTimeout(function () {
+        if (!maskot.classList.contains('tutup-mata') && !maskot.classList.contains('melek-lebar')) {
+          maskot.classList.add('kedip');
+          setTimeout(function () { maskot.classList.remove('kedip'); }, 140);
+        }
+        jadwalkanKedip();
+      }, jeda);
+    }
+    jadwalkanKedip();
+
+    /* ---------- Maskot interaktif: klik = reaksi acak ---------- */
+    var daftarReaksi = [
+      { kelas: 'reaksi-loncat', durasi: 620, teks: 'Hai! 👋' },
+      { kelas: 'reaksi-putar', durasi: 620, teks: 'Wiii~ 🌀' },
+      { kelas: 'reaksi-goyang', durasi: 520, teks: 'Hehe~' },
+      { kelas: 'reaksi-cinta', durasi: 900, teks: 'Semangat! 💙' },
+      { kelas: 'reaksi-wink', durasi: 700, teks: 'Kedip satu 😉' }
+    ];
+    var sedangBereaksi = false;
+    var timerGelembung = null;
+
+    function pancingReaksi() {
+      if (sedangBereaksi) return;
+      sedangBereaksi = true;
+      var r = daftarReaksi[Math.floor(Math.random() * daftarReaksi.length)];
+      maskot.classList.add(r.kelas);
+
+      gelembung.textContent = r.teks;
+      gelembung.classList.add('tampil');
+      clearTimeout(timerGelembung);
+      timerGelembung = setTimeout(function () { gelembung.classList.remove('tampil'); }, 1100);
+
+      setTimeout(function () {
+        maskot.classList.remove(r.kelas);
+        sedangBereaksi = false;
+      }, r.durasi);
+    }
+
+    maskot.addEventListener('click', pancingReaksi);
+    maskot.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pancingReaksi(); }
+    });
+
+    /* ---------- Login -> cek ke backend via AJAX, loading screen HANYA kalau berhasil ----------
+       Alur:
+         1. Klik "Masuk Akun" -> validasi kolom kosong (alert custom, tidak ke server).
+         2. Data dikirim ke /login lewat fetch() (header X-Requested-With, server
+            membalas JSON). Selama menunggu, tombol cuma berubah jadi "Memeriksa..."
+            -- TIDAK ada layar penuh, karena hasilnya belum diketahui.
+         3. BERHASIL -> baru tampil loading screen EduNex, lalu pindah ke halaman
+            tujuan. GAGAL -> tanpa loading screen: field yang salah diberi
+            indikator merah + pesan error, isian user tetap ada. */
+    var form = document.getElementById('loginForm');
+    var tombolSubmit = document.getElementById('tombolSubmit');
+    var TEKS_TOMBOL_MASUK = tombolSubmit ? tombolSubmit.textContent : 'Masuk Akun';
+    var sedangMasuk = false;          // cegah submit ganda selama menunggu server / pindah halaman
+    var BATAS_LOGIN_MS = 20000;       // server tidak membalas selama ini -> dianggap gagal terhubung
+    var BATAS_PEMUATAN_MS = 15000;    // pindah halaman macet selama ini -> loader menawarkan jalur keluar
+
+    /* ---------- Loading screen EduNex (kontrol) ---------- */
+    var enxLoader = document.getElementById('enx-loader');
+    var enxLabel = document.getElementById('enxLabel');
+    var enxStatus = document.getElementById('enxStatus');
+    var enxAksi = document.getElementById('enxAksi');
+    var enxCoba = document.getElementById('enxCoba');
+    var enxTutup = document.getElementById('enxTutup');
+    var enxTimerBatas = null;
+    var enxAksiCoba = null;
+    var enxAksiTutup = null;
+
+    // opsi: { label, status, onCoba (opsional), onTutup (opsional) }
+    function enxTampil(opsi) {
+      opsi = opsi || {};
+      clearTimeout(enxTimerBatas);
+      enxAksiCoba = opsi.onCoba || null;
+      enxAksiTutup = opsi.onTutup || null;
+      enxLabel.textContent = opsi.label || 'Memuat';
+      enxStatus.textContent = opsi.status || '';
+      enxAksi.hidden = true;
+      enxLoader.classList.remove('lambat');
+      enxLoader.classList.add('tampil');
+      enxLoader.setAttribute('aria-hidden', 'false');
+      enxLoader.setAttribute('aria-busy', 'true');
+      // Jalur keluar: kalau pemuatan tidak kunjung selesai, jangan tutup halaman selamanya.
+      enxTimerBatas = setTimeout(enxLambat, BATAS_PEMUATAN_MS);
+    }
+    function enxLambat() {
+      enxTimerBatas = null;
+      enxLoader.classList.add('lambat');
+      enxLoader.setAttribute('aria-busy', 'false');
+      enxLabel.textContent = 'Pemuatan memakan waktu lebih lama';
+      enxStatus.textContent = 'Periksa koneksi internet kamu';
+      enxCoba.hidden = !enxAksiCoba;
+      enxAksi.hidden = false;
+      (enxAksiCoba ? enxCoba : enxTutup).focus();
+    }
+    function enxSembunyi() {
+      clearTimeout(enxTimerBatas);
+      enxTimerBatas = null;
+      enxLoader.classList.remove('tampil', 'lambat');
+      enxLoader.setAttribute('aria-hidden', 'true');
+      enxLoader.setAttribute('aria-busy', 'false');
+      enxAksi.hidden = true;
+    }
+    if (enxCoba) enxCoba.addEventListener('click', function () { if (enxAksiCoba) enxAksiCoba(); });
+    if (enxTutup) enxTutup.addEventListener('click', function () {
+      var aksi = enxAksiTutup;
+      enxSembunyi();
+      if (aksi) aksi();
+    });
+
+    /* ---------- Peta nama halaman tujuan sesuai role ---------- */
+    var petaHalamanRole = {
+      guru: 'halaman guru',
+      siswa: 'halaman siswa',
+      staf_kebersihan: 'halaman staf kebersihan'
+    };
+
+    /* ---------- Indikator error per-field (login) ---------- */
+    var daftarFieldLogin = { role: selectRole, username: inputUsername, password: inputPassword };
+
+    var idPesanField = { role: 'pesanRole', username: 'pesanUsername', password: 'pesanPassword' };
+    // Pesan bawaan kalau server hanya menyebut KOLOM yang bermasalah (tanpa teks sendiri).
+    var PESAN_FIELD_DEFAULT = {
+      password: 'Password yang kamu masukkan salah.',
+      username: 'Username tidak ditemukan.',
+      role: 'Role tidak sesuai dengan akun ini.'
+    };
+
+    // pesan: teks kecil di bawah kolom (kosong = hanya border merah, tanpa teks).
+    function tandaiFieldError(nama, pesan) {
+      var el = daftarFieldLogin[nama];
+      var pembungkus = el && el.closest('.field');
+      if (!pembungkus) return;
+      var kotakPesan = document.getElementById(idPesanField[nama]);
+      pembungkus.classList.remove('field-error');
+      void pembungkus.offsetWidth; // paksa reflow supaya animasi goyang main ulang
+      if (kotakPesan) {
+        // kosongkan dulu, lalu isi lagi: pembaca layar tetap membacakan pesan yang sama saat gagal berulang
+        kotakPesan.textContent = '';
+        if (pesan) {
+          setTimeout(function () {
+            if (pembungkus.classList.contains('field-error')) kotakPesan.textContent = pesan;
+          }, 50);
+        }
+      }
+      pembungkus.classList.add('field-error');
+      el.setAttribute('aria-invalid', 'true');
+      if (kotakPesan && pesan) el.setAttribute('aria-describedby', kotakPesan.id);
+    }
+    function bersihkanFieldError(nama) {
+      var el = daftarFieldLogin[nama];
+      var pembungkus = el && el.closest('.field');
+      if (!pembungkus) return;
+      pembungkus.classList.remove('field-error');
+      el.removeAttribute('aria-invalid');
+      el.removeAttribute('aria-describedby');
+    }
+    function bersihkanSemuaFieldError() {
+      Object.keys(daftarFieldLogin).forEach(bersihkanFieldError);
+    }
+    // Mulai mengubah field -> indikator error field itu hilang. Ini murni tampilan:
+    // BUKAN bukti login sudah benar (keputusan tetap di server).
+    inputUsername.addEventListener('input', function () { bersihkanFieldError('username'); });
+    inputPassword.addEventListener('input', function () { bersihkanFieldError('password'); });
+    selectRole.addEventListener('change', function () { bersihkanFieldError('role'); });
+
+    // Field mana yang bermasalah ditentukan SERVER lewat JSON: { field: 'username' }
+    // atau { fields: ['username', 'password'] }. Kalau server tidak menyebut (pesan
+    // gabungan "username/password salah"), tandai pasangan username + password.
+    function ambilFieldBermasalah(hasil) {
+      var daftar = [];
+      var f = hasil && (hasil.fields || hasil.field);
+      if (typeof f === 'string') daftar = [f];
+      else if (Array.isArray(f)) daftar = f;
+      daftar = daftar.filter(function (n) { return Object.prototype.hasOwnProperty.call(daftarFieldLogin, n); });
+      return daftar.length ? daftar : ['username', 'password'];
+    }
+
+    function pulihkanFormLogin() {
+      sedangMasuk = false;
+      tombolSubmit.disabled = false;
+      tombolSubmit.style.opacity = '1';
+      tombolSubmit.textContent = TEKS_TOMBOL_MASUK;
+    }
+
+    var jsFlashContainer = document.getElementById('jsFlashContainer');
+
+    /* ---------- Hilangkan pesan flash secara PELAN-PELAN (fade + menciut) ----------
+       Dipakai untuk semua kasus: auto-hilang sendiri setelah beberapa detik,
+       ATAU digantikan pesan baru saat user spam klik "Masuk Akun" berkali-kali.
+       Jadi tidak pernah ada pesan yang "plek" hilang mendadak -- selalu lewat
+       transisi CSS 'hilang' dulu, baru dibuang dari DOM. */
+    function hilangkanPesanFlash(kotak, cepat) {
+      if (!kotak || kotak.dataset.sedangHilang === '1') return;
+      kotak.dataset.sedangHilang = '1';
+      kotak.classList.add('hilang');
+      setTimeout(function () {
+        if (kotak.parentNode) kotak.parentNode.removeChild(kotak);
+      }, cepat ? 350 : 650);
+    }
+
+    // Auto-hilang sendiri setelah beberapa detik tampil -- tidak cepat, tidak lama.
+    function jadwalkanAutoHilangPesan(kotak, tundaMs) {
+      setTimeout(function () {
+        hilangkanPesanFlash(kotak, false);
+      }, tundaMs || 4000);
+    }
+
+    function tampilkanPesanErrorLogin(pesan) {
+      // Kalau masih ada pesan lama (misal user spam submit dan gagal lagi),
+      // pesan lama dihilangkan dulu dengan fade cepat -- bukan langsung dihapus
+      // instan -- baru pesan baru ditampilkan menggantikannya.
+      var pesanLama = jsFlashContainer.querySelector('.flash-msg');
+      if (pesanLama) hilangkanPesanFlash(pesanLama, true);
+
+      var kotak = document.createElement('div');
+      kotak.className = 'flash-msg error';
+      kotak.textContent = pesan;
+      jsFlashContainer.appendChild(kotak);
+      jadwalkanAutoHilangPesan(kotak);
+    }
+
+    // Pesan flash dari server (Flask, misal "Anda telah keluar dari sistem")
+    // yang sudah ada begitu halaman dimuat -- ikut dijadwalkan hilang perlahan.
+    document.querySelectorAll('.flash-container:not(#jsFlashContainer) > .flash-msg').forEach(function (kotak) {
+      jadwalkanAutoHilangPesan(kotak);
+    });
+
+    // Dipanggil SETELAH server menyatakan login berhasil. Loader tampil selama browser
+    // memuat halaman tujuan; kalau halaman langsung siap, loader belum sempat terlihat.
+    function arahkanKeTujuan(url, namaHalaman) {
+      enxTampil({
+        label: 'Login berhasil',
+        status: 'Mengarahkan ke ' + namaHalaman,
+        onCoba: function () { arahkanKeTujuan(url, namaHalaman); },
+        onTutup: function () {
+          try { window.stop(); } catch (e) {} // batalkan navigasi yang macet
+          pulihkanFormLogin();
+        }
+      });
+      window.location.href = url;
+    }
+
+    function tampilkanHasilLogin(hasil) {
+      if (hasil && hasil.success) {
+        // ---------- SUKSES: baru sekarang loading screen tampil ----------
+        simpanDataIngatSaya(); // simpan/hapus data "Ingat saya" cuma saat login benar-benar berhasil
+        arahkanKeTujuan(hasil.redirect || '/dashboard', petaHalamanRole[selectRole.value] || 'dashboard');
+        return;
+      }
+
+      // ---------- GAGAL: TANPA loading screen ----------
+      // Isian user (username/password/role) tidak disentuh. Kegagalan koneksi/timeout
+      // (galatJaringan) bukan salah isian, jadi tidak menandai field.
+      pulihkanFormLogin();
+      var pesanGagal = (hasil && hasil.message) || 'Username, password, atau role salah!';
+      if (hasil && hasil.galatJaringan) {
+        tampilkanPesanErrorLogin(pesanGagal); // bukan salah isian -> pesan umum di atas, tanpa tanda merah
+        return;
+      }
+      // Kolom yang bermasalah ditentukan SERVER. Teks per kolom (opsional): { errors: { password: '...' } }.
+      // Kalau server hanya menyebut kolomnya, dipakai pesan bawaan. Kalau LEBIH DARI SATU kolom ditandai,
+      // cukup satu pesan umum di kolom terakhir (kolom lain hanya border merah) -- tidak membocorkan
+      // kolom mana yang sebenarnya benar.
+      var bermasalah = ambilFieldBermasalah(hasil);
+      var pesanServer = (hasil && hasil.errors && typeof hasil.errors === 'object') ? hasil.errors : {};
+      var kolomGabungan = bermasalah.length > 1;
+      bermasalah.forEach(function (nama, i) {
+        var pesan = pesanServer[nama] || '';
+        if (!pesan) {
+          if (!kolomGabungan) pesan = PESAN_FIELD_DEFAULT[nama] || pesanGagal;
+          else if (i === bermasalah.length - 1) pesan = pesanGagal;
+        }
+        tandaiFieldError(nama, pesan);
+      });
+      var pertama = daftarFieldLogin[bermasalah[0]];
+      if (pertama && typeof pertama.focus === 'function') pertama.focus();
+    }
+
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (sedangMasuk) return;
+
+        // ---------- Validasi custom (pengganti validasi native browser) ----------
+        // Dicek berurutan: role dulu, baru username, baru password -- begitu
+        // ada satu yang kosong, alert langsung tampil & submit dihentikan di
+        // sini, tidak lanjut ke server.
+        if (selectRole.value === '') {
+          tampilkanValidasiAlert('Pilih role terlebih dahulu', 'role');
+          selectRole.focus();
+          return;
+        }
+        if (inputUsername.value.trim() === '') {
+          tampilkanValidasiAlert('Username wajib diisi', 'username');
+          inputUsername.focus();
+          return;
+        }
+        if (inputPassword.value.trim() === '') {
+          tampilkanValidasiAlert('Password wajib diisi', 'password');
+          inputPassword.focus();
+          return;
+        }
+        sembunyikanValidasiAlert();
+        bersihkanSemuaFieldError();
+
+        sedangMasuk = true;
+        tombolSubmit.disabled = true;
+        tombolSubmit.style.opacity = '0.7';
+        tombolSubmit.textContent = 'Memeriksa...';
+        // Lepas fokus dari kolom yang sedang aktif. Tanpa ini, kalau Enter ditekan dari kolom username,
+        // dropdown saran isi-otomatis browser (mis. "guru") bisa tetap melayang di atas halaman.
+        var elemenAktif = document.activeElement;
+        if (elemenAktif && elemenAktif !== document.body && typeof elemenAktif.blur === 'function') elemenAktif.blur();
+        // Bersihkan pesan error percobaan sebelumnya -- lewat fade cepat,
+        // bukan dihapus instan, jadi kalau user spam klik tetap terasa halus.
+        var pesanErrorSebelumnya = jsFlashContainer.querySelector('.flash-msg');
+        if (pesanErrorSebelumnya) hilangkanPesanFlash(pesanErrorSebelumnya, true);
+
+        // Kirim ke backend. Batas waktu supaya tombol tidak macet selamanya kalau server diam.
+        var pengendali = ('AbortController' in window) ? new AbortController() : null;
+        var timerBatasLogin = setTimeout(function () { if (pengendali) pengendali.abort(); }, BATAS_LOGIN_MS);
+
+        fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          credentials: 'same-origin',
+          signal: pengendali ? pengendali.signal : undefined
+        }).then(function (res) {
+          return res.json().then(function (hasil) {
+            // 429 = dibatasi / akun dikunci sementara: BUKAN salah isian, jadi pesan
+            // umum di atas form, tanpa menandai merah kolom mana pun.
+            if (res.status === 429 && hasil) hasil.galatJaringan = true;
+            return hasil;
+          }).catch(function () {
+            return { success: false, galatJaringan: true, message: 'Terjadi kendala saat memproses respons server.' };
+          });
+        }).catch(function (err) {
+          return {
+            success: false,
+            galatJaringan: true,
+            message: (err && err.name === 'AbortError')
+              ? 'Server terlalu lama merespons. Coba lagi sebentar lagi.'
+              : 'Tidak bisa terhubung ke server. Periksa koneksi kamu.'
+          };
+        }).then(function (hasil) {
+          clearTimeout(timerBatasLogin);
+          tampilkanHasilLogin(hasil);
+        });
+      });
+    }
+
+    /* ---------- Geser panel Login <-> Daftar ----------
+       Ganti "Buat Akun Baru" / "Masuk di sini" dari navigasi ke halaman lain
+       (tirai + reload) jadi TOGGLE di halaman yang sama: panel hijau berlogo
+       (.panel-slider) & kartu form (.form-slider) sama-sama 50% lebar wrapper
+       lalu saling geser (translateX 100%/-100%) via class "mode-daftar" di
+       .login-wrapper. Isi form yang ditampilkan (login/daftar) ditukar persis
+       di tengah durasi geser (325ms dari 650ms) supaya pertukarannya "ketutup"
+       sapuan panel hijau yang sedang lewat, bukan kelihatan glitch. */
+    var loginWrapper = document.getElementById('loginWrapper');
+    var loginContainer = document.getElementById('loginContainer');
+    var registerContainer = document.getElementById('registerContainer');
+    var tautanDaftar = document.getElementById('tautanDaftar');
+    var tautanMasukDariDaftar = document.getElementById('tautanMasukDariDaftar');
+    var modeSaatIniDaftar = false;
+    var sedangGeser = false;
+    var DURASI_GESER = 650;
+    // Versi mobile sekarang full-slide juga (lihat CSS .mobile-slide-* di
+    // breakpoint 720px, translateX 100% bukan 26px lagi) -- durasinya
+    // disamakan dengan transisi Login<->Lupa Password (0.42s) biar terasa
+    // konsisten di seluruh app, tapi tetap lebih singkat dari versi desktop
+    // (650ms) karena di sini cuma satu kartu yang meluncur, bukan seluruh
+    // panel ilustrasi+form.
+    var DURASI_GESER_MOBILE = 420;
+    var mqMobile = window.matchMedia('(max-width: 720px)');
+
+    function resetScrollForm(kontainer) {
+      var area = kontainer.querySelector('.login-scroll-area');
+      if (area) area.scrollTop = 0;
+      /* Di desktop yang scroll adalah .login-scroll-area di atas. Di HP,
+         yang scroll adalah #homeSceneHost sendiri (lihat media query 720px
+         -- #homeSceneHost diberi overflow-y:auto karena posisinya fixed,
+         jadi body tidak bisa ikut men-scroll-nya). Makanya scroll
+         #homeSceneHost juga perlu direset ke atas di sini, supaya pas
+         pindah mode Login <-> Daftar user langsung lihat baris paling atas
+         form yang baru (bukan nyangkut di posisi scroll form sebelumnya). */
+      var homeHost = document.getElementById('homeSceneHost');
+      if (homeHost) homeHost.scrollTop = 0;
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+
+    function pindahMode(keDaftar) {
+      if (sedangGeser || keDaftar === modeSaatIniDaftar) return;
+      sedangGeser = true;
+      modeSaatIniDaftar = keDaftar;
+      loginWrapper.classList.toggle('mode-daftar', keDaftar);
+
+      // ---------- Versi mobile: full-slide, kartu lama & baru BARENGAN ----------
+      // (.panel-slider/.form-slider translateX 100% dimatikan di breakpoint
+      // ini, lihat CSS -- jadi mode-daftar di atas cuma dipakai buat hal lain
+      // yang masih relevan di HP, mis. .illustration-mobile-title). Arah
+      // tetap dijaga konsisten dgn versi desktop: Login->Daftar keluar ke
+      // kiri & masuk dari kanan, Daftar->Login kebalikannya.
+      if (mqMobile.matches) {
+        var kontainerKeluar = keDaftar ? loginContainer : registerContainer;
+        var kontainerMasuk = keDaftar ? registerContainer : loginContainer;
+        var kelasKeluar = keDaftar ? 'mobile-slide-keluar-kiri' : 'mobile-slide-keluar-kanan';
+        var kelasMasuk = keDaftar ? 'mobile-slide-masuk-kanan' : 'mobile-slide-masuk-kiri';
+
+        // Kartu lama langsung dilepas dari alur normal (position:absolute,
+        // lihat CSS .mobile-slide-keluar-*) begitu class-nya dipasang --
+        // supaya kartu baru di bawah ini langsung menata tinggi wrapper
+        // sesuai dirinya sendiri, sementara kartu lama numpuk di atas &
+        // meluncur pergi.
+        kontainerKeluar.classList.add(kelasKeluar);
+
+        // Kartu baru ditampilkan SEKARANG JUGA (bukan nunggu kartu lama
+        // selesai/disembunyikan dulu) -- posisi awalnya di luar layar
+        // (kelasMasuk), baru direset scroll-nya, paksa reflow supaya posisi
+        // awal ini "kepakai" browser, lalu kelasnya dilepas 1 frame
+        // berikutnya biar dia meluncur balik ke translateX(0) BARENGAN
+        // dengan kartu lama yang sedang meluncur pergi di atasnya.
+        kontainerMasuk.style.display = 'flex';
+        kontainerMasuk.classList.add(kelasMasuk);
+        resetScrollForm(kontainerMasuk);
+        void kontainerMasuk.offsetWidth;
+        requestAnimationFrame(function () {
+          kontainerMasuk.classList.remove(kelasMasuk);
+        });
+        // Kartu Login baru saja tampil lagi -- langsung sinkronkan mata
+        // maskot ke posisi kursor/jari TERAKHIR (lihat komentar
+        // sinkronMataUlang di atas), bukan nunggu gerakan baru.
+        if (!keDaftar) sinkronMataUlang();
+
+        // Baru setelah animasi selesai (kartu lama sudah benar-benar keluar
+        // layar), bersih-bersih: sembunyikan & lepas class-nya supaya tidak
+        // ikut position:absolute lagi kalau nanti dia jadi kartu "masuk".
+        setTimeout(function () {
+          kontainerKeluar.style.display = 'none';
+          kontainerKeluar.classList.remove(kelasKeluar);
+        }, DURASI_GESER_MOBILE);
+
+        setTimeout(function () { sedangGeser = false; }, DURASI_GESER_MOBILE);
+        return;
+      }
+
+      // ---------- Versi desktop: geser seluruh panel (translateX 100%) ----------
+      setTimeout(function () {
+        if (keDaftar) {
+          loginContainer.style.display = 'none';
+          registerContainer.style.display = 'flex';
+          resetScrollForm(registerContainer);
+        } else {
+          registerContainer.style.display = 'none';
+          loginContainer.style.display = 'flex';
+          resetScrollForm(loginContainer);
+          // Sama seperti versi mobile di atas -- begitu kartu Login tampil
+          // lagi, langsung sinkronkan mata ke posisi kursor terakhir.
+          sinkronMataUlang();
+        }
+      }, DURASI_GESER / 2);
+
+      setTimeout(function () { sedangGeser = false; }, DURASI_GESER);
+    }
+
+    if (tautanDaftar) {
+      tautanDaftar.addEventListener('click', function (e) {
+        e.preventDefault();
+        pindahMode(true);
+      });
+    }
+    if (tautanMasukDariDaftar) {
+      tautanMasukDariDaftar.addEventListener('click', function (e) {
+        e.preventDefault();
+        pindahMode(false);
+      });
+    }
+
+    /* ---------- Tombol lihat/sembunyikan password di form Daftar ---------- */
+    var toggleRegPassword = document.getElementById('toggleRegPassword');
+    var regPasswordInput = document.getElementById('regPassword');
+    if (toggleRegPassword && regPasswordInput) {
+      toggleRegPassword.addEventListener('mousedown', function (e) { e.preventDefault(); });
+      toggleRegPassword.addEventListener('click', function () {
+        var tampil = regPasswordInput.type === 'text';
+        regPasswordInput.type = tampil ? 'password' : 'text';
+        toggleRegPassword.classList.toggle('aktif', !tampil);
+        var labelBaru = tampil ? 'Lihat password' : 'Sembunyikan password';
+        toggleRegPassword.setAttribute('aria-label', labelBaru);
+        toggleRegPassword.title = labelBaru;
+      });
+    }
+
+    /* ---------- Form Daftar: loading screen EduNex saat submit ----------
+       Form daftar tetap submit NATIVE (POST biasa ke Flask, bukan AJAX)
+       supaya redirect/flash message dari backend tetap jalan seperti biasa.
+       Loader cuma menutupi layar sambil menunggu halaman berpindah; kalau
+       server membalas dengan halaman yang sama (mis. validasi gagal), halaman
+       dimuat ulang dan loader otomatis hilang. Kalau macet, user bisa menutupnya. */
+    var formDaftar = document.getElementById('registerForm');
+    var tombolSubmitDaftar = document.getElementById('tombolSubmitDaftar');
+    if (formDaftar && enxLoader) {
+      formDaftar.addEventListener('submit', function () {
+        tombolSubmitDaftar.disabled = true;
+        tombolSubmitDaftar.style.opacity = '0.7';
+        enxTampil({
+          label: 'Membuat akun',
+          status: 'Mohon tunggu sebentar',
+          onTutup: function () {
+            try { window.stop(); } catch (e) {}
+            tombolSubmitDaftar.disabled = false;
+            tombolSubmitDaftar.style.opacity = '1';
+          }
+        });
+        // Tidak preventDefault() -- biarkan form benar-benar submit ke server.
+      });
+    }
+  })();
+</script>
+
+<script>
+  /* ---------- 3D Coverflow logo jurusan (panel kiri) ----------
+     Hanya 3 slide (TKJ, TAV, TKR) yang selalu tampil semua; yang berubah
+     cuma PERAN tiap slide (tengah/kiri/kanan) lewat atribut data-peran.
+     Semua transform & filter dianimasikan murni oleh CSS transition
+     (lihat .cf-slide di <style>), jadi JS di sini cuma mengatur state --
+     ringan dan lancar dipakai di HP low-end. */
+  (function () {
+    var track = document.getElementById('cfTrack');
+    if (!track) return;
+    var slides = Array.prototype.slice.call(track.querySelectorAll('.cf-slide'));
+    var total = slides.length;
+    if (!total) return;
+
+    var indexTengah = 0;        // index slide (data-index) yang sedang di tengah
+    var timerOtomatis = null;
+    var JEDA_OTOMATIS = 4000;   // ms -- interval auto-play
+    var AMBANG_GESER = 45;      // px -- minimal jarak drag dianggap swipe sah
+    var sedangGeser = false;
+    var mulaiX = 0;
+    var deltaX = 0;
+
+    // Peran dihitung ulang tiap render dari selisih index, BUKAN disimpan
+    // manual -- supaya urutan TKJ-TAV-TKR tidak pernah kacau walau diputar
+    // berkali-kali (infinite loop aman tanpa cloning elemen).
+    function tentukanPeran(indexSlide) {
+      var selisih = (indexSlide - indexTengah + total) % total;
+      if (selisih === 0) return 'tengah';
+      if (selisih === 1) return 'kanan';
+      return 'kiri';
+    }
+
+    function render() {
+      slides.forEach(function (slide) {
+        var indexSlide = parseInt(slide.getAttribute('data-index'), 10);
+        slide.setAttribute('data-peran', tentukanPeran(indexSlide));
+      });
+      terapkanWarna(); // warna panel selalu ikut jurusan yang sedang di tengah
+    }
+
+    function berikutnya() {
+      indexTengah = (indexTengah + 1) % total;
+      render();
+    }
+    function sebelumnya() {
+      indexTengah = (indexTengah - 1 + total) % total;
+      render();
+    }
+
+    function mulaiOtomatis() {
+      hentikanOtomatis();
+      timerOtomatis = setInterval(berikutnya, JEDA_OTOMATIS);
+    }
+    function hentikanOtomatis() {
+      if (timerOtomatis) {
+        clearInterval(timerOtomatis);
+        timerOtomatis = null;
+      }
+    }
+
+    /* ---------- Warna adaptif panel (mengikuti logo jurusan di tengah) ----------
+       1) Tiap logo dianalisis SEKALI lewat <canvas> (piksel transparan, putih
+          & abu terang dibuang; sisanya dikelompokkan per rona dan dihitung
+          berdasarkan LUAS area). Hasil disimpan di paletJurusan[], jadi pergantian
+          slide tidak pernah menghitung ulang.
+       2) Palet = rona dominan logo yang digelapkan (supaya teks putih tetap
+          terbaca, kontras >= 7:1) + rona pendamping kalau luasnya hampir sama kuat.
+       3) Transisi: satu loop requestAnimationFrame yang menginterpolasi warna
+          SAAT INI -> warna target selama DURASI_WARNA. Karena start-nya selalu
+          warna yang sedang tampil, slide yang diganti di tengah transisi tidak
+          menimbulkan loncatan, kilatan, atau animasi bertumpuk.
+       Logo gagal dimuat / canvas ditolak / logo netral tak terbaca -> palet
+       emerald asli dipakai (dan alasannya dicatat di console). */
+    var panel = track.closest ? track.closest('.illustration-panel') : null;
+    var DURASI_WARNA = 1800;   // ms -- batas atas rentang 1,2-1,8 dtk: perpindahan paling lembut
+    var BAWAAN = {
+      c0: [6, 35, 29], c1: [10, 59, 48], c2: [15, 77, 63], c3: [20, 96, 78],
+      glow: [45, 212, 191], shadow: [2, 10, 8],
+      teks: [255, 255, 255], alfa: [0.78, 0.62, 0]   // warna teks panel + opasitas paragraf/footer
+    };
+    var KUNCI_WARNA = ['c0', 'c1', 'c2', 'c3', 'glow', 'shadow', 'teks'];   // diinterpolasi di OKLab
+    var KUNCI_LIN = ['alfa'];                                              // skalar, diinterpolasi linear
+    var KUNCI_SEMUA = KUNCI_WARNA.concat(KUNCI_LIN);
+    var paletJurusan = [];     // index slide -> { palet, info } | { gagal: 'alasan' }
+    var warnaKini = salinPalet(BAWAAN);   // yang sedang tampil di layar
+    var warnaTarget = salinPalet(BAWAAN);
+    var animWarna = null;      // { dari, ke, mulai } | null
+    var rafWarna = 0;
+
+    function salinPalet(p) {
+      var o = {};
+      KUNCI_SEMUA.forEach(function (k) { o[k] = p[k].slice(); });
+      return o;
+    }
+    function sama(a, b) {
+      return KUNCI_SEMUA.every(function (k) {
+        return a[k][0] === b[k][0] && a[k][1] === b[k][1] && a[k][2] === b[k][2];
+      });
+    }
+    function batas(n, lo, hi) { return Math.min(hi, Math.max(lo, n)); }
+    function hex(c) {
+      return '#' + c.map(function (v) { return ('0' + Math.round(v).toString(16)).slice(-2); }).join('');
+    }
+    function rgbKeHsl(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      var mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, h = 0, s = 0, d = mx - mn;
+      if (d) {
+        s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+        if (mx === r) h = ((g - b) / d + (g < b ? 6 : 0));
+        else if (mx === g) h = (b - r) / d + 2;
+        else h = (r - g) / d + 4;
+        h *= 60;
+      }
+      return [h, s, l];
+    }
+    function hslKeRgb(h, s, l) {
+      h = ((h % 360) + 360) % 360 / 360;
+      if (!s) { var v = l * 255; return [v, v, v]; }
+      var q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+      function f(t) {
+        if (t < 0) t += 1; if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+      }
+      return [f(h + 1 / 3) * 255, f(h) * 255, f(h - 1 / 3) * 255];
+    }
+    function luminans(c) {
+      var a = c.map(function (v) {
+        v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+    }
+    function kontrasPutih(c) { return 1.05 / (luminans(c) + 0.05); }
+    // OKLab: interpolasi di ruang warna perseptual, jadi biru -> emas tidak melewati abu/
+    // hijau keruh di tengah jalan dan kecerahan berubah merata (tanpa "celah" gelap).
+    function keLab(c) {
+      var r = c[0] / 255, g = c[1] / 255, b = c[2] / 255;
+      r = r <= 0.04045 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
+      g = g <= 0.04045 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
+      b = b <= 0.04045 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+      var l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+      var m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+      var s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+      return [0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+              1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+              0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s];
+    }
+    function dariLab(c) {
+      var l = Math.pow(c[0] + 0.3963377774 * c[1] + 0.2158037573 * c[2], 3);
+      var m = Math.pow(c[0] - 0.1055613458 * c[1] - 0.0638541728 * c[2], 3);
+      var s = Math.pow(c[0] - 0.0894841775 * c[1] - 1.2914855480 * c[2], 3);
+      var rgb = [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+                -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+                -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s];
+      return rgb.map(function (v) {
+        v = batas(v, 0, 1);
+        return 255 * (v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055);
+      });
+    }
+    function campurLab(a, b, t) {
+      return dariLab(campur(keLab(a), keLab(b), t));
+    }
+    function campur(a, b, t) {
+      return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+    }
+
+    // Warna dominan logo: { utama:[r,g,b], pendamping:[r,g,b]|null, netral:bool, luas:{...} }
+    function analisisLogo(img) {
+      var nw = img.naturalWidth, nh = img.naturalHeight;
+      if (!nw || !nh) return { gagal: 'gambar kosong / gagal dimuat' };
+      var sisi = 96, skala = Math.min(sisi / nw, sisi / nh);
+      var w = Math.max(1, Math.round(nw * skala)), h = Math.max(1, Math.round(nh * skala));
+      var cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      var ctx = cv.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0, w, h);
+      var data;
+      try { data = ctx.getImageData(0, 0, w, h).data; }
+      catch (e) { return { gagal: 'canvas ditolak browser (' + (e && e.name) + ')' }; }
+
+      var BIN = 24, bins = [], i;
+      for (i = 0; i < BIN; i++) bins.push({ n: 0, r: 0, g: 0, b: 0 });
+      var total = 0, akromatik = 0, jumlah = 0;
+      // Bingkai luar = identitas logo (gear biru TKJ, segi enam kuning TAV, dst.), jadi
+      // piksel di dekat tepi logo dihitung lebih berat daripada isi di tengahnya.
+      // Pusat & jari-jari diambil dari kotak pembatas piksel yang tidak transparan.
+      var x0 = w, y0 = h, x1 = -1, y1 = -1, px, py;
+      for (i = 0; i < data.length; i += 4) {
+        if (data[i + 3] < 200) continue;
+        px = (i / 4) % w; py = Math.floor(i / 4 / w);
+        if (px < x0) x0 = px; if (px > x1) x1 = px; if (py < y0) y0 = py; if (py > y1) y1 = py;
+      }
+      var pcx = (x0 + x1) / 2, pcy = (y0 + y1) / 2, prad = Math.max(1, Math.max(x1 - x0, y1 - y0) / 2);
+      for (i = 0; i < data.length; i += 4) {
+        if (data[i + 3] < 200) continue;                       // transparan / tepi anti-alias
+        var r = data[i], g = data[i + 1], b = data[i + 2];
+        var mn = Math.min(r, g, b), mx = Math.max(r, g, b);
+        if (mn >= 225 && mx - mn <= 30) continue;              // putih
+        var hsl = rgbKeHsl(r, g, b);
+        if (hsl[1] < 0.12 && hsl[2] > 0.7) continue;           // abu terang / kilau
+        px = (i / 4) % w; py = Math.floor(i / 4 / w);
+        var rr = Math.min(1, Math.sqrt((px - pcx) * (px - pcx) + (py - pcy) * (py - pcy)) / prad);
+        var bobot = 1 + 5 * rr * rr;                           // 1 di pusat ... 6 di tepi
+        jumlah++; total += bobot;
+        if (hsl[1] < 0.2 || hsl[2] < 0.12) { akromatik += bobot; continue; }  // hitam / abu: bukan rona
+        var bi = Math.floor(hsl[0] / (360 / BIN)) % BIN;
+        bins[bi].n += bobot; bins[bi].r += r * bobot; bins[bi].g += g * bobot; bins[bi].b += b * bobot;
+      }
+      if (jumlah < 30) return { gagal: 'logo nyaris kosong setelah piksel transparan/putih dibuang' };
+      var kromatik = total - akromatik;
+      if (kromatik < total * 0.12) {
+        return { netral: true, utama: [60, 66, 78], pendamping: null, luas: { kromatik: kromatik / total } };
+      }
+      // skor tiap rona = luas bin itu + setengah luas tetangganya (rona yang berdekatan digabung)
+      function skor(k) {
+        return bins[k].n + 0.5 * bins[(k + BIN - 1) % BIN].n + 0.5 * bins[(k + 1) % BIN].n;
+      }
+      function rataRata(k) {
+        var n = 0, r = 0, g = 0, b = 0;
+        [(k + BIN - 1) % BIN, k, (k + 1) % BIN].forEach(function (j) {
+          n += bins[j].n; r += bins[j].r; g += bins[j].g; b += bins[j].b;
+        });
+        return n ? [r / n, g / n, b / n] : [0, 0, 0];
+      }
+      var k1 = 0, s1 = -1;
+      for (i = 0; i < BIN; i++) { var sk = skor(i); if (sk > s1) { s1 = sk; k1 = i; } }
+      // Kuning/emas yang digelapkan berubah jadi zaitun/cokelat lumpur dan tidak lagi
+      // terbaca sebagai "kuning logo". Jadi kalau rona utama kuning dan ada warna lain
+      // yang cukup luas (biru gear TKJ, hijau TAV), warna lain itu jadi DASAR latar
+      // dan kuning dipakai sebagai cahaya aksen.
+      var hk1 = k1 * (360 / BIN) + 360 / BIN / 2;
+      var kuning = hk1 >= 40 && hk1 <= 75;
+      var k2 = -1, s2 = -1;
+      for (i = 0; i < BIN; i++) {
+        var jarak = Math.min((i - k1 + BIN) % BIN, (k1 - i + BIN) % BIN);
+        if (jarak < 2) continue;                                // minimal 30 derajat dari rona utama (merah vs emas tetap beda)
+        var hi = i * (360 / BIN) + 360 / BIN / 2;
+        if (kuning && hi >= 25 && hi <= 80) continue;           // oranye/kuning tua = tepi bayangan kuning yang sama
+        var sk2 = skor(i); if (sk2 > s2) { s2 = sk2; k2 = i; }
+      }
+      var pendamping = null;
+      if (k2 >= 0 && s2 >= s1 * (kuning ? 0.3 : 0.6) && bins[k2].n >= kromatik * 0.08) pendamping = rataRata(k2);
+      return {
+        utama: rataRata(k1), pendamping: pendamping, netral: false, kuning: kuning,
+        luas: { utama: s1 / kromatik, pendamping: pendamping ? s2 / kromatik : 0, kromatik: kromatik / total }
+      };
+    }
+
+    // Palet gelap (aman untuk teks putih) dari warna logo
+    // Logo dominan kuning: latar dibuat emas-kuning TERANG (sesuai logo), dan teks panel
+    // berganti gelap supaya tetap terbaca (kontras teks >= 4,6:1 terhadap bagian latar tergelap).
+    function paletTerang() {
+      // TAV: kuning logo yang hidup tapi nyaman di mata. Hexagon logo = #fdfc07 (rona ~59).
+      // Kenapa versi sebelumnya terlihat kusam: kuning yang digelapkan jadi OLIVE/lumpur, dan
+      // bayangan pojok yang gelap menambah kesan keruh. Solusinya: kedalaman diberi lewat rona
+      // yang bergeser HANGAT (emas/amber di sudut -> lemon di sisi terang), bukan lewat kecerahan
+      // rendah; saturasi tetap tinggi (~93%) tapi kecerahan 52-61% supaya tidak neon/menyilaukan.
+      var teks = [18, 12, 2];
+      var rona = [47, 50, 53, 56], sat = [0.92, 0.92, 0.93, 0.94];
+      var stop = [0.52, 0.55, 0.58, 0.61], c, guard = 0;
+      function bangun() { c = stop.map(function (l, i) { return hslKeRgb(rona[i], sat[i], l); }); }
+      bangun();
+      while ((luminans(c[0]) + 0.05) / (luminans(teks) + 0.05) < 4.6 && guard++ < 40) {
+        stop = stop.map(function (l) { return Math.min(0.66, l * 1.02); });
+        bangun();
+      }
+      return {
+        c0: c[0].map(Math.round), c1: c[1].map(Math.round), c2: c[2].map(Math.round), c3: c[3].map(Math.round),
+        glow: hslKeRgb(54, 0.95, 0.66).map(Math.round),
+        shadow: hslKeRgb(42, 0.85, 0.42).map(Math.round),   // amber hangat (bukan cokelat/olive gelap) supaya pojok tidak keruh
+        teks: teks, alfa: [0.92, 0.82, 0]
+      };
+    }
+    function buatPalet(a) {
+      if (a.kuning) return paletTerang();
+      var dasar = a.utama;
+      var hsl = rgbKeHsl(dasar[0], dasar[1], dasar[2]);
+      var H = hsl[0];
+      // Kuning murni yang digelapkan jadi hijau-zaitun. Digeser sedikit ke emas supaya tetap
+      // terbaca "kuning" (versi gelap, karena teks putih harus tetap terbaca).
+      if (a.kuning) H = 50;
+      var kontrasMin = a.kuning ? 4.6 : 7;   // kuning dibuat emas yang lebih hidup (bukan cokelat); 4,6:1 masih lolos AA untuk teks putih
+      var S = a.netral ? 0.1 : (a.kuning ? 0.95 : batas(hsl[1] * 0.95, 0.5, 0.8));
+      var batasL = batas(hsl[2] * 0.6, 0.12, a.kuning ? 0.3 : 0.24);            // logo gelap -> latar lebih gelap lagi
+      var skalaL = a.kuning ? 1 : batasL / 0.24;
+      var stop = (a.kuning ? [0.11, 0.18, 0.24, 0.30] : [0.09, 0.14, 0.19, 0.24]).map(function (l) { return l * skalaL; });
+      var c = stop.map(function (l) { return hslKeRgb(H, S, l); });
+      // kontras teks putih di ujung paling terang gradasi harus >= 7:1
+      var guard = 0;
+      while (kontrasPutih(c[3]) < kontrasMin && guard++ < 30) {
+        stop = stop.map(function (l) { return l * 0.94; });
+        c = stop.map(function (l) { return hslKeRgb(H, S, l); });
+      }
+      var glowH = H;
+      if (a.pendamping) {
+        var h2 = rgbKeHsl(a.pendamping[0], a.pendamping[1], a.pendamping[2])[0];
+        // Warna pendamping hanya ikut menyemu bila rona-nya BERDEKATAN (<= 45 derajat) dengan
+        // warna dasar. Rona yang berseberangan (biru vs kuning TKJ) kalau dicampur ke latar
+        // malah jadi noda zaitun/emas, jadi diabaikan: latar tetap satu rona bersih.
+        var selisihRona = Math.abs(((h2 - H + 540) % 360) - 180);
+        if (selisihRona <= 45) glowH = h2;
+        if (selisihRona <= 45 && !a.kuning) {
+          c[3] = campur(c[3], hslKeRgb(h2, S, stop[3]), 0.45); // ujung gradasi condong ke warna pendamping
+          c[2] = campur(c[2], hslKeRgb(h2, S, stop[2]), 0.15);
+        }
+      }
+      return {
+        c0: c[0].map(Math.round), c1: c[1].map(Math.round), c2: c[2].map(Math.round), c3: c[3].map(Math.round),
+        glow: hslKeRgb(glowH, a.netral ? 0.12 : 0.7, 0.5).map(Math.round),
+        shadow: hslKeRgb(H, 0.5, 0.03).map(Math.round),
+        teks: [255, 255, 255], alfa: [0.78, 0.62, 0]
+      };
+    }
+
+    function proses(slide) {
+      var idx = parseInt(slide.getAttribute('data-index'), 10);
+      var img = slide.querySelector('.cf-logo-img');
+      var nama = slide.getAttribute('data-nama') || ('slide ' + idx);
+      function selesai(hasil) {
+        if (hasil.gagal) {
+          paletJurusan[idx] = { gagal: hasil.gagal };
+          if (window.console) console.warn('[warna-jurusan] ' + nama + ': ' + hasil.gagal + ' -> pakai emerald bawaan');
+        } else {
+          paletJurusan[idx] = { palet: buatPalet(hasil), info: hasil };
+          if (window.console) console.info('[warna-jurusan] ' + nama + ': utama ' + hex(hasil.utama) +
+            (hasil.pendamping ? ', pendamping ' + hex(hasil.pendamping) : ', tanpa pendamping') + 
+            (hasil.netral ? ' (logo netral)' : ''), hasil.luas);
+        }
+        if (idx === indexTengah) terapkanWarna();
+      }
+      function jalan() {
+        try { selesai(analisisLogo(img)); }
+        catch (e) { selesai({ gagal: 'error analisis: ' + (e && e.message) }); }
+      }
+      if (!img) { selesai({ gagal: 'elemen logo tidak ditemukan' }); return; }
+      if (img.complete) {
+        if (img.naturalWidth) jalan(); else selesai({ gagal: 'logo gagal dimuat' });
+      } else {
+        img.addEventListener('load', jalan, { once: true });
+        img.addEventListener('error', function () { selesai({ gagal: 'logo gagal dimuat' }); }, { once: true });
+      }
+    }
+
+    function gambarWarna() {
+      KUNCI_WARNA.forEach(function (k) {
+        panel.style.setProperty('--jur-' + k, warnaKini[k].map(Math.round).join(','));
+      });
+      panel.style.setProperty('--jur-a2', warnaKini.alfa[0].toFixed(3));
+      panel.style.setProperty('--jur-a3', warnaKini.alfa[1].toFixed(3));
+    }
+    /* Warna teks saat transisi dari/ke jurusan berlatar terang (TAV): kalau teks ikut
+       diinterpolasi putih -> gelap bersamaan dengan latar, di tengah jalan keduanya sama-sama
+       abu-abu sehingga teks nyaris hilang (kontras ~1:1). Jadi selama transisi, warna teks
+       dipilih per-frame dari kontras sebenarnya terhadap latar yang sedang tampil: putih atau
+       gelap-TAV, dengan crossfade sempit di titik kontras seimbang (kontras tidak pernah jatuh
+       ke abu-abu). Antar jurusan berlatar gelap (TKJ <-> TKR) hasilnya selalu putih = sama
+       persis seperti sebelumnya. Tanpa palet bergelap-teks (tidak ada logo kuning), tidak aktif. */
+    function paletTeksGelap() {
+      for (var i = 0; i < paletJurusan.length; i++) {
+        var h = paletJurusan[i];
+        if (h && h.palet && luminans(h.palet.teks) < 0.5) return h.palet;
+      }
+      return null;
+    }
+    function kontrasTeks(teks, k) {
+      var lt = luminans(teks), min = 99;
+      ['c0', 'c1', 'c2', 'c3'].forEach(function (n) {
+        var lb = luminans(k[n]);
+        var r = (Math.max(lt, lb) + 0.05) / (Math.min(lt, lb) + 0.05);
+        if (r < min) min = r;
+      });
+      return min;   // kontras terburuk di sepanjang gradasi latar
+    }
+    function sesuaikanTeks(k) {
+      var g = paletTeksGelap();
+      if (!g) return;
+      var putih = BAWAAN.teks;
+      // Pindah TEGAS di titik kontras seimbang, bukan crossfade: crossfade putih<->gelap selalu
+      // melewati abu-abu yang setara dengan latar (teks sesaat hilang). Di titik seimbang kedua
+      // pilihan punya kontras sama, jadi teks tetap terbaca sebelum maupun sesudah pindah.
+      var gelap = kontrasTeks(g.teks, k) > kontrasTeks(putih, k);
+      k.teks = (gelap ? g.teks : putih).slice();
+      k.alfa = (gelap ? g.alfa : BAWAAN.alfa).slice();
+    }
+    function langkahWarna(now) {
+      rafWarna = 0;
+      if (!animWarna) return;
+      var t = batas((now - animWarna.mulai) / DURASI_WARNA, 0, 1);
+      var e = 0.5 - 0.5 * Math.cos(Math.PI * t);                // ease-in-out sinus: awal & akhir lembut
+      KUNCI_WARNA.forEach(function (k) {
+        warnaKini[k] = campurLab(animWarna.dari[k], animWarna.ke[k], e);
+      });
+      KUNCI_LIN.forEach(function (k) {
+        warnaKini[k] = campur(animWarna.dari[k], animWarna.ke[k], e);
+      });
+      sesuaikanTeks(warnaKini);
+      if (t >= 1) { warnaKini = salinPalet(animWarna.ke); animWarna = null; }
+      gambarWarna();
+      if (animWarna) rafWarna = requestAnimationFrame(langkahWarna);
+    }
+    function keWarna(target) {
+      if (!panel || sama(target, warnaTarget)) return;
+      warnaTarget = salinPalet(target);
+      if (rafWarna) { cancelAnimationFrame(rafWarna); rafWarna = 0; }
+      var kurangGerak = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (kurangGerak) {                                         // hormati preferensi: ganti langsung, tanpa animasi
+        animWarna = null; warnaKini = salinPalet(target); gambarWarna(); return;
+      }
+      animWarna = { dari: salinPalet(warnaKini), ke: salinPalet(target), mulai: performance.now() };
+      rafWarna = requestAnimationFrame(langkahWarna);
+    }
+    function terapkanWarna() {
+      if (!panel) return;
+      // Di HP (<= 720px) showcase disembunyikan CSS -> tidak ada logo yang tampil,
+      // jadi panel tetap emerald bawaan supaya tidak berubah warna "tanpa sebab".
+      var tampil = track.offsetParent !== null;
+      var h = paletJurusan[indexTengah];
+      var target = (tampil && h && h.palet) ? h.palet : BAWAAN;
+      panel.setAttribute('data-warna-jurusan', (tampil && h && h.palet) ? hex(h.palet.c2) : 'bawaan');
+      keWarna(target);
+    }
+    if (panel) {
+      slides.forEach(proses);
+      var rafUkuran = 0;
+      window.addEventListener('resize', function () {
+        if (rafUkuran) return;
+        rafUkuran = requestAnimationFrame(function () { rafUkuran = 0; terapkanWarna(); });
+      });
+    }
+
+    // Klik logo sayap -> langsung jadikan tengah (navigasi tanpa dots)
+    slides.forEach(function (slide) {
+      slide.addEventListener('click', function () {
+        if (slide.getAttribute('data-peran') === 'tengah') return;
+        indexTengah = parseInt(slide.getAttribute('data-index'), 10);
+        render();
+        mulaiOtomatis();
+      });
+    });
+
+    // ---------- Drag / swipe (mouse & sentuh HP, via Pointer Events) ----------
+    function geserMulai(e) {
+      sedangGeser = true;
+      mulaiX = e.clientX;
+      deltaX = 0;
+      hentikanOtomatis(); // wajib berhenti sementara saat user berinteraksi
+    }
+    function geserJalan(e) {
+      if (!sedangGeser) return;
+      deltaX = e.clientX - mulaiX;
+    }
+    function geserSelesai() {
+      if (!sedangGeser) return;
+      sedangGeser = false;
+      if (deltaX <= -AMBANG_GESER) {
+        berikutnya(); // geser ke kiri -> maju
+      } else if (deltaX >= AMBANG_GESER) {
+        sebelumnya(); // geser ke kanan -> mundur
+      }
+      deltaX = 0;
+      mulaiOtomatis(); // lanjutkan auto-play setelah interaksi selesai
+    }
+
+    track.addEventListener('pointerdown', geserMulai);
+    window.addEventListener('pointermove', geserJalan);
+    window.addEventListener('pointerup', geserSelesai);
+    window.addEventListener('pointercancel', geserSelesai);
+
+    // Tab pindah/minimize -> setInterval auto-play ikut berhenti (bukan
+    // cuma "tidak kelihatan"), supaya tidak buang CPU sia-sia di background.
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        hentikanOtomatis();
+      } else if (!sedangGeser) {
+        mulaiOtomatis();
+      }
+    });
+
+    render();
+    mulaiOtomatis();
+  })();
+</script>
+
+<script>
+  /* ---------- Jeda animasi CSS dekoratif saat tab tidak aktif ----------
+     Menambah/menghapus class .jeda-animasi di <html> yang men-set
+     animation-play-state: paused untuk SEMUA animasi CSS (blob, maskot,
+     dsb -- lihat definisi .jeda-animasi di <style>). Satu listener global,
+     murah, dan tidak perlu tahu elemen mana saja yang beranimasi. */
+  document.addEventListener('visibilitychange', function () {
+    document.documentElement.classList.toggle('jeda-animasi', document.hidden);
+  });
+</script>
+
+<script>
+  /* ---------- Scene-swap Login <-> Lupa Password (iframe preload) ----------
+     Lihat komentar panjang di CSS #homeSceneHost/#lupaSceneHost. Ringkasnya:
+     - Kalau dokumen ini dibuka NORMAL (bukan sebagai iframe embed): iframe
+       ke lupa_password.html di-preload diam-diam saat idle, dan klik
+       "Lupa Password?" menggeser scene lewat class .trikarya-scene-lupa +
+       history.pushState (URL browser tetap berubah wajar, tombol back jalan).
+     - Kalau dokumen ini dibuka SEBAGAI iframe embed (diEmbed true -- kasus
+       deep-link langsung ke lupa_password.html, lihat scene-host simetris
+       di file itu), maka JANGAN preload iframe lagi (mencegah nested iframe
+       tak berujung) -- klik "Lupa Password?" di sini cukup kirim postMessage
+       ke parent, biar parent (lupa_password.html) yang menggeser scene-nya
+       balik ke home miliknya sendiri. */
+  (function () {
+    var HOME_URL = "{{ url_for('login') }}";
+    var LUPA_URL = "{{ url_for('lupa_password') }}";
+    var diEmbed = (window.top !== window.self) ||
+      new URLSearchParams(window.location.search).get('embed') === '1';
+
+    var htmlEl = document.documentElement;
+    var linkLupa = document.querySelector('.link-lupa');
+    var wrapper = document.getElementById('loginWrapper'); // dipakai utk fallback lama
+    var lupaFrame = document.getElementById('lupaFrame');
+
+    function preloadLupa() {
+      if (diEmbed || !lupaFrame || lupaFrame.getAttribute('src')) return;
+      var sep = LUPA_URL.indexOf('?') > -1 ? '&' : '?';
+      lupaFrame.src = LUPA_URL + sep + 'embed=1';
+    }
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(preloadLupa, { timeout: 2000 });
+    } else {
+      setTimeout(preloadLupa, 800);
+    }
+
+    function gotoLupa(e) {
+      if (e) e.preventDefault();
+
+      if (diEmbed) {
+        // Kita sedang jadi konten iframe di dalam lupa_password.html --
+        // minta parent yang menggeser scene-nya sendiri kembali ke home.
+        window.parent.postMessage({ type: 'trikarya:scene-back' }, window.location.origin);
+        return;
+      }
+
+      if (!lupaFrame) { window.location.href = LUPA_URL; return; }
+
+      preloadLupa(); // jaga-jaga kalau idle callback belum sempat jalan
+      htmlEl.classList.add('trikarya-scene-lupa');
+      history.pushState({ scene: 'lupa' }, '', LUPA_URL);
+    }
+
+    if (linkLupa) linkLupa.addEventListener('click', gotoLupa);
+
+    // Minta iframe lupaFrame mereset kartunya sendiri ke step awal ("Reset
+    // Password") setiap kali scene "lupa" ini DITINGGALKAN kembali ke home.
+    // Tanpa ini, iframe-nya tidak pernah reload -- jadi kalau user sempat
+    // sampai step "Berhasil", lalu balik ke login, lalu klik "Lupa Password?"
+    // lagi, iframe yang tampil lagi masih nyangkut di step "Berhasil" yang
+    // basi (bukan direset otomatis). Dikirim lewat contentWindow, bukan cuma
+    // window.parent dari sisi lupa_password.html, karena kasus ini dipicu
+    // dari SISI login.html (tombol back / balasan postMessage), bukan dari
+    // klik user di dalam iframe lupa itu sendiri.
+    function resetLupaFrame() {
+      if (lupaFrame && lupaFrame.contentWindow) {
+        lupaFrame.contentWindow.postMessage({ type: 'trikarya:reset-lupa' }, window.location.origin);
+      }
+    }
+
+    window.addEventListener('popstate', function (e) {
+      var scene = e.state && e.state.scene;
+      var kembaliKeHome = htmlEl.classList.contains('trikarya-scene-lupa') && scene !== 'lupa';
+      htmlEl.classList.toggle('trikarya-scene-lupa', scene === 'lupa');
+      if (kembaliKeHome) {
+        resetLupaFrame();
+        if (window.trikaryaPutarUlangAnimasiHome) {
+          window.trikaryaPutarUlangAnimasiHome();
+        }
+      }
+    });
+
+    window.addEventListener('message', function (e) {
+      if (diEmbed || e.origin !== window.location.origin || !e.data) return;
+      if (e.data.type === 'trikarya:scene-back') {
+        htmlEl.classList.remove('trikarya-scene-lupa');
+        history.pushState({ scene: 'home' }, '', HOME_URL);
+        resetLupaFrame();
+        if (window.trikaryaPutarUlangAnimasiHome) {
+          window.trikaryaPutarUlangAnimasiHome();
+        }
+      }
+    });
+  })();
+</script>
+
+<script>
+  /* Tanda tangan pembuat -- Copyright (c) 2026 AHMAD FAKHRI AL FARISI (MIT License) */
+  console.log('%cDibuat oleh AHMAD FAKHRI AL FARISI', 'font-weight:700;font-size:13px;color:#2563eb;');
+</script>
+
+</body>
+</html>

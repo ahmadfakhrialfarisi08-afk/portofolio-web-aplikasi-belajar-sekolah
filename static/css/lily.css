@@ -1,0 +1,85 @@
+/* LILY -- animasi mikro. Semua lewat CSS variable agar JS cukup mengubah nilai. */
+.lily { position: relative; display: inline-block; width: 160px; --lily-gaze-x: 0px; --lily-gaze-y: 0px;
+        --lily-tilt: 0deg; --lily-head-x: 0px; --lily-head-r: 0deg; --lily-breath: 4.2s;
+        --lily-mood-tilt: 0deg; --lily-lean-s: 1; --lily-lean-y: 0px; --lily-amp: 1; --lily-tr: .45s; }
+.lily-body { transform-origin: 50% 90%; animation: lily-breathe var(--lily-breath) ease-in-out infinite;
+             will-change: transform; backface-visibility: hidden; }  /* layer GPU sendiri: cegah getar 2px akibat pembulatan piksel */
+.lily-sprite { display: block; width: 100%; height: auto; user-select: none; pointer-events: none;
+  transform: translate(calc(var(--lily-gaze-x) + var(--lily-head-x)), calc(var(--lily-gaze-y) + var(--lily-lean-y)))
+             rotate(calc(var(--lily-tilt) + var(--lily-head-r) + var(--lily-mood-tilt)))
+             scale(var(--lily-lean-s));
+  transition: transform var(--lily-tr) cubic-bezier(.3,.7,.3,1); will-change: transform;
+  filter: drop-shadow(0 10px 14px rgba(15,23,42,.16)); }
+@keyframes lily-breathe { 0%,100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, calc(-2px * var(--lily-amp)), 0); } }
+ 
+/* gestur singkat */
+.lily-anim-nod    .lily-body { animation: lily-nod .6s ease-in-out 1; }
+.lily-anim-hop    .lily-body { animation: lily-hop .7s cubic-bezier(.3,1.6,.5,1) 1; }
+.lily-anim-bounce .lily-body { animation: lily-bounce .55s ease-in-out 3; }
+.lily-anim-tilt   .lily-body { animation: lily-tilt .9s ease-in-out 1; }
+.lily-anim-sink   .lily-body { animation: lily-sink 1.2s ease-out 1 forwards; }
+.lily-anim-blinkfx .lily-sprite { animation: lily-blinkfx .13s linear 1; }  /* cadangan bila sprite blink belum ada */
+@keyframes lily-nod    { 0%,100% { transform: translateY(0); } 40% { transform: translateY(4px) rotate(1.5deg); } }
+@keyframes lily-hop    { 0% { transform: translateY(0) scale(1,1); } 25% { transform: translateY(1px) scale(1.04,.95); }
+                         55% { transform: translateY(-12px) scale(.98,1.04); } 100% { transform: translateY(0) scale(1,1); } }
+@keyframes lily-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px) rotate(-2deg); } }
+@keyframes lily-tilt   { 0%,100% { transform: rotate(0); } 40% { transform: rotate(-4deg); } 70% { transform: rotate(3deg); } }
+@keyframes lily-sink   { to { transform: translateY(5px) scale(1.0,.985); } }
+@keyframes lily-blinkfx{ 50% { opacity: .82; } }
+ 
+/* mood sleepy: napas lebih lambat */
+.lily[data-mood="sleepy"] { --lily-breath: 6.5s; }
+.lily[data-mood="excited"], .lily[data-mood="celebrating"] { --lily-breath: 2.6s; }
+ 
+/* ===== v2: micro-expression, state makro, transisi halus ===== */
+/* gerak kecil tambahan (semuanya subtle) */
+.lily-anim-nodsmall  .lily-body   { animation: lily-nodsmall .45s ease-in-out 1; }
+.lily-anim-shake     .lily-body   { animation: lily-shake .5s ease-in-out 1; }
+.lily-anim-recoil    .lily-body   { animation: lily-recoil .5s cubic-bezier(.3,1.2,.5,1) 1; }
+.lily-anim-sigh      .lily-body   { animation: lily-sigh 1.1s ease-in-out 1; }
+.lily-anim-blinkslow .lily-sprite { animation: lily-blinkslow .28s ease-in-out 1; }  /* kedip lambat (cadangan tanpa sprite) */
+.lily-sprite.lily-swap            { animation: lily-swapfx .22s ease-out 1; }        /* pergantian ekspresi diperhalus */
+@keyframes lily-nodsmall  { 0%,100% { transform: translateY(0); } 45% { transform: translateY(2px) rotate(.8deg); } }
+@keyframes lily-shake     { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-1.6deg); } 75% { transform: rotate(1.6deg); } }
+@keyframes lily-recoil    { 0% { transform: translateY(0) scale(1); } 30% { transform: translateY(1px) scale(.975); } 100% { transform: translateY(0) scale(1); } }
+@keyframes lily-sigh      { 0%,100% { transform: translateY(0) scale(1); } 35% { transform: translateY(-2px) scale(1.015); } 75% { transform: translateY(1px) scale(.992); } }
+@keyframes lily-blinkslow { 50% { opacity: .78; } }
+@keyframes lily-swapfx    { from { opacity: .88; transform-origin: 50% 60%; } to { opacity: 1; } }
+ 
+/* perayaan: goyang halus selama mood celebrating (tidak menimpa gestur singkat yang sedang berjalan) */
+.lily[data-mood="celebrating"]:not([class*="lily-anim-"]) .lily-body { animation: lily-sway 1.3s ease-in-out infinite; }
+@keyframes lily-sway { 0%,100% { transform: rotate(0) translateY(0); } 25% { transform: rotate(-1.4deg) translateY(-2px); }
+                       75% { transform: rotate(1.4deg) translateY(-2px); } }
+ 
+/* ritme gerak mengikuti state makro (diatur lily_brain.js lewat data-state) */
+.lily[data-state="NOTICE"]         { --lily-tr: .26s; }                    /* attention shift: cepat dan tegas */
+.lily[data-state="FOCUSED"]        { --lily-tr: .55s; --lily-amp: .7; }    /* membaca: napas tenang */
+.lily[data-state="THINKING"]       { --lily-tr: .7s;  --lily-amp: .8; }
+.lily[data-state="ATTENTION"]      { --lily-amp: .85; }
+.lily[data-state="EMPATHETIC"]     { --lily-tr: .6s;  --lily-amp: .6; }
+.lily[data-state="ENCOURAGING"]    { --lily-tr: .4s; }
+.lily[data-state="SUCCESS"]        { --lily-amp: 1.3; }
+.lily[data-state="CELEBRATION"]    { --lily-tr: .3s;  --lily-amp: 1.7; }
+.lily[data-state="RETURN_TO_IDLE"] { --lily-tr: .8s; }                      /* kembali ke idle perlahan, natural */
+ 
+/* Hook untuk aset/overlay wajah di masa depan, bila kelak dibuat (belum mengubah tampilan apa pun):
+   .lily[data-eyes="soft|attentive|curious|focused|relaxed|wide|sleepy"]
+   .lily[data-mouth="slight_smile|warm_smile|happy_smile|open_smile|small_surprise|concerned|thinking|apologetic"]
+   .lily[data-head="neutral|tilt_l|tilt_r|lean|back|down"] */
+ 
+/* balon respons */
+.lily-bubble { position: absolute; bottom: 100%; left: 50%; transform: translate(-50%, 8px) scale(.96);
+  min-width: 140px; max-width: 260px; padding: 9px 13px; border-radius: 14px; background: #fff; color: #1e293b;
+  font: 500 13px/1.4 inherit; box-shadow: 0 8px 24px rgba(15,23,42,.14); opacity: 0; pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease; }
+.lily-bubble.show { opacity: 1; transform: translate(-50%, -6px) scale(1); }
+.lily-bubble::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -6px;
+  border: 6px solid transparent; border-top-color: #fff; }
+ 
+@media (prefers-reduced-motion: reduce) {
+  .lily-body, [class*="lily-anim-"] .lily-body, [class*="lily-anim-"] .lily-sprite,
+  .lily[data-mood] .lily-body, .lily-sprite.lily-swap { animation: none !important; }
+  .lily-sprite { transition: none; }
+}
+ 

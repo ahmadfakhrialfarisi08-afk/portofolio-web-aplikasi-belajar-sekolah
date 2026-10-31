@@ -1,0 +1,77 @@
+/* ============================================================
+   border_pemula.css (v2 - foto avatar disamain ke bukaan frame)
+   ------------------------------------------------------------
+   CATATAN v2 (SEKARANG): img.user-avatar di v1 dikunci 100% x 100%,
+   sama kayak wrapper -- padahal border_pemula.png sendiri tampil di
+   100% wrapper juga (object-fit:contain), dan lubang transparan di
+   TENGAH gambar border itu cuma ~70-73% dari kanvasnya (sisanya
+   dimakan ring bronze di 4 sisi). Hasilnya foto 100% "nutupin" ring
+   bronze-nya alih-alih pas ngisi lubang persegi di dalamnya -- persis
+   pola bug yang sama yang sudah dibenerin di border_admin.css (avatar
+   72%) & border_imortal.css (avatar 64%).
+   Dihitung dari bounding-box lubang border_pemula.png (~70.3% lebar,
+   ~72.9% tinggi) dikali skala tampil border ini sendiri (100%) =
+   avatar diturunkan dari 100% -> 71% (dibulatkan, tengah2 antara
+   70.3% & 72.9%) supaya foto pas ngisi lubang, ring bronze-nya
+   kelihatan utuh melingkupi foto.
+   ------------------------------------------------------------
+   CATATAN v3 (SEKARANG): 71% x 71% rata masih nyisain garis putih
+   tipis di atas/bawah foto -- karena lubangnya sendiri TIDAK persegi
+   pas (lebar 69.5% vs tinggi 72.7% dari pengukuran ulang piksel
+   asli), sedangkan avatar dikunci rata 71% x 71%, jadi di sisi
+   tinggi ada kekurangan ~1.7% yang nongol sebagai celah. Dinaikkan
+   ke 72% x 75% (sedikit LEBIH BESAR dari lubang asli, bukan pas-pas
+   amat) supaya foto benar2 nutup penuh sampai ring bronze-nya tanpa
+   celah sama sekali -- selisih dikit itu ketutup ring yang cukup
+   tebal, jadi tidak kelihatan motong ukiran ring.
+   ------------------------------------------------------------
+   KENAPA FILE INI PERLU ADA:
+   Sebelumnya border_pemula.jpg TIDAK punya CSS sendiri sama sekali --
+   cuma numpang aturan umum di border_polos.css. Selama wrapper-nya
+   simpel (avatar & border sama-sama ngisi 100% wrapper) itu kelihatan
+   aman. Tapi begitu dipakai di wrapper yang lebih spesifik (mis. modal
+   "Detail Siswa"), foto profil (.user-avatar) ternyata tampil di UKURAN
+   ASLI file fotonya alih-alih ngisi penuh wrapper, sedangkan border
+   tetap kecil sesuai ukuran wrapper -- hasilnya foto gede "lepas",
+   border kecil kepisah di pojok, gak nempel di foto sama sekali.
+
+   PERBAIKAN: file ini SENGAJA menuliskan ulang semua properti yang
+   dibutuhkan (position, top, left, width, height, transform, z-index,
+   object-fit) secara eksplisit & lengkap untuk foto MAUPUN border saat
+   border_pemula sedang dipakai, jadi hasilnya tidak lagi bisa
+   "kepotong" gara-gara aturan umum di border_polos.css tidak lengkap.
+   Sama seperti border_imortal.css, tapi tanpa efek glow/aura (Pemula
+   itu border dasar/starter, polos).
+
+   Cara pakai: taruh di static/css/, link SETELAH border_pink.css dan
+   SEBELUM border_imortal.css:
+     <link rel="stylesheet" href="../static/css/border_pemula.css">
+   ============================================================ */
+
+.profile-wrapper:has(img.user-border[src*="border_pemula"]) {
+    position: relative;
+}
+
+.profile-wrapper:has(img.user-border[src*="border_pemula"]) img.user-avatar {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 72%;
+    height: 75%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    object-fit: cover;
+    object-position: center;
+}
+
+.profile-wrapper img.user-border[src*="border_pemula"] {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    object-fit: contain;
+    pointer-events: none;
+    z-index: 2;
+}

@@ -1,0 +1,325 @@
+/* ============================================================
+   efek_nama_collector.css
+   ------------------------------------------------------------
+   Efek untuk NAMA + TITLE "THE COLLECTOR" (pasangan border_aurora).
+   Border fisik avatar TIDAK ada di file ini -- itu urusan file
+   border_aurora.css terpisah (scoped :has(), pola border_admin.css
+   / border_imortal.css).
+
+   MEKANISME ASLI (sudah dikonfirmasi dari dashboard_siswa_2.js,
+   bukan tebakan lagi): efek nama & title BUKAN sistem equip
+   terpisah -- keduanya otomatis IKUT border yang sedang dipakai:
+     getEfekNamaClass(border)   -> nama class efek nama (dipasang
+                                    ke elemen .nama-siswa-efektif /
+                                    #idcard-nama)
+     getTitleBadgeClass(kelas)  -> nama class badge title (dipasang
+                                    ke #idcard-title-badge, teksnya
+                                    sendiri = border.rank)
+     getBadgeDevHtml(border)    -> badge kecil di sebelah nama
+                                    (pola sama dgn DEV/Queen/IMMORTAL)
+
+   Border baru "Aurora" (id: border_aurora, kategori: 'khusus',
+   rank: 'THE COLLECTOR') sudah didaftarkan di DAFTAR_BORDER_KHUSUS
+   (dashboard_siswa_2.js), dengan:
+     getEfekNamaClass()   -> 'efek-nama-collector'   (class di sini)
+     getTitleBadgeClass() -> 'title-badge-collector' (class di sini)
+   Begitu border ini di-equip lewat "Pakai Border" di halaman
+   Kustomisasi Profil, dua class di file CSS ini otomatis kepasang
+   sendiri oleh dashboard_siswa_2.js -- tidak perlu HTML/JS tambahan
+   apa pun lagi di luar itu.
+
+   File ini murni tambahan visual (skin), aman di-link setelah
+   border_admin.css di <head>. Tidak menyentuh border_admin.css,
+   border_imortal.css, markup, atau logic JS yang sudah ada.
+   ============================================================ */
+
+/* ---------- 1. Efek nama: kristal es berpendar ---------- */
+/* Default (Mode Terang): gradient warna JENUH/pekat (cyan->biru->ungu),
+   BUKAN pucat -- supaya tetap kebaca kontras di atas latar terang/putih
+   yang dipakai Mode Terang. Warna pucat aslinya (cocok utk latar gelap)
+   dipindah ke override html.dark di bawah, bukan dihapus. */
+.efek-nama-collector {
+    position: relative;
+    display: inline-block;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: linear-gradient(
+        100deg,
+        #0284c7 0%,
+        #2563eb 22%,
+        #4f46e5 40%,
+        #7c3aed 58%,
+        #9333ea 75%,
+        #0284c7 100%
+    );
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    /* PERBAIKAN: sebelumnya 2 lapis drop-shadow ditumpuk (blur 4px + 9px)
+       di atas teks gradient background-clip:text -- kombinasi ini bikin
+       tepi huruf jadi kabur/blur (paling kentara di HP krn ukuran font
+       lebih kecil dari laptop, jadi blur-nya "menelan" bentuk hurufnya).
+       Dipangkas jadi 1 lapis saja dengan blur radius jauh lebih kecil --
+       warna & animasi gradient TIDAK berubah, cuma glow-nya ditipiskan
+       supaya tetap kelihatan berwarna tapi hurufnya tajam & jelas dibaca. */
+    filter: drop-shadow(0 0 1.5px rgba(120, 200, 255, 0.45));
+    animation: collector-shimmer 5s linear infinite;
+}
+
+/* Mode Gelap: kembali ke gradient pucat/cerah aslinya -- di atas latar
+   gelap, warna pucat ini yang justru paling kontras & "berpendar". */
+html.dark .efek-nama-collector,
+/* PERBAIKAN: tema aksen "Rahasia" (dipicu tombol Rahasia di header)
+   mengecat header & body jadi navy gelap TANPA memasang class
+   "html.dark" (itu tema aksen terpisah, bukan Mode Gelap sungguhan --
+   lihat data-accent-theme="rahasia" di dashboard_siswa.css). Karena
+   override pucat di atas cuma menyasar "html.dark", nama dengan efek
+   Collector di tema Rahasia sebelumnya masih pakai gradient JENUH versi
+   Mode Terang (dirancang utk latar putih) di atas header navy gelap --
+   bagian ungu gradiennya jadi nyaris menyatu dengan latar, susah
+   dibaca. Disamakan supaya tema Rahasia ikut pakai gradient pucat yang
+   sama seperti Mode Gelap (sama-sama latar gelap, kebutuhan kontrasnya
+   sama). */
+html:not(.dark)[data-accent-theme="rahasia"] .efek-nama-collector {
+    background-image: linear-gradient(
+        100deg,
+        #eaf7ff 0%,
+        #9fe8ff 22%,
+        #ffffff 40%,
+        #b9c8ff 58%,
+        #d9b8ff 75%,
+        #eaf7ff 100%
+    );
+}
+
+@keyframes collector-shimmer {
+    0%   { background-position: 250% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ---------- 2. Title/badge "THE COLLECTOR" ---------- */
+/* Sejajar dengan #idcard-title-badge.title-badge-default: dibuat
+   self-contained (bawa padding/radius/font-size sendiri) supaya
+   tetap konsisten dipakai di mana pun -- baik ditukar ke elemen
+   yang sudah punya utility class Tailwind (idcard-title-badge)
+   maupun span kosong ala badge-dev-siswa-efektif.
+
+   RIWAYAT PERBAIKAN singkat (biar ke depan gak bolak-balik salah
+   arah lagi kalau ada yg edit file ini):
+   #1 padding/letter-spacing/font-size dikecilkan -- versi awal
+      kelebaran, bikin badge ke-wrap ke bawah nama alih-alih sejajar.
+   #2 sempat dicoba: teks di-clip ke gradient (background-clip:text)
+      persis efek nama. Ternyata dua masalah: (a) kalau elemen jadi
+      flex, clip-nya suka gagal total di sebagian browser/WebView;
+      (b) begitu jalan pun, teks pucat di atas latar pucat jadi nyaris
+      tak kebaca (kontras kurang) walau sudah ditambal outline gelap.
+   #3 gradient bergerak dipindah jadi LATAR BELAKANG PIL itu sendiri,
+      teks "COLLECTOR" jadi warna solid putih + outline gelap (text-
+      shadow) biar kebaca.
+   #4 sempat dicoba lagi: teksnya sendiri yang di-clip gradient
+      (background-clip:text, 2-layer background: layer teks + layer
+      latar gelap solid terpisah) supaya WARNA TEKS ikut gerak.
+   #5 balik ke pola #3: satu layer background = gradient shimmer
+      bergerak (persis warna & animasi .efek-nama-collector) sebagai
+      warna latar pil, teks "COLLECTOR" & ikon tetap warna SOLID
+      (tidak ikut animasi) + outline/drop-shadow gelap tipis biar
+      selalu kebaca jelas apa pun fase animasi latarnya.
+   #6 dikonfirmasi dari video live site: latar pil sempat diam sama
+      sekali -- ternyata karena rule `background: ... !important` versi
+      itu pakai shorthand yang diam-diam ngunci `background-position`
+      jadi ikut !important juga, sehingga selalu menang lawan animasi
+      (CSS Animations levelnya di bawah !important biasa di cascade).
+      Fix: pindah ke longhand (background-image/-repeat/-size) supaya
+      background-position bebas dikendalikan @keyframes.
+   #7 dilaporkan user (screenshot): teks "COLLECTOR" kadang nyaris tak
+      kebaca -- baik di Mode Gelap maupun Mode Terang. Penyebab:
+      seluruh warna gradient latar ini PUCAT/TERANG (dari #eaf7ff
+      sampai #ffffff, gak ada satu pun stop yang gelap), jadi begitu
+      animasi nyampe fase mendekati putih, teks putih kita "ketelen"
+      -- bukan soal mode gelap/terang HALAMAN, tapi soal kontras teks
+      vs latar pil sendiri yang ikut berubah-ubah. Fix saat itu: teks
+      dibalik jadi warna GELAP solid (#16223f) + halo terang.
+   #8 (VERSI SEKARANG) user minta warna teks JANGAN gelap ("kesan
+      mati") -- maunya tetap pakai warna-warna DARI DALAM efek itu
+      sendiri (cyan/biru/ungu es), bukan solid gelap. Solusinya: teks
+      dikasih gradient WARNA-WARNI dari keluarga warna yang sama
+      dengan efek (cyan->biru->ungu, versi lebih jenuh/pekat drpd
+      stop pucat di latar pil), TAPI posisinya DIBUAT DIAM (tidak
+      ikut animasi bolak-balik latar pil) -- supaya kontrasnya tetap
+      konsisten & gak pernah nabrak fase putih latar yang bergerak.
+      Caranya: elemen ini sekarang punya 2 layer background sekaligus
+      (background-image multi-lapis, background-clip juga 2 nilai
+      sejajar) -- layer 1 (gradient cyan/biru/ungu jenuh, DIAM) di-
+      clip ke "text" jadi warna huruf, layer 2 (gradient pucat asli,
+      BERGERAK persis .efek-nama-collector) di-clip ke "border-box"
+      jadi latar pil. Dua-duanya "dari dalam efek yang sama" (satu
+      keluarga warna es/aurora), cuma satu diam (teks) & satu gerak
+      (latar) -- teks tetap hidup & berwarna, bukan gelap mati, tapi
+      kontrasnya stabil krn gak ikut fase latar yang berubah-ubah. */
+.title-badge-collector {
+    position: relative;
+    display: inline-block;
+    padding: 0.15em 0.5em;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    line-height: 1.5;
+    border-radius: 999px;
+    overflow: hidden;
+    isolation: isolate;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow: 0 0 10px rgba(120, 170, 255, 0.35);
+
+    /* Dua layer background dalam satu shorthand -- lihat #8:
+       layer 1 = gradient warna-warni JENUH (teks, diam, di-clip text),
+       layer 2 = gradient pucat asli (latar pil, bergerak, di-clip
+       border-box). background-size/-position/-clip semua dikasih 2
+       nilai sejajar urutan layernya. !important dipakai krn badge ini
+       juga bawa class dasar `.badge-dev` yg bisa nimpa lewat cascade. */
+    background-image:
+        linear-gradient(100deg, #17c8ff 0%, #5a8dff 45%, #a86bff 100%),
+        linear-gradient(
+            100deg,
+            #bae6fd 0%,
+            #7dd3fc 22%,
+            #e0e7ff 40%,
+            #c4b5fd 58%,
+            #ddd6fe 75%,
+            #bae6fd 100%
+        ) !important;
+    background-repeat: no-repeat, repeat !important;
+    background-size: 100% 100%, 250% 100% !important;
+    -webkit-background-clip: text, border-box !important;
+    background-clip: text, border-box !important;
+    animation: collector-badge-pill-shimmer 5s linear infinite !important;
+
+    /* Teks transparan supaya yang tampak adalah layer 1 (gradient
+       cyan-biru-ungu jenuh, diam) yang sudah di-clip ke bentuk huruf.
+       Drop-shadow senada (bukan outline gelap) buat glow, biar tetap
+       "hidup"/menyala, bukan mati. */
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+    filter: drop-shadow(0 0 3px rgba(90, 170, 255, 0.55))
+            drop-shadow(0 0 6px rgba(160, 110, 255, 0.4));
+}
+
+/* Animasi khusus badge: background-position dikasih 2 nilai sejajar
+   2 layer di atas -- layer 1 (teks) SENGAJA diam (0 0 terus) supaya
+   warnanya tidak ikut nabrak fase latar, layer 2 (latar pil) yang
+   bergerak persis @keyframes collector-shimmer milik efek nama. */
+@keyframes collector-badge-pill-shimmer {
+    0%   { background-position: 0 0, 250% 50%; }
+    100% { background-position: 0 0, 0% 50%; }
+}
+
+/* Jaga-jaga khusus Mode Gelap: dashboard_siswa.css sebelumnya
+   terbukti punya rule global `html.dark .text-slate-900 { ... !important }`
+   yang spesifisitasnya lebih tinggi dari class biasa & sempat nimpa
+   warna badge DEV (lihat riwayat bug badge DEV). Selector di bawah ini
+   sengaja dibuat SENGAJA lebih spesifik (html.dark + class diulang)
+   drpd pola rule global semacam itu, supaya latar gradient badge ini
+   dijamin tetap menang & tidak ikut ketiban aturan global lain, apa
+   pun urutan file CSS-nya di <head>. */
+html.dark .title-badge-collector.title-badge-collector {
+    background-image:
+        linear-gradient(100deg, #17c8ff 0%, #5a8dff 45%, #a86bff 100%),
+        linear-gradient(
+            100deg,
+            #eaf7ff 0%,
+            #9fe8ff 22%,
+            #ffffff 40%,
+            #b9c8ff 58%,
+            #d9b8ff 75%,
+            #eaf7ff 100%
+        ) !important;
+    background-repeat: no-repeat, repeat !important;
+    background-size: 100% 100%, 250% 100% !important;
+    -webkit-background-clip: text, border-box !important;
+    background-clip: text, border-box !important;
+    animation: collector-badge-pill-shimmer 5s linear infinite !important;
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+/* Jarak ikon<->teks: pakai margin (bukan gap milik flex/grid) supaya
+   elemen tetap inline-block sederhana, bukan flex-item. Ikon TIDAK
+   ikut ter-clip ke layer teks milik induk (elemen sendiri, box
+   terpisah), jadi dikasih warna solid dari tengah gradient teks yang
+   sama (biru es) + glow senada, biar tetap serasi & jelas kebaca. */
+.title-badge-collector i {
+    margin-right: 0.25em;
+    vertical-align: -0.05em;
+    color: #5a8dff !important;
+    -webkit-text-fill-color: #5a8dff !important;
+    filter: drop-shadow(0 0 3px rgba(90, 170, 255, 0.55));
+}
+
+/* Auto-isi teks HANYA kalau elemennya kosong (pola badge-dev-siswa-efektif).
+   Kalau elemen sudah ada teks (pola idcard-title-badge yang diisi JS),
+   aturan ini tidak match sama sekali -- tidak akan dobel teks.
+   Pseudo-element ini box-nya sendiri, terpisah dari 2-layer background
+   elemen induk -- jadi diberi gradient warna-warni statis miliknya
+   sendiri (sama persis layer 1 teks di atas, TIDAK dianimasikan)
+   supaya tetap konsisten warnanya dgn kondisi teks JS-filled. */
+.title-badge-collector:empty::before {
+    content: "THE COLLECTOR";
+    background-image: linear-gradient(100deg, #17c8ff 0%, #5a8dff 45%, #a86bff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+}
+
+/* sapuan cahaya tipis yang lewat pelan di atas badge -- lapisan
+   ekstra "kilau", terpisah dari gerak warna latar di atas supaya
+   badge terasa lebih hidup (dua gerakan independen: warna & kilau). */
+.title-badge-collector::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+        100deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.5) 45%,
+        transparent 60%
+    );
+    background-size: 220% 100%;
+    animation: collector-sweep 4.5s ease-in-out infinite;
+}
+
+@keyframes collector-sweep {
+    0%   { background-position: 130% 0; }
+    50%  { background-position: -30% 0; }
+    100% { background-position: -30% 0; }
+}
+
+/* hover: glow sedikit lebih terang, terasa "hidup" -- blur juga
+   ditipiskan (lihat catatan PERBAIKAN di .efek-nama-collector di atas)
+   supaya nama tetap tajam/jelas walau lagi di-hover, bukan cuma pas
+   diam. Badge title (.title-badge-collector) tidak diubah di sini --
+   blur-nya di elemen itu bukan pada TEKS (teksnya solid/transparan-clip
+   ke shape huruf tanpa filter tebal), jadi tidak kena masalah yg sama. */
+.efek-nama-collector:hover {
+    filter: drop-shadow(0 0 2.5px rgba(150, 220, 255, 0.6));
+}
+.title-badge-collector:hover {
+    filter: drop-shadow(0 0 6px rgba(150, 220, 255, 0.75))
+            drop-shadow(0 0 12px rgba(170, 150, 255, 0.5));
+}
+
+/* hormati preferensi kurangi animasi */
+@media (prefers-reduced-motion: reduce) {
+    .efek-nama-collector,
+    .title-badge-collector,
+    .title-badge-collector::after,
+    .title-badge-collector:empty::before {
+        animation: none;
+    }
+}

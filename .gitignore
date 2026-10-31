@@ -1,0 +1,79 @@
+# ============================================================
+# RAHASIA -- API key, token, kredensial (JANGAN PERNAH di-commit)
+# ============================================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+credentials.json
+service_account*.json
+
+# ============================================================
+# DATA PRIBADI ASLI siswa/guru -- JANGAN PERNAH di-commit
+# ============================================================
+database.db
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+instance/
+data/
+backup/
+backups/
+*.sql
+*.bak
+
+# Berkas unggahan pengguna (foto tugas, avatar, dokumen siswa/guru)
+# Kalau ada aset bawaan di folder ini yang memang mau dipublikasi,
+# pindahkan ke folder lain atau hapus baris yang sesuai.
+uploads/
+static/uploads/
+media/
+
+# ============================================================
+# Log & berkas sementara
+# ============================================================
+*.log
+logs/
+tmp/
+temp/
+
+# ============================================================
+# Python
+# ============================================================
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# ============================================================
+# Node (kalau ada)
+# ============================================================
+node_modules/
+
+# ============================================================
+# Editor / IDE
+# ============================================================
+.vscode/
+.idea/
+*.swp
+
+# ============================================================
+# Sistem operasi (Windows / macOS)
+# ============================================================
+Thumbs.db
+desktop.ini
+.DS_Store
+.venv
+Trikarya-Akademik/

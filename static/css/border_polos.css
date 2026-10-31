@@ -1,0 +1,128 @@
+/* ==========================================
+   1. BORDER FRAME MLBB (EMAS)
+   ========================================== */
+
+/* Container Utama Pembungkus Profil */
+.profile-wrapper {
+  position: relative;
+  width: 52px;   /* Ukuran total frame di navbar */
+  height: 52px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+/* Efek sedikit membesar pas kursor di-hover ke foto */
+.profile-wrapper:hover {
+  transform: scale(1.08);
+}
+
+/* Foto Profil (Layar Bawah) */
+.user-avatar {
+  width: 72%;           /* Ukuran foto presisi di dalam frame */
+  height: 72%;
+  object-fit: cover;
+  border-radius: 6px;   /* Sudut melengkung halus */
+  position: absolute;
+  z-index: 1;
+}
+
+/* Border MLBB Emas (Layar Atas) */
+.user-border {
+  width: 100%;          
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;           
+  pointer-events: none; /* Klik tembus ke foto/dropdown */
+  
+  /* Efek Glowing Emas */
+  filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.7));
+  transition: filter 0.3s ease;
+}
+
+/* Glow makin terang pas di-hover */
+.profile-wrapper:hover .user-border {
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.95));
+}
+
+
+/* ==========================================
+   2. EFEK TEKS & BADGE ELEGAN SEIRAMA (SLOW 5S)
+   ========================================== */
+
+/* Nama Berkilau Gradient Emas (Slow & Smooth) */
+.gold-name {
+  background: linear-gradient(90deg, #d4af37, #fff2a8, #ffd700, #aa7c11, #d4af37);
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  font-weight: 800;
+  animation: shine-gold 5s linear infinite; /* Durasi 5 Detik Mulus */
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+@keyframes shine-gold {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: 0% center;
+  }
+}
+
+/* Badge DEV Emas Menyala */
+.badge-dev {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: linear-gradient(135deg, #bf953f, #fcf6ba, #b38728);
+  color: #1a1a1a;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
+  vertical-align: middle;
+  margin-left: 6px;
+  
+  position: relative;
+  overflow: hidden;
+}
+
+/* Highlight Garis Miring "/" (Cahaya Bergerak Kanan ke Kiri) */
+.badge-dev::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -100%; /* Mulai dari Pojok Kanan */
+  width: 40%;    /* Lebar garis miring */
+  height: 200%;
+  
+  /* Gradien Highlight Putih Miring "/" */
+  background: linear-gradient(
+    90deg, 
+    rgba(255, 255, 255, 0) 0%, 
+    rgba(255, 255, 255, 0.95) 50%, 
+    rgba(255, 255, 255, 0) 100%
+  );
+  
+  transform: rotate(25deg); /* Bikin sudut garis miring / */
+  animation: shine-dev-slow 5s linear infinite; /* 5s Linear biar seirama sama Nama */
+  pointer-events: none;
+}
+
+/* Gerakan dari Kanan ke Kiri secara Perlahan */
+@keyframes shine-dev-slow {
+  0% {
+    right: -100%;
+  }
+  100% {
+    right: 200%;
+  }
+}

@@ -1,0 +1,112 @@
+/* ============================================================
+   efek_nama_bug_hunter.css
+   Efek nama (.efek-nama-bug-hunter) & badge title
+   (.title-badge-bug-hunter) untuk title "🐞 BUG HUNTER".
+
+   SEMENTARA dev-only: hanya terpasang ke elemen nama/badge kalau
+   dashboard_siswa_2.js menentukan border/efekNama/title aktif =
+   'title_bug_hunter' -- yang mana isBorderTerbuka() cuma pernah
+   true untuk akunIniAdminDev() (Ahmad Fakhri Al Farisi / username
+   'siswa'). Siswa biasa/dummy tidak pernah kena class ini.
+
+   Palet warna merah darah disamakan dengan demo animasi title
+   "BUG HUNTER" (bug-hunter-title-demo.html) supaya identitasnya
+   konsisten antara efek nama di dashboard & title besar itu.
+   Ikuti pola file efek_nama_collector.css yang sudah ada -- taruh
+   file ini di folder CSS yang sama, lalu tambahkan:
+     <link rel="stylesheet" href="../static/css/efek_nama_bug_hunter.css">
+   di <head> dashboard_siswa.html (persis di sebelah link
+   efek_nama_collector.css).
+   ============================================================ */
+
+.efek-nama-bug-hunter {
+    /* Floor paling gelap dinaikkan dari #3b0000 -> #6e0000 supaya tidak
+       "tenggelam" di atas background gelap (mis. tema Special #0f172a),
+       tapi tetap masuk kategori merah darah (bukan merah cerah/neon). */
+    background:
+        linear-gradient(
+            105deg,
+            transparent 38%,
+            rgba(255, 140, 140, 0.25) 47%,
+            rgba(255, 140, 140, 0.06) 52%,
+            transparent 62%
+        ) 100% 0 / 260% 100% no-repeat,
+        linear-gradient(
+            180deg,
+            #d62b2b 0%,
+            #b32020 16%,
+            #900707 32%,
+            #7c0303 46%,
+            #6e0000 60%,
+            #8a0808 80%,
+            #a81616 100%
+        );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    /* FIX (blur/susah dibaca): stroke sebelumnya 0.4px & opacity 0.35 --
+       terlalu tipis+transparan buat "mengunci" tepi huruf, jadi kontur
+       gampang luntur ke background gelap manapun. Sekarang lebih tebal &
+       gelap pekat supaya kontur huruf tetap tegas di background apa pun
+       (bukan lagi mengandalkan warna merah terang yang malah nyaru ke
+       gradiennya sendiri). text-rendering/antialiasing ditambah biar
+       browser render tepi huruf setajam mungkin. */
+    -webkit-text-stroke: 0.6px rgba(30, 0, 0, 0.85);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    /* FIX (blur/susah dibaca): dulu ada 2 drop-shadow ber-blur besar (5px
+       & 10px) yang tugasnya jadi "glow", padahal glow blur besar itu justru
+       PENYEBAB UTAMA teks kelihatan kabur -- blur-nya menutupi tepi huruf,
+       apalagi pas animasi pulse bikin blur-nya membesar sampai 14px.
+       Sekarang cuma 1 shadow kontak (blur ~1px, buat kedalaman/kontras,
+       bukan glow) + 1 glow SANGAT tipis (blur 3px, opacity rendah) supaya
+       "nyala merah"-nya masih kerasa tapi tidak lagi menelan bentuk huruf. */
+    filter:
+        drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6))
+        drop-shadow(0 0 3px rgba(180, 0, 0, 0.35));
+    animation: efekNamaBugHunterSheen 6s ease-in-out infinite;
+}
+
+/* Kilau metalik tipis yang menyapu pelan, senada dgn titleSheen di
+   demo animasi title besar -- sengaja jauh lebih halus krn ini
+   ditempel ke teks nama kecil di header/ID card, bukan judul besar. */
+@keyframes efekNamaBugHunterSheen {
+    0%, 74% { background-position: 100% 0, 0 0; }
+    100%    { background-position: 0% 0,   0 0; }
+}
+
+/* Sentuhan "berdenyut" tipis pada glow, biar tidak terlihat statis mati */
+.efek-nama-bug-hunter {
+    animation: efekNamaBugHunterSheen 6s ease-in-out infinite,
+               efekNamaBugHunterPulse 3.4s ease-in-out infinite;
+}
+@keyframes efekNamaBugHunterPulse {
+    /* FIX (blur/susah dibaca): rentang blur lama 5px<->14px -- di puncak
+       pulse teksnya jadi bola lampu merah, bukan tulisan lagi. Sekarang
+       cuma "berdenyut" tipis (3px<->4.5px) supaya kerasa hidup tanpa
+       pernah bikin hurufnya kabur. */
+    0%, 100% {
+        filter:
+            drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6))
+            drop-shadow(0 0 3px rgba(180, 0, 0, 0.32));
+    }
+    50% {
+        filter:
+            drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6))
+            drop-shadow(0 0 4.5px rgba(200, 20, 20, 0.42));
+    }
+}
+
+/* Badge kecil "BUG HUNTER" di sebelah nama (header, ID Card, daftar
+   teman, leaderboard, toast "ditikung") -- pola sama persis dengan
+   title-badge-collector / title-badge-imortal yang sudah ada. */
+.title-badge-bug-hunter {
+    background: linear-gradient(180deg, #b32020, #5a0000);
+    color: #ffe2e2;
+    border: 1px solid #ff3b3b;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .efek-nama-bug-hunter { animation: none; }
+}

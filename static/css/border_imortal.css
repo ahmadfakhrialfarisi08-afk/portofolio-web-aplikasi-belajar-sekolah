@@ -1,0 +1,124 @@
+/* ============================================================
+   border_imortal.css (v17 - FIX: foto mengisi penuh lubang border,
+   TANPA memperbesar border)
+   ------------------------------------------------------------
+   AKAR MASALAH GAP YANG DILAPORKAN:
+   Di v16 ada blok "modifier" yang menambahkan transform: scale(1.25)
+   pada img.user-border (bukan pada foto) untuk membuat kristal
+   TERLIHAT lebih besar. Tapi border_imortal.png adalah SATU file
+   gabungan -- kristal DAN lubang transparannya ada di gambar yang
+   sama. Waktu border di-scale up, lubangnya ikut membesar,
+   sementara ukuran foto (img.user-avatar) tetap dibiarkan di
+   58%/62% (angka lama, sebelum border discale). Hasilnya: lubang
+   sekarang lebih besar dari foto -> muncul gap kosong di antara
+   foto dan tepi dalam kristal. Ini justru contoh "memperbesar
+   border untuk mengatasi masalah", yang seharusnya dihindari.
+
+   PERBAIKAN v17:
+   1. Blok transform: scale(1.25) pada img.user-border DIHAPUS.
+      Border kembali ke 100% x 100%, TIDAK diperbesar sama sekali.
+      Artinya lubang transparan juga kembali ke ukuran ASLI hasil
+      ukur presisi di v16 (flood-fill dari titik tengah, stabil di
+      5 ambang alpha): lebar 300px (60.0%) x tinggi ~319px (63.8%)
+      dari kanvas 500x500, tidak menyentuh tepi kanvas.
+   2. img.user-avatar dinaikkan dari 58%/62% -> 59.8%/63.6%, yaitu
+      SANGAT DEKAT dengan ukuran lubang asli (60.0%/63.8%), tersisa
+      margin ~0.2 poin persen di dalam batas lubang. Margin sekecil
+      ini cukup untuk membungkus pembulatan sub-piksel di berbagai
+      ukuran layar (transisi tepi lubang tajam/1px, jadi TIDAK butuh
+      margin blur besar seperti versi lama), sambil tetap memastikan
+      foto TIDAK PERNAH nyembul keluar dari lubang.
+   3. object-fit: cover DIPERTAHANKAN pada foto supaya foto tetap
+      mengisi penuh persegi lubang (tanpa distorsi/gepeng) walau
+      rasio aspek foto asli berbeda dengan rasio lubang.
+   4. Posisi tetap disentrakan (top/left: 50% + translate(-50%,-50%))
+      karena pengukuran lubang dilakukan dari titik tengah kanvas
+      dan lubang tidak menyentuh tepi kanvas di sisi mana pun --
+      jadi lubang memang simetris terhadap pusat gambar.
+   5. z-index TIDAK diubah: img.user-border tetap z-index: 2 (di
+      atas foto), sehingga kristal/ornamen/glow border tetap terlihat
+      penuh menutupi tepi foto seperti sebelumnya.
+
+   TIDAK DISENTUH SAMA SEKALI (sesuai constraint):
+   - border_admin.css dan border_polos.css: tidak dibuka/diedit.
+   - Markup HTML dan logic JS rank/avatar: tidak diubah.
+   - Ukuran/posisi img.user-border: tetap 100%/100%, tidak diperbesar.
+
+   URUTAN LOAD tidak berubah -- tetap taruh SETELAH border_polos.css
+   & border_admin.css di <head>/bagian bawah, supaya selector :has()
+   yang lebih spesifik ini menang lawan style dasar .profile-wrapper
+   polos:
+     <link rel="stylesheet" href="../static/css/border_imortal.css">
+   ============================================================ */
+
+.profile-wrapper:has(img.user-border[src*="border_imortal"]) {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0; /* frame kristal kotak, bukan bulat */
+}
+
+.profile-wrapper:has(img.user-border[src*="border_imortal"]) img.user-avatar {
+    width: 59.8%;
+    height: 63.6%;
+    object-fit: cover;
+    border-radius: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}
+
+.profile-wrapper:has(img.user-border[src*="border_imortal"]) img.user-border[src*="border_imortal"] {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    pointer-events: none;
+    /* Sengaja TANPA transform: scale() -- border tidak diperbesar.
+       Kalau nanti kristal terasa "kekecilan" secara visual, itu
+       harus diselesaikan dengan aset PNG border_imortal yang punya
+       lubang tengah lebih kecil relatif terhadap kanvasnya (bandingkan
+       dengan border Admin/Pemula), BUKAN dengan scale CSS di sini,
+       karena scale border otomatis membesarkan lubang juga dan
+       memunculkan lagi gap seperti bug yang baru diperbaiki ini. */
+
+    /* ============================================================
+       v18 -- "border terlihat tipis di zoom normal"
+       ------------------------------------------------------------
+       SENGAJA TIDAK pakai transform: scale(1.05-1.10) di sini.
+       Alasan: PNG ini satu file gabungan kristal + lubang tengah,
+       jadi scale apa pun pada elemen ini otomatis ikut membesarkan
+       lubang transparannya juga -> foto (yang sekarang FIXED di
+       59.8%/63.6%, tidak boleh diubah lagi) akan kembali kelihatan
+       kekecilan dengan gap di sekitarnya -- persis bug yang baru
+       diperbaiki. Ukuran/posisi elemen ini (100% x 100%, top/left 0)
+       TETAP TIDAK DIUBAH.
+
+       Sebagai gantinya, "ketebalan" ditambah lewat filter, yang
+       mengikuti kontur alpha kristal secara presisi (bukan kotak
+       bounding box) dan HANYA menambah lapisan visual tipis (~1px)
+       di luar tepi asli gambar -- tidak menggeser/membesarkan
+       geometri lubang atau posisi kristal itu sendiri:
+       - dua drop-shadow tanpa offset & blur sangat kecil menumpuk
+         jadi kontur gelap tipis di sekeliling siluet kristal, bikin
+         tepinya kebaca lebih tegas/"tebal" di ukuran normal.
+       - saturate() & contrast() menaikkan sedikit "pop" warna kristal
+         supaya lebih menonjol tanpa mengubah ukuran apa pun.
+       Total lebar tambahan visual di luar tepi asli kristal cuma
+       ~1px, jadi tidak menjorok jauh dari avatar.
+
+       CATATAN: warna kontur di bawah pakai hitam transparan (netral,
+       aman untuk kristal warna apa pun). Kalau kristal Immortal
+       kamu warnanya spesifik (misal emas/ungu) dan mau konturnya
+       senada, kasih tahu saya warnanya, nanti tinggal ganti nilai
+       rgba() di drop-shadow ini tanpa ubah bagian lain. */
+    filter:
+        drop-shadow(0 0 1px rgba(0, 0, 0, 0.55))
+        drop-shadow(0 0 1px rgba(0, 0, 0, 0.55))
+        saturate(1.12)
+        contrast(1.06);
+}

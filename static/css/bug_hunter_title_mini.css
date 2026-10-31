@@ -1,0 +1,189 @@
+/* ============================================================
+   bug_hunter_title_mini.css
+   ------------------------------------------------------------
+   Preview animasi MINI title "BUG HUNTER" -- khusus dipakai di
+   kartu "Bug Hunter" pada tab Title, Kustomisasi Profil (lihat
+   buatPreviewMiniBugHunter()/jalankanAnimasiMiniBugHunter() di
+   dashboard_siswa_2.js). Terinspirasi dari demo animasi title
+   full-layar (predator eyes + text disintegration), tapi:
+   - Dikontain PENUH di dalam kartu (position:relative + overflow
+     hidden), TIDAK ada overlay gelap ke seluruh halaman.
+   - Huruf tidak dipecah jadi piksel lewat canvas (berat kalau
+     dijalankan terus-menerus di grid kartu) -- diganti glitch
+     per-huruf berbasis CSS (jitter + chromatic aberration merah/
+     cyan lewat drop-shadow), tetap terasa "huruf beranimasi".
+   - SVG mata predator dipakai APA ADANYA dari demo (vector, jadi
+     tetap tajam walau diperkecil), cuma ukurannya di-scale turun.
+   ============================================================ */
+
+.bh-mini-stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 8px;
+    background: radial-gradient(ellipse at 50% 50%, rgba(60, 0, 0, 0.07), transparent 70%);
+    transition: background 300ms ease;
+}
+.bh-mini-stage.is-dark {
+    background: radial-gradient(ellipse at 50% 50%, rgba(25, 0, 0, 0.55), rgba(0, 0, 0, 0.12) 75%);
+}
+
+.bh-mini-title-layer {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 200ms linear;
+}
+.bh-mini-title-layer.is-hidden { opacity: 0; }
+
+.bh-mini-title {
+    margin: 0;
+    display: flex;
+    font-family: 'Arial Black', 'Segoe UI Black', system-ui, sans-serif;
+    font-weight: 900;
+    font-size: clamp(9px, 3vw, 13px);
+    letter-spacing: 0.06em;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* Tiap huruf dibungkus <span> sendiri (lihat buatPreviewMiniBugHunter()) supaya
+   glitch-nya kerasa per-huruf, bukan satu blok teks bergetar bareng. Gradien
+   warna merah darah sengaja diulang PERSIS di tiap span (bukan cuma di parent)
+   -- .efek-nama-bug-hunter/title besar cuma butuh 1 elemen, tapi di sini tiap
+   <span> perlu clip teksnya sendiri-sendiri supaya tetap merah saat masing-
+   masing bergerak independen. Karena gradien utamanya vertikal (180deg, tidak
+   berubah mengikuti posisi X), warnanya tetap konsisten & menyatu walau
+   dipecah per-huruf. */
+.bh-mini-title span {
+    display: inline-block;
+    /* Sama seperti efek-nama-bug-hunter: floor gelap dinaikkan + glow
+       merah terang ditambah, supaya tetap kebaca di kartu terang maupun
+       saat tema Special (background navy gelap) aktif. */
+    background:
+        linear-gradient(105deg, transparent 38%, rgba(255, 140, 140, 0.22) 47%, rgba(255, 140, 140, 0.05) 52%, transparent 62%) 100% 0 / 260% 100% no-repeat,
+        linear-gradient(180deg, #d62b2b 0%, #b32020 14%, #900707 30%, #7c0303 44%, #6e0000 60%, #8a0808 82%, #a81616 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    /* FIX (blur/susah dibaca) -- sinkron dgn perbaikan di
+       efek_nama_bug_hunter.css: stroke dipertegas + drop-shadow glow
+       ber-blur besar dipangkas jadi 1 shadow kontak + 1 glow tipis,
+       supaya per-huruf di kartu mini ini tidak kabur juga. */
+    -webkit-text-stroke: 0.5px rgba(30, 0, 0, 0.85);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    filter:
+        drop-shadow(0 1px 1px rgba(0, 0, 0, 0.65))
+        drop-shadow(0 0 2.5px rgba(180, 0, 0, 0.32));
+    animation: bhMiniSheen 6s ease-in-out infinite;
+}
+@keyframes bhMiniSheen {
+    0%, 74% { background-position: 100% 0, 0 0; }
+    100%    { background-position: 0% 0,   0 0; }
+}
+
+/* Glitch keluar: jitter + pecah warna merah/cyan (chromatic aberration khas
+   listrik/gangguan digital), lalu pudar -- dipicu JS lewat class is-glitching,
+   delay per-span diatur inline lewat style="animation-delay:...ms" (lihat JS). */
+.bh-mini-title.is-glitching span {
+    animation: bhMiniGlitch 220ms ease-in-out forwards;
+}
+@keyframes bhMiniGlitch {
+    0%   { transform: translate(0, 0);      opacity: 1;   filter: drop-shadow(0 1px 1px rgba(0,0,0,.65)) drop-shadow(0 0 2.5px rgba(180,0,0,.32)); }
+    30%  { transform: translate(1.4px, -1px); opacity: 1;  filter: drop-shadow(-2px 0 0 rgba(255,40,40,.7)) drop-shadow(2px 0 0 rgba(60,220,255,.5)); }
+    55%  { transform: translate(-1px, 1px);   opacity: .7; filter: drop-shadow(2px 0 0 rgba(255,40,40,.6)) drop-shadow(-2px 0 0 rgba(60,220,255,.4)); }
+    100% { transform: translate(0, 2px);      opacity: 0;  filter: none; }
+}
+
+/* Glitch kembali (huruf muncul lagi setelah mata "selesai berburu") */
+.bh-mini-title.is-restoring span {
+    animation: bhMiniRestore 260ms ease-out forwards;
+}
+@keyframes bhMiniRestore {
+    0%   { opacity: 0; transform: translateY(-3px); filter: drop-shadow(-2px 0 0 rgba(255,40,40,.5)) drop-shadow(2px 0 0 rgba(60,220,255,.35)); }
+    60%  { opacity: 1; transform: translateY(0.5px); }
+    100% { opacity: 1; transform: translateY(0); filter: drop-shadow(0 1px 1px rgba(0,0,0,.65)) drop-shadow(0 0 2.5px rgba(180,0,0,.32)); }
+}
+
+/* ---------- MATA PREDATOR MINI (SVG sama persis dgn demo, discale kecil) ---------- */
+.bh-mini-eyes {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(6px, 3vw, 10px);
+    z-index: 2;
+    opacity: 0;
+    --psx: 1.28; --psy: 1.1; --pdur: 0ms; --pease: cubic-bezier(0.2, 0.9, 0.25, 1);
+    --lt: -60px; --lb: 40px; --ldur: 0ms; --lease: cubic-bezier(0.16, 1, 0.3, 1);
+    --heat: 0.25; --hdur: 0ms;
+    --px: 0; --py: 0; --pshift: 0ms;
+    --sx: 0; --sy: 0; --ss: 1.3; --so: 0.95; --sdur: 0ms;
+    --cx: -6; --co: 0; --cdur: 0ms;
+    transition: opacity 30ms linear;
+}
+.bh-mini-eyes.is-visible { opacity: 1; }
+
+.bh-mini-eye {
+    position: relative;
+    width: clamp(20px, 9vw, 30px);
+    aspect-ratio: 200 / 90;
+    filter: drop-shadow(0 0 2px rgba(230, 20, 20, 0.3)) drop-shadow(0 0 6px rgba(130, 0, 0, 0.32));
+}
+.bh-mini-eye svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.bh-mini-eye .iris-flare { opacity: 0; }
+.bh-mini-eyes.is-visible .iris-flare { animation: bhMiniIrisIgnite 420ms cubic-bezier(0.2, 0.7, 0.2, 1) 1; }
+@keyframes bhMiniIrisIgnite { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+.bh-mini-eye .pupil {
+    transform-box: fill-box; transform-origin: center;
+    transform: scale(var(--psx), var(--psy));
+    transition: transform var(--pdur) var(--pease);
+}
+.bh-mini-eye .pupil-shift {
+    transform: translate(calc(var(--px) * 1px), calc(var(--py) * 1px));
+    transition: transform var(--pshift) ease-in-out;
+}
+.bh-mini-eye--right .pupil-shift { transform: translate(calc(var(--px) * -1px), calc(var(--py) * 1px)); }
+
+.bh-mini-eye .iris-heat { opacity: var(--heat); transition: opacity var(--hdur) ease; }
+
+.bh-mini-eye .spec {
+    transform-box: fill-box; transform-origin: center;
+    transform: translate(calc(var(--sx) * 1px), calc(var(--sy) * 1px)) scale(var(--ss));
+    opacity: var(--so);
+    transition: transform var(--sdur) ease, opacity var(--sdur) ease;
+}
+.bh-mini-eye--right .spec { transform: translate(calc(var(--sx) * -1px), calc(var(--sy) * 1px)) scale(var(--ss)); }
+
+.bh-mini-eye .cornea-red {
+    transform: translate(calc(var(--cx) * 1px), 0);
+    opacity: var(--co);
+    transition: transform var(--cdur) ease-in-out, opacity var(--cdur) ease-in-out;
+}
+.bh-mini-eye--right .cornea-red { transform: translate(calc(var(--cx) * -1px), 0); }
+
+.bh-mini-eye .lid { transition: transform var(--ldur) var(--lease); }
+.bh-mini-eye .lid-top    { transform: translateY(var(--lt)); }
+.bh-mini-eye .lid-bottom { transform: translateY(var(--lb)); }
+
+@media (prefers-reduced-motion: reduce) {
+    .bh-mini-title span,
+    .bh-mini-eyes,
+    .bh-mini-eye .pupil, .bh-mini-eye .pupil-shift, .bh-mini-eye .iris-heat,
+    .bh-mini-eye .spec, .bh-mini-eye .cornea-red, .bh-mini-eye .lid {
+        transition: none !important;
+        animation: none !important;
+    }
+    .bh-mini-eyes.is-visible .iris-flare { animation: none !important; }
+    /* Reduced motion: tampilkan title diam dgn warna merah, tanpa siklus mata. */
+    .bh-mini-eyes { display: none !important; }
+    .bh-mini-title-layer.is-hidden { opacity: 1 !important; }
+}

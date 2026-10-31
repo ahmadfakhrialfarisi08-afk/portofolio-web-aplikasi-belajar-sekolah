@@ -1,0 +1,454 @@
+/* ============================================================
+   CSS FITUR PELANGGARAN + PENEBUS (Dashboard Guru & Siswa)
+   Semua class diprefix "pel-" biar tidak nabrak class yang sudah ada.
+   Warna konvensi: merah=aktif/mendesak, biru=menunggu ACC guru,
+   kuning=menunggu tugas dikerjakan siswa, hijau=selesai, abu=dibatalkan.
+   ============================================================ */
+
+:root {
+    --pel-merah: #dc2626;
+    --pel-merah-bg: #fee2e2;
+    --pel-biru: #2563eb;
+    --pel-biru-bg: #dbeafe;
+    --pel-kuning: #ca8a04;
+    --pel-kuning-bg: #fef9c3;
+    --pel-hijau: #16a34a;
+    --pel-hijau-bg: #dcfce7;
+    --pel-abu: #64748b;
+    --pel-abu-bg: #f1f5f9;
+    --pel-ungu: #7e22ce;
+    --pel-ungu-bg: #f3e8ff;
+}
+
+/* ---------- BADGE ⚠️ DI CARD SISWA (DASHBOARD GURU) ---------- */
+.pel-badge-slot { display: inline-block; }
+
+.pel-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: none;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    color: #fff;
+    line-height: 1.6;
+}
+.pel-badge-merah { background: var(--pel-merah); }
+.pel-badge-biru { background: var(--pel-biru); }
+.pel-badge-kuning { background: var(--pel-kuning); color: #1f2937; }
+.pel-badge:hover { filter: brightness(0.92); }
+
+/* ---------- STATUS PILL (dipakai modal, tabel, overlay, arsip) ---------- */
+.pel-status-pill {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.pel-status-merah { background: var(--pel-merah-bg); color: var(--pel-merah); }
+.pel-status-biru { background: var(--pel-biru-bg); color: var(--pel-biru); }
+.pel-status-kuning { background: var(--pel-kuning-bg); color: var(--pel-kuning); }
+.pel-status-ungu { background: var(--pel-ungu-bg); color: var(--pel-ungu); }
+.pel-status-hijau { background: var(--pel-hijau-bg); color: var(--pel-hijau); }
+.pel-status-abu { background: var(--pel-abu-bg); color: var(--pel-abu); }
+
+/* ---------- MODAL (Detail Pelanggaran Guru & Form Tambah Manual) ---------- */
+.pel-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+    padding: 16px;
+}
+.pel-modal-overlay.hidden { display: none; }
+
+.pel-modal-box {
+    background: #fff;
+    border-radius: 16px;
+    max-width: 640px; width: 100%;
+    max-height: 88vh;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+html.dark .pel-modal-box { background: #1e293b; color: #f1f5f9; }
+
+.pel-modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+html.dark .pel-modal-head { border-color: #334155; }
+.pel-modal-head h3 { margin: 0; font-size: 17px; font-weight: 700; }
+
+.pel-btn-close {
+    background: none; border: none; font-size: 22px; line-height: 1;
+    cursor: pointer; color: inherit; opacity: 0.6;
+}
+.pel-btn-close:hover { opacity: 1; }
+
+.pel-modal-body {
+    padding: 16px 20px;
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 14px;
+}
+
+.pel-kosong { opacity: 0.6; font-size: 14px; text-align: center; padding: 24px 0; }
+
+/* ---------- ITEM PELANGGARAN (dipakai di modal, tabel, arsip) ---------- */
+.pel-item {
+    border: 1px solid #e2e8f0;
+    border-left-width: 4px;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13.5px;
+    display: flex; flex-direction: column; gap: 6px;
+}
+html.dark .pel-item { border-color: #334155; }
+.pel-item-merah { border-left-color: var(--pel-merah); }
+.pel-item-biru { border-left-color: var(--pel-biru); }
+.pel-item-kuning { border-left-color: var(--pel-kuning); }
+.pel-item-hijau { border-left-color: var(--pel-hijau); }
+.pel-item-abu { border-left-color: var(--pel-abu); }
+
+.pel-item-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pel-item-jenis { font-weight: 700; }
+.pel-item-keterangan { opacity: 0.85; }
+.pel-item-instruksi, .pel-item-deadline, .pel-item-catatan-siswa,
+.pel-item-catatan-tolak, .pel-item-banding, .pel-item-tanggal {
+    background: rgba(0,0,0,0.03);
+    border-radius: 8px;
+    padding: 6px 10px;
+}
+html.dark .pel-item-instruksi, html.dark .pel-item-deadline,
+html.dark .pel-item-catatan-siswa, html.dark .pel-item-catatan-tolak,
+html.dark .pel-item-banding, html.dark .pel-item-tanggal { background: rgba(255,255,255,0.06); }
+
+.pel-item-catatan-bk {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #7e22ce;
+    background: #faf5ff;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.pel-audit { font-size: 12px; opacity: 0.55; font-style: italic; }
+
+.pel-item-aksi { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- TOMBOL ---------- */
+.pel-btn {
+    border: none; border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    background: #e2e8f0; color: #1e293b;
+}
+.pel-btn:hover { filter: brightness(0.95); }
+.pel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.pel-btn-primer { background: var(--pel-biru); color: #fff; }
+.pel-btn-kasih-tugas { background: var(--pel-kuning); color: #1f2937; }
+.pel-btn-acc { background: var(--pel-hijau); color: #fff; }
+.pel-btn-tolak { background: var(--pel-merah); color: #fff; }
+.pel-btn-batalkan { background: transparent; color: var(--pel-abu); border: 1px solid var(--pel-abu); }
+.pel-btn-lihat { background: var(--pel-biru-bg); color: var(--pel-biru); }
+
+/* ---------- FORM INLINE (Kasih Tugas / Tolak / Tambah Manual) ---------- */
+.pel-form-tugaskan, .pel-form-tolak {
+    display: flex; flex-direction: column; gap: 8px;
+    background: rgba(0,0,0,0.03);
+    border-radius: 10px;
+    padding: 10px;
+}
+html.dark .pel-form-tugaskan, html.dark .pel-form-tolak { background: rgba(255,255,255,0.06); }
+.pel-form-tugaskan.hidden, .pel-form-tolak.hidden { display: none; }
+
+.pel-form-tugaskan textarea, .pel-form-tolak textarea,
+.pel-form-tambah textarea, .pel-form-tambah select, .pel-form-tambah input {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13.5px;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    background: #fff; color: inherit;
+}
+html.dark .pel-form-tugaskan textarea, html.dark .pel-form-tolak textarea,
+html.dark .pel-form-tambah textarea, html.dark .pel-form-tambah select,
+html.dark .pel-form-tambah input { background: #0f172a; border-color: #334155; }
+
+.pel-form-tugaskan textarea, .pel-form-tambah textarea { min-height: 64px; resize: vertical; }
+
+.pel-form-tambah { display: flex; flex-direction: column; gap: 6px; }
+.pel-form-tambah label { font-size: 12px; font-weight: 700; opacity: 0.7; margin-top: 6px; }
+.pel-tanda-wajib { color: var(--pel-merah); font-weight: 600; margin-left: 6px; }
+.pel-tanda-wajib.hidden { display: none; }
+#pel-f-submit { margin-top: 10px; }
+
+/* ---------- BUKTI FOTO (thumbnail grid) ---------- */
+.pel-bukti-grid, .pel-preview-grid {
+    display: flex; flex-wrap: wrap; gap: 8px;
+}
+.pel-bukti-thumb {
+    width: 76px; height: 76px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+}
+
+/* ---------- HALAMAN PELANGGARAN (Dashboard Guru) ---------- */
+.pel-halaman { padding: 20px; }
+.pel-halaman-head {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+    margin-bottom: 16px;
+}
+.pel-halaman-head h2 { margin: 0; font-size: 20px; font-weight: 800; }
+.pel-halaman-toolbar { display: flex; gap: 10px; align-items: center; }
+.pel-halaman-toolbar select {
+    border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px 10px; font-size: 13.5px;
+    background: #fff; color: inherit;
+}
+html.dark .pel-halaman-toolbar select { background: #1e293b; border-color: #334155; }
+
+.pel-tabel { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.pel-tabel th, .pel-tabel td {
+    text-align: left; padding: 10px 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+html.dark .pel-tabel th, html.dark .pel-tabel td { border-color: #334155; }
+.pel-tabel th { font-weight: 700; opacity: 0.7; font-size: 12px; text-transform: uppercase; }
+
+/* ---------- OVERLAY PELANGGARAN AKTIF (Dashboard Siswa) ---------- */
+#overlay-pelanggaran-aktif {
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, 0.75);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9998;
+    padding: 16px;
+}
+#overlay-pelanggaran-aktif.hidden { display: none; }
+
+#overlay-pelanggaran-isi {
+    background: #fff;
+    border-radius: 18px;
+    max-width: 460px; width: 100%;
+    max-height: 88vh; overflow-y: auto;
+    padding: 24px;
+    display: flex; flex-direction: column; gap: 12px;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.35);
+}
+html.dark #overlay-pelanggaran-isi { background: #1e293b; color: #f1f5f9; }
+
+.pel-overlay-jenis { font-size: 18px; font-weight: 800; }
+.pel-overlay-keterangan { opacity: 0.85; font-size: 14px; }
+.pel-overlay-info { font-size: 13.5px; opacity: 0.8; }
+.pel-overlay-instruksi, .pel-overlay-deadline, .pel-overlay-ditolak, .pel-overlay-catatan {
+    background: rgba(0,0,0,0.04);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 13.5px;
+}
+html.dark .pel-overlay-instruksi, html.dark .pel-overlay-deadline,
+html.dark .pel-overlay-ditolak, html.dark .pel-overlay-catatan { background: rgba(255,255,255,0.07); }
+.pel-overlay-ditolak { color: var(--pel-merah); }
+
+.pel-upload-bukti { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.pel-upload-bukti input[type="file"] { font-size: 13px; }
+.pel-upload-bukti textarea {
+    border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 10px;
+    font-size: 13.5px; min-height: 56px; resize: vertical;
+    background: #fff; color: inherit; font-family: inherit;
+}
+html.dark .pel-upload-bukti textarea { background: #0f172a; border-color: #334155; }
+
+.pel-btn-lanjut { background: var(--pel-biru); color: #fff; align-self: flex-start; }
+.pel-btn-kirim-bukti { background: var(--pel-hijau); color: #fff; }
+
+.pel-banding-wrap { border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 6px; }
+html.dark .pel-banding-wrap { border-color: #334155; }
+.pel-btn-banding-toggle { background: transparent; color: var(--pel-merah); border: 1px solid var(--pel-merah); }
+.pel-form-banding { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.pel-form-banding.hidden { display: none; }
+.pel-form-banding textarea {
+    border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 10px;
+    font-size: 13.5px; min-height: 60px; resize: vertical;
+    background: #fff; color: inherit; font-family: inherit;
+}
+html.dark .pel-form-banding textarea { background: #0f172a; border-color: #334155; }
+.pel-btn-kirim-banding { background: var(--pel-merah); color: #fff; align-self: flex-start; }
+
+/* ---------- ARSIP (Dashboard Siswa) ---------- */
+.pel-arsip-panel { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+.pel-arsip-panel.hidden { display: none; }
+.pel-arsip-panel h3 { margin: 0 0 8px; font-size: 15px; font-weight: 800; }
+#pel-arsip-list, #pel-arsip-tugas-list { display: flex; flex-direction: column; gap: 8px; }
+
+/* ---------- RESPONSIVE (HP) ---------- */
+@media (max-width: 480px) {
+    .pel-modal-box { max-height: 92vh; }
+    #overlay-pelanggaran-isi { padding: 18px; border-radius: 14px; }
+    .pel-halaman-head { flex-direction: column; align-items: flex-start; }
+    .pel-tabel { font-size: 12.5px; }
+    .pel-tabel th, .pel-tabel td { padding: 8px 6px; }
+}
+
+/* ============================================================
+   DAFTAR SISWA -> DETAIL PELANGGARAN (modal guru)
+   Dipakai: #modal-daftar-siswa-pelanggaran & #modal-detail-pelanggaran-siswa
+   (dashboard_guru_pelanggaran.js, BAGIAN D). Semua class baru: pel-daftar-*,
+   pel-detail-*, pel-entri-*, plus tombol pel-btn-primary/secondary/danger.
+   ============================================================ */
+
+/* ---------- TOMBOL (varian baru, tidak menimpa .pel-btn-* lama) ---------- */
+.pel-btn-primary { background: var(--pel-biru); color: #fff; }
+.pel-btn-secondary { background: transparent; color: var(--pel-abu); border: 1px solid var(--pel-abu); }
+.pel-btn-danger { background: var(--pel-merah); color: #fff; }
+.pel-btn-primary:focus-visible, .pel-btn-secondary:focus-visible, .pel-btn-danger:focus-visible,
+.pel-daftar-card:focus-visible { outline: 2px solid var(--pel-biru); outline-offset: 2px; }
+
+/* ---------- CARD SISWA DI MODAL DAFTAR (clickable) ---------- */
+.pel-daftar-card {
+    width: 100%;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    text-align: left;
+    background: #fff; color: inherit;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 12px 14px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, border-color 0.15s, transform 0.05s;
+}
+.pel-daftar-card:hover { background: #f8fafc; border-color: #cbd5e1; }
+.pel-daftar-card:active { transform: scale(0.99); }
+html.dark .pel-daftar-card { background: #1e293b; border-color: #334155; }
+html.dark .pel-daftar-card:hover { background: #273449; }
+
+.pel-daftar-info { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pel-daftar-nama { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pel-daftar-ringkas { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pel-daftar-aman { font-size: 12px; font-weight: 600; color: var(--pel-hijau); }
+.pel-daftar-arsip { font-size: 12px; color: var(--pel-abu); }
+.pel-daftar-panah { font-size: 22px; line-height: 1; opacity: 0.4; flex-shrink: 0; }
+
+/* ---------- ISI MODAL DETAIL ---------- */
+.pel-detail-isi { display: flex; flex-direction: column; gap: 18px; }
+.pel-detail-memuat { text-align: center; font-size: 13.5px; opacity: 0.6; padding: 20px 0; margin: 0; }
+
+.pel-detail-status {
+    display: flex; flex-direction: column; gap: 2px;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 14.5px; font-weight: 700;
+}
+.pel-detail-status-ok { background: var(--pel-hijau-bg); color: #166534; }
+.pel-detail-status-err { background: var(--pel-merah-bg); color: var(--pel-merah); }
+.pel-detail-status-sub { font-size: 12.5px; font-weight: 500; opacity: 0.8; }
+html.dark .pel-detail-status-ok { background: rgba(22, 163, 74, 0.18); color: #86efac; }
+html.dark .pel-detail-status-err { background: rgba(220, 38, 38, 0.2); color: #fca5a5; }
+
+.pel-detail-ringkasan {
+    display: flex; flex-direction: column; gap: 8px;
+    background: rgba(0,0,0,0.03);
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+html.dark .pel-detail-ringkasan { background: rgba(255,255,255,0.06); }
+.pel-detail-ringkasan-teks { font-size: 13.5px; }
+.pel-detail-ringkasan-chip { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.pel-detail-seksi { display: flex; flex-direction: column; gap: 10px; }
+.pel-detail-judul {
+    display: flex; align-items: center; gap: 8px;
+    margin: 0;
+    font-size: 12px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    opacity: 0.7;
+}
+.pel-detail-jumlah {
+    background: #e2e8f0; color: #334155;
+    border-radius: 999px; padding: 1px 8px;
+    font-size: 11px; letter-spacing: 0;
+}
+html.dark .pel-detail-jumlah { background: #334155; color: #e2e8f0; }
+.pel-detail-list { display: flex; flex-direction: column; gap: 10px; }
+
+/* ---------- ENTRI PELANGGARAN (aktif & arsip) ---------- */
+.pel-entri {
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #94a3b8;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 13.5px;
+    display: flex; flex-direction: column; gap: 8px;
+    background: #fff;
+}
+html.dark .pel-entri { background: #1e293b; border-color: #334155; border-left-color: #64748b; }
+.pel-entri-aktif { border-left-color: #dc2626; }
+.pel-entri-menunggu_acc { border-left-color: #2563eb; }
+.pel-entri-menunggu_tugas { border-left-color: #d97706; }
+.pel-entri-menunggu_bk { border-left-color: #7e22ce; }
+html.dark .pel-entri-aktif { border-left-color: #dc2626; }
+html.dark .pel-entri-menunggu_acc { border-left-color: #2563eb; }
+html.dark .pel-entri-menunggu_tugas { border-left-color: #d97706; }
+html.dark .pel-entri-menunggu_bk { border-left-color: #7e22ce; }
+
+/* arsip: read-only, sedikit lebih redup */
+.pel-entri-arsip { opacity: 0.92; }
+.pel-entri-selesai, html.dark .pel-entri-selesai { border-left-color: var(--pel-hijau); }
+.pel-entri-dibatalkan, html.dark .pel-entri-dibatalkan { border-left-color: var(--pel-abu); }
+
+.pel-entri-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.pel-entri-jenis { font-weight: 700; font-size: 14.5px; min-width: 0; overflow-wrap: anywhere; }
+.pel-entri-head .pel-status-pill { flex-shrink: 0; text-align: center; }
+.pel-entri-meta { font-size: 12px; opacity: 0.7; }
+.pel-entri-keterangan { opacity: 0.9; overflow-wrap: anywhere; }
+.pel-entri-blok {
+    background: rgba(0,0,0,0.03);
+    border-radius: 8px;
+    padding: 6px 10px;
+    overflow-wrap: anywhere;
+}
+html.dark .pel-entri-blok { background: rgba(255,255,255,0.06); }
+.pel-entri-blok-tolak { color: var(--pel-merah); }
+.pel-entri-pelapor { font-size: 12px; opacity: 0.6; font-style: italic; }
+.pel-entri-info-bk {
+    display: inline-flex; align-items: center;
+    background: var(--pel-ungu-bg); color: var(--pel-ungu);
+    border-radius: 8px; padding: 6px 10px;
+    font-size: 12.5px; font-weight: 700;
+}
+.pel-entri-aksi { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* input datetime di form Kasih Tugas (textarea-nya sudah di-style di atas) */
+.pel-form-tugaskan input[type="datetime-local"] {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13.5px;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    background: #fff; color: inherit;
+}
+html.dark .pel-form-tugaskan input[type="datetime-local"] { background: #0f172a; border-color: #334155; }
+
+/* ---------- RESPONSIVE (desktop -> HP) ---------- */
+@media (max-width: 640px) {
+    .pel-daftar-card { padding: 11px 12px; }
+    .pel-entri { padding: 11px 12px; }
+    .pel-entri-head { flex-direction: column; gap: 6px; }
+    .pel-entri-aksi .pel-btn { flex: 1 1 100%; min-height: 40px; }
+    .pel-entri-info-bk { flex: 1 1 100%; justify-content: center; }
+    .pel-form-tugaskan .pel-btn, .pel-form-tolak .pel-btn { width: 100%; min-height: 40px; }
+    .pel-detail-isi { gap: 14px; }
+}
