@@ -37,6 +37,7 @@
         'html.keyboard-open #bottom-nav-mobile,html.keyboard-open .guru-bottom-nav,html.keyboard-open [data-bottom-nav],' +
         'html.keyboard-open .ai-full-catatan,html.keyboard-open .scorus-foot{display:none !important}' +
         'html.keyboard-open #main-content,html.keyboard-open #main-scroll-container{padding-bottom:0 !important}' +
+        'html.keyboard-open #main-content:has(#tab-ai-support:not(.hidden)){padding-bottom:0 !important}' +
         // dashboard guru: kotak chat mengisi area di atas keyboard
         'html.keyboard-open #tab-scorus-ai .scorus-shell{height:calc(var(--vvh) - 12px) !important;min-height:0 !important}' +
         '}';
