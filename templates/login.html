@@ -1776,18 +1776,59 @@
       if (checkboxIngatSaya.checked) {
         // KEAMANAN: password TIDAK disimpan di localStorage (rawan dicuri lewat
         // XSS / orang yang memakai perangkat yang sama). Cukup username & role;
-        // untuk password biarkan pengelola password browser yang menanganinya.
+        // password dititipkan ke pengelola kata sandi browser (lihat bawah).
         var data = {
           username: inputUsername ? inputUsername.value : '',
           role: selectRole ? selectRole.value : ''
         };
         localStorage.setItem(KUNCI_INGAT, JSON.stringify(data));
+        simpanPasswordKePengelolaBrowser();
       } else {
         localStorage.removeItem(KUNCI_INGAT);
       }
     }
 
+    /* Password TIDAK pernah masuk localStorage. Sebagai gantinya dipakai
+       Credential Management API: password disimpan ke pengelola kata sandi
+       browser (terenkripsi, diamankan akun/layar kunci perangkat). Karena login
+       memakai fetch() -- bukan submit form biasa -- browser tidak menawarkan
+       "Simpan sandi?" sendiri, jadi disimpan manual di sini setelah login
+       BERHASIL dan "Ingat saya" dicentang. Dipakai Chrome/Edge/Samsung
+       (Android & desktop); browser tanpa API ini tetap jalan seperti biasa. */
+    function simpanPasswordKePengelolaBrowser() {
+      try {
+        if (!('credentials' in navigator) || typeof window.PasswordCredential !== 'function') return;
+        if (!inputUsername || !inputPassword || !inputPassword.value) return;
+        var kredensial = new window.PasswordCredential({
+          id: inputUsername.value,
+          password: inputPassword.value,
+          name: inputUsername.value
+        });
+        navigator.credentials.store(kredensial).catch(function () {});
+      } catch (e) { /* abaikan: fitur tambahan, bukan syarat login */ }
+    }
+
+    // Isi password otomatis dari pengelola browser kalau username-nya cocok dengan
+    // yang diingat, supaya user cukup klik "Masuk Akun".
+    function isiPasswordDariPengelolaBrowser() {
+      try {
+        if (!checkboxIngatSaya || !checkboxIngatSaya.checked) return;
+        if (!inputPassword || inputPassword.value) return;
+        if (!('credentials' in navigator) || typeof window.PasswordCredential !== 'function') return;
+        navigator.credentials.get({ password: true, mediation: 'optional' }).then(function (kred) {
+          if (!kred || kred.type !== 'password') return;
+          if (inputUsername && inputUsername.value && kred.id !== inputUsername.value) return;
+          if (inputUsername && !inputUsername.value) inputUsername.value = kred.id;
+          if (!inputPassword.value) {
+            inputPassword.value = kred.password;
+            inputPassword.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        }).catch(function () {});
+      } catch (e) { /* abaikan */ }
+    }
+
     muatDataIngatSaya();
+    isiPasswordDariPengelolaBrowser();
 
     function bersihkanStatusPassword() {
       maskot.classList.remove('tutup-mata', 'melek-lebar');
