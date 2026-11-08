@@ -157,6 +157,16 @@ _ORIGIN_TAMBAHAN = {
 }
 
 @app.before_request
+def _paksa_https():
+    """Paksa http:// -> https:// (hanya kalau COOKIE_SECURE=1). Cookie session
+    bertanda Secure dibuang browser di halaman http, sehingga login 'berhasil'
+    tapi /dashboard berikutnya tanpa cookie lalu balik ke /login (sering terjadi
+    di HP yang masuk lewat link http dari hasil pencarian Google)."""
+    if app.config.get('SESSION_COOKIE_SECURE') and request.headers.get('X-Forwarded-Proto', 'https') == 'http':
+        return redirect(request.url.replace('http://', 'https://', 1), code=301)
+
+
+@app.before_request
 def _tolak_request_lintas_situs():
     if request.method in ('GET', 'HEAD', 'OPTIONS'):
         return None
