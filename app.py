@@ -455,6 +455,14 @@ def _log_akses_request(response):
                 'status': response.status_code,
                 'durasi_ms': durasi_ms,
                 'user': (session.get('user') or {}).get('username'),
+                # DIAGNOSA (bug "kepental ke login" di HP): apakah browser mengirim
+                # cookie session, siapa yang memicu request, dan perangkat apa.
+                'cookie': 'session' in request.cookies,
+                'set_cookie': any(h.lower().startswith('session=') for h in response.headers.getlist('Set-Cookie')),
+                'referer': (request.headers.get('Referer') or '')[:120],
+                'dest': request.headers.get('Sec-Fetch-Dest'),
+                'mode': request.headers.get('Sec-Fetch-Mode'),
+                'ua': (request.headers.get('User-Agent') or '')[:90],
             }
             _akses_logger.info(json.dumps(baris, ensure_ascii=False))
     except Exception as exc:
