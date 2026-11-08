@@ -3769,6 +3769,12 @@ def send_otp_email(to_email, otp, fullname):
 # ----------------------------------------------------
 @app.route('/')
 def index():
+    # PERBAIKAN: dulu SELALU ke /login, padahal GET /login menghapus session --
+    # jadi user yang sudah login ter-logout tiap kali membuka alamat root
+    # (history Chrome HP, bookmark, pintasan layar utama, tab dipulihkan).
+    # Sekarang yang sudah login langsung diarahkan ke dashboard-nya.
+    if 'user' in session:
+        return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
  
 # ----------------------------------------------------
