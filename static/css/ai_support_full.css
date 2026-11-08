@@ -394,3 +394,21 @@
     .ai-pilihan-btn { padding: 8px 14px; }
 }
 @media (prefers-reduced-motion: reduce) { .ai-pilihan-btn { transition: none; } }
+
+
+/* ============================================================
+   KEYBOARD HP -- kolom ketik tetap di atas keyboard (BARU)
+   Dipasang oleh static/js/ai_support_keyboard.js: --vvh = tinggi area
+   terlihat (di atas keyboard), class html.keyboard-open saat keyboard muncul.
+   ============================================================ */
+body:has(#tab-ai-support:not(.hidden)) { height: var(--vvh, 100dvh) !important; }
+.scroll-sembunyi-quiz:has(#tab-ai-support:not(.hidden)) { height: 100% !important; }
+
+@media (max-width: 639px) {
+    /* 16px mencegah iOS Safari zoom otomatis saat input difokus */
+    #input-ai-support { font-size: 16px !important; }
+    /* keyboard terbuka: sembunyikan bottom nav & ruang cadangannya */
+    html.keyboard-open #bottom-nav-mobile { display: none !important; }
+    html.keyboard-open #main-content:has(#tab-ai-support:not(.hidden)) { padding-bottom: 0 !important; }
+    html.keyboard-open .ai-full-catatan { display: none; }
+}
