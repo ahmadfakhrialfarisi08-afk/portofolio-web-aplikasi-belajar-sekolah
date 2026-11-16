@@ -92,6 +92,17 @@ app.config['SESSION_COOKIE_SECURE'] = os.environ.get('COOKIE_SECURE', '0') == '1
 # cukup panjang untuk satu hari kerja penuh di sekolah.
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=12)
 
+# Batas ukuran body request. Tanpa ini, 1 request raksasa bisa menghabiskan RAM worker.
+# Default 16 MB (cukup untuk foto base64 tugas/karya & VN 1 MB); ubah lewat .env: MAX_UPLOAD_MB=...
+try:
+    app.config['MAX_CONTENT_LENGTH'] = int(os.environ.get('MAX_UPLOAD_MB', '16')) * 1024 * 1024
+except ValueError:
+    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
+@app.errorhandler(413)
+def _request_terlalu_besar(_e):
+    return jsonify(success=False, ok=False, message='Ukuran data terlalu besar.'), 413
+
 # ----------------------------------------------------
 # BLUEPRINT GEMINI (folder api/ + services/)
 # ----------------------------------------------------
@@ -253,7 +264,13 @@ _rate_limit_hits = defaultdict(deque)  # kunci -> deque[timestamp request]
 # dashboard yang sah TIDAK ikut kena limit yang sebenarnya ditujukan untuk
 # lonjakan tidak wajar (klik spam/loop bug).
 BATAS_RATE_LIMIT = {
-    'login':  (5, 60),     # login, register, kirim/verifikasi OTP
+    'login':  (5, 60),     # register, lupa password, kirim/verifikasi OTP (per IP -- ketat, mencegah spam email OTP)
+    # LOGIN (POST /login) dipisah dari 'login' di atas: 5/menit per IP terlalu kecil kalau 1 kelas
+    # (WiFi sekolah = 1 IP publik) login bersamaan -- siswa ke-6 dst kena blokir. Brute-force tetap
+    # dijaga per-akun lewat _login_sedang_dikunci() (5 gagal per IP+username, 15 per username).
+    'masuk':  (50, 10),    # jendela pendek: kalau kena batas, cukup tunggu <=10 detik (WiFi sekolah tidak tertahan lama)
+    # Halaman dashboard (render HTML besar) -- sebelumnya tidak ada batas sama sekali.
+    'halaman': (20, 10),
     'umum':   (60, 60),    # API umum (baca/tulis data ringan)
     'berat':  (120, 60),   # endpoint yang baca banyak data / komputasi berat -- dinaikkan dari 20 karena 1x buka Rekap/Dashboard Guru bisa memicu puluhan panggilan paralel yang sah (submisi + hasil periksa per tugas per kelas)
     'upload': (10, 60),    # upload foto/tugas
@@ -312,6 +329,11 @@ def _cek_dan_catat_rate_limit(kategori):
     kunci = f"{kategori}:{_kunci_rate_limit()}"
     sekarang = time.time()
     with _rate_limit_lock:
+        # Buang kunci lama supaya dict tidak membengkak terus (tiap IP/akun = 1 kunci;
+        # tanpa ini memori naik pelan-pelan, apalagi saat banyak IP berbeda mengakses).
+        if len(_rate_limit_hits) > 5000:
+            for k in [k for k, d in _rate_limit_hits.items() if not d or sekarang - d[-1] > 120]:
+                del _rate_limit_hits[k]
         antrian = _rate_limit_hits[kunci]
         while antrian and sekarang - antrian[0] > jendela:
             antrian.popleft()
@@ -3813,7 +3835,7 @@ def login():
         # Rate limit di sini (bukan decorator di seluruh route) supaya
         # cuma PERCOBAAN login (POST) yang dibatasi -- membuka halaman
         # /login (GET) tetap bebas, tidak ikut jatah yang sama.
-        if not _cek_dan_catat_rate_limit('login'):
+        if not _cek_dan_catat_rate_limit('masuk'):
             pesan_gagal = 'Terlalu banyak percobaan login. Coba lagi sebentar ya.'
             is_ajax_limit = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             flash(pesan_gagal, 'error')
@@ -5767,6 +5789,7 @@ def api_ai_chat():
 # ----------------------------------------------------
 @app.route('/guru')
 @app.route('/daftar_guru.html')
+@batasi('halaman')
 def halaman_daftar_guru():
     if 'user' not in session:
         return redirect(url_for('login'))
@@ -5776,6 +5799,7 @@ def halaman_daftar_guru():
 # ROUTE DASHBOARD (PENGARAH BERDASARKAN ROLE)
 # ----------------------------------------------------
 @app.route('/dashboard')
+@batasi('halaman')
 def dashboard():
     if 'user' not in session:
         return redirect(url_for('login'))
@@ -5809,6 +5833,7 @@ def _sisipkan_kelas_siswa(html, kunci_kelas):
 
 
 @app.route('/dashboard/siswa')
+@batasi('halaman')
 def dashboard_siswa():
     if 'user' not in session or session['user']['role'] != 'siswa':
         return redirect(url_for('login'))
@@ -5878,6 +5903,7 @@ def dashboard_siswa():
     return _sisipkan_kelas_siswa(html, _kunci_kelas_akun(session['user']['username']))
  
 @app.route('/dashboard/guru')
+@batasi('halaman')
 def dashboard_guru():
     if 'user' not in session or session['user']['role'] != 'guru':
         return redirect(url_for('login'))
@@ -5925,6 +5951,7 @@ def api_sesi_whoami():
     )
  
 @app.route('/dashboard/staf')
+@batasi('halaman')
 def dashboard_staf():
     if 'user' not in session or session['user']['role'] not in ['staf_kebersihan', 'staf']:
         return redirect(url_for('login'))
