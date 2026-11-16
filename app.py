@@ -734,6 +734,17 @@ users = {
                 'border_aktif': 'starter_pemula',
         'foto_profil': FOTO_PROFIL_DEFAULT
     },
+    'Fauzan': {
+                    'username': 'Fauzan',
+                    'password': generate_password_hash('fauzan'),
+                    'role': 'siswa',
+                    'email': 'Fauzan@sekolah.sch.id',
+                    'fullname': 'FAUZAN MUHAMMAD AKBAR',
+                    'identity_number': '0902870319',
+                    'kelas': 'XII TKJ 2',
+                    'border_aktif': 'starter_pemula',
+        'foto_profil': FOTO_PROFIL_DEFAULT
+    },
     'admin fajri': {
               'username': 'fajri',
               'password': generate_password_hash('fajri123'),
