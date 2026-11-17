@@ -16,6 +16,7 @@
   <meta name="copyright" content="Copyright (c) 2026 AHMAD FAKHRI AL FARISI - MIT License" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
   <title>Login - SMK BANJAR ASRI</title>
   <!-- Wajib supaya submit form / klik link di dalam dokumen ini, saat dia
        dimuat sebagai iframe embed (lihat #lupaSceneHost di lupa_password.html),
@@ -177,7 +178,7 @@
       max-height: 100vh;
       min-height: 100vh;
       margin: 0;
-      background: #ffffff;
+      background: #f7f6f2;
       border-radius: 0;
       overflow: hidden;
       box-shadow: none;
@@ -233,7 +234,7 @@
       will-change: transform;
     }
     .panel-slider { z-index: 3; }
-    .form-slider { z-index: 1; background: #ffffff; overflow: hidden; }
+    .form-slider { z-index: 1; background: #f7f6f2; overflow: hidden; }
     .form-slider > .login-container { flex: 1 1 auto; }
     .login-wrapper.mode-daftar .panel-slider { transform: translateX(100%); }
     .login-wrapper.mode-daftar .form-slider { transform: translateX(-100%); }
@@ -246,7 +247,7 @@
          Nilai fallback di bawah = emerald asli, jadi tanpa JS / logo gagal
          dianalisis / tampilan HP, tampilannya persis seperti sebelumnya. */
       background:
-        radial-gradient(circle at 78% 6%, rgba(var(--jur-glow, 45,212,191),0.22), transparent 45%),
+        radial-gradient(circle at 78% 6%, rgba(var(--jur-glow, 45,212,191),0.12), transparent 45%),
         radial-gradient(circle at 8% 98%, rgba(var(--jur-shadow, 2,10,8),0.55), transparent 55%),
         linear-gradient(160deg, rgb(var(--jur-c0, 6,35,29)) 0%, rgb(var(--jur-c1, 10,59,48)) 42%, rgb(var(--jur-c2, 15,77,63)) 72%, rgb(var(--jur-c3, 20,96,78)) 100%);
       display: flex;
@@ -275,7 +276,7 @@
       position: absolute;
       top: -50%; left: -60%;
       width: 60%; height: 220%;
-      background: linear-gradient(115deg, transparent 30%, rgba(var(--jur-glow, 45,212,191),0.14) 50%, transparent 70%);
+      background: linear-gradient(115deg, transparent 30%, rgba(var(--jur-glow, 45,212,191),0.07) 50%, transparent 70%);
       transform: rotate(12deg);
       animation: sinarSapu 6s linear infinite;
       z-index: 0;
@@ -369,7 +370,7 @@
       z-index: 30;
     }
     .cf-slide[data-peran="tengah"] .cf-logo {
-      filter: drop-shadow(0 0 18px rgba(255,255,255,0.5));
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,0.38));
     }
     .cf-slide[data-peran="kanan"] {
       transform: translateX(115px) scale(0.8);
@@ -404,7 +405,7 @@
     .login-container {
       flex: 1 1 54%;
       position: relative;
-      background-color: #ffffff;
+      background-color: #f7f6f2;
       padding: 0 56px;
       display: flex;
       flex-direction: column;
@@ -1126,6 +1127,26 @@
       box-shadow: 0 10px 15px -3px rgba(15,23,42,.1), 0 4px 6px -4px rgba(15,23,42,.1);
     }
     .validasi-alert-ikon { width: 16px; height: 16px; flex-shrink: 0; }
+    /* ===================== MODE GELAP OTOMATIS (panel form) =====================
+       Mengikuti pengaturan perangkat (prefers-color-scheme). Panel kiri sudah gelap,
+       jadi yang disesuaikan hanya panel form di kanan supaya tidak menyilaukan malam hari. */
+    @media (prefers-color-scheme: dark) {
+      :root { color-scheme: dark; }
+      .login-wrapper, .form-slider, .login-container { background-color: #14181a; }
+      h2, label { color: #e6e8e6; }
+      .subtitle, .ingat-teks, .bottom-links { color: #a3abb0; }
+      select, input { background-color: #1c2225; color: #e6e8e6; border-color: #343d42; }
+      select:hover, input:hover { border-color: #3f8f7c; }
+      select:focus, input:focus { border-color: #4fae97; box-shadow: 0 0 0 4px rgba(79,174,151,0.18); }
+      input::placeholder { color: #7d878c; }
+      .input-icon, .input-chevron { color: #7d878c; }
+      .toggle-password { color: #a3abb0; }
+      .toggle-password:hover { color: #8fd6c3; background-color: rgba(79,174,151,0.12); }
+      .kotak-centang { background-color: #1c2225; border-color: #4a555b; }
+      .link { color: #6cc4ad; }
+      .link::after { background: #6cc4ad; }
+      .maskot-wrap { filter: drop-shadow(0 10px 16px rgba(0,0,0,0.5)); }
+    }
   </style>
 </head>
 <body>
@@ -2709,25 +2730,23 @@
     // Logo dominan kuning: latar dibuat emas-kuning TERANG (sesuai logo), dan teks panel
     // berganti gelap supaya tetap terbaca (kontras teks >= 4,6:1 terhadap bagian latar tergelap).
     function paletTerang() {
-      // TAV: kuning logo yang hidup tapi nyaman di mata. Hexagon logo = #fdfc07 (rona ~59).
-      // Kenapa versi sebelumnya terlihat kusam: kuning yang digelapkan jadi OLIVE/lumpur, dan
-      // bayangan pojok yang gelap menambah kesan keruh. Solusinya: kedalaman diberi lewat rona
-      // yang bergeser HANGAT (emas/amber di sudut -> lemon di sisi terang), bukan lewat kecerahan
-      // rendah; saturasi tetap tinggi (~93%) tapi kecerahan 52-61% supaya tidak neon/menyilaukan.
-      var teks = [18, 12, 2];
-      var rona = [47, 50, 53, 56], sat = [0.92, 0.92, 0.93, 0.94];
-      var stop = [0.52, 0.55, 0.58, 0.61], c, guard = 0;
+      // TAV (logo kuning): TIDAK lagi memakai latar kuning terang -- di layar penuh itu menyilaukan
+      // (apalagi malam hari) dan memaksa teks berganti hitam/putih tiap slide. Sekarang rona emas/amber
+      // logo tetap dipertahankan, tapi dibuat GELAP dan tidak jenuh, jadi teks panel selalu putih.
+      var teks = [255, 255, 255];
+      var rona = [36, 38, 40, 42], sat = [0.50, 0.52, 0.54, 0.55];
+      var stop = [0.09, 0.13, 0.17, 0.21], c, guard = 0;
       function bangun() { c = stop.map(function (l, i) { return hslKeRgb(rona[i], sat[i], l); }); }
       bangun();
-      while ((luminans(c[0]) + 0.05) / (luminans(teks) + 0.05) < 4.6 && guard++ < 40) {
-        stop = stop.map(function (l) { return Math.min(0.66, l * 1.02); });
+      while (kontrasPutih(c[3]) < 7 && guard++ < 30) {
+        stop = stop.map(function (l) { return l * 0.94; });
         bangun();
       }
       return {
         c0: c[0].map(Math.round), c1: c[1].map(Math.round), c2: c[2].map(Math.round), c3: c[3].map(Math.round),
-        glow: hslKeRgb(54, 0.95, 0.66).map(Math.round),
-        shadow: hslKeRgb(42, 0.85, 0.42).map(Math.round),   // amber hangat (bukan cokelat/olive gelap) supaya pojok tidak keruh
-        teks: teks, alfa: [0.92, 0.82, 0]
+        glow: hslKeRgb(44, 0.55, 0.42).map(Math.round),
+        shadow: hslKeRgb(36, 0.5, 0.03).map(Math.round),
+        teks: teks, alfa: [0.78, 0.62, 0]
       };
     }
     function buatPalet(a) {
@@ -2739,8 +2758,8 @@
       // terbaca "kuning" (versi gelap, karena teks putih harus tetap terbaca).
       if (a.kuning) H = 50;
       var kontrasMin = a.kuning ? 4.6 : 7;   // kuning dibuat emas yang lebih hidup (bukan cokelat); 4,6:1 masih lolos AA untuk teks putih
-      var S = a.netral ? 0.1 : (a.kuning ? 0.95 : batas(hsl[1] * 0.95, 0.5, 0.8));
-      var batasL = batas(hsl[2] * 0.6, 0.12, a.kuning ? 0.3 : 0.24);            // logo gelap -> latar lebih gelap lagi
+      var S = a.netral ? 0.1 : (a.kuning ? 0.95 : batas(hsl[1] * 0.6, 0.28, 0.5));   // jenuh dibatasi: neon -> tenang di mata
+      var batasL = batas(hsl[2] * 0.6, 0.12, a.kuning ? 0.3 : 0.2);            // logo gelap -> latar lebih gelap lagi
       var skalaL = a.kuning ? 1 : batasL / 0.24;
       var stop = (a.kuning ? [0.11, 0.18, 0.24, 0.30] : [0.09, 0.14, 0.19, 0.24]).map(function (l) { return l * skalaL; });
       var c = stop.map(function (l) { return hslKeRgb(H, S, l); });
@@ -2765,7 +2784,7 @@
       }
       return {
         c0: c[0].map(Math.round), c1: c[1].map(Math.round), c2: c[2].map(Math.round), c3: c[3].map(Math.round),
-        glow: hslKeRgb(glowH, a.netral ? 0.12 : 0.7, 0.5).map(Math.round),
+        glow: hslKeRgb(glowH, a.netral ? 0.12 : 0.5, 0.42).map(Math.round),
         shadow: hslKeRgb(H, 0.5, 0.03).map(Math.round),
         teks: [255, 255, 255], alfa: [0.78, 0.62, 0]
       };
